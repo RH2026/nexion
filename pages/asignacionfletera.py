@@ -290,11 +290,6 @@ def calcular_fecha_programacion():
 # 3.1 FUNCIÓN PARA ACUMULAR, ELIMINAR DUPLICADOS Y AÑADIR COLUMNAS VACÍAS
 # ==========================================
 def actualizar_historial_envios_github(df_nuevos):
-    """
-    Descarga envios.csv de GitHub, le añade columnas vacías (FECHA DE ENVIO, ESTATUS, FECHA ACTUAL, SERVICIO),
-    concatena los nuevos datos, elimina duplicados por Factura (conservando el más reciente)
-    y lo vuelve a subir. Si no existe, lo crea desde cero.
-    """
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "envios.csv"
@@ -310,7 +305,6 @@ def actualizar_historial_envios_github(df_nuevos):
     
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
     
-    # Asegurar que los datos nuevos tengan las columnas requeridas
     df_procesado = df_nuevos.copy()
     if "FECHA DE PROGRAMACION" not in df_procesado.columns:
         fecha_prog = calcular_fecha_programacion()
@@ -324,7 +318,6 @@ def actualizar_historial_envios_github(df_nuevos):
     if "SERVICIO" not in df_procesado.columns:
         df_procesado["SERVICIO"] = ""
 
-    # 1. Intentar leer el archivo actual de GitHub
     r = requests.get(url, headers=headers)
     df_existente = pd.DataFrame()
     sha = None
@@ -335,7 +328,6 @@ def actualizar_historial_envios_github(df_nuevos):
         content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
         df_existente = pd.read_csv(io.StringIO(content_decoded))
     
-    # 2. Combinar historial existente con el nuevo análisis
     if not df_existente.empty:
         if "FECHA DE PROGRAMACION" not in df_existente.columns:
             df_existente["FECHA DE PROGRAMACION"] = ""
@@ -352,24 +344,21 @@ def actualizar_historial_envios_github(df_nuevos):
     else:
         df_combinado = df_procesado
 
-    # 3. Eliminar duplicados si suben por error la misma factura (mantiene el último / más reciente)
     if "Factura" in df_combinado.columns:
         df_combinado = df_combinado.drop_duplicates(subset=["Factura"], keep="last")
 
-    # 4. Convertir a CSV en memoria y codificar en Base64
     csv_buffer = io.StringIO()
     df_combinado.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
     csv_str = csv_buffer.getvalue()
     content_base64 = base64.b64encode(csv_str.encode("utf-8")).decode("utf-8")
     
-    # 5. Preparar petición PUT para GitHub
     data = {
         "message": "Actualización automática, fecha de programación y limpieza de duplicados en envios.csv",
         "content": content_base64,
         "branch": "main"
     }
     if sha:
-        data["sha"] = sha  # Requerido si el archivo ya existe
+        data["sha"] = sha
 
     put_response = requests.put(url, headers=headers, json=data)
     
@@ -808,7 +797,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (MÓDULO DE ASIGNACIÓN)
+# 5. INTERFAZ PRINCIPAL (MÓDULO DE ASIGNACIÓN DIRECTA)
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
@@ -816,7 +805,7 @@ def main():
         st.session_state.animacion_cargada = True
     
     st.markdown(
-        f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T PREPARATION MODULE</p>",
+        f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>SMART ROUTING // ASIGNACIÓN DIRECTA</p>",
         unsafe_allow_html=True,
     )
 
@@ -894,108 +883,90 @@ def main():
 
                 st.markdown("---")
                 if st.button(
-                    "RENDERIZAR TABLA", use_container_width=True
+                    "SMART ROUTING (MOTOR DE ASIGNACIÓN)",
+                    type="primary",
+                    use_container_width=True,
                 ):
-                    st.session_state.df_final_st = df_rango[
-                        df_rango[col_folio].isin(folios_ok)
-                    ]
+                    try:
+                        df_st = df_rango[
+                            df_rango[col_folio].isin(folios_ok)
+                        ]
+                        df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
+                        matriz_db = obtener_matriz_github()
 
-                if "df_final_st" in st.session_state:
-                    df_st = st.session_state.df_final_st
-                    st.dataframe(df_st, use_container_width=True)
+                        col_dir_erp = next(
+                            (c for c in df_log.columns if "DIRECCION" in c.upper()), None
+                        )
+                        col_dest_matriz = (
+                            "DESTINO"
+                            if "DESTINO" in matriz_db.columns
+                            else matriz_db.columns[0]
+                        )
+                        col_flet_matriz = (
+                            "TRANSPORTE"
+                            if "TRANSPORTE" in matriz_db.columns
+                            else "FLETERA"
+                        )
+                        col_tarifa_matriz = (
+                            "PRECIO POR CAJA"
+                            if "PRECIO POR CAJA" in matriz_db.columns
+                            else "COSTO"
+                        )
 
-                    towrite = io.BytesIO()
-                    df_st.to_excel(towrite, index=False, engine="openpyxl")
-                    st.download_button(
-                        label="DESCARGAR S&T",
-                        data=towrite.getvalue(),
-                        file_name="ST_DATA.xlsx",
-                        use_container_width=True,
-                    )
+                        def motor_v4(row):
+                            if not col_dir_erp:
+                                return "ERROR: COL DIRECCION", 0.0
+                            dir_limpia = limpiar_texto(row[col_dir_erp])
+                            if any(
+                                loc in dir_limpia
+                                for loc in [
+                                    "GDL",
+                                    "GUADALAJARA",
+                                    "ZAPOPAN",
+                                    "TLAQUEPAQUE",
+                                    "TONALA",
+                                    "TLAJOMULCO",
+                                ]
+                            ):
+                                return "LOCAL", 0.0
+                            for _, fila in matriz_db.iterrows():
+                                dest_key = limpiar_texto(fila[col_dest_matriz])
+                                if dest_key and (dest_key in dir_limpia):
+                                    flet = fila.get(col_flet_matriz, "ASIGNADO")
+                                    costo_val = pd.to_numeric(
+                                        fila.get(col_tarifa_matriz, 0.0), errors="coerce"
+                                    )
+                                    return flet, costo_val
+                            return "REVISIÓN MANUAL", 0.0
 
-                    if st.button(
-                        "SMART ROUTING (MOTOR DE ASIGNACIÓN)",
-                        type="primary",
-                        use_container_width=True,
-                    ):
-                        try:
-                            df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
-                            matriz_db = obtener_matriz_github()
+                        res = df_log.apply(motor_v4, axis=1)
+                        df_log["RECOMENDACION"] = [r[0] for r in res]
+                        df_log["COSTO"] = [r[1] for r in res]
 
-                            col_dir_erp = next(
-                                (c for c in df_log.columns if "DIRECCION" in c.upper()), None
-                            )
-                            col_dest_matriz = (
-                                "DESTINO"
-                                if "DESTINO" in matriz_db.columns
-                                else matriz_db.columns[0]
-                            )
-                            col_flet_matriz = (
-                                "TRANSPORTE"
-                                if "TRANSPORTE" in matriz_db.columns
-                                else "FLETERA"
-                            )
-                            col_tarifa_matriz = (
-                                "PRECIO POR CAJA"
-                                if "PRECIO POR CAJA" in matriz_db.columns
-                                else "COSTO"
-                            )
+                        fecha_prog_calculada = calcular_fecha_programacion()
+                        df_log["FECHA DE PROGRAMACION"] = fecha_prog_calculada
 
-                            def motor_v4(row):
-                                if not col_dir_erp:
-                                    return "ERROR: COL DIRECCION", 0.0
-                                dir_limpia = limpiar_texto(row[col_dir_erp])
-                                if any(
-                                    loc in dir_limpia
-                                    for loc in [
-                                        "GDL",
-                                        "GUADALAJARA",
-                                        "ZAPOPAN",
-                                        "TLAQUEPAQUE",
-                                        "TONALA",
-                                        "TLAJOMULCO",
-                                    ]
-                                ):
-                                    return "LOCAL", 0.0
-                                for _, fila in matriz_db.iterrows():
-                                    dest_key = limpiar_texto(fila[col_dest_matriz])
-                                    if dest_key and (dest_key in dir_limpia):
-                                        flet = fila.get(col_flet_matriz, "ASIGNADO")
-                                        costo_val = pd.to_numeric(
-                                            fila.get(col_tarifa_matriz, 0.0), errors="coerce"
-                                        )
-                                        return flet, costo_val
-                                return "REVISIÓN MANUAL", 0.0
+                        df_log = df_log.rename(columns={col_folio: "Factura"})
+                        cols_deseadas = [
+                            "Factura",
+                            "FECHA DE PROGRAMACION",
+                            "RECOMENDACION",
+                            "Transporte",
+                            "DIRECCION",
+                            "COSTO",
+                            "Nombre_Cliente",
+                            "Nombre_Extran",
+                            "Quantity",
+                            "DESTINO",
+                        ]
+                        cols_finales = [c for c in cols_deseadas if c in df_log.columns]
 
-                            res = df_log.apply(motor_v4, axis=1)
-                            df_log["RECOMENDACION"] = [r[0] for r in res]
-                            df_log["COSTO"] = [r[1] for r in res]
+                        st.session_state.df_analisis = df_log[cols_finales]
+                        st.success("¡Motor sincronizado con datos recientes y fecha de programación ajustada!")
+                        st.rerun()
 
-                            # Inyección automática de la columna FECHA DE PROGRAMACION basada en la regla horaria de GDL
-                            fecha_prog_calculada = calcular_fecha_programacion()
-                            df_log["FECHA DE PROGRAMACION"] = fecha_prog_calculada
-
-                            df_log = df_log.rename(columns={col_folio: "Factura"})
-                            cols_deseadas = [
-                                "Factura",
-                                "FECHA DE PROGRAMACION",
-                                "RECOMENDACION",
-                                "Transporte",
-                                "DIRECCION",
-                                "COSTO",
-                                "Nombre_Cliente",
-                                "Nombre_Extran",
-                                "Quantity",
-                                "DESTINO",
-                            ]
-                            cols_finales = [c for c in cols_deseadas if c in df_log.columns]
-
-                            st.session_state.df_analisis = df_log[cols_finales]
-                            st.success("¡Motor sincronizado con datos recientes y fecha de programación ajustada!")
-                            st.rerun()
-
-                        except Exception as e:
-                            st.error(f"Error en el motor de asignación: {e}")
+                    except Exception as e:
+                        st.error(f"Error en el motor de asignación: {e}")
 
         except Exception as e:
             st.error(f"Error procesando el archivo ERP: {e}")
