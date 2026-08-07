@@ -309,7 +309,6 @@ def actualizar_historial_envios_github(df_nuevos):
     
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
     
-    # Asegurar que los datos nuevos tengan las columnas requeridas
     df_procesado = df_nuevos.copy()
     if "FECHA DE PROGRAMACION" not in df_procesado.columns:
         fecha_prog = calcular_fecha_programacion()
@@ -323,7 +322,6 @@ def actualizar_historial_envios_github(df_nuevos):
     if "SERVICIO" not in df_procesado.columns:
         df_procesado["SERVICIO"] = ""
 
-    # 1. Intentar leer el archivo actual de GitHub
     r = requests.get(url, headers=headers)
     df_existente = pd.DataFrame()
     sha = None
@@ -334,41 +332,30 @@ def actualizar_historial_envios_github(df_nuevos):
         content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
         df_existente = pd.read_csv(io.StringIO(content_decoded))
     
-    # 2. Combinar historial existente con el nuevo análisis
     if not df_existente.empty:
-        if "FECHA DE PROGRAMACION" not in df_existente.columns:
-            df_existente["FECHA DE PROGRAMACION"] = ""
-        if "FECHA DE ENVIO" not in df_existente.columns:
-            df_existente["FECHA DE ENVIO"] = ""
-        if "ESTATUS" not in df_existente.columns:
-            df_existente["ESTATUS"] = ""
-        if "FECHA ACTUAL" not in df_existente.columns:
-            df_existente["FECHA ACTUAL"] = ""
-        if "SERVICIO" not in df_existente.columns:
-            df_existente["SERVICIO"] = ""
-            
+        for col in ["FECHA DE PROGRAMACION", "FECHA DE ENVIO", "ESTATUS", "FECHA ACTUAL", "SERVICIO"]:
+            if col not in df_existente.columns:
+                df_existente[col] = ""
+                
         df_combinado = pd.concat([df_existente, df_procesado], ignore_index=True)
     else:
         df_combinado = df_procesado
 
-    # 3. Eliminar duplicados si suben por error la misma factura (mantiene el último / más reciente)
     if "Factura" in df_combinado.columns:
         df_combinado = df_combinado.drop_duplicates(subset=["Factura"], keep="last")
 
-    # 4. Convertir a CSV en memoria y codificar en Base64
     csv_buffer = io.StringIO()
     df_combinado.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
     csv_str = csv_buffer.getvalue()
     content_base64 = base64.b64encode(csv_str.encode("utf-8")).decode("utf-8")
     
-    # 5. Preparar petición PUT para GitHub
     data = {
         "message": "Actualización automática, fecha de programación y limpieza de duplicados en envios.csv",
         "content": content_base64,
         "branch": "main"
     }
     if sha:
-        data["sha"] = sha  # Requerido si el archivo ya existe
+        data["sha"] = sha 
 
     put_response = requests.put(url, headers=headers, json=data)
     
@@ -396,7 +383,9 @@ def crear_imagen_qr(contenido_qr):
 def generar_sellos_fisicos(df_datos, x_pos, y_pos):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(612, 792)) 
-    fecha_programacion = datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    tz_gdl = pytz.timezone("America/Mexico_City")
+    fecha_programacion = datetime.now(tz_gdl).strftime("%d/%m/%Y %H:%M")
     
     for _, row in df_datos.iterrows():
         fletera = str(row.get('RECOMENDACION', 'N/A'))
@@ -418,7 +407,9 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
 def marcar_pdf_digital(pdf_file, fletera_val, factura_val, x_pos, y_pos):
     reader = PdfReader(pdf_file)
     writer = PdfWriter()
-    fecha_programacion = datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    tz_gdl = pytz.timezone("America/Mexico_City")
+    fecha_programacion = datetime.now(tz_gdl).strftime("%d/%m/%Y %H:%M")
     
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=letter) 
@@ -970,13 +961,12 @@ def main():
                             df_log["RECOMENDACION"] = [r[0] for r in res]
                             df_log["COSTO"] = [r[1] for r in res]
                             
-                            # Inyección automática de la columna FECHA DE PROGRAMACION basada en la regla horaria de GDL
                             fecha_prog_calculada = calcular_fecha_programacion()
                             df_log["FECHA DE PROGRAMACION"] = fecha_prog_calculada
 
                             if "FECHA DE PROGRAMACION" in df_log.columns:
                                 df_log["FECHA DE PROGRAMACION"] = pd.to_datetime(
-                                    df_log["FECHA DE PROGRAMACION"], errors="coerce"
+                                    df_log["FECHA DE PROGRAMACION"], errors="coerce", dayfirst=True
                                 ).dt.strftime("%d/%m/%Y").fillna(df_log["FECHA DE PROGRAMACION"])
 
                             df_log = df_log.rename(columns={col_folio: "Factura"})
