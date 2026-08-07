@@ -279,12 +279,11 @@ def calcular_fecha_programacion():
     hora_actual = ahora_gdl.hour
     
     if hora_actual < 12:
-        return ahora_gdl.strftime("%Y-%m-%d")
+        return ahora_gdl.strftime("%d/%m/%Y")
     elif hora_actual >= 15:
-        return (ahora_gdl + timedelta(days=1)).strftime("%Y-%m-%d")
+        return (ahora_gdl + timedelta(days=1)).strftime("%d/%m/%Y")
     else:
-        return ahora_gdl.strftime("%Y-%m-%d")
-
+        return ahora_gdl.strftime("%d/%m/%Y")
 
 # ==========================================
 # 3.1 FUNCIÓN PARA ACUMULAR, ELIMINAR DUPLICADOS Y AÑADIR COLUMNAS VACÍAS
@@ -970,10 +969,15 @@ def main():
                             res = df_log.apply(motor_v4, axis=1)
                             df_log["RECOMENDACION"] = [r[0] for r in res]
                             df_log["COSTO"] = [r[1] for r in res]
-
+                            
                             # Inyección automática de la columna FECHA DE PROGRAMACION basada en la regla horaria de GDL
                             fecha_prog_calculada = calcular_fecha_programacion()
                             df_log["FECHA DE PROGRAMACION"] = fecha_prog_calculada
+
+                            if "FECHA DE PROGRAMACION" in df_log.columns:
+                            df_log["FECHA DE PROGRAMACION"] = pd.to_datetime(
+                                df_log["FECHA DE PROGRAMACION"], errors="coerce"
+                            ).dt.strftime("%d/%m/%Y").fillna(df_log["FECHA DE PROGRAMACION"])
 
                             df_log = df_log.rename(columns={col_folio: "Factura"})
                             cols_deseadas = [
