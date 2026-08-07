@@ -959,9 +959,11 @@ def main():
 
         df_envios['numero_guia'] = lista_guias
 
-        # ── LÓGICA MAESTRA: 24 HORAS GUADALAJARA (RETRASO VS EN TIEMPO) ──
+       # ── LÓGICA MAESTRA CORREGIDA: VALIDACIÓN DE PLAZOS Y HORA GDL ──
         tz_gdl = pytz.timezone("America/Mexico_City")
         ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
+        hoy_gdl = ahora_gdl.date()
+        
         valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
         
         estatus_calculado = []
@@ -980,23 +982,27 @@ def main():
                     estatus_calculado.append("EN TIEMPO")
                 continue
                 
+            fecha_prog_date = dt_prog.date()
             limite_24h = dt_prog + timedelta(hours=24)
             
-            # Caso 2: Si no tiene fecha de envío pero ya pasaron más de 24 horas desde la programación
-            if fe_str.lower() in valores_nulos_fecha:
-                if ahora_gdl > limite_24h:
-                    estatus_calculado.append("RETRASO")
-                else:
+            # Caso 2: Si la fecha de programación es en el futuro (mañana o después)
+            if fecha_prog_date > hoy_gdl:
+                if fe_str.lower() in valores_nulos_fecha:
                     estatus_calculado.append("SURTIENDO")
+                else:
+                    estatus_calculado.append("EN TIEMPO")
             else:
-                # Caso 3: Tiene fecha de envío con hora, se compara si superó las 24 horas de la fecha de programación
-                if pd.notna(dt_env):
-                    if dt_env > limite_24h:
+                # Si ya es hoy o pasó, evaluamos las 24 horas
+                if fe_str.lower() in valores_nulos_fecha:
+                    if ahora_gdl > limite_24h:
+                        estatus_calculado.append("RETRASO")
+                    else:
+                        estatus_calculado.append("SURTIENDO")
+                else:
+                    if pd.notna(dt_env) and dt_env > limite_24h:
                         estatus_calculado.append("RETRASO")
                     else:
                         estatus_calculado.append("EN TIEMPO")
-                else:
-                    estatus_calculado.append("EN TIEMPO")
                     
         df_envios['estatus'] = estatus_calculado
         df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
