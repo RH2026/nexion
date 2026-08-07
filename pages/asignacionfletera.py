@@ -1,5 +1,5 @@
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 import re
 import time
@@ -13,6 +13,7 @@ import pandas as pd
 from pypdf import PdfReader, PdfWriter
 import qrcode
 import streamlit as st
+import pytz
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
@@ -272,6 +273,19 @@ def limpiar_texto(texto):
     return " ".join(texto.split())
 
 
+def calcular_fecha_programacion():
+    tz_gdl = pytz.timezone("America/Mexico_City")
+    ahora_gdl = datetime.now(tz_gdl)
+    hora_actual = ahora_gdl.hour
+    
+    if hora_actual < 12:
+        return ahora_gdl.strftime("%Y-%m-%d")
+    elif hora_actual >= 15:
+        return (ahora_gdl + timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        return ahora_gdl.strftime("%Y-%m-%d")
+
+
 # ==========================================
 # 3.1 FUNCIÓN PARA ACUMULAR, ELIMINAR DUPLICADOS Y AÑADIR COLUMNAS VACÍAS
 # ==========================================
@@ -296,8 +310,11 @@ def actualizar_historial_envios_github(df_nuevos):
     
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
     
-    # Asegurar que los datos nuevos tengan las columnas vacías requeridas
+    # Asegurar que los datos nuevos tengan las columnas requeridas
     df_procesado = df_nuevos.copy()
+    if "FECHA DE PROGRAMACION" not in df_procesado.columns:
+        fecha_prog = calcular_fecha_programacion()
+        df_procesado["FECHA DE PROGRAMACION"] = fecha_prog
     if "FECHA DE ENVIO" not in df_procesado.columns:
         df_procesado["FECHA DE ENVIO"] = ""
     if "ESTATUS" not in df_procesado.columns:
@@ -320,7 +337,8 @@ def actualizar_historial_envios_github(df_nuevos):
     
     # 2. Combinar historial existente con el nuevo análisis
     if not df_existente.empty:
-        # Asegurar también que el archivo existente tenga las columnas por compatibilidad
+        if "FECHA DE PROGRAMACION" not in df_existente.columns:
+            df_existente["FECHA DE PROGRAMACION"] = ""
         if "FECHA DE ENVIO" not in df_existente.columns:
             df_existente["FECHA DE ENVIO"] = ""
         if "ESTATUS" not in df_existente.columns:
@@ -346,7 +364,7 @@ def actualizar_historial_envios_github(df_nuevos):
     
     # 5. Preparar petición PUT para GitHub
     data = {
-        "message": "Actualización automática y limpieza de duplicados en envios.csv",
+        "message": "Actualización automática, fecha de programación y limpieza de duplicados en envios.csv",
         "content": content_base64,
         "branch": "main"
     }
@@ -378,8 +396,6 @@ def crear_imagen_qr(contenido_qr):
 
 def generar_sellos_fisicos(df_datos, x_pos, y_pos):
     buffer = io.BytesIO()
-    # Forzamos las medidas exactas del tamaño Carta en puntos (width, height)
-    # 8.5 x 11 pulgadas * 72 puntos por pulgada = 612 x 792
     c = canvas.Canvas(buffer, pagesize=(612, 792)) 
     fecha_programacion = datetime.now().strftime("%Y-%m-%d %H:%M")
     
@@ -392,7 +408,6 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
         
         texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
         qr_io = crear_imagen_qr(texto_qr)
-        # Asegúrate de que tus coordenadas x_pos, y_pos no se salgan del lienzo de 612x792
         c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 37, width=55, height=55)
         
         c.showPage()
@@ -407,9 +422,6 @@ def marcar_pdf_digital(pdf_file, fletera_val, factura_val, x_pos, y_pos):
     fecha_programacion = datetime.now().strftime("%Y-%m-%d %H:%M")
     
     packet = io.BytesIO()
-    # --- AQUÍ ESTABA EL PUNTO CLAVE: ---
-    # Si el PDF original no tenía tamaño definido o venía en A4, 
-    # al poner 'letter' aquí, forzamos el formato correcto.
     can = canvas.Canvas(packet, pagesize=letter) 
     
     can.setFont("Helvetica-Bold", 12)
@@ -514,7 +526,6 @@ with header_zone:
             except Exception:
                 df_matriz_fresco = cargar_datos_dashboard()
 
-            # 1. Búsqueda en Matriz Principal (Global)
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
                 cols_op = [
@@ -531,7 +542,6 @@ with header_zone:
                     ).any(axis=1)
                     res_ops = df_matriz_fresco[mask_ops].copy()
 
-            # 2. Búsqueda en Archivo T1.xlsx
             res_t1 = pd.DataFrame()
             try:
                 df_t1_temp = pd.read_excel("T1.xlsx") 
@@ -559,23 +569,18 @@ with header_zone:
             except Exception:
                 pass
 
-            # 3. CRUCE DE INFORMACIÓN (Si está en Matriz Global pero le falta la guía, se la inyectamos desde T1)
             if not res_ops.empty and not res_t1.empty:
                 for idx, row in res_ops.iterrows():
                     guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
                     if guia_actual in ["", "nan", "0", "None"]:
                         pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        # Buscamos coincidencia en T1 por número de pedido/factura
                         match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
                         if not match_en_t1.empty:
-                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
                             res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
                             res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
                             if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
                                 res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
 
-            # 4. Búsqueda en Inventario (Por si acaso se busca un SKU/Código)
             res_inv = pd.DataFrame()
             if res_ops.empty and res_t1.empty:
                 try:
@@ -590,7 +595,6 @@ with header_zone:
                 except Exception:
                     pass
 
-            # Asignación final de resultados
             if not res_ops.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
@@ -967,9 +971,14 @@ def main():
                             df_log["RECOMENDACION"] = [r[0] for r in res]
                             df_log["COSTO"] = [r[1] for r in res]
 
+                            # Inyección automática de la columna FECHA DE PROGRAMACION basada en la regla horaria de GDL
+                            fecha_prog_calculada = calcular_fecha_programacion()
+                            df_log["FECHA DE PROGRAMACION"] = fecha_prog_calculada
+
                             df_log = df_log.rename(columns={col_folio: "Factura"})
                             cols_deseadas = [
                                 "Factura",
+                                "FECHA DE PROGRAMACION",
                                 "RECOMENDACION",
                                 "Transporte",
                                 "DIRECCION",
@@ -982,7 +991,7 @@ def main():
                             cols_finales = [c for c in cols_deseadas if c in df_log.columns]
 
                             st.session_state.df_analisis = df_log[cols_finales]
-                            st.success("¡Motor sincronizado con datos recientes!")
+                            st.success("¡Motor sincronizado con datos recientes y fecha de programación ajustada!")
                             st.rerun()
 
                         except Exception as e:
@@ -1016,6 +1025,7 @@ def main():
         p_editado = st.data_editor(
             p, use_container_width=True, hide_index=True,
             column_config={
+                "FECHA DE PROGRAMACION": st.column_config.TextColumn("FECHA PROG.", disabled=not modo_edicion),
                 "RECOMENDACION": st.column_config.TextColumn("FLETERA", disabled=not modo_edicion),
                 "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f", disabled=not modo_edicion),
             },
@@ -1025,13 +1035,12 @@ def main():
         if st.button("FIJAR CAMBIOS", use_container_width=True, type="primary"):
             st.session_state.df_analisis = p_editado
             
-            # Sincronizar, añadir columnas vacías, eliminar duplicados y acumular en envios.csv dentro de GitHub
             exito = actualizar_historial_envios_github(p_editado)
             if exito:
                 st.toast("¡Cambios guardados, duplicados depurados y acumulados en envios.csv!", icon="✅")
             else:
                 st.toast("Guardado localmente, pero falló la sincronización con GitHub", icon="⚠️")
-            
+        
         st.write("") 
         
         output_xlsx = io.BytesIO()
