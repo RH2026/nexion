@@ -907,14 +907,12 @@ def main():
         df_envios['nombre_extran'] = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
         df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).fillna('').astype(str)
         
-        # Extracción y limpieza de Fechas
         fecha_prog_raw = df_raw.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
         df_envios['fecha_programacion'] = fecha_prog_raw
 
         fecha_envio_raw = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
         df_envios['fecha_envio'] = fecha_envio_raw
         
-        # Búsqueda automática de Número de Guía
         lista_guias = []
         for idx, row in df_raw.iterrows():
             fac = str(row.get('Factura', '')).strip()
@@ -959,7 +957,7 @@ def main():
 
         df_envios['numero_guia'] = lista_guias
 
-       # ── LÓGICA MAESTRA CORREGIDA: VALIDACIÓN DE PLAZOS Y HORA GDL ──
+        # ── LÓGICA MAESTRA CORREGIDA: HORA GDL Y FECHAS FUTURAS ──
         tz_gdl = pytz.timezone("America/Mexico_City")
         ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
         hoy_gdl = ahora_gdl.date()
@@ -971,10 +969,9 @@ def main():
             fp_str = str(f_prog).strip()
             fe_str = str(f_env).strip()
             
-            dt_prog = pd.to_datetime(fp_str, errors='coerce')
-            dt_env = pd.to_datetime(fe_str, errors='coerce')
+            dt_prog = pd.to_datetime(fp_str, dayfirst=True, errors='coerce')
+            dt_env = pd.to_datetime(fe_str, dayfirst=True, errors='coerce')
             
-            # Caso 1: Si no hay fecha de programación válida
             if pd.isna(dt_prog):
                 if fe_str.lower() in valores_nulos_fecha:
                     estatus_calculado.append("SURTIENDO")
@@ -985,14 +982,13 @@ def main():
             fecha_prog_date = dt_prog.date()
             limite_24h = dt_prog + timedelta(hours=24)
             
-            # Caso 2: Si la fecha de programación es en el futuro (mañana o después)
+            # Si la fecha de programación es en el futuro (mañana o después), NUNCA debe marcar retraso
             if fecha_prog_date > hoy_gdl:
                 if fe_str.lower() in valores_nulos_fecha:
                     estatus_calculado.append("SURTIENDO")
                 else:
                     estatus_calculado.append("EN TIEMPO")
             else:
-                # Si ya es hoy o pasó, evaluamos las 24 horas
                 if fe_str.lower() in valores_nulos_fecha:
                     if ahora_gdl > limite_24h:
                         estatus_calculado.append("RETRASO")
@@ -1007,7 +1003,6 @@ def main():
         df_envios['estatus'] = estatus_calculado
         df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
 
-        # Ordenar folios en orden consecutivo estricto
         df_envios = df_envios.sort_values(by='factura', ascending=True, ignore_index=True)
 
         # ── FILTROS SUPER INTELIGENTES 4 EN LÍNEA ────────────────────────
