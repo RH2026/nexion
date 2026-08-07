@@ -907,15 +907,18 @@ def main():
         df_envios['nombre_extran'] = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
         df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).fillna('').astype(str)
         
+        # --- APLICAMOS EL FORMATO DD/MM/YYYY ---
         fecha_prog_raw = df_raw.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
-        df_envios['fecha_programacion'] = fecha_prog_raw
+        dt_prog_temp = pd.to_datetime(fecha_prog_raw, errors='coerce', dayfirst=True)
+        df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(fecha_prog_raw)
 
         fecha_envio_raw = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
-        df_envios['fecha_envio'] = fecha_envio_raw
+        dt_envio_temp = pd.to_datetime(fecha_envio_raw, errors='coerce', dayfirst=True)
+        df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(fecha_envio_raw)
         
         # Parseo de fechas para el filtrado por calendario
-        df_envios['dt_prog_parsed'] = pd.to_datetime(df_envios['fecha_programacion'], dayfirst=True, errors='coerce')
-        df_envios['dt_envio_parsed'] = pd.to_datetime(df_envios['fecha_envio'], dayfirst=True, errors='coerce')
+        df_envios['dt_prog_parsed'] = dt_prog_temp
+        df_envios['dt_envio_parsed'] = dt_envio_temp
 
         lista_guias = []
         for idx, row in df_raw.iterrows():
