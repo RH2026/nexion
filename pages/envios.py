@@ -754,7 +754,7 @@ def render_envios_flow_responsive(data):
     return components.html(html_content, height=800, scrolling=True)
 
 
-def main():    
+def main():   
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
@@ -907,25 +907,19 @@ def main():
         df_envios['nombre_extran'] = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
         df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).fillna('').astype(str)
         
-        # --- LECTURA Y CONVERSIÓN FORZADA A DD/MM/YYYY ---
+        # --- PROCESAMIENTO UNIVERSAL DE FECHAS A DD/MM/YYYY ---
         f_prog_input = df_raw.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
         dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
-        # Si venía en formato YYYY-MM-DD o similar, lo pasamos a DD/MM/YYYY de inmediato
-        fecha_prog_raw = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
-        df_envios['fecha_programacion'] = fecha_prog_raw
+        df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
 
         f_env_input = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
         dt_envio_temp = pd.to_datetime(f_env_input, errors='coerce', dayfirst=True)
-        fecha_envio_raw = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(f_env_input)
-        df_envios['fecha_envio'] = fecha_envio_raw
+        df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(f_env_input)
         
-        # Parseo de fechas para el filtrado por calendario
+        # Parseo limpio de fechas para el filtrado por calendario
         df_envios['dt_prog_parsed'] = dt_prog_temp
         df_envios['dt_envio_parsed'] = dt_envio_temp
-        
-        # Parseo de fechas para el filtrado por calendario
-        df_envios['dt_prog_parsed'] = dt_prog_temp
-        
+
         lista_guias = []
         for idx, row in df_raw.iterrows():
             fac = str(row.get('Factura', '')).strip()
@@ -978,7 +972,7 @@ def main():
         valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
         
         estatus_calculado = []
-        for f_prog, f_env in zip(fecha_prog_raw, fecha_envio_raw):
+        for f_prog, f_env in zip(f_prog_input, f_env_input):
             fp_str = str(f_prog).strip()
             fe_str = str(f_env).strip()
             
