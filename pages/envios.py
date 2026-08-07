@@ -754,7 +754,7 @@ def render_envios_flow_responsive(data):
     return components.html(html_content, height=800, scrolling=True)
 
 
-def main():   
+def main():    
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
@@ -912,19 +912,18 @@ def main():
         dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
         df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
 
-        f_env_input = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
-        dt_envio_temp = pd.to_datetime(f_env_input, errors='coerce', dayfirst=True)
-        df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(f_env_input)
-        
-        # Parseo limpio de fechas para el filtrado por calendario
-        df_envios['dt_prog_parsed'] = dt_prog_temp
-        df_envios['dt_envio_parsed'] = dt_envio_temp
-
+        # ── LÓGICA NUEVA: BÚSQUEDA DE GUÍA EN T1 Y ASIGNACIÓN DE F.DOC COMO FECHA DE ENVÍO Y "Enviada" ──
         lista_guias = []
+        lista_fechas_envio = []
+        
+        f_env_raw_list = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+
         for idx, row in df_raw.iterrows():
             fac = str(row.get('Factura', '')).strip()
             guia_encontrada = ""
+            fecha_envio_encontrada = ""
             
+            # 1. Buscar en el archivo actual si ya trae guía
             for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
                 if col_g in df_raw.columns and pd.notna(row.get(col_g)):
                     val_g = str(row.get(col_g)).strip()
@@ -932,6 +931,7 @@ def main():
                         guia_encontrada = val_g
                         break
             
+            # 2. Buscar en el Dashboard Global si no está
             if not guia_encontrada and df_dashboard_global is not None and not df_dashboard_global.empty:
                 for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
                     if col_ped in df_dashboard_global.columns:
@@ -946,7 +946,9 @@ def main():
                         if guia_encontrada:
                             break
 
-            if not guia_encontrada and not df_t1_global.empty:
+            # 3. Buscar en T1.xlsx (¡Aquí aplica la regla especial de F.DOC!)
+            encontrado_en_t1 = False
+            if not df_t1_global.empty:
                 for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
                     if col_t1_ped in df_t1_global.columns:
                         match_t1 = df_t1_global[df_t1_global[col_t1_ped].astype(str).str.strip() == fac]
@@ -956,13 +958,42 @@ def main():
                                     vg = str(match_t1.iloc[0][cg_t1]).strip()
                                     if vg and vg not in ['', 'nan', '0', '0.0']:
                                         guia_encontrada = vg
+                                        encontrado_en_t1 = True
                                         break
+                            
+                            # Si encontró la guía en T1, extraemos F.DOC automáticamente
+                            if encontrado_en_t1:
+                                for col_fdoc in ['F.DOC', 'FECHA', 'FECHA DOC']:
+                                    if col_fdoc in match_t1.columns:
+                                        fdoc_val = str(match_t1.iloc[0][col_fdoc]).strip()
+                                        if fdoc_val and fdoc_val not in ['', 'nan', '0', '0.0']:
+                                            dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
+                                            fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
+                                            break
+                                break
                         if guia_encontrada:
                             break
 
+            # Si se encontró en T1, forzamos fecha de envío con F.DOC y el estatus como "Enviada"
+            if encontrado_en_t1 and fecha_envio_encontrada:
+                final_fecha_envio = fecha_envio_encontrada
+            else:
+                # Si no vino de T1, respetamos la fecha de envío original del registro
+                orig_fe = str(f_env_raw_list.iloc[idx]).strip()
+                final_fecha_envio = orig_fe
+
             lista_guias.append(guia_encontrada)
+            lista_fechas_envio.append(final_fecha_envio)
 
         df_envios['numero_guia'] = lista_guias
+        df_envios['fecha_envio_raw'] = lista_fechas_envio
+
+        dt_envio_temp = pd.to_datetime(df_envios['fecha_envio_raw'], errors='coerce', dayfirst=True)
+        df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios['fecha_envio_raw'])
+        
+        # Parseo limpio de fechas para el filtrado por calendario
+        df_envios['dt_prog_parsed'] = dt_prog_temp
+        df_envios['dt_envio_parsed'] = dt_envio_temp
 
         # ── LÓGICA MAESTRA CORREGIDA: HORA GDL Y FECHAS FUTURAS ──
         tz_gdl = pytz.timezone("America/Mexico_City")
@@ -972,13 +1003,21 @@ def main():
         valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
         
         estatus_calculado = []
-        for f_prog, f_env in zip(f_prog_input, f_env_input):
+        for f_prog, f_env, guia_val in zip(f_prog_input, df_envios['fecha_envio_raw'], lista_guias):
             fp_str = str(f_prog).strip()
             fe_str = str(f_env).strip()
             
             dt_prog = pd.to_datetime(fp_str, dayfirst=True, errors='coerce')
             dt_env = pd.to_datetime(fe_str, dayfirst=True, errors='coerce')
             
+            # Si se encontró guía (por ejemplo, en T1), automáticamente se marca como "Enviada" o "EN TIEMPO" según la lógica establecida
+            if guia_val and guia_val not in ['', 'nan', '0', '0.0']:
+                if fe_str.lower() in valores_nulos_fecha:
+                    estatus_calculado.append("ENVIADA")
+                else:
+                    estatus_calculado.append("EN TIEMPO")
+                continue
+
             if pd.isna(dt_prog):
                 if fe_str.lower() in valores_nulos_fecha:
                     estatus_calculado.append("SURTIENDO")
