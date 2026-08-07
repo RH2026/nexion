@@ -975,9 +975,9 @@ def main():
                             df_log["FECHA DE PROGRAMACION"] = fecha_prog_calculada
 
                             if "FECHA DE PROGRAMACION" in df_log.columns:
-                            df_log["FECHA DE PROGRAMACION"] = pd.to_datetime(
-                                df_log["FECHA DE PROGRAMACION"], errors="coerce"
-                            ).dt.strftime("%d/%m/%Y").fillna(df_log["FECHA DE PROGRAMACION"])
+                                df_log["FECHA DE PROGRAMACION"] = pd.to_datetime(
+                                    df_log["FECHA DE PROGRAMACION"], errors="coerce"
+                                ).dt.strftime("%d/%m/%Y").fillna(df_log["FECHA DE PROGRAMACION"])
 
                             df_log = df_log.rename(columns={col_folio: "Factura"})
                             cols_deseadas = [
