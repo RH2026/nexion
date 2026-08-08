@@ -88,7 +88,7 @@ html, body, .stApp {{
 }}
 
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
-div.stButton > button, div.stDownloadButton > button, div.stFormSubmitButton > button {{
+div.stButton > button, div.stDownloadButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -101,7 +101,7 @@ div.stButton > button, div.stDownloadButton > button, div.stFormSubmitButton > b
     transition: all 0.3s ease !important;
 }}
 
-div.stButton > button:hover, div.stDownloadButton > button:hover, div.stFormSubmitButton > button:hover {{
+div.stButton > button:hover, div.stDownloadButton > button:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
     border-color: #00A3A3 !important;
@@ -638,7 +638,7 @@ with header_zone:
 
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (DESTINO LIMPIO Y CONTROLADO)
+# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (SIN FORMULARIO NI BOTONES EXTRA)
 # ==========================================
 def render_envios_flow_responsive(data):
     html_content = f"""
@@ -897,15 +897,12 @@ def main():
         df_envios['nombre_cliente'] = df_raw.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
         df_envios['nombre_extran'] = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
         
-        # --- LIMPIEZA DE DESTINO PARA EVITAR DIRECCIONES LARGAS ---
         def limpiar_destino_largo(val):
             v_str = str(val).strip()
             if not v_str or v_str.lower() in ['nan', '0', 'none']:
                 return "NACIONAL"
-            # Si contiene comas o es muy largo, intentamos extraer la zona o ciudad principal o acortarlo inteligentemente
             if len(v_str) > 25:
                 partes = [p.strip() for p in v_str.split(',')]
-                # Buscar si hay alguna parte que parezca ciudad o estado, o tomar las últimas partes
                 if len(partes) >= 2:
                     return f"{partes[-2]} / {partes[-1]}" if len(partes[-2]) < 15 else partes[-1]
                 return v_str[:25] + "..."
@@ -913,12 +910,10 @@ def main():
 
         df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).apply(limpiar_destino_largo)
         
-        # --- PROCESAMIENTO UNIVERSAL DE FECHAS A DD/MM/YYYY ---
         f_prog_input = df_raw.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
         dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
         df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
 
-        # ── BÚSQUEDA DE GUÍA EN T1 Y ASIGNACIÓN DE F.DOC COMO FECHA DE ENVÍO ──
         lista_guias = []
         lista_fechas_envio = []
         
@@ -1046,29 +1041,26 @@ def main():
         df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
         df_envios = df_envios.sort_values(by='factura', ascending=True, ignore_index=True)
 
-        # ── BÚNKER DE FILTROS TÁCTICOS CON `st.form` ──────────────
-        with st.form(key="form_filtros_envios"):
-            f1, f2, f3, f4, f5 = st.columns(5)
+        # ── BÚNKER DE FILTROS TÁCTICOS (SIN FORMULARIO NI BOTONES) ──
+        f1, f2, f3, f4, f5 = st.columns(5)
 
-            with f1:
-                filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=None, key="calendario_fprog_envios")
+        with f1:
+            filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=None, key="calendario_fprog_envios")
 
-            with f2:
-                filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=None, key="calendario_fenv_envios")
+        with f2:
+            filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=None, key="calendario_fenv_envios")
 
-            with f3:
-                facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
-                filtro_factura = st.selectbox("FACTURA", facturas_opts, key="filtro_factura_envios")
+        with f3:
+            facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
+            filtro_factura = st.selectbox("FACTURA", facturas_opts, key="filtro_factura_envios")
 
-            with f4:
-                paq_opts = ["TODAS"] + sorted(list(df_envios['recomendacion'].loc[df_envios['recomendacion'] != ''].unique()))
-                filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
+        with f4:
+            paq_opts = ["TODAS"] + sorted(list(df_envios['recomendacion'].loc[df_envios['recomendacion'] != ''].unique()))
+            filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
 
-            with f5:
-                estatus_opts = ["TODOS"] + sorted(list(df_envios['estatus'].loc[df_envios['estatus'] != ''].unique()))
-                filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
-
-            btn_aplicar = st.form_submit_button("APLICAR ORDEN DE FILTRADO", use_container_width=True)
+        with f5:
+            estatus_opts = ["TODOS"] + sorted(list(df_envios['estatus'].loc[df_envios['estatus'] != ''].unique()))
+            filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
 
         df_filtrado = df_envios.copy()
 
