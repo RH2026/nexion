@@ -638,7 +638,7 @@ with header_zone:
 
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (DIRECCIÓN ELIMINADA RADICALMENTE)
+# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (DESTINO LIMPIO Y CONTROLADO)
 # ==========================================
 def render_envios_flow_responsive(data):
     html_content = f"""
@@ -896,7 +896,22 @@ def main():
         df_envios['recomendacion'] = df_raw.get('RECOMENDACION', pd.Series(dtype=str)).fillna('').astype(str)
         df_envios['nombre_cliente'] = df_raw.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
         df_envios['nombre_extran'] = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
-        df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).fillna('').astype(str)
+        
+        # --- LIMPIEZA DE DESTINO PARA EVITAR DIRECCIONES LARGAS ---
+        def limpiar_destino_largo(val):
+            v_str = str(val).strip()
+            if not v_str or v_str.lower() in ['nan', '0', 'none']:
+                return "NACIONAL"
+            # Si contiene comas o es muy largo, intentamos extraer la zona o ciudad principal o acortarlo inteligentemente
+            if len(v_str) > 25:
+                partes = [p.strip() for p in v_str.split(',')]
+                # Buscar si hay alguna parte que parezca ciudad o estado, o tomar las últimas partes
+                if len(partes) >= 2:
+                    return f"{partes[-2]} / {partes[-1]}" if len(partes[-2]) < 15 else partes[-1]
+                return v_str[:25] + "..."
+            return v_str
+
+        df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).apply(limpiar_destino_largo)
         
         # --- PROCESAMIENTO UNIVERSAL DE FECHAS A DD/MM/YYYY ---
         f_prog_input = df_raw.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
