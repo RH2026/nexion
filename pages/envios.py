@@ -88,7 +88,7 @@ html, body, .stApp {{
 }}
 
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
-div.stButton > button, div.stDownloadButton > button {{
+div.stButton > button, div.stDownloadButton > button, div.stFormSubmitButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -101,7 +101,7 @@ div.stButton > button, div.stDownloadButton > button {{
     transition: all 0.3s ease !important;
 }}
 
-div.stButton > button:hover, div.stDownloadButton > button:hover {{
+div.stButton > button:hover, div.stDownloadButton > button:hover, div.stFormSubmitButton > button:hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
     border-color: #00A3A3 !important;
@@ -912,7 +912,7 @@ def main():
         dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
         df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
 
-        # ── LÓGICA NUEVA: BÚSQUEDA DE GUÍA EN T1 Y ASIGNACIÓN DE F.DOC COMO FECHA DE ENVÍO Y "Enviada" ──
+        # ── BÚSQUEDA DE GUÍA EN T1 Y ASIGNACIÓN DE F.DOC COMO FECHA DE ENVÍO ──
         lista_guias = []
         lista_fechas_envio = []
         
@@ -923,7 +923,6 @@ def main():
             guia_encontrada = ""
             fecha_envio_encontrada = ""
             
-            # 1. Buscar en el archivo actual si ya trae guía
             for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
                 if col_g in df_raw.columns and pd.notna(row.get(col_g)):
                     val_g = str(row.get(col_g)).strip()
@@ -931,7 +930,6 @@ def main():
                         guia_encontrada = val_g
                         break
             
-            # 2. Buscar en el Dashboard Global si no está
             if not guia_encontrada and df_dashboard_global is not None and not df_dashboard_global.empty:
                 for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
                     if col_ped in df_dashboard_global.columns:
@@ -946,7 +944,6 @@ def main():
                         if guia_encontrada:
                             break
 
-            # 3. Buscar en T1.xlsx (¡Aquí aplica la regla especial de F.DOC!)
             encontrado_en_t1 = False
             if not df_t1_global.empty:
                 for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
@@ -961,7 +958,6 @@ def main():
                                         encontrado_en_t1 = True
                                         break
                             
-                            # Si encontró la guía en T1, extraemos F.DOC automáticamente
                             if encontrado_en_t1:
                                 for col_fdoc in ['F.DOC', 'FECHA', 'FECHA DOC']:
                                     if col_fdoc in match_t1.columns:
@@ -970,15 +966,13 @@ def main():
                                             dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
                                             fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
                                             break
-                                break
+                                    break
                         if guia_encontrada:
                             break
 
-            # Si se encontró en T1, forzamos fecha de envío con F.DOC y el estatus como "Enviada"
             if encontrado_en_t1 and fecha_envio_encontrada:
                 final_fecha_envio = fecha_envio_encontrada
             else:
-                # Si no vino de T1, respetamos la fecha de envío original del registro
                 orig_fe = str(f_env_raw_list.iloc[idx]).strip()
                 final_fecha_envio = orig_fe
 
@@ -991,11 +985,9 @@ def main():
         dt_envio_temp = pd.to_datetime(df_envios['fecha_envio_raw'], errors='coerce', dayfirst=True)
         df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios['fecha_envio_raw'])
         
-        # Parseo limpio de fechas para el filtrado por calendario
         df_envios['dt_prog_parsed'] = dt_prog_temp
         df_envios['dt_envio_parsed'] = dt_envio_temp
 
-        # ── LÓGICA MAESTRA CORREGIDA: HORA GDL Y FECHAS FUTURAS ──
         tz_gdl = pytz.timezone("America/Mexico_City")
         ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
         hoy_gdl = ahora_gdl.date()
@@ -1010,7 +1002,6 @@ def main():
             dt_prog = pd.to_datetime(fp_str, dayfirst=True, errors='coerce')
             dt_env = pd.to_datetime(fe_str, dayfirst=True, errors='coerce')
             
-            # Si se encontró guía (por ejemplo, en T1), automáticamente se marca como "Enviada" o "EN TIEMPO" según la lógica establecida
             if guia_val and guia_val not in ['', 'nan', '0', '0.0']:
                 if fe_str.lower() in valores_nulos_fecha:
                     estatus_calculado.append("ENVIADA")
@@ -1047,29 +1038,32 @@ def main():
                     
         df_envios['estatus'] = estatus_calculado
         df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
-
         df_envios = df_envios.sort_values(by='factura', ascending=True, ignore_index=True)
 
-        # ── 5 FILTROS EN UNA SOLA LÍNEA CON CALENDARIOS LIMPIOS ──
-        f1, f2, f3, f4, f5 = st.columns(5)
+        # ── BÚNKER DE FILTROS TÁCTICOS CON `st.form` ──────────────
+        with st.form(key="form_filtros_envios"):
+            f1, f2, f3, f4, f5 = st.columns(5)
 
-        with f1:
-            filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=None, key="calendario_fprog_envios")
+            with f1:
+                filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=None, key="calendario_fprog_envios")
 
-        with f2:
-            filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=None, key="calendario_fenv_envios")
+            with f2:
+                filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=None, key="calendario_fenv_envios")
 
-        with f3:
-            facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
-            filtro_factura = st.selectbox("FACTURA", facturas_opts, key="filtro_factura_envios")
+            with f3:
+                facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
+                filtro_factura = st.selectbox("FACTURA", facturas_opts, key="filtro_factura_envios")
 
-        with f4:
-            paq_opts = ["TODAS"] + sorted(list(df_envios['recomendacion'].loc[df_envios['recomendacion'] != ''].unique()))
-            filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
+            with f4:
+                paq_opts = ["TODAS"] + sorted(list(df_envios['recomendacion'].loc[df_envios['recomendacion'] != ''].unique()))
+                filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
 
-        with f5:
-            estatus_opts = ["TODOS"] + sorted(list(df_envios['estatus'].loc[df_envios['estatus'] != ''].unique()))
-            filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
+            with f5:
+                estatus_opts = ["TODOS"] + sorted(list(df_envios['estatus'].loc[df_envios['estatus'] != ''].unique()))
+                filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
+
+            # Botón de ejecución explícita para evitar recargas automáticas al escribir
+            btn_aplicar = st.form_submit_button("APLICAR ORDEN DE FILTRADO", use_container_width=True)
 
         df_filtrado = df_envios.copy()
 
