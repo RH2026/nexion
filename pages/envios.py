@@ -638,7 +638,7 @@ with header_zone:
 
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (SIN COLUMNA DIRECCIÓN)
+# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (DIRECCIÓN ELIMINADA RADICALMENTE)
 # ==========================================
 def render_envios_flow_responsive(data):
     html_content = f"""
