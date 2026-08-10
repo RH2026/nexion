@@ -7970,7 +7970,7 @@ else:
             
                             <!-- Instrucción Justo Después del Checklist -->
                             <div style="background: #fff3cd; border: 1px solid #ffeeba; padding: 6px 10px; margin-bottom: 12px; text-align: center; font-size: 0.8em; font-weight: bold; color: #856404; border-radius: 4px;">
-                                Marque con una “C” para indicar que cumple la especificación y marque con una “NC” para indicar que no cumple.
+                                Marque con una “✅” para indicar que cumple la especificación y marque con una “❌” para indicar que no cumple.
                             </div>
                 
                             <table style="width: 100%; border-collapse: collapse; font-size: 0.75em; margin-bottom: 15px;">
