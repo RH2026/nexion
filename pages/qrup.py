@@ -267,8 +267,9 @@ def actualizar_envios_desde_qr(texto_qr):
         return False, "Falta configurar GITHUB_TOKEN en los Secrets."
 
     try:
-        match_factura = re.search(r"FACTURA:\s*([^\s|]+)", texto_qr, re.IGNORECASE)
-        match_prog = re.search(r"PROG:\s*([\d\-]+\s+[\d:]+)", texto_qr, re.IGNORECASE)
+        # Regex flexibles corregidas para evitar bloqueos por formato exacto
+        match_factura = re.search(r"FACTURA:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
+        match_prog = re.search(r"PROG:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
 
         if not match_factura or not match_prog:
             return False, "El formato del QR no es válido. Asegúrate de que contenga FACTURA y PROG."
