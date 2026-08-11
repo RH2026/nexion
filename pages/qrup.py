@@ -254,46 +254,76 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
         y_actual -= interlineado
     return y_actual 
 
-def actualizar_envios_desde_qr(texto_qr):
+
+# --- NUEVA LÓGICA DE LOTE TEMPORAL Y SINCRONIZACIÓN ---
+if "lote_escaneos_pendientes" not in st.session_state:
+    st.session_state.lote_escaneos_pendientes = []
+
+def agregar_escaneo_al_lote(texto_qr):
     """
-    Parsea el QR, verifica que exista en la base de datos general / envios, 
-    si no existe frena la operación; si ya tiene fecha de envío avisa, y si está vacía la actualiza.
+    Agrega el QR escaneado al lote temporal en memoria después de validar 
+    que tenga el formato correcto y exista en el sistema, sin tocar GitHub todavía.
+    """
+    match_factura = re.search(r"FACTURA:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
+    match_prog = re.search(r"PROG:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
+
+    if not match_factura or not match_prog:
+        return False, "El formato del QR no es válido. Asegúrate de que contenga FACTURA y PROG."
+
+    factura_scans = str(match_factura.group(1)).strip()
+    prog_val = str(match_prog.group(1)).strip()
+
+    # Validación previa en la base de datos general (Dashboard) para asegurar existencia real
+    df_dash_val = cargar_datos_dashboard()
+    existe_en_sistema = False
+    if df_dash_val is not None and not df_dash_val.empty:
+        for col_p in ["NÚMERO DE PEDIDO", "PEDIDO", "FACTURA"]:
+            if col_p in df_dash_val.columns:
+                if factura_scans in df_dash_val[col_p].astype(str).str.strip().values:
+                    existe_en_sistema = True
+                    break
+
+    if not existe_en_sistema:
+        return False, f"❌ La factura {factura_scans} no existe en la base de datos general."
+
+    # Verificar si ya está agregado en el lote actual pendiente de sincronizar
+    for item in st.session_state.lote_escaneos_pendientes:
+        if item["factura"] == factura_scans:
+            return False, f"⚠️ La factura {factura_scans} ya está en el lote pendiente de sincronización."
+
+    # Agregar al lote temporal
+    st.session_state.lote_escaneos_pendientes.append({
+        "factura": factura_scans,
+        "fecha_envio": prog_val,
+        "qr_completo": texto_qr,
+        "hora": datetime.now().strftime("%H:%M:%S")
+    })
+
+    return True, f"✅ Factura {factura_scans} agregada al lote temporal."
+
+
+def sincronizar_lote_con_github():
+    """
+    Toma todo el lote acumulado en memoria y realiza UNA SOLA petición PUT a GitHub.
     """
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "envios.csv"
-    
+
     if not TOKEN:
         return False, "Falta configurar GITHUB_TOKEN en los Secrets."
 
+    if not st.session_state.lote_escaneos_pendientes:
+        return False, "No hay escaneos pendientes en el lote para sincronizar."
+
     try:
-        # Regex flexibles corregidas para evitar bloqueos por formato exacto
-        match_factura = re.search(r"FACTURA:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
-        match_prog = re.search(r"PROG:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
-
-        if not match_factura or not match_prog:
-            return False, "El formato del QR no es válido. Asegúrate de que contenga FACTURA y PROG."
-
-        factura_scans = str(match_factura.group(1)).strip()
-        prog_val = str(match_prog.group(1)).strip()
-
-        # 1. Validación previa en la base de datos principal (Dashboard) para asegurar existencia real
-        df_dash_val = cargar_datos_dashboard()
-        existe_en_sistema = False
-        if df_dash_val is not None and not df_dash_val.empty:
-            for col_p in ["NÚMERO DE PEDIDO", "PEDIDO", "FACTURA"]:
-                if col_p in df_dash_val.columns:
-                    if factura_scans in df_dash_val[col_p].astype(str).str.strip().values:
-                        existe_en_sistema = True
-                        break
-
-        # 2. Descargar y verificar envios.csv
         headers = {
             "Authorization": f"Bearer {TOKEN}",
             "Accept": "application/vnd.github+json"
         }
         url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
 
+        # 1. Descargar el archivo actual de GitHub
         r = requests.get(url, headers=headers)
         if r.status_code != 200:
             return False, "No se pudo conectar con envios.csv en GitHub."
@@ -304,54 +334,41 @@ def actualizar_envios_desde_qr(texto_qr):
         df_envios = pd.read_csv(io.StringIO(content_decoded))
         df_envios.columns = [str(c).strip() for c in df_envios.columns]
 
-        col_fac_encontrada = None
-        for c in df_envios.columns:
-            if c.lower() in ["factura", "folio", "docnum"]:
-                col_fac_encontrada = c
-                break
+        # Identificar columnas
+        col_fac_encontrada = next((c for c in df_envios.columns if c.lower() in ["factura", "folio", "docnum"]), "FACTURA")
+        col_fecha_envio = next((c for c in df_envios.columns if "fecha" in c.lower() and "envio" in c.lower()), "FECHA DE ENVIO")
 
-        if not col_fac_encontrada:
-            return False, "No se encontró la columna de Factura en envios.csv."
-
-        col_fecha_envio = None
-        for c in df_envios.columns:
-            if "fecha" in c.lower() and "envio" in c.lower():
-                col_fecha_envio = c
-                break
-        
-        if not col_fecha_envio:
-            col_fecha_envio = "FECHA DE ENVIO"
+        if col_fecha_envio not in df_envios.columns:
             df_envios[col_fecha_envio] = ""
 
-        # Blindaje a texto para evitar errores con float64
         df_envios[col_fecha_envio] = df_envios[col_fecha_envio].astype(str)
         df_envios[col_fac_encontrada] = df_envios[col_fac_encontrada].astype(str).str.strip()
 
-        # Verificar si existe en envios.csv o en el dashboard general
-        en_envios = factura_scans in df_envios[col_fac_encontrada].values
+        # 2. Aplicar todas las actualizaciones del lote de un solo golpe
+        facturas_actualizadas = []
+        for escaneo in st.session_state.lote_escaneos_pendientes:
+            fac = escaneo["factura"]
+            f_env = escaneo["fecha_envio"]
 
-        if not en_envios and not existe_en_sistema:
-            return False, f"❌ La factura {factura_scans} no existe en la base de datos. No se puede guardar."
+            en_envios = fac in df_envios[col_fac_encontrada].values
+            if en_envios:
+                fila_actual = df_envios[df_envios[col_fac_encontrada] == fac].iloc[0]
+                val_actual = str(fila_actual[col_fecha_envio]).strip()
+                if not val_actual or val_actual.lower() in ["nan", "nat", "none", ""]:
+                    df_envios.loc[df_envios[col_fac_encontrada] == fac, col_fecha_envio] = f_env
+                    facturas_actualizadas.append(fac)
+            else:
+                nueva_fila = {col_fac_encontrada: fac, col_fecha_envio: f_env}
+                df_envios = pd.concat([df_envios, pd.DataFrame([nueva_fila])], ignore_index=True)
+                facturas_actualizadas.append(fac)
 
-        if en_envios:
-            fila_actual = df_envios[df_envios[col_fac_encontrada] == factura_scans].iloc[0]
-            valor_actual = str(fila_actual[col_fecha_envio]).strip()
-
-            if valor_actual and valor_actual.lower() not in ["nan", "nat", "none", ""]:
-                return False, f"⚠️ La factura {factura_scans} ya cuenta con fecha de envío registrada ({valor_actual}). No se puede sobrescribir."
-
-            df_envios.loc[df_envios[col_fac_encontrada] == factura_scans, col_fecha_envio] = prog_val
-        else:
-            # Si existe en el sistema general pero no estaba en envios.csv, se agrega de forma segura
-            nueva_fila = {col_fac_encontrada: factura_scans, col_fecha_envio: prog_val}
-            df_envios = pd.concat([df_envios, pd.DataFrame([nueva_fila])], ignore_index=True)
-
+        # 3. Subir el archivo actualizado a GitHub en una sola petición
         csv_buffer = io.StringIO()
         df_envios.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
         content_base64 = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
 
         data = {
-            "message": f"Actualización automática de fecha de envío por QR para factura {factura_scans}",
+            "message": f"Sincronización por lote de {len(facturas_actualizadas)} folios escaneados",
             "content": content_base64,
             "branch": "main",
             "sha": sha
@@ -359,12 +376,14 @@ def actualizar_envios_desde_qr(texto_qr):
 
         put_response = requests.put(url, headers=headers, json=data)
         if put_response.status_code in [200, 201]:
-            return True, f"¡Factura {factura_scans} registrada con éxito! Fecha: {prog_val}"
+            st.session_state.lote_escaneos_pendientes = []
+            return True, f"¡Sincronización exitosa! Se actualizaron {len(facturas_actualizadas)} folios en GitHub."
         else:
-            return False, "Error al guardar los cambios en GitHub."
+            return False, "Error al guardar el lote en GitHub."
 
     except Exception as e:
-        return False, f"Error procesando: {str(e)}"
+        return False, f"Error en la sincronización: {str(e)}"
+
 
 def generar_etiquetas_nexion(df_datos):
     output = io.BytesIO()
@@ -798,7 +817,7 @@ def main():
                     📱 LECTOR QR MÓVIL (CÁMARA DEL CELULAR)
                 </p>
                 <p style="font-size: 11px; color: rgba(255,255,255,0.8); margin-bottom: 12px;">
-                    Apunta con la cámara de tu celular al código QR. En cuanto se lea, <b>se guardará automáticamente</b> en la base de datos y aparecerá abajo en la vista previa del listado escaneado.
+                    Apunta con la cámara de tu celular al código QR. Se acumulará en el lote temporal para que puedas sincronizarlos todos juntos de un solo golpe.
                 </p>
             </div>
             """,
@@ -807,77 +826,92 @@ def main():
 
         qr_detectado = None
 
-        # 1. SI SE USA LA CÁMARA NATIVA (SE GUARDA AUTOMÁTICAMENTE SIN BOTÓN)
+        # 1. CÁMARA NATIVA (ACUMULA EN LOTE TEMPORAL)
         if _QR_SCANNER_DISPONIBLE:
             st.markdown("###### 📷 Cámara Activa:")
             qr_detectado = qrcode_scanner(key="lector_qr_movil")
             
-            # Inicializar estado para evitar guardados repetidos del mismo QR en sesión
             if "ultimo_qr_procesado" not in st.session_state:
                 st.session_state.ultimo_qr_procesado = ""
 
             if qr_detectado and qr_detectado != st.session_state.ultimo_qr_procesado:
                 st.session_state.ultimo_qr_procesado = qr_detectado
-                with st.spinner("QR detectado. Verificando y guardando..."):
-                    exito, mensaje = actualizar_envios_desde_qr(qr_detectado)
-                    if exito:
-                        st.success(mensaje)
-                        # Agregar al listado de vista previa temporal de escaneos
-                        st.session_state.scans_recientes.insert(0, {"qr": qr_detectado, "hora": datetime.now().strftime("%H:%M:%S"), "msg": mensaje})
-                        time.sleep(1)
-                        st.rerun()
-                    else:
-                        st.error(mensaje)
+                exito, mensaje = agregar_escaneo_al_lote(qr_detectado)
+                if exito:
+                    st.toast(mensaje, icon="📥")
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.warning(mensaje)
         else:
             st.info("💡 Tip: Para activar el visor de la cámara en pantalla, asegúrate de tener instalado `streamlit-qrcode-scanner` en tu requirements.txt.")
 
         st.markdown("---")
-        st.markdown("###### ⌨️ Entrada Manual (Con Botón)")
+        st.markdown("###### ⌨️ Entrada Manual")
 
-        # 2. ENTRADA MANUAL (SÍ REQUIERE BOTÓN)
+        # 2. ENTRADA MANUAL (TAMBIÉN ACUMULA EN LOTE)
         qr_input_manual = st.text_input("Pegar o ingresar contenido del QR:", placeholder="Ej: FLETERA: TRES GUERRAS | FACTURA: 241877 | PROG: 2026-08-04 17:28", key="input_manual_qr")
 
-        if st.button("🚀 PROCESAR Y ACTUALIZAR MANUALMENTE", key="btn_procesar_qr_manual", type="primary"):
+        if st.button("➕ AGREGAR AL LOTE MANUALMENTE", key="btn_agregar_qr_manual", type="primary"):
             if qr_input_manual:
-                with st.spinner("Validando y actualizando en GitHub..."):
-                    exito, mensaje = actualizar_envios_desde_qr(qr_input_manual)
-                    if exito:
-                        st.success(mensaje)
-                        # Agregar al listado de vista previa temporal de escaneos
-                        st.session_state.scans_recientes.insert(0, {"qr": qr_input_manual, "hora": datetime.now().strftime("%H:%M:%S"), "msg": mensaje})
-                        time.sleep(1)
-                        st.rerun()
-                    else:
-                        st.error(mensaje)
+                exito, mensaje = agregar_escaneo_al_lote(qr_input_manual)
+                if exito:
+                    st.success(mensaje)
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.warning(mensaje)
             else:
                 st.warning("Por favor ingresa o pega el texto del QR.")
 
-    # ── VISTA PREVIA DEL LISTADO ESCANEADO (VALIDACIÓN EN TIEMPO REAL) ──
-    if st.session_state.scans_recientes:
-        st.markdown("---")
-        col_t_prev, col_limpiar = st.columns([4, 1])
-        with col_t_prev:
-            st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'><div style='background:#00FFAA;width:4px;height:18px;border-radius:2px;'></div><span style='color:white;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>📋 VISTA PREVIA DE ESCANEOS RECIENTES ({len(st.session_state.scans_recientes)})</span></div>", unsafe_allow_html=True)
-        with col_limpiar:
-            if st.button("🗑️ Limpiar Vista", key="btn_limpiar_vprev"):
-                st.session_state.scans_recientes = []
-                st.rerun()
-
-        # Contenedor con scroll o diseño limpio para validar la carga de la sesión
-        for idx, item in enumerate(st.session_state.scans_recientes[:10]): # Muestra los últimos 10
-            st.markdown(
-                f"""
-                <div style="background: rgba(0, 255, 170, 0.05); border: 1px solid rgba(0, 255, 170, 0.2); border-left: 4px solid #00FFAA; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <span style="color: #00FFAA; font-size: 10px; font-weight: 800; letter-spacing: 1px;">✅ CARGADO EXITOSAMENTE</span>
-                        <span style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 600;">🕒 {item['hora']}</span>
+        # ── SECCIÓN DE LOTE PENDIENTE Y BOTÓN DE SINCRONIZACIÓN ──
+        if st.session_state.lote_escaneos_pendientes:
+            st.markdown("---")
+            col_info_lote, col_btn_sync = st.columns([2.5, 1.5])
+            with col_info_lote:
+                st.markdown(f"""
+                    <div style="background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.3); border-left: 4px solid #FFD700; padding: 12px; border-radius: 6px;">
+                        <span style="color: #FFD700; font-size: 11px; font-weight: 800; letter-spacing: 1px;">📦 LOTE PENDIENTE DE SUBA: {len(st.session_state.lote_escaneos_pendientes)} FOLIOS</span>
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 2px;">Capturados localmente. Presiona sincronizar para enviarlos todos juntos a GitHub.</div>
                     </div>
-                    <div style="font-size: 11px; color: white; font-weight: 700; word-break: break-all;">{item['msg']}</div>
-                    <div style="font-size: 9px; color: rgba(255,255,255,0.6); font-family: monospace; margin-top: 3px;">Data: {item['qr']}</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+                """, unsafe_allow_html=True)
+            
+            with col_btn_sync:
+                if st.button("☁️ SINCRONIZAR LOTE AHORA", key="btn_sync_lote", type="primary", use_container_width=True):
+                    with st.spinner("Sincronizando lote completo con GitHub..."):
+                        exito_sync, msg_sync = sincronizar_lote_con_github()
+                        if exito_sync:
+                            st.success(msg_sync)
+                            time.sleep(1.5)
+                            st.rerun()
+                        else:
+                            st.error(msg_sync)
+
+        # ── VISTA PREVIA DEL LOTE ACUMULADO ──
+        if st.session_state.lote_escaneos_pendientes:
+            st.markdown("---")
+            col_t_prev, col_limpiar = st.columns([4, 1])
+            with col_t_prev:
+                st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'><div style='background:#FFD700;width:4px;height:18px;border-radius:2px;'></div><span style='color:white;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>📋 FOLIOS EN ESPERA DE SINCRONIZAR ({len(st.session_state.lote_escaneos_pendientes)})</span></div>", unsafe_allow_html=True)
+            with col_limpiar:
+                if st.button("🗑️ Vaciar Lote", key="btn_limpiar_lote"):
+                    st.session_state.lote_escaneos_pendientes = []
+                    st.rerun()
+
+            for idx, item in enumerate(st.session_state.lote_escaneos_pendientes):
+                st.markdown(
+                    f"""
+                    <div style="background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.2); border-left: 4px solid #FFD700; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="color: #FFD700; font-size: 10px; font-weight: 800; letter-spacing: 1px;">PENDIENTE DE SUBIR // FACTURA: {item['factura']}</span>
+                            <span style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 600;">🕒 {item['hora']}</span>
+                        </div>
+                        <div style="font-size: 11px; color: white; font-weight: 700; word-break: break-all;">Fecha Asignada: {item['fecha_envio']}</div>
+                        <div style="font-size: 9px; color: rgba(255,255,255,0.6); font-family: monospace; margin-top: 3px;">Data: {item['qr_completo']}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
     st.markdown("---")
 
