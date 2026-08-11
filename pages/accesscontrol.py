@@ -847,6 +847,27 @@ def main():
     st.markdown("<p style='font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: white; margin-bottom: 2px;'>MATRIZ GLOBAL DE ACCESOS Y PERMISOS</p>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 12px;'>Configura los permisos tanto de los módulos principales como de cada uno de sus submenús individuales por operador.</p>", unsafe_allow_html=True)
 
+    # --- BLOQUE PARA AGREGAR NUEVO USUARIO ---
+    st.markdown("---")
+    with st.expander("➕ AGREGAR NUEVO OPERADOR AL SISTEMA"):
+        col1, col2 = st.columns(2)
+        nuevo_usuario = col1.text_input("NOMBRE DE USUARIO (ID)")
+        if col2.button("REGISTRAR EN MATRIZ"):
+            if nuevo_usuario and nuevo_usuario not in df_permisos["USUARIO"].values:
+                # Creamos una fila nueva con todo en False
+                nueva_fila = pd.DataFrame([{"USUARIO": nuevo_usuario}])
+                for col in df_permisos.columns:
+                    if col != "USUARIO":
+                        nueva_fila[col] = False
+                
+                # Unimos y guardamos en sesión
+                df_permisos = pd.concat([df_permisos, nueva_fila], ignore_index=True)
+                st.session_state["df_permisos_local"] = df_permisos
+                st.success(f"Operador {nuevo_usuario} agregado. ¡Recuerda dar click en GUARDAR Y SINCRONIZAR!")
+            else:
+                st.error("El usuario ya existe o el campo está vacío.")
+    
+    
     df_permisos = cargar_matriz_permisos()
 
     if not df_permisos.empty:
