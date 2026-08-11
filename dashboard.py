@@ -8017,46 +8017,72 @@ else:
             # --- SUBSECCIÓN C: PROFORMA ---
             elif st.session_state.menu_sub == "PREGUIA PAQMEX": # <-- Alineado con 'elif ... == "CONTRARRECIBOS"'
                 # --- CONFIGURACIÓN DE PRODUCTOS ---
-                # 1. Función para leer tu matriz CSV y limpiar nombres de columnas
-                @st.cache_data(ttl=60)
+                # --- CONFIGURACIÓN OPTIMIZADA Y VELOZ PARA GITHUB ---
+                @st.cache_data(ttl=10)
                 def cargar_csv_github():
+                    """
+                    Descarga el CSV directamente usando la API de Contenidos de GitHub con autenticación,
+                    garantizando que la información esté fresca al instante (TTL de 10 segundos) 
+                    y evitando los retrasos de la caché raw.
+                    """
                     try:
                         repo = "RH2026/nexion"
                         filename = "facturacion_moreno.csv"
                         branch = "main"
-                      
-                        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                        
                         token = st.secrets["GITHUB_TOKEN"]
-                        headers = {"Authorization": f"token {token}"}
-                      
+                        headers = {
+                            "Authorization": f"Bearer {token}",
+                            "Accept": "application/vnd.github+json",
+                            "X-GitHub-Api-Version": "2022-11-28"
+                        }
+                        url = f"https://api.github.com/repos/{repo}/contents/{filename}?ref={branch}"
+                        
                         response = requests.get(url, headers=headers)
-                      
+                        
                         if response.status_code == 200:
-                            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                            file_info = response.json()
+                            content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
+                            df = pd.read_csv(BytesIO(content_decoded.encode("utf-8")), encoding="utf-8-sig")
                             df.columns = df.columns.astype(str).str.strip()
                             return df
                         else:
+                            # Fallback rápido a la URL raw si la API llegara a fallar por cuota
+                            url_raw = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}?t={int(time.time())}"
+                            resp_raw = requests.get(url_raw, headers={"Authorization": f"token {token}"})
+                            if resp_raw.status_code == 200:
+                                df = pd.read_csv(BytesIO(resp_raw.content), encoding="utf-8-sig")
+                                df.columns = df.columns.astype(str).str.strip()
+                                return df
+                            
                             st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
                             return pd.DataFrame()
+                            
                     except Exception as e:
                         st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
                         return pd.DataFrame()
                 
                 
-                # Función para descargar el logo 'paqmex.jpg' desde tu repositorio de GitHub
+                # Función optimizada para descargar el logo 'paqmex.jpg' desde GitHub
                 @st.cache_data(ttl=300)
                 def obtener_logo_github():
                     try:
                         repo = "RH2026/nexion"
                         filename = "paqmex.jpg"
                         branch = "main"
-                        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                        
                         token = st.secrets["GITHUB_TOKEN"]
-                        headers = {"Authorization": f"token {token}"}
-                      
+                        headers = {
+                            "Authorization": f"Bearer {token}",
+                            "Accept": "application/vnd.github+json"
+                        }
+                        url = f"https://api.github.com/repos/{repo}/contents/{filename}?ref={branch}"
+                        
                         response = requests.get(url, headers=headers)
                         if response.status_code == 200:
-                            return BytesIO(response.content)
+                            file_info = response.json()
+                            content_bytes = base64.b64decode(file_info["content"])
+                            return BytesIO(content_bytes)
                         return None
                     except Exception:
                         return None
