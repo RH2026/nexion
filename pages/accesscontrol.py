@@ -867,7 +867,6 @@ def main():
                 st.error("El usuario ya existe o el campo está vacío.")
     
     
-    
 
     if not df_permisos.empty:
         for col in df_permisos.columns:
@@ -889,7 +888,8 @@ def main():
             "FORMATOS", "DATOS", "FINANZAS", "ENFOQUE", "ACCESS CTRL", "AUDITORÍA"
         ])
 
-        df_editado = df_permisos.copy()
+        # Asegurar que df_editado refleje de forma reactiva el session_state actual
+        df_editado = st.session_state["df_permisos_local"].copy()
 
         def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
             c_m1, c_m2, c_esp = st.columns([1.5, 1.5, 4])
@@ -897,7 +897,7 @@ def main():
                 if st.button("✅ Marcar Todo", key=f"btn_marcar_todo_{tab_key}", use_container_width=True):
                     for c in cols_tab:
                         if c != "USUARIO":
-                            df_fuente[c] = True
+                            df_fuente.loc[:, c] = True
                     st.session_state["df_permisos_local"] = df_fuente
                     st.rerun()
 
@@ -905,7 +905,7 @@ def main():
                 if st.button("❌ Desmarcar Todo", key=f"btn_desmarcar_todo_{tab_key}", use_container_width=True):
                     for c in cols_tab:
                         if c != "USUARIO":
-                            df_fuente[c] = False
+                            df_fuente.loc[:, c] = False
                     st.session_state["df_permisos_local"] = df_fuente
                     st.rerun()
 
@@ -941,6 +941,8 @@ def main():
                     for idx, val in sub_ed[c].items():
                         user_val = sub_ed.loc[idx, "USUARIO"]
                         df_fuente.loc[df_fuente["USUARIO"] == user_val, c] = val
+            
+            st.session_state["df_permisos_local"] = df_fuente
             return df_fuente
 
         with tab_dash:
@@ -1019,7 +1021,7 @@ def main():
         with col_b1:
             if st.button("GUARDAR Y SINCRONIZAR", use_container_width=True, type="primary"):
                 with st.spinner("Actualizando permisos al instante..."):
-                    exito = guardar_matriz_en_github(df_editado)
+                    exito = guardar_matriz_en_github(st.session_state["df_permisos_local"])
                     if exito:
                         st.success("¡Permisos actualizados al instante en la app y guardados en GitHub, mi amor! 🚀")
                         time.sleep(0.5)
