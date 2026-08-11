@@ -293,6 +293,7 @@ def login_screen():
                     "Sandra": "Sandra, Analista",
                     "ASanchez": "Alejandra",
                     "MarthaC" : "Martha Casas",
+                    "Cris" : "Cristobal",
                 }
                 
                 generos = {
@@ -310,7 +311,8 @@ def login_screen():
                     "Carlos": "M",
                     "Sandra": "F",
                     "ASanchez":"F",
-                    "MarthaC" : "F"
+                    "MarthaC" : "F",
+                    "Cris" : "M"
                 }
 
                 if (
