@@ -847,6 +847,7 @@ def main():
     st.markdown("<p style='font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: white; margin-bottom: 2px;'>MATRIZ GLOBAL DE ACCESOS Y PERMISOS</p>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 12px;'>Configura los permisos tanto de los módulos principales como de cada uno de sus submenús individuales por operador.</p>", unsafe_allow_html=True)
 
+    df_permisos = cargar_matriz_permisos()
     # --- BLOQUE PARA AGREGAR NUEVO USUARIO ---
     st.markdown("---")
     with st.expander("➕ AGREGAR NUEVO OPERADOR AL SISTEMA"):
@@ -868,7 +869,7 @@ def main():
                 st.error("El usuario ya existe o el campo está vacío.")
     
     
-    df_permisos = cargar_matriz_permisos()
+    
 
     if not df_permisos.empty:
         for col in df_permisos.columns:
