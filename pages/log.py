@@ -118,11 +118,14 @@ elif not st.session_state.autenticado:
     login_screen()
 
 else:
-    # Si ya está autenticado y recarga la página principal:
+    # SI YA ESTÁ AUTENTICADO:
+    # Solo redirigimos a AGC si es él y está en la raíz, 
+    # para el resto, si ya tienen sesión, NO hacemos nada (el pass permite que se queden donde están).
     if st.session_state.get("usuario_activo", "").upper() == "AGC":
-        st.switch_page("pages/entregas_agc.py")
+        # Usamos un pequeño check para no redirigir en bucle si ya está en su página
+        if "entregas_agc" not in st.query_params.get("page", ""): 
+            st.switch_page("pages/entregas_agc.py")
     else:
-        # Si ya tiene sesión activa y recarga el script principal, 
-        # lo mandamos a indicadores solo si está en la raíz, 
-        # permitiendo que las páginas de la carpeta 'pages/' operen de forma independiente.
+        # Aquí eliminamos cualquier redirección forzada a indicadores.
+        # Si ya está autenticado, el flujo simplemente continúa y muestra el contenido de la página actual.
         pass
