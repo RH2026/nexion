@@ -54,9 +54,7 @@ def registrar_acceso(usuario):
         ]
     )
 
-    if not os.path.isfile(
-        archivo_log
-    ):
+    if not os.path.isfile(archivo_log):
 
         nuevo_registro.to_csv(
             archivo_log,
@@ -79,10 +77,8 @@ def registrar_acceso(usuario):
 
 def cargar_datos_usuario(usuario):
 
-    """
-    Carga permisos, nombre real y género
-    directamente desde el CSV de GitHub.
-    """
+    """Carga permisos, nombre real y género directamente
+    desde el CSV de GitHub"""
 
     try:
 
@@ -129,9 +125,7 @@ def cargar_datos_usuario(usuario):
 
             st.session_state.permisos = {}
 
-            st.session_state.nombre_completo = (
-                usuario
-            )
+            st.session_state.nombre_completo = usuario
 
             st.session_state.genero_usuario = "M"
 
@@ -139,15 +133,13 @@ def cargar_datos_usuario(usuario):
 
         st.session_state.permisos = {}
 
-        st.session_state.nombre_completo = (
-            usuario
-        )
+        st.session_state.nombre_completo = usuario
 
         st.session_state.genero_usuario = "M"
 
 
 # ============================================================
-# 5. SESSION STATE
+# 5. INICIALIZACIÓN DE ESTADOS
 # ============================================================
 
 if "autenticado" not in st.session_state:
@@ -164,7 +156,7 @@ if "login_exitoso" not in st.session_state:
 
 
 # ============================================================
-# 6. TODAS TUS PÁGINAS
+# 6. MAPA DE TODAS TUS PÁGINAS
 # ============================================================
 
 PAGINAS = {
@@ -205,7 +197,7 @@ PAGINAS = {
 
 
 # ============================================================
-# 7. OBTENER ÚLTIMA PÁGINA
+# 7. OBTENER PÁGINA GUARDADA
 # ============================================================
 
 def obtener_pagina_guardada():
@@ -264,9 +256,7 @@ def ir_a_pagina_post_login():
         .upper()
     )
 
-    pagina_guardada = (
-        obtener_pagina_guardada()
-    )
+    pagina_guardada = obtener_pagina_guardada()
 
 
     # ========================================================
@@ -287,7 +277,7 @@ def ir_a_pagina_post_login():
 
 
     # ========================================================
-    # SI YA HABÍA UNA PÁGINA GUARDADA
+    # SI EXISTE UNA PÁGINA GUARDADA
     # ========================================================
 
     if pagina_guardada:
@@ -298,15 +288,13 @@ def ir_a_pagina_post_login():
 
         if ruta:
 
-            st.switch_page(
-                ruta
-            )
+            st.switch_page(ruta)
 
             return
 
 
     # ========================================================
-    # PRIMERA VEZ
+    # PRIMER INGRESO
     # ========================================================
 
     guardar_pagina_actual(
@@ -319,7 +307,7 @@ def ir_a_pagina_post_login():
 
 
 # ============================================================
-# 10. CSS
+# 10. ESTILOS CSS
 # ============================================================
 
 vars_css = {
@@ -329,47 +317,46 @@ vars_css = {
     "border": "#4B5D67"
 }
 
-
 st.markdown(
     f"""
-    <style>
+<style>
 
-    header,
-    [data-testid="stHeader"],
-    [data-testid="collapsedControl"],
-    [data-testid="stSidebar"],
-    .viewerBadge_container__1QSob {{
-        visibility: hidden !important;
-        display: none !important;
-    }}
+header,
+[data-testid="stHeader"],
+[data-testid="collapsedControl"],
+[data-testid="stSidebar"],
+.viewerBadge_container__1QSob {{
+    visibility: hidden !important;
+    display: none !important;
+}}
 
-    html,
-    body,
-    .stApp {{
-        background-color: {vars_css['bg']} !important;
-        color: {vars_css['text']} !important;
-        font-family: 'Inter', sans-serif;
-    }}
+html,
+body,
+.stApp {{
+    background-color: {vars_css['bg']} !important;
+    color: {vars_css['text']} !important;
+    font-family: 'Inter', sans-serif;
+}}
 
-    .block-container {{
-        padding-top: 0.8rem !important;
-        background-color: {vars_css['bg']} !important;
-    }}
+.block-container {{
+    padding-top: 0.8rem !important;
+    background-color: {vars_css['bg']} !important;
+}}
 
-    div.stButton > button {{
-        background-color: {vars_css['card']} !important;
-        color: {vars_css['text']} !important;
-        border: 1px solid {vars_css['border']} !important;
-        border-radius: 4px !important;
-        font-weight: 700 !important;
-        text-transform: uppercase;
-        font-size: 10px !important;
-        height: 34px !important;
-        width: 100% !important;
-    }}
+div.stButton > button {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    font-size: 10px !important;
+    height: 34px !important;
+    width: 100% !important;
+}}
 
-    </style>
-    """,
+</style>
+""",
     unsafe_allow_html=True
 )
 
@@ -380,9 +367,7 @@ st.markdown(
 
 def login_screen():
 
-    _, col, _ = st.columns(
-        [2, 2, 2]
-    )
+    _, col, _ = st.columns([2, 2, 2])
 
     with col:
 
@@ -398,34 +383,76 @@ def login_screen():
 
         try:
 
-            with open(
-                "n2.png",
-                "rb"
-            ) as f:
+            # Intentamos primero con n2.png
+            if os.path.exists("n2.png"):
 
-                encoded = base64.b64encode(
-                    f.read()
-                ).decode()
+                with open(
+                    "n2.png",
+                    "rb"
+                ) as f:
 
-            st.markdown(
-                f"""
-                <div style="
-                    display:flex;
-                    justify-content:center;
-                    margin-bottom:30px;
-                ">
+                    encoded = base64.b64encode(
+                        f.read()
+                    ).decode()
 
-                    <img
-                        src="data:image/png;base64,{encoded}"
-                        width="180"
-                    >
+                st.markdown(
+                    f"""
+                    <div style="
+                        display:flex;
+                        justify-content:center;
+                        margin-bottom:30px;
+                    ">
+                        <img
+                            src="data:image/png;base64,{encoded}"
+                            width="180"
+                        >
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            # Si no existe n2.png, usamos n1.png
+            elif os.path.exists("n1.png"):
 
-        except:
+                with open(
+                    "n1.png",
+                    "rb"
+                ) as f:
+
+                    encoded = base64.b64encode(
+                        f.read()
+                    ).decode()
+
+                st.markdown(
+                    f"""
+                    <div style="
+                        display:flex;
+                        justify-content:center;
+                        margin-bottom:30px;
+                    ">
+                        <img
+                            src="data:image/png;base64,{encoded}"
+                            width="180"
+                        >
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            else:
+
+                st.markdown(
+                    """
+                    <h1 style="
+                        text-align:center;
+                    ">
+                        NEXION
+                    </h1>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+        except Exception:
 
             st.markdown(
                 """
@@ -440,12 +467,10 @@ def login_screen():
 
 
         # ====================================================
-        # FORMULARIO
+        # FORMULARIO ORIGINAL
         # ====================================================
 
-        with st.form(
-            "login_form"
-        ):
+        with st.form("login_form"):
 
             user_input = st.text_input(
                 "USUARIO",
@@ -465,16 +490,14 @@ def login_screen():
 
 
             # =================================================
-            # VALIDAR LOGIN
+            # VALIDACIÓN
             # =================================================
 
             if submit:
 
-                lista_usuarios = (
-                    st.secrets.get(
-                        "usuarios",
-                        {}
-                    )
+                lista_usuarios = st.secrets.get(
+                    "usuarios",
+                    {}
                 )
 
                 if (
@@ -509,7 +532,7 @@ def login_screen():
 
 
         # ====================================================
-        # LOGIN CORRECTO
+        # LOGIN EXITOSO
         # ====================================================
 
         if st.session_state.get(
@@ -526,12 +549,16 @@ def login_screen():
 
             st.session_state.login_exitoso = False
 
-            # AQUÍ ESTÁ LA MAGIA
+
+            # =================================================
+            # AQUÍ ES DONDE SE RECUPERA LA PÁGINA
+            # =================================================
+
             ir_a_pagina_post_login()
 
 
 # ============================================================
-# 12. SPLASH
+# 12. SPLASH ORIGINAL
 # ============================================================
 
 if not st.session_state.splash_completado:
@@ -561,7 +588,7 @@ if not st.session_state.splash_completado:
                     border:2px solid rgba(130, 212, 230, 0.15);
                     border-top:2px solid #82D4E6;
                     border-radius:50%;
-                    animation:nexionSpin 1s linear infinite;
+                    animation:spin 1s linear infinite;
                     margin-bottom:25px;
                 "></div>
 
@@ -578,15 +605,11 @@ if not st.session_state.splash_completado:
             </div>
 
             <style>
-
-            @keyframes nexionSpin {{
-
+            @keyframes spin {{
                 100% {{
-                    transform:rotate(360deg);
+                    transform: rotate(360deg);
                 }}
-
             }}
-
             </style>
             ''',
             unsafe_allow_html=True
@@ -602,7 +625,7 @@ if not st.session_state.splash_completado:
 
 
 # ============================================================
-# 13. CONTROL DE LOGIN
+# 13. CONTROL DE AUTENTICACIÓN
 # ============================================================
 
 elif not st.session_state.autenticado:
