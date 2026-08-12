@@ -993,10 +993,11 @@ def main():
         ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
         hoy_gdl = ahora_gdl.date()
         
+        # ── BLOQUE DE LÓGICA CORREGIDO Y BLINDADO ────────────────────────
         valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
         
         estatus_calculado = []
-        for f_prog, f_env, guia_val in zip(f_prog_input, df_envios['fecha_envio_raw'], lista_guias):
+        for f_prog, f_env, guia_val in zip(f_prog_input, lista_fechas_envio, lista_guias):
             fp_str = str(f_prog).strip()
             fe_str = str(f_env).strip()
             g_str = str(guia_val).strip()
@@ -1024,13 +1025,13 @@ def main():
             else:
                 fecha_prog_date = None
 
-            # APLICACIÓN DE TUS REGLAS CORREGIDAS:
+            # APLICACIÓN DE TUS REGLAS EXACTAS:
             if tiene_g and tiene_fe:
                 estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
             elif not tiene_g and tiene_fe:
                 estatus_calculado.append("ENVIADA")  # Se pintará en verde como "ENVIADA EN ESPERA DE GUÍA" en la interfaz
             elif tiene_g and not tiene_fe:
-                # Si ya tiene guía, se asume enviada aunque falte la fecha física de envío en el raw
+                # Si ya tiene guía pero no fecha de envío física, se clasifica como enviada en tiempo o retraso según corresponda
                 estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
             else:
                 # Ninguna de las dos (sigue en proceso interno)
