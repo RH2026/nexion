@@ -29,7 +29,47 @@ GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
 
 
 # ============================================================
-# 3. REGISTRAR ACCESO
+# 3. MAPA DE DESTINOS
+# ============================================================
+
+DESTINOS_VALIDOS = {
+    "accesscontrol":
+        "pages/accesscontrol.py",
+
+    "asignacionfletera":
+        "pages/asignacionfletera.py",
+
+    "entregas_agc":
+        "pages/entregas_agc.py",
+
+    "envios":
+        "pages/envios.py",
+
+    "etiquetas":
+        "pages/etiquetas.py",
+
+    "indicadores":
+        "pages/indicadores.py",
+
+    "locales":
+        "pages/locales.py",
+
+    "log":
+        "pages/log.py",
+
+    "muestras":
+        "pages/muestras.py",
+
+    "picking":
+        "pages/picking.py",
+
+    "qrup":
+        "pages/qrup.py",
+}
+
+
+# ============================================================
+# 4. REGISTRAR ACCESO
 # ============================================================
 
 def registrar_acceso(usuario):
@@ -74,13 +114,15 @@ def registrar_acceso(usuario):
 
 
 # ============================================================
-# 4. CARGAR DATOS DEL USUARIO
+# 5. CARGAR DATOS DEL USUARIO
 # ============================================================
 
 def cargar_datos_usuario(usuario):
 
-    """Carga permisos, nombre real y género directamente
-    desde el CSV de GitHub"""
+    """
+    Carga permisos, nombre real y género
+    directamente desde el CSV de GitHub.
+    """
 
     try:
 
@@ -91,7 +133,9 @@ def cargar_datos_usuario(usuario):
             f"?nocache={int(time.time())}"
         )
 
-        df = pd.read_csv(url)
+        df = pd.read_csv(
+            url
+        )
 
         df.columns = [
             str(c).upper().strip()
@@ -127,41 +171,84 @@ def cargar_datos_usuario(usuario):
 
             st.session_state.permisos = {}
 
-            st.session_state.nombre_completo = usuario
+            st.session_state.nombre_completo = (
+                usuario
+            )
 
-            st.session_state.genero_usuario = "M"
+            st.session_state.genero_usuario = (
+                "M"
+            )
 
     except Exception:
 
         st.session_state.permisos = {}
 
-        st.session_state.nombre_completo = usuario
+        st.session_state.nombre_completo = (
+            usuario
+        )
 
-        st.session_state.genero_usuario = "M"
+        st.session_state.genero_usuario = (
+            "M"
+        )
 
 
 # ============================================================
-# 5. SESSION STATE
+# 6. SESSION STATE
 # ============================================================
 
 if "autenticado" not in st.session_state:
+
     st.session_state.autenticado = False
 
+
 if "splash_completado" not in st.session_state:
+
     st.session_state.splash_completado = False
 
+
 if "usuario_activo" not in st.session_state:
+
     st.session_state.usuario_activo = ""
 
+
 if "login_exitoso" not in st.session_state:
+
     st.session_state.login_exitoso = False
 
 
 # ============================================================
-# 6. DESTINO GUARDADO
+# 7. OBTENER DESTINO GUARDADO
 # ============================================================
 
 def obtener_destino():
+
+    # ========================================================
+    # PRIORIDAD 1
+    # SESSION STATE
+    # ========================================================
+
+    destino = st.session_state.get(
+        "pagina_pendiente",
+        None
+    )
+
+    if destino:
+
+        destino = str(
+            destino
+        ).strip().lower()
+
+        if destino in DESTINOS_VALIDOS:
+
+            return DESTINOS_VALIDOS[
+                destino
+            ]
+
+
+    # ========================================================
+    # PRIORIDAD 2
+    # QUERY PARAMS
+    # ========================================================
 
     try:
 
@@ -176,44 +263,9 @@ def obtener_destino():
                 destino
             ).strip().lower()
 
-            destinos_validos = {
-                "accesscontrol":
-                    "pages/accesscontrol.py",
+            if destino in DESTINOS_VALIDOS:
 
-                "asignacionfletera":
-                    "pages/asignacionfletera.py",
-
-                "entregas_agc":
-                    "pages/entregas_agc.py",
-
-                "envios":
-                    "pages/envios.py",
-
-                "etiquetas":
-                    "pages/etiquetas.py",
-
-                "indicadores":
-                    "pages/indicadores.py",
-
-                "locales":
-                    "pages/locales.py",
-
-                "log":
-                    "pages/log.py",
-
-                "muestras":
-                    "pages/muestras.py",
-
-                "picking":
-                    "pages/picking.py",
-
-                "grup":
-                    "pages/grup.py",
-            }
-
-            if destino in destinos_validos:
-
-                return destinos_validos[
+                return DESTINOS_VALIDOS[
                     destino
                 ]
 
@@ -221,66 +273,68 @@ def obtener_destino():
 
         pass
 
+
+    # ========================================================
+    # SIN DESTINO
+    # ========================================================
+
     return "pages/indicadores.py"
 
 
 # ============================================================
-# 7. IR AL DESTINO DESPUÉS DEL LOGIN
+# 8. LIMPIAR DESTINO GUARDADO
+# ============================================================
+
+def limpiar_destino():
+
+    # --------------------------------------------------------
+    # Limpiar SESSION STATE
+    # --------------------------------------------------------
+
+    st.session_state.pop(
+        "pagina_pendiente",
+        None
+    )
+
+
+    # --------------------------------------------------------
+    # Limpiar QUERY PARAM
+    # --------------------------------------------------------
+
+    try:
+
+        del st.query_params[
+            "return_to"
+        ]
+
+    except Exception:
+
+        pass
+
+
+# ============================================================
+# 9. IR A LA PÁGINA DESPUÉS DEL LOGIN
 # ============================================================
 
 def ir_a_pagina_post_login():
 
-    usuario = (
-        st.session_state
-        .get(
-            "usuario_activo",
-            ""
-        )
-        .upper()
-    )
-
-
-    # ========================================================
-    # AGC
-    # ========================================================
-
-    if usuario == "AGC":
-
-        try:
-            del st.query_params["return_to"]
-        except Exception:
-            pass
-
-        st.switch_page(
-            "pages/entregas_agc.py"
-        )
-
-        return
-
-
-    # ========================================================
-    # DESTINO GUARDADO
-    # ========================================================
+    # --------------------------------------------------------
+    # Obtener destino ANTES de limpiarlo
+    # --------------------------------------------------------
 
     destino = obtener_destino()
 
 
-    # ========================================================
-    # LIMPIAMOS return_to
-    #
-    # No usamos page.
-    # No modificamos la URL de la página destino.
-    # ========================================================
+    # --------------------------------------------------------
+    # Limpiar destino
+    # --------------------------------------------------------
 
-    try:
-        del st.query_params["return_to"]
-    except Exception:
-        pass
+    limpiar_destino()
 
 
-    # ========================================================
-    # IR A LA PÁGINA
-    # ========================================================
+    # --------------------------------------------------------
+    # Ir exactamente a donde estaba el usuario
+    # --------------------------------------------------------
 
     st.switch_page(
         destino
@@ -288,7 +342,7 @@ def ir_a_pagina_post_login():
 
 
 # ============================================================
-# 8. CSS
+# 10. CSS
 # ============================================================
 
 vars_css = {
@@ -342,7 +396,7 @@ div.stButton > button {{
 
 
 # ============================================================
-# 9. LOGIN
+# 11. LOGIN
 # ============================================================
 
 def login_screen():
@@ -379,7 +433,18 @@ def login_screen():
                     ).decode()
 
                 st.markdown(
-                    f'<div style="display:flex;justify-content:center;margin-bottom:30px;"><img src="data:image/png;base64,{encoded}" width="180"></div>',
+                    f'''
+                    <div style="
+                        display:flex;
+                        justify-content:center;
+                        margin-bottom:30px;
+                    ">
+                        <img
+                            src="data:image/png;base64,{encoded}"
+                            width="180"
+                        >
+                    </div>
+                    ''',
                     unsafe_allow_html=True
                 )
 
@@ -397,7 +462,18 @@ def login_screen():
                     ).decode()
 
                 st.markdown(
-                    f'<div style="display:flex;justify-content:center;margin-bottom:30px;"><img src="data:image/png;base64,{encoded}" width="180"></div>',
+                    f'''
+                    <div style="
+                        display:flex;
+                        justify-content:center;
+                        margin-bottom:30px;
+                    ">
+                        <img
+                            src="data:image/png;base64,{encoded}"
+                            width="180"
+                        >
+                    </div>
+                    ''',
                     unsafe_allow_html=True
                 )
 
@@ -464,19 +540,38 @@ def login_screen():
                     ) == pass_input
                 ):
 
+                    # -----------------------------------------
+                    # AUTENTICACIÓN
+                    # -----------------------------------------
+
                     st.session_state.autenticado = True
 
                     st.session_state.usuario_activo = (
                         user_input
                     )
 
+
+                    # -----------------------------------------
+                    # DATOS DEL USUARIO
+                    # -----------------------------------------
+
                     cargar_datos_usuario(
                         user_input
                     )
 
+
+                    # -----------------------------------------
+                    # REGISTRAR ACCESO
+                    # -----------------------------------------
+
                     registrar_acceso(
                         user_input
                     )
+
+
+                    # -----------------------------------------
+                    # MARCAR LOGIN EXITOSO
+                    # -----------------------------------------
 
                     st.session_state.login_exitoso = True
 
@@ -511,7 +606,7 @@ def login_screen():
 
 
 # ============================================================
-# 10. SPLASH
+# 12. SPLASH
 # ============================================================
 
 if not st.session_state.splash_completado:
@@ -525,7 +620,45 @@ if not st.session_state.splash_completado:
         "SYSTEM READY..."
     ]:
 
-        html_splash = f'<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><div style="width:90px;height:90px;border:2px solid rgba(130,212,230,0.15);border-top:2px solid #82D4E6;border-radius:50%;animation:nexionSpin 1s linear infinite;margin-bottom:25px;"></div><p style="font-family:monospace;font-size:11px;letter-spacing:4px;color:#FFFFFF;text-transform:uppercase;">{m}</p></div><style>@keyframes nexionSpin{{100%{{transform:rotate(360deg);}}}}</style>'
+        html_splash = f'''
+        <div style="
+            height:70vh;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+        ">
+
+            <div style="
+                width:90px;
+                height:90px;
+                border:2px solid rgba(130,212,230,0.15);
+                border-top:2px solid #82D4E6;
+                border-radius:50%;
+                animation:nexionSpin 1s linear infinite;
+                margin-bottom:25px;
+            "></div>
+
+            <p style="
+                font-family:monospace;
+                font-size:11px;
+                letter-spacing:4px;
+                color:#FFFFFF;
+                text-transform:uppercase;
+            ">
+                {m}
+            </p>
+
+        </div>
+
+        <style>
+        @keyframes nexionSpin {{
+            100% {{
+                transform:rotate(360deg);
+            }}
+        }}
+        </style>
+        '''
 
         p.markdown(
             html_splash,
@@ -544,7 +677,7 @@ if not st.session_state.splash_completado:
 
 
 # ============================================================
-# 11. CONTROL DE AUTENTICACIÓN
+# 13. CONTROL DE AUTENTICACIÓN
 # ============================================================
 
 elif not st.session_state.autenticado:
@@ -553,7 +686,7 @@ elif not st.session_state.autenticado:
 
 
 # ============================================================
-# 12. SI YA ESTÁ AUTENTICADO
+# 14. SI YA ESTÁ AUTENTICADO
 # ============================================================
 
 else:
