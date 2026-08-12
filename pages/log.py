@@ -54,7 +54,9 @@ def registrar_acceso(usuario):
         ]
     )
 
-    if not os.path.isfile(archivo_log):
+    if not os.path.isfile(
+        archivo_log
+    ):
 
         nuevo_registro.to_csv(
             archivo_log,
@@ -139,7 +141,7 @@ def cargar_datos_usuario(usuario):
 
 
 # ============================================================
-# 5. INICIALIZACIÓN DE ESTADOS
+# 5. SESSION STATE
 # ============================================================
 
 if "autenticado" not in st.session_state:
@@ -156,93 +158,74 @@ if "login_exitoso" not in st.session_state:
 
 
 # ============================================================
-# 6. MAPA DE TODAS TUS PÁGINAS
+# 6. DESTINO GUARDADO
 # ============================================================
 
-PAGINAS = {
-
-    "accesscontrol":
-        "pages/accesscontrol.py",
-
-    "asignacionfletera":
-        "pages/asignacionfletera.py",
-
-    "entregas_agc":
-        "pages/entregas_agc.py",
-
-    "envios":
-        "pages/envios.py",
-
-    "etiquetas":
-        "pages/etiquetas.py",
-
-    "indicadores":
-        "pages/indicadores.py",
-
-    "locales":
-        "pages/locales.py",
-
-    "log":
-        "pages/log.py",
-
-    "muestras":
-        "pages/muestras.py",
-
-    "picking":
-        "pages/picking.py",
-
-    "grup":
-        "pages/grup.py",
-}
-
-
-# ============================================================
-# 7. OBTENER PÁGINA GUARDADA
-# ============================================================
-
-def obtener_pagina_guardada():
+def obtener_destino():
 
     try:
 
-        pagina = st.query_params.get(
-            "page",
+        destino = st.query_params.get(
+            "return_to",
             None
         )
 
-        if pagina:
+        if destino:
 
-            pagina = str(
-                pagina
+            destino = str(
+                destino
             ).strip().lower()
 
-            if pagina in PAGINAS:
+            destinos_validos = {
+                "accesscontrol":
+                    "pages/accesscontrol.py",
 
-                return pagina
+                "asignacionfletera":
+                    "pages/asignacionfletera.py",
+
+                "entregas_agc":
+                    "pages/entregas_agc.py",
+
+                "envios":
+                    "pages/envios.py",
+
+                "etiquetas":
+                    "pages/etiquetas.py",
+
+                "indicadores":
+                    "pages/indicadores.py",
+
+                "locales":
+                    "pages/locales.py",
+
+                "log":
+                    "pages/log.py",
+
+                "muestras":
+                    "pages/muestras.py",
+
+                "picking":
+                    "pages/picking.py",
+
+                "grup":
+                    "pages/grup.py",
+            }
+
+            if destino in destinos_validos:
+
+                return destinos_validos[
+                    destino
+                ]
 
     except Exception:
 
         pass
 
-    return None
+    return "pages/indicadores.py"
 
 
 # ============================================================
-# 8. GUARDAR PÁGINA ACTUAL
-# ============================================================
-
-def guardar_pagina_actual(pagina):
-
-    pagina = str(
-        pagina
-    ).strip().lower()
-
-    if pagina in PAGINAS:
-
-        st.query_params["page"] = pagina
-
-
-# ============================================================
-# 9. DESTINO DESPUÉS DEL LOGIN
+# 7. IR AL DESTINO DESPUÉS DEL LOGIN
 # ============================================================
 
 def ir_a_pagina_post_login():
@@ -256,8 +239,6 @@ def ir_a_pagina_post_login():
         .upper()
     )
 
-    pagina_guardada = obtener_pagina_guardada()
-
 
     # ========================================================
     # AGC
@@ -265,9 +246,10 @@ def ir_a_pagina_post_login():
 
     if usuario == "AGC":
 
-        guardar_pagina_actual(
-            "entregas_agc"
-        )
+        try:
+            del st.query_params["return_to"]
+        except Exception:
+            pass
 
         st.switch_page(
             "pages/entregas_agc.py"
@@ -277,37 +259,36 @@ def ir_a_pagina_post_login():
 
 
     # ========================================================
-    # SI EXISTE UNA PÁGINA GUARDADA
+    # DESTINO GUARDADO
     # ========================================================
 
-    if pagina_guardada:
-
-        ruta = PAGINAS.get(
-            pagina_guardada
-        )
-
-        if ruta:
-
-            st.switch_page(ruta)
-
-            return
+    destino = obtener_destino()
 
 
     # ========================================================
-    # PRIMER INGRESO
+    # LIMPIAMOS return_to
+    #
+    # No usamos page.
+    # No modificamos la URL de la página destino.
     # ========================================================
 
-    guardar_pagina_actual(
-        "indicadores"
-    )
+    try:
+        del st.query_params["return_to"]
+    except Exception:
+        pass
+
+
+    # ========================================================
+    # IR A LA PÁGINA
+    # ========================================================
 
     st.switch_page(
-        "pages/indicadores.py"
+        destino
     )
 
 
 # ============================================================
-# 10. ESTILOS CSS
+# 8. CSS
 # ============================================================
 
 vars_css = {
@@ -317,10 +298,10 @@ vars_css = {
     "border": "#4B5D67"
 }
 
+
 st.markdown(
     f"""
 <style>
-
 header,
 [data-testid="stHeader"],
 [data-testid="collapsedControl"],
@@ -354,7 +335,6 @@ div.stButton > button {{
     height: 34px !important;
     width: 100% !important;
 }}
-
 </style>
 """,
     unsafe_allow_html=True
@@ -362,12 +342,14 @@ div.stButton > button {{
 
 
 # ============================================================
-# 11. LOGIN
+# 9. LOGIN
 # ============================================================
 
 def login_screen():
 
-    _, col, _ = st.columns([2, 2, 2])
+    _, col, _ = st.columns(
+        [2, 2, 2]
+    )
 
     with col:
 
@@ -383,8 +365,9 @@ def login_screen():
 
         try:
 
-            # Intentamos primero con n2.png
-            if os.path.exists("n2.png"):
+            if os.path.exists(
+                "n2.png"
+            ):
 
                 with open(
                     "n2.png",
@@ -396,23 +379,13 @@ def login_screen():
                     ).decode()
 
                 st.markdown(
-                    f"""
-                    <div style="
-                        display:flex;
-                        justify-content:center;
-                        margin-bottom:30px;
-                    ">
-                        <img
-                            src="data:image/png;base64,{encoded}"
-                            width="180"
-                        >
-                    </div>
-                    """,
+                    f'<div style="display:flex;justify-content:center;margin-bottom:30px;"><img src="data:image/png;base64,{encoded}" width="180"></div>',
                     unsafe_allow_html=True
                 )
 
-            # Si no existe n2.png, usamos n1.png
-            elif os.path.exists("n1.png"):
+            elif os.path.exists(
+                "n1.png"
+            ):
 
                 with open(
                     "n1.png",
@@ -424,53 +397,32 @@ def login_screen():
                     ).decode()
 
                 st.markdown(
-                    f"""
-                    <div style="
-                        display:flex;
-                        justify-content:center;
-                        margin-bottom:30px;
-                    ">
-                        <img
-                            src="data:image/png;base64,{encoded}"
-                            width="180"
-                        >
-                    </div>
-                    """,
+                    f'<div style="display:flex;justify-content:center;margin-bottom:30px;"><img src="data:image/png;base64,{encoded}" width="180"></div>',
                     unsafe_allow_html=True
                 )
 
             else:
 
                 st.markdown(
-                    """
-                    <h1 style="
-                        text-align:center;
-                    ">
-                        NEXION
-                    </h1>
-                    """,
+                    "<h1 style='text-align:center;'>NEXION</h1>",
                     unsafe_allow_html=True
                 )
 
         except Exception:
 
             st.markdown(
-                """
-                <h1 style="
-                    text-align:center;
-                ">
-                    NEXION
-                </h1>
-                """,
+                "<h1 style='text-align:center;'>NEXION</h1>",
                 unsafe_allow_html=True
             )
 
 
         # ====================================================
-        # FORMULARIO ORIGINAL
+        # FORMULARIO
         # ====================================================
 
-        with st.form("login_form"):
+        with st.form(
+            "login_form"
+        ):
 
             user_input = st.text_input(
                 "USUARIO",
@@ -495,16 +447,20 @@ def login_screen():
 
             if submit:
 
-                lista_usuarios = st.secrets.get(
-                    "usuarios",
-                    {}
+                lista_usuarios = (
+                    st.secrets.get(
+                        "usuarios",
+                        {}
+                    )
                 )
 
                 if (
                     user_input in lista_usuarios
                     and
                     str(
-                        lista_usuarios[user_input]
+                        lista_usuarios[
+                            user_input
+                        ]
                     ) == pass_input
                 ):
 
@@ -545,20 +501,17 @@ def login_screen():
                 f"{st.session_state.get('nombre_completo', '').upper()}"
             )
 
-            time.sleep(0.8)
+            time.sleep(
+                0.8
+            )
 
             st.session_state.login_exitoso = False
-
-
-            # =================================================
-            # AQUÍ ES DONDE SE RECUPERA LA PÁGINA
-            # =================================================
 
             ir_a_pagina_post_login()
 
 
 # ============================================================
-# 12. SPLASH
+# 10. SPLASH
 # ============================================================
 
 if not st.session_state.splash_completado:
@@ -579,7 +532,9 @@ if not st.session_state.splash_completado:
             unsafe_allow_html=True
         )
 
-        time.sleep(0.4)
+        time.sleep(
+            0.4
+        )
 
     p.empty()
 
@@ -589,7 +544,7 @@ if not st.session_state.splash_completado:
 
 
 # ============================================================
-# 13. CONTROL DE AUTENTICACIÓN
+# 11. CONTROL DE AUTENTICACIÓN
 # ============================================================
 
 elif not st.session_state.autenticado:
@@ -598,7 +553,7 @@ elif not st.session_state.autenticado:
 
 
 # ============================================================
-# 14. SI YA ESTÁ AUTENTICADO
+# 12. SI YA ESTÁ AUTENTICADO
 # ============================================================
 
 else:
