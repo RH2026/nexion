@@ -95,10 +95,22 @@ def login_screen():
             
             # Navegación basada en permisos del CSV
             permisos = st.session_state.get("permisos", {})
-            destino = "pages/indicadores.py"
-            if st.session_state.usuario_activo.upper() == "RIGOBERTO": destino = "pages/indicadores.py"
-            elif permisos.get("AGC", False): destino = "pages/entregas_agc.py"
-            elif permisos.get("NACIONAL", False): destino = "pages/envios.py"
+            
+            # Función auxiliar para convertir valores de permisos a booleano real
+            def es_true(val):
+                return str(val).upper() in ['TRUE', '1', 'T', 'VERDADERO']
+
+            usuario_actual = st.session_state.usuario_activo.upper()
+            
+            if usuario_actual == "RIGOBERTO":
+                destino = "pages/indicadores.py"
+            elif es_true(permisos.get("AGC", False)):
+                destino = "pages/entregas_agc.py"
+            elif es_true(permisos.get("NACIONAL", False)):
+                destino = "pages/envios.py"
+            else:
+                destino = "pages/indicadores.py"
+                
             st.switch_page(destino)
 
 # Flujo de Splash
