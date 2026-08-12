@@ -36,18 +36,27 @@ def registrar_acceso(usuario):
 
     archivo_log = "log_accesos.csv"
 
-    zona_horaria = pytz.timezone("America/Mexico_City")
+    zona_horaria = pytz.timezone(
+        "America/Mexico_City"
+    )
 
-    ahora = datetime.now(zona_horaria).strftime(
+    ahora = datetime.now(
+        zona_horaria
+    ).strftime(
         "%Y-%m-%d %I:%M %p"
     )
 
     nuevo_registro = pd.DataFrame(
         [[usuario, ahora]],
-        columns=["Usuario", "Fecha/Hora"]
+        columns=[
+            "Usuario",
+            "Fecha/Hora"
+        ]
     )
 
-    if not os.path.isfile(archivo_log):
+    if not os.path.isfile(
+        archivo_log
+    ):
 
         nuevo_registro.to_csv(
             archivo_log,
@@ -92,7 +101,8 @@ def cargar_datos_usuario(usuario):
         ]
 
         user_row = df[
-            df["USUARIO"].str.upper() == usuario.upper()
+            df["USUARIO"].str.upper()
+            == usuario.upper()
         ]
 
         if not user_row.empty:
@@ -102,18 +112,26 @@ def cargar_datos_usuario(usuario):
             st.session_state.permisos = data
 
             st.session_state.nombre_completo = (
-                data.get("NOMBRE REAL", usuario)
+                data.get(
+                    "NOMBRE REAL",
+                    usuario
+                )
             )
 
             st.session_state.genero_usuario = (
-                data.get("GENERO", "M")
+                data.get(
+                    "GENERO",
+                    "M"
+                )
             )
 
         else:
 
             st.session_state.permisos = {}
 
-            st.session_state.nombre_completo = usuario
+            st.session_state.nombre_completo = (
+                usuario
+            )
 
             st.session_state.genero_usuario = "M"
 
@@ -121,13 +139,15 @@ def cargar_datos_usuario(usuario):
 
         st.session_state.permisos = {}
 
-        st.session_state.nombre_completo = usuario
+        st.session_state.nombre_completo = (
+            usuario
+        )
 
         st.session_state.genero_usuario = "M"
 
 
 # ============================================================
-# 5. INICIALIZACIÓN DE SESSION STATE
+# 5. SESSION STATE
 # ============================================================
 
 if "autenticado" not in st.session_state:
@@ -144,44 +164,67 @@ if "login_exitoso" not in st.session_state:
 
 
 # ============================================================
-# 6. MAPA DE PÁGINAS
+# 6. TODAS TUS PÁGINAS
 # ============================================================
 
 PAGINAS = {
 
-    "indicadores":
-        "pages/indicadores.py",
+    "accesscontrol":
+        "pages/accesscontrol.py",
+
+    "asignacionfletera":
+        "pages/asignacionfletera.py",
 
     "entregas_agc":
         "pages/entregas_agc.py",
 
-    "corporativos":
-        "pages/corporativos.py",
+    "envios":
+        "pages/envios.py",
 
-    "control_embarques":
-        "pages/control_embarques.py",
+    "etiquetas":
+        "pages/etiquetas.py",
 
-    "rastreo":
-        "pages/rastreo.py",
+    "indicadores":
+        "pages/indicadores.py",
 
+    "locales":
+        "pages/locales.py",
+
+    "log":
+        "pages/log.py",
+
+    "muestras":
+        "pages/muestras.py",
+
+    "picking":
+        "pages/picking.py",
+
+    "grup":
+        "pages/grup.py",
 }
 
 
 # ============================================================
-# 7. OBTENER PÁGINA GUARDADA
+# 7. OBTENER ÚLTIMA PÁGINA
 # ============================================================
 
 def obtener_pagina_guardada():
 
     try:
 
-        pagina = st.query_params.get("page", None)
+        pagina = st.query_params.get(
+            "page",
+            None
+        )
 
         if pagina:
 
-            pagina = str(pagina).strip().lower()
+            pagina = str(
+                pagina
+            ).strip().lower()
 
             if pagina in PAGINAS:
+
                 return pagina
 
     except Exception:
@@ -197,7 +240,9 @@ def obtener_pagina_guardada():
 
 def guardar_pagina_actual(pagina):
 
-    pagina = str(pagina).strip().lower()
+    pagina = str(
+        pagina
+    ).strip().lower()
 
     if pagina in PAGINAS:
 
@@ -205,28 +250,34 @@ def guardar_pagina_actual(pagina):
 
 
 # ============================================================
-# 9. REGRESAR A LA PÁGINA GUARDADA DESPUÉS DEL LOGIN
+# 9. DESTINO DESPUÉS DEL LOGIN
 # ============================================================
 
 def ir_a_pagina_post_login():
 
     usuario = (
         st.session_state
-        .get("usuario_activo", "")
+        .get(
+            "usuario_activo",
+            ""
+        )
         .upper()
     )
 
-    pagina_guardada = obtener_pagina_guardada()
+    pagina_guardada = (
+        obtener_pagina_guardada()
+    )
 
 
-    # --------------------------------------------------------
-    # CASO 1
-    # AGC SIEMPRE ENTRA A ENTREGAS AGC
-    # --------------------------------------------------------
+    # ========================================================
+    # AGC
+    # ========================================================
 
     if usuario == "AGC":
 
-        guardar_pagina_actual("entregas_agc")
+        guardar_pagina_actual(
+            "entregas_agc"
+        )
 
         st.switch_page(
             "pages/entregas_agc.py"
@@ -235,10 +286,9 @@ def ir_a_pagina_post_login():
         return
 
 
-    # --------------------------------------------------------
-    # CASO 2
-    # EXISTE UNA PÁGINA GUARDADA
-    # --------------------------------------------------------
+    # ========================================================
+    # SI YA HABÍA UNA PÁGINA GUARDADA
+    # ========================================================
 
     if pagina_guardada:
 
@@ -248,17 +298,20 @@ def ir_a_pagina_post_login():
 
         if ruta:
 
-            st.switch_page(ruta)
+            st.switch_page(
+                ruta
+            )
 
             return
 
 
-    # --------------------------------------------------------
-    # CASO 3
-    # PRIMERA ENTRADA
-    # --------------------------------------------------------
+    # ========================================================
+    # PRIMERA VEZ
+    # ========================================================
 
-    guardar_pagina_actual("indicadores")
+    guardar_pagina_actual(
+        "indicadores"
+    )
 
     st.switch_page(
         "pages/indicadores.py"
@@ -322,12 +375,14 @@ st.markdown(
 
 
 # ============================================================
-# 11. PANTALLA DE LOGIN
+# 11. LOGIN
 # ============================================================
 
 def login_screen():
 
-    _, col, _ = st.columns([2, 2, 2])
+    _, col, _ = st.columns(
+        [2, 2, 2]
+    )
 
     with col:
 
@@ -337,13 +392,16 @@ def login_screen():
         )
 
 
-        # ----------------------------------------------------
+        # ====================================================
         # LOGO
-        # ----------------------------------------------------
+        # ====================================================
 
         try:
 
-            with open("n2.png", "rb") as f:
+            with open(
+                "n2.png",
+                "rb"
+            ) as f:
 
                 encoded = base64.b64encode(
                     f.read()
@@ -356,10 +414,12 @@ def login_screen():
                     justify-content:center;
                     margin-bottom:30px;
                 ">
+
                     <img
                         src="data:image/png;base64,{encoded}"
                         width="180"
                     >
+
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -369,7 +429,9 @@ def login_screen():
 
             st.markdown(
                 """
-                <h1 style="text-align:center;">
+                <h1 style="
+                    text-align:center;
+                ">
                     NEXION
                 </h1>
                 """,
@@ -377,11 +439,13 @@ def login_screen():
             )
 
 
-        # ----------------------------------------------------
-        # FORMULARIO LOGIN
-        # ----------------------------------------------------
+        # ====================================================
+        # FORMULARIO
+        # ====================================================
 
-        with st.form("login_form"):
+        with st.form(
+            "login_form"
+        ):
 
             user_input = st.text_input(
                 "USUARIO",
@@ -400,28 +464,26 @@ def login_screen():
             )
 
 
-            # ------------------------------------------------
+            # =================================================
             # VALIDAR LOGIN
-            # ------------------------------------------------
+            # =================================================
 
             if submit:
 
-                lista_usuarios = st.secrets.get(
-                    "usuarios",
-                    {}
+                lista_usuarios = (
+                    st.secrets.get(
+                        "usuarios",
+                        {}
+                    )
                 )
-
 
                 if (
                     user_input in lista_usuarios
                     and
-                    str(lista_usuarios[user_input])
-                    == pass_input
+                    str(
+                        lista_usuarios[user_input]
+                    ) == pass_input
                 ):
-
-                    # ----------------------------------------
-                    # AUTENTICACIÓN
-                    # ----------------------------------------
 
                     st.session_state.autenticado = True
 
@@ -429,27 +491,15 @@ def login_screen():
                         user_input
                     )
 
-
-                    # ----------------------------------------
-                    # CARGAR DATOS
-                    # ----------------------------------------
-
                     cargar_datos_usuario(
                         user_input
                     )
-
-
-                    # ----------------------------------------
-                    # REGISTRAR ACCESO
-                    # ----------------------------------------
 
                     registrar_acceso(
                         user_input
                     )
 
-
                     st.session_state.login_exitoso = True
-
 
                 else:
 
@@ -459,7 +509,7 @@ def login_screen():
 
 
         # ====================================================
-        # LOGIN EXITOSO
+        # LOGIN CORRECTO
         # ====================================================
 
         if st.session_state.get(
@@ -476,31 +526,24 @@ def login_screen():
 
             st.session_state.login_exitoso = False
 
-
-            # ------------------------------------------------
-            # IR A LA ÚLTIMA PÁGINA
-            # ------------------------------------------------
-
+            # AQUÍ ESTÁ LA MAGIA
             ir_a_pagina_post_login()
 
 
 # ============================================================
-# 12. SPLASH SCREEN
+# 12. SPLASH
 # ============================================================
 
 if not st.session_state.splash_completado:
 
     p = st.empty()
 
-    mensajes = [
+    for m in [
         "ESTABLISHING SECURE ACCESS...",
         "AUTHENTICATING NEXION GATEWAY...",
         "LOGISTICS DATA FLOW INITIALIZING...",
         "SYSTEM READY..."
-    ]
-
-
-    for m in mensajes:
+    ]:
 
         p.markdown(
             f'''
@@ -515,10 +558,10 @@ if not st.session_state.splash_completado:
                 <div style="
                     width:90px;
                     height:90px;
-                    border:2px solid rgba(130,212,230,0.15);
+                    border:2px solid rgba(130, 212, 230, 0.15);
                     border-top:2px solid #82D4E6;
                     border-radius:50%;
-                    animation:spin 1s linear infinite;
+                    animation:nexionSpin 1s linear infinite;
                     margin-bottom:25px;
                 "></div>
 
@@ -536,7 +579,7 @@ if not st.session_state.splash_completado:
 
             <style>
 
-            @keyframes spin {{
+            @keyframes nexionSpin {{
 
                 100% {{
                     transform:rotate(360deg);
@@ -551,7 +594,6 @@ if not st.session_state.splash_completado:
 
         time.sleep(0.4)
 
-
     p.empty()
 
     st.session_state.splash_completado = True
@@ -560,7 +602,7 @@ if not st.session_state.splash_completado:
 
 
 # ============================================================
-# 13. CONTROL DE AUTENTICACIÓN
+# 13. CONTROL DE LOGIN
 # ============================================================
 
 elif not st.session_state.autenticado:
@@ -569,17 +611,9 @@ elif not st.session_state.autenticado:
 
 
 # ============================================================
-# 14. USUARIO AUTENTICADO
+# 14. SI YA ESTÁ AUTENTICADO
 # ============================================================
 
 else:
-
-    # --------------------------------------------------------
-    # Si ya estamos autenticados en el archivo principal,
-    # NO mandar automáticamente a indicadores.
-    #
-    # Esto es importante para que un refresh no destruya
-    # la navegación.
-    # --------------------------------------------------------
 
     st.stop()
