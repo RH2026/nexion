@@ -17,7 +17,7 @@ import streamlit.components.v1 as components
 import streamlit as st
 import pytz
 
-st.query_params["page"] = "envios"
+
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
