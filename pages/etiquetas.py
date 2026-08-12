@@ -12,8 +12,6 @@ from reportlab.pdfgen import canvas
 import pandas as pd
 import streamlit as st
 
-st.query_params["page"] = "etiquetas"
-
 
 
 # 1. CONFIGURACIÓN DE PÁGINA
