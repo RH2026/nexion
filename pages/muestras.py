@@ -16,6 +16,9 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfgen import canvas
 import reportlab.lib.units as units
+from auth import exigir_autenticacion
+
+exigir_autenticacion("muestras")
 
 cm = units.cm
 
