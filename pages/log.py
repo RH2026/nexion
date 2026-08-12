@@ -606,7 +606,7 @@ def login_screen():
 
 
 # ============================================================
-# 12. SPLASH
+# 10. SPLASH
 # ============================================================
 
 if not st.session_state.splash_completado:
@@ -620,45 +620,7 @@ if not st.session_state.splash_completado:
         "SYSTEM READY..."
     ]:
 
-        html_splash = f'''
-        <div style="
-            height:70vh;
-            display:flex;
-            flex-direction:column;
-            justify-content:center;
-            align-items:center;
-        ">
-
-            <div style="
-                width:90px;
-                height:90px;
-                border:2px solid rgba(130,212,230,0.15);
-                border-top:2px solid #82D4E6;
-                border-radius:50%;
-                animation:nexionSpin 1s linear infinite;
-                margin-bottom:25px;
-            "></div>
-
-            <p style="
-                font-family:monospace;
-                font-size:11px;
-                letter-spacing:4px;
-                color:#FFFFFF;
-                text-transform:uppercase;
-            ">
-                {m}
-            </p>
-
-        </div>
-
-        <style>
-        @keyframes nexionSpin {{
-            100% {{
-                transform:rotate(360deg);
-            }}
-        }}
-        </style>
-        '''
+        html_splash = f'<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><div style="width:90px;height:90px;border:2px solid rgba(130,212,230,0.15);border-top:2px solid #82D4E6;border-radius:50%;animation:nexionSpin 1s linear infinite;margin-bottom:25px;"></div><p style="font-family:monospace;font-size:11px;letter-spacing:4px;color:#FFFFFF;text-transform:uppercase;">{m}</p></div><style>@keyframes nexionSpin{{100%{{transform:rotate(360deg);}}}}</style>'
 
         p.markdown(
             html_splash,
