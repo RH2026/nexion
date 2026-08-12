@@ -792,6 +792,8 @@ def main():
     with col_btn_refrescar:
         if st.button("ACTUALIZAR DATOS", key="btn_refrescar_datos_envios", use_container_width=True):
             st.cache_data.clear()
+            # Incrementamos la versión del editor para forzar su reinicio con datos frescos
+            st.session_state["editor_version"] = st.session_state.get("editor_version", 1) + 1
             st.session_state.pop("df_envios_cache_v", None)
             st.rerun()
 
@@ -799,7 +801,9 @@ def main():
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "envios.csv"
     
-    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}?_t={int(time.time() * 1000)}"
+    # Timestamp único para evitar caché agresiva en requests
+    current_t = int(time.time() * 1000)
+    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}?_t={current_t}"
 
     def get_github_data():
         headers = {
@@ -843,6 +847,7 @@ def main():
         if r_put.status_code in [200, 201]:
             st.success("¡Envíos guardados en GitHub con éxito! 🚀")
             st.cache_data.clear()
+            st.session_state["editor_version"] = st.session_state.get("editor_version", 1) + 1
             return True
         else:
             st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
@@ -877,11 +882,14 @@ def main():
                 unsafe_allow_html=True,
             )
 
+            # Llave dinámica para que el editor se obligue a refrescar al compilar o actualizar
+            editor_key = f"editor_envios_admin_session_{st.session_state.get('editor_version', 1)}"
+
             df_editado = st.data_editor(
                 df_raw,
                 use_container_width=True,
                 num_rows="dynamic",
-                key="editor_envios_admin_session",
+                key=editor_key,
             )
 
             if st.button(
