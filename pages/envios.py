@@ -999,43 +999,43 @@ def main():
         for f_prog, f_env, guia_val in zip(f_prog_input, df_envios['fecha_envio_raw'], lista_guias):
             fp_str = str(f_prog).strip()
             fe_str = str(f_env).strip()
+            g_str = str(guia_val).strip()
             
             dt_prog = pd.to_datetime(fp_str, dayfirst=True, errors='coerce')
             dt_env = pd.to_datetime(fe_str, dayfirst=True, errors='coerce')
             
-            if guia_val and guia_val not in ['', 'nan', '0', '0.0']:
-                if fe_str.lower() in valores_nulos_fecha:
-                    estatus_calculado.append("ENVIADA")
-                else:
-                    estatus_calculado.append("EN TIEMPO")
-                continue
-
-            if pd.isna(dt_prog):
-                if fe_str.lower() in valores_nulos_fecha:
-                    estatus_calculado.append("SURTIENDO")
-                else:
-                    estatus_calculado.append("EN TIEMPO")
-                continue
-                
-            fecha_prog_date = dt_prog.date()
-            limite_24h = dt_prog + timedelta(hours=24)
+            tiene_g = g_str and g_str.lower() not in valores_nulos_fecha
+            tiene_fe = fe_str.lower() not in valores_nulos_fecha
             
-            if fecha_prog_date > hoy_gdl:
-                if fe_str.lower() in valores_nulos_fecha:
+            # Definir límite de tiempo si hay fecha de programación
+            tarde = False
+            if pd.notna(dt_prog):
+                limite_24h = dt_prog + timedelta(hours=24)
+                fecha_prog_date = dt_prog.date()
+                
+                # Si hay fecha de envío y supera el límite
+                if tiene_fe and pd.notna(dt_env) and dt_env > limite_24h:
+                    tarde = True
+                elif not tiene_fe and tiene_g and ahora_gdl > limite_24h:
+                    tarde = True
+                elif not tiene_fe and not tiene_g and ahora_gdl > limite_24h:
+                    tarde = True
+            else:
+                fecha_prog_date = None
+
+            # APLICACIÓN DE TUS REGLAS EXACTAS:
+            if tiene_g and tiene_fe:
+                estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
+            elif not tiene_g and tiene_fe:
+                estatus_calculado.append("ENVIADA")
+            elif tiene_g and not tiene_fe:
+                estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
+            else:
+                # Ninguna de las dos (sigue en proceso interno)
+                if fecha_prog_date is not None and fecha_prog_date > hoy_gdl:
                     estatus_calculado.append("SURTIENDO")
                 else:
-                    estatus_calculado.append("EN TIEMPO")
-            else:
-                if fe_str.lower() in valores_nulos_fecha:
-                    if ahora_gdl > limite_24h:
-                        estatus_calculado.append("RETRASO")
-                    else:
-                        estatus_calculado.append("SURTIENDO")
-                else:
-                    if pd.notna(dt_env) and dt_env > limite_24h:
-                        estatus_calculado.append("RETRASO")
-                    else:
-                        estatus_calculado.append("EN TIEMPO")
+                    estatus_calculado.append("RETRASO" if tarde else "SURTIENDO")
                     
         df_envios['estatus'] = estatus_calculado
         df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
