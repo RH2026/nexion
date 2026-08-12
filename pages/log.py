@@ -93,24 +93,21 @@ def login_screen():
             time.sleep(0.8)
             st.session_state.login_exitoso = False
             
-            # Navegación basada en permisos del CSV
+            # --- CORRECCIÓN DE LÓGICA DE NAVEGACIÓN ---
             permisos = st.session_state.get("permisos", {})
+            usuario_actual = st.session_state.usuario_activo.upper()
             
-            # Función auxiliar para convertir valores de permisos a booleano real
             def es_true(val):
                 return str(val).upper() in ['TRUE', '1', 'T', 'VERDADERO']
 
-            usuario_actual = st.session_state.usuario_activo.upper()
-            
-            if usuario_actual == "RIGOBERTO":
-                destino = "pages/indicadores.py"
-            elif es_true(permisos.get("AGC", False)):
+            # 1. SI ES EL OPERADOR AGC, VA A SU PÁGINA ESPECÍFICA
+            if usuario_actual == "AGC":
                 destino = "pages/entregas_agc.py"
-            elif es_true(permisos.get("NACIONAL", False)):
-                destino = "pages/envios.py"
+            
+            # 2. PARA TODOS LOS DEMÁS, EL DESTINO POR DEFECTO ES INDICADORES
             else:
                 destino = "pages/indicadores.py"
-                
+
             st.switch_page(destino)
 
 # Flujo de Splash
