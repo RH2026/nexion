@@ -11,6 +11,9 @@ from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfgen import canvas
 import pandas as pd
 import streamlit as st
+from auth import exigir_autenticacion
+
+exigir_autenticacion("etiquetas")
 
 
 
