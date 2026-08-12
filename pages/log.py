@@ -48,7 +48,7 @@ def cargar_datos_usuario(usuario):
     except Exception:
         st.session_state.permisos = {}
 
-# Inicialización
+# Inicialización de estados
 if "autenticado" not in st.session_state: st.session_state.autenticado = False
 if "splash_completado" not in st.session_state: st.session_state.splash_completado = False
 
@@ -93,10 +93,11 @@ def login_screen():
             time.sleep(0.8)
             st.session_state.login_exitoso = False
             
-            # Lógica de redirección post-login
+            # REGLA DE DESTINO POST-LOGIN
             if st.session_state.usuario_activo.upper() == "AGC":
                 st.switch_page("pages/entregas_agc.py")
             else:
+                # Si inició sesión desde el home, lo mandamos a indicadores por defecto
                 st.switch_page("pages/indicadores.py")
 
 # Flujo de Splash
@@ -111,10 +112,17 @@ if not st.session_state.splash_completado:
     p.empty()
     st.session_state.splash_completado = True
     st.rerun()
+
+# Control de autenticación
 elif not st.session_state.autenticado: 
     login_screen()
+
 else:
-    # Si ya está autenticado, dejamos que el usuario navegue libremente 
-    # excepto si es AGC, que siempre lo redirigimos a su página
+    # Si ya está autenticado y recarga la página principal:
     if st.session_state.get("usuario_activo", "").upper() == "AGC":
         st.switch_page("pages/entregas_agc.py")
+    else:
+        # Si ya tiene sesión activa y recarga el script principal, 
+        # lo mandamos a indicadores solo si está en la raíz, 
+        # permitiendo que las páginas de la carpeta 'pages/' operen de forma independiente.
+        pass
