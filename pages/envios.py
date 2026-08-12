@@ -687,7 +687,7 @@ def render_envios_flow_responsive(data):
         <div class="w-full space-y-2">
             {"".join([f'''
             <div class="list-row flex items-stretch">
-                <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "EN TIEMPO" else ("bg-red-500" if item['estatus'] == "RETRASO" else "bg-amber-500")} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO"] else ("bg-red-500" if "RETRASO" in item['estatus'] else "bg-amber-500")} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
                 <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
                     
                     <div class="w-full md:w-36 shrink-0">
@@ -731,7 +731,7 @@ def render_envios_flow_responsive(data):
                     <div class="w-full md:w-36 flex justify-between md:block text-right shrink-0">
                         <div class="label-mini md:mb-1">Fecha Envío / Estatus</div>
                         <div class="text-[10px] font-bold text-sky-400 uppercase">{item['fecha_envio'] if item['fecha_envio'] else 'SIN ENVIAR'}</div>
-                        <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "EN TIEMPO" else ("text-red-400" if item['estatus'] == "RETRASO" else "text-amber-400")} tracking-tighter min-h-[16px]">
+                        <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO"] else ("text-red-400" if "RETRASO" in item['estatus'] else "text-amber-400")} tracking-tighter min-h-[16px]">
                             {item['estatus']}
                         </div>
                     </div>
