@@ -14,6 +14,9 @@ from pypdf import PdfReader, PdfWriter
 import qrcode
 import streamlit as st
 import pytz
+from auth import exigir_autenticacion
+
+exigir_autenticacion("asignacionfletera")
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
