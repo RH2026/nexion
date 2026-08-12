@@ -993,7 +993,7 @@ def main():
         ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
         hoy_gdl = ahora_gdl.date()
         
-        # ── BLOQUE DE LÓGICA CORREGIDO Y BLINDADO ────────────────────────
+        # ── BLOQUE DE LÓGICA CORREGIDO: HERENCIA DE FECHA SI HAY GUÍA ──
         valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
         
         estatus_calculado = []
@@ -1002,11 +1002,16 @@ def main():
             fe_str = str(f_env).strip()
             g_str = str(guia_val).strip()
             
-            dt_prog = pd.to_datetime(fp_str, dayfirst=True, errors='coerce')
-            dt_env = pd.to_datetime(fe_str, dayfirst=True, errors='coerce')
-            
             tiene_g = g_str and g_str.lower() not in valores_nulos_fecha
             tiene_fe = fe_str.lower() not in valores_nulos_fecha
+            
+            # Si tiene guía pero no tiene fecha de envío, heredamos la fecha de programación para mantener la congruencia
+            if tiene_g and not tiene_fe and fp_str and fp_str.lower() not in valores_nulos_fecha:
+                fe_str = fp_str
+                tiene_fe = True
+
+            dt_prog = pd.to_datetime(fp_str, dayfirst=True, errors='coerce')
+            dt_env = pd.to_datetime(fe_str, dayfirst=True, errors='coerce')
             
             # Definir límite de tiempo si hay fecha de programación
             tarde = False
@@ -1014,27 +1019,21 @@ def main():
                 limite_24h = dt_prog + timedelta(hours=24)
                 fecha_prog_date = dt_prog.date()
                 
-                # Si hay fecha de envío y supera el límite
                 if tiene_fe and pd.notna(dt_env) and dt_env > limite_24h:
-                    tarde = True
-                # Si NO hay fecha de envío, pero SÍ tiene guía, evaluamos contra el tiempo actual en GDL
-                elif not tiene_fe and tiene_g and ahora_gdl > limite_24h:
                     tarde = True
                 elif not tiene_fe and not tiene_g and ahora_gdl > limite_24h:
                     tarde = True
             else:
                 fecha_prog_date = None
 
-            # APLICACIÓN DE TUS REGLAS EXACTAS:
+            # APLICACIÓN DE TUS REGLAS:
             if tiene_g and tiene_fe:
                 estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
             elif not tiene_g and tiene_fe:
-                estatus_calculado.append("ENVIADA")  # Se pintará en verde como "ENVIADA EN ESPERA DE GUÍA" en la interfaz
+                estatus_calculado.append("ENVIADA")
             elif tiene_g and not tiene_fe:
-                # Si ya tiene guía pero no fecha de envío física, se clasifica como enviada en tiempo o retraso según corresponda
                 estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
             else:
-                # Ninguna de las dos (sigue en proceso interno)
                 if fecha_prog_date is not None and fecha_prog_date > hoy_gdl:
                     estatus_calculado.append("SURTIENDO")
                 else:
