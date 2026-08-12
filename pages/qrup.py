@@ -13,6 +13,9 @@ from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfgen import canvas
 import streamlit as st
+from auth import exigir_autenticacion
+
+exigir_autenticacion("qrup")
 
 # Intentar importar el escáner QR nativo para móviles si está instalado
 try:
