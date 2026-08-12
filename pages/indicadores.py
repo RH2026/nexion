@@ -15,6 +15,9 @@ from pypdf import PdfReader, PdfWriter
 import qrcode
 import streamlit.components.v1 as components
 import streamlit as st
+from auth import exigir_autenticacion
+
+exigir_autenticacion("indicadores")
 
 st.query_params["page"] = "indicadores"
 
