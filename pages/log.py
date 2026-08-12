@@ -93,22 +93,11 @@ def login_screen():
             time.sleep(0.8)
             st.session_state.login_exitoso = False
             
-            # --- CORRECCIÓN DE LÓGICA DE NAVEGACIÓN ---
-            permisos = st.session_state.get("permisos", {})
-            usuario_actual = st.session_state.usuario_activo.upper()
-            
-            def es_true(val):
-                return str(val).upper() in ['TRUE', '1', 'T', 'VERDADERO']
-
-            # 1. SI ES EL OPERADOR AGC, VA A SU PÁGINA ESPECÍFICA
-            if usuario_actual == "AGC":
-                destino = "pages/entregas_agc.py"
-            
-            # 2. PARA TODOS LOS DEMÁS, EL DESTINO POR DEFECTO ES INDICADORES
+            # Lógica de redirección post-login
+            if st.session_state.usuario_activo.upper() == "AGC":
+                st.switch_page("pages/entregas_agc.py")
             else:
-                destino = "pages/indicadores.py"
-
-            st.switch_page(destino)
+                st.switch_page("pages/indicadores.py")
 
 # Flujo de Splash
 if not st.session_state.splash_completado:
@@ -122,5 +111,10 @@ if not st.session_state.splash_completado:
     p.empty()
     st.session_state.splash_completado = True
     st.rerun()
-elif not st.session_state.autenticado: login_screen()
-else: st.switch_page("pages/indicadores.py")
+elif not st.session_state.autenticado: 
+    login_screen()
+else:
+    # Si ya está autenticado, dejamos que el usuario navegue libremente 
+    # excepto si es AGC, que siempre lo redirigimos a su página
+    if st.session_state.get("usuario_activo", "").upper() == "AGC":
+        st.switch_page("pages/entregas_agc.py")
