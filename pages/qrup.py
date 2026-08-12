@@ -213,33 +213,6 @@ verificar_permiso_pagina("CENTRO DE DATOS", "ESCANEAR QR")
 # 3. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
 # ==========================================
 @st.cache_data(ttl=5)
-def cargar_csv_github():
-    try:
-        repo = "RH2026/nexion"
-        filename = "facturacion_moreno.csv"
-        branch = "main"
-        t = int(time.time())
-
-        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}?v={t}"
-        token = st.secrets["GITHUB_TOKEN"]
-        headers = {
-            "Authorization": f"token {token}",
-            "Cache-Control": "no-cache",
-        }
-
-        response = requests.get(url, headers=headers)
-
-        if response.status_code == 200:
-            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
-            df.columns = df.columns.astype(str).str.strip()
-            return df
-        else:
-            return pd.DataFrame()
-    except Exception:
-        return pd.DataFrame()
-
-
-@st.cache_data(ttl=5)
 def cargar_datos_dashboard():
     t = int(time.time())
     url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
@@ -253,29 +226,6 @@ def cargar_datos_dashboard():
         return None
     except Exception:
         return None
-
-
-def limpiar_parentesis(texto):
-    return re.sub(r"\(.*?\)", "", str(texto)).strip()
-
-
-def dibujar_texto_bloque_pro(
-    c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado, max_lineas=3
-):
-    texto = str(texto).upper()
-    lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
-
-    tamano_actual = tamano_max
-    while len(lineas) > max_lineas and tamano_actual > 7:
-        tamano_actual -= 0.5
-        lineas = simpleSplit(texto, fuente, tamano_actual, ancho_max)
-
-    c.setFont(fuente, tamano_actual)
-    y_actual = y_inicio
-    for line in lineas[:max_lineas]:
-        c.drawCentredString(x_centro, y_actual, line)
-        y_actual -= interlineado
-    return y_actual
 
 
 # --- NUEVA LÓGICA DE LOTE TEMPORAL Y SINCRONIZACIÓN ---
@@ -460,144 +410,11 @@ def sincronizar_lote_con_github():
         return False, f"Error en la sincronización: {str(e)}"
 
 
-def generar_etiquetas_nexion(df_datos):
-    output = io.BytesIO()
-    w_rec, h_rec = 10.5 * cm, 7.5 * cm
-    c = canvas.Canvas(output, pagesize=(w_rec, h_rec))
-
-    margen_h = 0.8 * cm
-    w_util = w_rec - (2 * margen_h)
-    x_centro = w_rec / 2
-
-    if df_datos.empty:
-        c.save()
-        return output.getvalue()
-
-    for index, row in df_datos.iterrows():
-        try:
-            cantidad_real = int(row["Quantity"])
-            iteraciones = cantidad_real
-        except:
-            continue
-
-        nombre_crudo = row.get(
-            "Nombre_Extran",
-            row.get(
-                "Nombre_Ext",
-                row.get(
-                    "Nombre_Cliente",
-                    row.get("NOMBRE_CLIENTE", "SIN NOMBRE"),
-                ),
-            ),
-        )
-        nombre_final = limpiar_parentesis(nombre_crudo)
-        direccion_final = row.get(
-            "DIRECCION",
-            row.get("Domicilio", row.get("DOMICILIO", "DIRECCIÓN NO DISPONIBLE")),
-        )
-        transporte_final = str(
-            row.get("RECOMENDACION", row.get("Transporte", "TRES GUERRAS"))
-        )
-        factura_val = str(row.get("Factura", row.get("FOLIO", "S/F")))
-
-        for i in range(iteraciones):
-            c.setDash(1, 2)
-            c.setStrokeColorRGB(0.7, 0.7, 0.7)
-            c.rect(0, 0, w_rec, h_rec)
-            c.setDash([])
-            c.setStrokeColorRGB(0, 0, 0)
-
-            c.setFont("Helvetica-Bold", 7)
-            c.drawCentredString(
-                x_centro,
-                h_rec - 0.3 * cm,
-                "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV",
-            )
-            c.setFont("Helvetica", 5.5)
-            info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
-            dibujar_texto_bloque_pro(
-                c,
-                info_contacto,
-                x_centro,
-                h_rec - 0.7 * cm,
-                w_util,
-                "Helvetica",
-                5.5,
-                0.25 * cm,
-                max_lineas=1,
-            )
-
-            c.setLineWidth(0.3)
-            c.setStrokeColorRGB(0.7, 0.7, 0.7)
-            c.line(
-                margen_h,
-                h_rec - 0.95 * cm,
-                w_rec - margen_h,
-                h_rec - 0.95 * cm,
-            )
-            c.setStrokeColorRGB(0, 0, 0)
-
-            y_termino_nombre = dibujar_texto_bloque_pro(
-                c,
-                nombre_final,
-                x_centro,
-                h_rec - 1.8 * cm,
-                w_util,
-                "Helvetica-Bold",
-                22,
-                0.65 * cm,
-                max_lineas=3,
-            )
-
-            y_inicio_direccion = y_termino_nombre - 0.5 * cm
-            if y_inicio_direccion > 4.3 * cm:
-                y_inicio_direccion = 4.3 * cm
-            if y_inicio_direccion < 2.9 * cm:
-                y_inicio_direccion = 2.9 * cm
-            dibujar_texto_bloque_pro(
-                c,
-                direccion_final,
-                x_centro,
-                y_inicio_direccion,
-                w_util,
-                "Helvetica-Bold",
-                12.0,
-                0.45 * cm,
-                max_lineas=3,
-            )
-
-            c.setLineWidth(0.6)
-            y_linea_pie = 1.4 * cm
-            c.line(margen_h, y_linea_pie, w_rec - margen_h, y_linea_pie)
-
-            x_col1 = margen_h + 0.1 * cm
-            x_col2 = 5.25 * cm
-            x_col3 = w_rec - margen_h - 2.8 * cm
-
-            c.setFont("Helvetica-Bold", 8)
-            c.drawString(x_col1, y_linea_pie - 0.4 * cm, "FACTURA")
-            c.drawCentredString(x_col2, y_linea_pie - 0.4 * cm, "CAJAS")
-            c.drawString(x_col3, y_linea_pie - 0.4 * cm, "TRANSPORTE")
-
-            c.setFont("Helvetica-Bold", 11)
-            c.drawString(x_col1, y_linea_pie - 1.0 * cm, factura_val)
-            c.drawCentredString(
-                x_col2, y_linea_pie - 1.0 * cm, f"{i + 1} / {cantidad_real}"
-            )
-            c.setFont("Helvetica-Bold", 9.5)
-            c.drawString(x_col3, y_linea_pie - 1.0 * cm, transporte_final[:16])
-
-            c.showPage()
-
-    c.save()
-    return output.getvalue()
-
-
 # Inicialización segura de estados de menú
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "CENTRO DE DATOS"
 if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "ETIQUETAS"
+    st.session_state.menu_sub = "ESCANEAR QR"
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 if "resultado_busqueda" not in st.session_state:
@@ -628,7 +445,7 @@ with header_zone:
     with c2:
         azul_nexion = "#82D4E6"
         oro_brillante = "#FFD700"
-        ruta = f"CENTRO DE DATOS <span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> <span style='color: {oro_brillante}; font-weight: 500; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);'>ETIQUETAS</span>"
+        ruta = f"CENTRO DE DATOS <span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> <span style='color: {oro_brillante}; font-weight: 500; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);'>ESCANEAR QR</span>"
 
         st.markdown(
             f"""
