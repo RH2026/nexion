@@ -291,12 +291,16 @@ def agregar_escaneo_al_lote(texto_qr):
         if item["factura"] == factura_scans:
             return False, f"⚠️ La factura {factura_scans} ya está en el lote pendiente de sincronización."
 
-    # Agregar al lote temporal
+    # Zona horaria de México (UTC-6)
+    tz_mexico = timezone(timedelta(hours=-6))
+    hora_mexico = datetime.now(tz_mexico).strftime("%H:%M:%S")
+
+    # Agregar al lote temporal con la hora correcta
     st.session_state.lote_escaneos_pendientes.append({
         "factura": factura_scans,
         "fecha_envio": prog_val,
         "qr_completo": texto_qr,
-        "hora": datetime.now().strftime("%H:%M:%S")
+        "hora": hora_mexico
     })
 
     return True, f"✅ Factura {factura_scans} agregada al lote temporal."
