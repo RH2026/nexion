@@ -15,8 +15,6 @@ import qrcode
 import streamlit as st
 import pytz
 
-st.query_params["page"] = "asignacionfletera"
-
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
     page_title="JYPESA | Logistics",
