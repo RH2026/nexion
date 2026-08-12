@@ -12,6 +12,10 @@ from reportlab.pdfgen import canvas
 import pandas as pd
 import streamlit as st
 
+st.query_params["page"] = "etiquetas"
+
+
+
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
     page_title="JYPESA | Logistics",
