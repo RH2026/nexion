@@ -16,6 +16,8 @@ import qrcode
 import streamlit.components.v1 as components
 import streamlit as st
 
+st.query_params["page"] = "indicadores"
+
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
     page_title="JYPESA | Logistics",
