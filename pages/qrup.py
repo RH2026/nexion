@@ -1,5 +1,6 @@
 import base64
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import io
 import re
 import time
@@ -265,13 +266,16 @@ def agregar_escaneo_al_lote(texto_qr):
     que tenga el formato correcto y exista en el sistema, sin tocar GitHub todavía.
     """
     match_factura = re.search(r"FACTURA:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
-    match_prog = re.search(r"PROG:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
 
-    if not match_factura or not match_prog:
-        return False, "El formato del QR no es válido. Asegúrate de que contenga FACTURA y PROG."
+    if not match_factura:
+        return False, "El formato del QR no es válido. Asegúrate de que contenga FACTURA."
 
     factura_scans = str(match_factura.group(1)).strip()
-    prog_val = str(match_prog.group(1)).strip()
+
+    # Obtener fecha y hora actual de Guadalajara en el formato DD/MM/YYYY HH:MM
+    tz_gdl = ZoneInfo("America/Mexico_City")
+    ahora_gdl = datetime.now(tz_gdl)
+    prog_val = ahora_gdl.strftime("%d/%m/%Y %H:%M")
 
     # Validación previa en la base de datos general (Dashboard) para asegurar existencia real
     df_dash_val = cargar_datos_dashboard()
@@ -296,7 +300,7 @@ def agregar_escaneo_al_lote(texto_qr):
         "factura": factura_scans,
         "fecha_envio": prog_val,
         "qr_completo": texto_qr,
-        "hora": datetime.now().strftime("%H:%M:%S")
+        "hora": ahora_gdl.strftime("%H:%M:%S")
     })
 
     return True, f"✅ Factura {factura_scans} agregada al lote temporal."
@@ -850,7 +854,7 @@ def main():
         st.markdown("###### ⌨️ Entrada Manual")
 
         # 2. ENTRADA MANUAL (TAMBIÉN ACUMULA EN LOTE)
-        qr_input_manual = st.text_input("Pegar o ingresar contenido del QR:", placeholder="Ej: FLETERA: TRES GUERRAS | FACTURA: 241877 | PROG: 2026-08-04 17:28", key="input_manual_qr")
+        qr_input_manual = st.text_input("Pegar o ingresar contenido del QR:", placeholder="Ej: FLETERA: TRES GUERRAS | FACTURA: 241877", key="input_manual_qr")
 
         if st.button("➕ AGREGAR AL LOTE MANUALMENTE", key="btn_agregar_qr_manual", type="primary"):
             if qr_input_manual:
