@@ -93,11 +93,10 @@ def login_screen():
             time.sleep(0.8)
             st.session_state.login_exitoso = False
             
-            # REGLA DE DESTINO POST-LOGIN
+            # REGLA DE DESTINO POST-LOGIN INICIAL
             if st.session_state.usuario_activo.upper() == "AGC":
                 st.switch_page("pages/entregas_agc.py")
             else:
-                # Si inició sesión desde el home, lo mandamos a indicadores por defecto
                 st.switch_page("pages/indicadores.py")
 
 # Flujo de Splash
@@ -118,14 +117,10 @@ elif not st.session_state.autenticado:
     login_screen()
 
 else:
-    # SI YA ESTÁ AUTENTICADO:
-    # Solo redirigimos a AGC si es él y está en la raíz, 
-    # para el resto, si ya tienen sesión, NO hacemos nada (el pass permite que se queden donde están).
+    # Si ya está autenticado en la raíz:
     if st.session_state.get("usuario_activo", "").upper() == "AGC":
-        # Usamos un pequeño check para no redirigir en bucle si ya está en su página
         if "entregas_agc" not in st.query_params.get("page", ""): 
             st.switch_page("pages/entregas_agc.py")
     else:
-        # Aquí eliminamos cualquier redirección forzada a indicadores.
-        # Si ya está autenticado, el flujo simplemente continúa y muestra el contenido de la página actual.
-        pass
+        # Permitir que el usuario permanezca en su ruta activa sin forzar redirección a indicadores
+        st.stop()
