@@ -2,7 +2,7 @@ import streamlit as st
 
 
 # ============================================================
-# AUTENTICACIÓN Y REGRESO A LA PÁGINA SOLICITADA
+# PÁGINAS DISPONIBLES
 # ============================================================
 
 PAGINAS = {
@@ -21,13 +21,13 @@ PAGINAS = {
 
 
 # ============================================================
-# ENVIAR AL LOGIN
+# GUARDAR PÁGINA DESTINO
 # ============================================================
 
-def ir_a_login(pagina_actual):
+def guardar_destino(pagina_actual):
 
     # --------------------------------------------------------
-    # Normalizar nombre de página
+    # Normalizar nombre
     # --------------------------------------------------------
 
     pagina_actual = str(
@@ -36,32 +36,132 @@ def ir_a_login(pagina_actual):
 
 
     # --------------------------------------------------------
-    # Validar que la página exista
+    # Validar página
     # --------------------------------------------------------
 
     if pagina_actual not in PAGINAS:
-
-        pagina_actual = "indicadores"
-
-
-    # --------------------------------------------------------
-    # Guardar la página que el usuario quería abrir
-    #
-    # Ejemplo:
-    #
-    # indicadores
-    # envios
-    # etiquetas
-    #
-    # --------------------------------------------------------
-
-    st.query_params["return_to"] = pagina_actual
+        return False
 
 
     # --------------------------------------------------------
-    # Ir al LOGIN
+    # GUARDAR EN SESSION STATE
     #
-    # El login está dentro de /pages
+    # Esto permite conservar el destino mientras navegamos
+    # entre las páginas de Streamlit.
+    # --------------------------------------------------------
+
+    st.session_state["pagina_pendiente"] = (
+        pagina_actual
+    )
+
+
+    # --------------------------------------------------------
+    # GUARDAR TAMBIÉN EN LA URL
+    #
+    # Esto funciona como respaldo.
+    # --------------------------------------------------------
+
+    st.query_params["return_to"] = (
+        pagina_actual
+    )
+
+
+    return True
+
+
+# ============================================================
+# OBTENER DESTINO
+# ============================================================
+
+def obtener_destino():
+
+    # --------------------------------------------------------
+    # PRIMERA OPCIÓN:
+    # SESSION STATE
+    # --------------------------------------------------------
+
+    destino = st.session_state.get(
+        "pagina_pendiente",
+        None
+    )
+
+    if destino:
+
+        destino = str(
+            destino
+        ).strip().lower()
+
+        if destino in PAGINAS:
+
+            return destino
+
+
+    # --------------------------------------------------------
+    # SEGUNDA OPCIÓN:
+    # QUERY PARAMS
+    # --------------------------------------------------------
+
+    try:
+
+        destino = st.query_params.get(
+            "return_to",
+            None
+        )
+
+        if destino:
+
+            destino = str(
+                destino
+            ).strip().lower()
+
+            if destino in PAGINAS:
+
+                return destino
+
+    except Exception:
+
+        pass
+
+
+    # --------------------------------------------------------
+    # NO SE ENCONTRÓ DESTINO
+    # --------------------------------------------------------
+
+    return None
+
+
+# ============================================================
+# ENVIAR AL LOGIN
+# ============================================================
+
+def ir_a_login(pagina_actual):
+
+    # --------------------------------------------------------
+    # Guardar exactamente la página actual
+    # --------------------------------------------------------
+
+    destino_guardado = guardar_destino(
+        pagina_actual
+    )
+
+
+    # --------------------------------------------------------
+    # Si la página no existe en nuestro mapa,
+    # usamos indicadores como último recurso.
+    # --------------------------------------------------------
+
+    if not destino_guardado:
+
+        guardar_destino(
+            "indicadores"
+        )
+
+
+    # --------------------------------------------------------
+    # IR AL LOGIN
+    #
+    # IMPORTANTE:
+    # log.py está dentro de /pages
     # --------------------------------------------------------
 
     st.switch_page(
@@ -75,10 +175,6 @@ def ir_a_login(pagina_actual):
 
 def exigir_autenticacion(pagina_actual):
 
-    # --------------------------------------------------------
-    # Revisar si existe una sesión autenticada
-    # --------------------------------------------------------
-
     autenticado = st.session_state.get(
         "autenticado",
         False
@@ -86,11 +182,7 @@ def exigir_autenticacion(pagina_actual):
 
 
     # --------------------------------------------------------
-    # Si NO está autenticado:
-    #
-    # 1. Guardamos la página solicitada
-    # 2. Mandamos al login
-    # 3. Detenemos la ejecución
+    # SI NO ESTÁ AUTENTICADO
     # --------------------------------------------------------
 
     if not autenticado:
