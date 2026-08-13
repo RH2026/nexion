@@ -40,7 +40,6 @@ st.markdown(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-/* --- ANIMACIONES DE ENTRADA (EXCLUYENDO EL FOOTER) --- */
 @keyframes fadeInUp {{
     from {{
         opacity: 0;
@@ -56,7 +55,6 @@ st.markdown(
     animation: fadeInUp 0.6s ease-out;
 }}
 
-/* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
 header, footer, [data-testid="stHeader"] {{
     visibility: hidden !important;
     display: none !important;
@@ -75,7 +73,6 @@ button[kind="header"] {{
     pointer-events: none !important;
 }}
 
-/* APP BASE */
 html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
     color: {vars_css['text']} !important;
@@ -88,7 +85,6 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* BOTONES SLIM */
 div.stButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -108,25 +104,6 @@ div.stButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
-/* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
-div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
-    gap: 0.45rem !important;
-}}
-
-div[data-testid="stPopoverBody"] .stButton {{
-    margin-bottom: 0rem !important;
-}}
-
-div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
-    border: none !important;
-    background: transparent !important;
-    margin-bottom: 0rem !important;
-    > div {{
-        padding: 0 !important;
-    }}
-}}
-
-/*FOOTER FIJO BLINDADO */
 .footer {{ 
     position: fixed !important; 
     bottom: 0 !important; 
@@ -140,9 +117,6 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
     letter-spacing: 2px; 
     border-top: 1px solid {vars_css['border']} !important; 
     z-index: 999999 !important; 
-    animation: none !important;
-    transform: none !important;
-    opacity: 1 !important;
 }}
 </style>
 """,
@@ -151,7 +125,7 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
 
 
 # ==========================================
-# 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
+# 2. SISTEMA DE SEGURIDAD PRO
 # ==========================================
 if not st.session_state.get("autenticado", False):
     st.session_state.pagina_destino = "pages/facturacion.py"
@@ -164,75 +138,8 @@ def verificar_permiso_pagina(modulo, submodulo=None):
     
     permisos = st.session_state.get("permisos", {})
     if not permisos.get(modulo.upper(), False):
-        st.markdown(
-            f"""
-            <div style="
-                background: {vars_css['card']}; 
-                border: 1px solid {vars_css['border']}; 
-                border-left: 5px solid #FFD700; 
-                padding: 20px 25px; 
-                border-radius: 8px; 
-                width: 100%; 
-                font-family: 'Inter', sans-serif; 
-                color: white; 
-                box-sizing: border-box; 
-                margin-bottom: 25px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            ">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
-                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
-                        ACCESS RESTRICTED // MÓDULO NO AUTORIZADO
-                    </span>
-                </div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
-                    No cuentas con los permisos activos en la matriz para acceder al módulo: <b style="color: white; text-transform: uppercase;">{modulo}</b>.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        
-        col_regresar_m, col_vacia_m = st.columns([1.5, 4])
-        with col_regresar_m:
-            if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
-                st.switch_page("pages/facturacion.py")
         st.stop()
-        
     if submodulo and not permisos.get(submodulo.upper(), False):
-        st.markdown(
-            f"""
-            <div style="
-                background: {vars_css['card']}; 
-                border: 1px solid {vars_css['border']}; 
-                border-left: 5px solid #FFD700; 
-                padding: 20px 25px; 
-                border-radius: 8px; 
-                width: 100%; 
-                font-family: 'Inter', sans-serif; 
-                color: white; 
-                box-sizing: border-box; 
-                margin-bottom: 25px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            ">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
-                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
-                        ACCESS RESTRICTED // SECCIÓN BLOQUEADA
-                    </span>
-                </div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
-                    No cuentas con los privilegios necesarios para visualizar la sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        
-        col_regresar_s, col_vacia_s = st.columns([1.5, 4])
-        with col_regresar_s:
-            if st.button("REGRESAR AL INICIO", key="btn_regresar_submodulo", use_container_width=True):
-                st.switch_page("pages/facturacion.py")
         st.stop()
 
 verificar_permiso_pagina("CENTRO DE DATOS", "FACTURACIÓN")
@@ -249,7 +156,6 @@ def obtener_matriz_github():
         m.columns = [str(c).upper().strip() for c in m.columns]
         return m
     except Exception as e:
-        st.error(f"Error fatal al conectar con GitHub: {e}")
         return pd.DataFrame()
 
 
@@ -291,12 +197,12 @@ def calcular_fecha_programacion():
 
 
 # ==========================================
-# 3.1 FUNCIONES DE GESTIÓN DE FACTURACIÓN (CYNTHIA / GITHUB)
+# 3.1 GESTIÓN DE ARCHIVOS GITHUB (FACTURACIÓN SIN DUPLICADOS)
 # ==========================================
 def guardar_facturacion_github(df_nuevos, nombre_bloque=""):
     """
-    Descarga facturacion.csv de GitHub, concatena los nuevos datos evitando duplicados por Factura,
-    y vuelve a subirlo. Si no existe, lo crea desde cero.
+    Descarga facturacion.csv, filtra las facturas que YA EXISTEN para que no se vuelvan
+    a subir (evita duplicados con registros previos), concatena las nuevas y sube a GitHub.
     """
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
@@ -310,7 +216,6 @@ def guardar_facturacion_github(df_nuevos, nombre_bloque=""):
         "Authorization": f"Bearer {TOKEN}",
         "Accept": "application/vnd.github+json"
     }
-    
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
     
     df_procesado = df_nuevos.copy()
@@ -327,23 +232,29 @@ def guardar_facturacion_github(df_nuevos, nombre_bloque=""):
         content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
         df_existente = pd.read_csv(io.StringIO(content_decoded))
     
-    if not df_existente.empty:
+    col_fact_nuevos = next((c for c in df_procesado.columns if "FACTURA" in c.upper() or c.upper() == "FACTURA"), None)
+    
+    if not df_existente.empty and col_fact_nuevos:
+        col_fact_existente = next((c for c in df_existente.columns if "FACTURA" in c.upper() or c.upper() == "FACTURA"), col_fact_nuevos)
+        
+        # Filtrar solo aquellas facturas que NO están previamente registradas
+        facturas_existentes_set = set(df_existente[col_fact_existente].astype(str).str.strip().unique())
+        df_procesado = df_procesado[~df_procesado[col_fact_nuevos].astype(str).str.strip().isin(facturas_existentes_set)].copy()
+        
+        if df_procesado.empty:
+            st.warning("Todas las facturas de este rango ya existen previamente en `facturacion.csv`. No se agregaron duplicados.")
+            return True
+
         df_combinado = pd.concat([df_existente, df_procesado], ignore_index=True)
     else:
         df_combinado = df_procesado
 
-    # Evitar duplicados por Factura, conservando el más reciente
-    col_factura_key = next((c for c in df_combinado.columns if "FACTURA" in c.upper() or c.upper() == "FACTURA"), None)
-    if col_factura_key:
-        df_combinado = df_combinado.drop_duplicates(subset=[col_factura_key], keep="last")
-
     csv_buffer = io.StringIO()
     df_combinado.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
-    csv_str = csv_buffer.getvalue()
-    content_base64 = base64.b64encode(csv_str.encode("utf-8")).decode("utf-8")
+    content_base64 = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
     
     data = {
-        "message": f"Actualización de facturacion.csv - Bloque: {nombre_bloque or 'General'}",
+        "message": f"Actualización limpia de facturacion.csv - Bloque: {nombre_bloque or 'General'}",
         "content": content_base64,
         "branch": "main"
     }
@@ -351,12 +262,7 @@ def guardar_facturacion_github(df_nuevos, nombre_bloque=""):
         data["sha"] = sha 
 
     put_response = requests.put(url, headers=headers, json=data)
-    
-    if put_response.status_code in [200, 201]:
-        return True
-    else:
-        st.error(f"Error al actualizar facturacion.csv en GitHub: {put_response.json().get('message', 'Desconocido')}")
-        return False
+    return put_response.status_code in [200, 201]
 
 
 @st.cache_data(ttl=30)
@@ -383,13 +289,9 @@ def actualizar_historial_envios_github(df_nuevos):
     FILE_PATH = "envios.csv"
     
     if not TOKEN:
-        st.error("Falta configurar el GITHUB_TOKEN en los Secrets de Streamlit.")
         return False
 
-    headers = {
-        "Authorization": f"Bearer {TOKEN}",
-        "Accept": "application/vnd.github+json"
-    }
+    headers = {"Authorization": f"Bearer {TOKEN}", "Accept": "application/vnd.github+json"}
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
     
     df_procesado = df_nuevos.copy()
@@ -410,9 +312,6 @@ def actualizar_historial_envios_github(df_nuevos):
         df_existente = pd.read_csv(io.StringIO(content_decoded))
     
     if not df_existente.empty:
-        for col in ["FECHA DE PROGRAMACION", "FECHA DE ENVIO", "ESTATUS", "FECHA ACTUAL", "SERVICIO"]:
-            if col not in df_existente.columns:
-                df_existente[col] = ""
         df_combinado = pd.concat([df_existente, df_procesado], ignore_index=True)
     else:
         df_combinado = df_procesado
@@ -437,7 +336,7 @@ def actualizar_historial_envios_github(df_nuevos):
 
 
 # ==========================================
-# 3.2 FUNCIONES DE SELLADO CON QR INTEGRADO
+# 3.2 FUNCIONES DE SELLADO CON QR
 # ==========================================
 def crear_imagen_qr(contenido_qr):
     qr = qrcode.QRCode(version=1, box_size=2, border=1)
@@ -512,12 +411,10 @@ if "resultado_busqueda" not in st.session_state:
     st.session_state.resultado_busqueda = None
 if "search_key_version" not in st.session_state:
     st.session_state.search_key_version = 1
-if "tipo_resultado" not in st.session_state:
-    st.session_state.tipo_resultado = "OPERACION"
 
 
 # ==========================================
-# 4. HEADER CON 4 COLUMNAS Y MENÚ BLINDADO
+# 4. HEADER Y NAVEGACIÓN
 # ==========================================
 header_zone = st.container()
 with header_zone:
@@ -533,478 +430,125 @@ with header_zone:
         texto_principal = st.session_state.menu_main
         azul_nexion = "#82D4E6"
         oro_brillante = "#FFD700"
-
-        if texto_principal == "DASHBOARD":
-            texto_principal = f"NEXION <span style='color: {azul_nexion}; font-weight: 500; margin: 0 10px; font-size: 16px;'>|</span> SMART LOGISTICS"
-
         if st.session_state.menu_sub != "GENERAL":
-            ruta = (
-                f"{texto_principal} "
-                f"<span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> "
-                f"<span style='color: {oro_brillante}; font-weight: 500; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);'>"
-                f"{st.session_state.menu_sub}</span>"
-            )
+            ruta = f"{texto_principal} <span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> <span style='color: {oro_brillante}; font-weight: 500;'>{st.session_state.menu_sub}</span>"
         else:
             ruta = texto_principal
 
-        st.markdown(
-            f"""
-            <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
-                <p style='font-size: 13px; letter-spacing: 5px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
-                    {ruta}
-                </p>
-            </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(f"<div style='display: flex; justify-content: center;'><p style='font-size: 13px; letter-spacing: 5px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase;'>{ruta}</p></div>", unsafe_allow_html=True)
 
     with c3:
-        es_atencion3g = (
-            st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
-        )
-        key_actual = f"main_search_v{st.session_state.search_key_version}"
-
-        query = st.text_input(
-            "Buscar",
-            placeholder="🔍 BUSCADOR DESACTIVADO" if es_atencion3g else "🔍 Buscar...",
-            label_visibility="collapsed",
-            key=key_actual,
-            disabled=es_atencion3g,
-        )
-
-        if query:
-            url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
-            try:
-                df_matriz_fresco = pd.read_csv(url_raw)
-                df_matriz_fresco.columns = df_matriz_fresco.columns.str.strip()
-            except Exception:
-                df_matriz_fresco = cargar_datos_dashboard()
-
-            res_ops = pd.DataFrame()
-            if df_matriz_fresco is not None:
-                cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
-                cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
-                if cols_op_disp:
-                    mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
-                        lambda x: x.str.contains(query, case=False, na=False)
-                    ).any(axis=1)
-                    res_ops = df_matriz_fresco[mask_ops].copy()
-
-            res_t1 = pd.DataFrame()
-            try:
-                df_t1_temp = pd.read_excel("T1.xlsx") 
-                df_t1_temp.columns = df_t1_temp.columns.str.strip().str.upper()
-                cols_t1 = [c for c in ["OBSERVACION 1", "TALON", "DESTINATARIO", "DESTINO"] if c in df_t1_temp.columns]
-                if cols_t1:
-                    mask_t1 = df_t1_temp[cols_t1].astype(str).apply(
-                        lambda x: x.str.contains(query, case=False, na=False)
-                    ).any(axis=1)
-                    match_t1 = df_t1_temp[mask_t1].copy()
-                    if not match_t1.empty:
-                        match_t1 = match_t1.rename(columns={
-                            "TALON": "NÚMERO DE GUÍA",
-                            "OBSERVACION 1": "NÚMERO DE PEDIDO",
-                            "DESTINATARIO": "NOMBRE DEL CLIENTE",
-                            "SUBTOTAL": "COSTO DE LA GUÍA",
-                            "F.DOC": "FECHA DE ENVÍO",
-                            "BULTOS": "CANTIDAD DE CAJAS"
-                        })
-                        match_t1["FLETERA"] = "TRES GUERRAS"
-                        res_t1 = match_t1
-            except Exception:
-                pass
-
-            if not res_ops.empty and not res_t1.empty:
-                for idx, row in res_ops.iterrows():
-                    guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    if guia_actual in ["", "nan", "0", "None"]:
-                        pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
-                        if not match_en_t1.empty:
-                            res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
-                            res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
-                            if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
-                                res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
-
-            res_inv = pd.DataFrame()
-            if res_ops.empty and res_t1.empty:
-                try:
-                    df_inv_temp = pd.read_csv("inventario.csv")
-                    df_inv_temp.columns = df_inv_temp.columns.str.strip()
-                    cols_inv = [c for c in ["CODIGO", "DESCRIPCION"] if c in df_inv_temp.columns]
-                    if cols_inv:
-                        mask_inv = df_inv_temp[cols_inv].astype(str).apply(
-                            lambda x: x.str.contains(query, case=False, na=False)
-                        ).any(axis=1)
-                        res_inv = df_inv_temp[mask_inv]
-                except Exception:
-                    pass
-
-            if not res_ops.empty:
-                st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "OPERACION"
-                st.session_state.resultado_busqueda = res_ops
-            elif not res_t1.empty:
-                st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "OPERACION" 
-                st.session_state.resultado_busqueda = res_t1
-            elif not res_inv.empty:
-                st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "INVENTARIO"
-                st.session_state.resultado_busqueda = res_inv
-            else:
-                st.session_state.busqueda_activa = False
-                st.session_state.resultado_busqueda = None
-                st.toast("Sin resultados: No se encontró en Matriz Global ni en T1", icon="⚠️")
+        query = st.text_input("Buscar", placeholder="🔍 Buscar...", label_visibility="collapsed", key=f"main_search_v{st.session_state.search_key_version}")
 
     with c4:
         with st.popover("☰ Menú", use_container_width=True):
-            usuario = st.session_state.get("usuario_activo", "GUEST")
-            permisos = st.session_state.get("permisos", {})
-            nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
-        
-            st.markdown(
-                f"""
-                <div style='background-color: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #00D4FF;'>
-                    <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
-                    <p style='color:{vars_css['text']}; font-size:13px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
-                </div>
-            """,
-                unsafe_allow_html=True,
-            )
-        
-            if permisos.get("DASHBOARD", False) or usuario.upper() == "RIGOBERTO":
-                if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                    st.session_state.menu_main = "DASHBOARD"
-                    st.session_state.menu_sub = "GENERAL"
-                    st.session_state.busqueda_activa = False
-                    st.switch_page("pages/indicadores.py")
-        
-            if permisos.get("SEGUIMIENTO", False) or usuario.upper() == "RIGOBERTO":
-                with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                    opciones_seg_posibles = ["ALERTAS", "GANTT", "QUEJAS"]
-                    opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
-                    for s in opciones_seg:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
-                            st.session_state.menu_main = "SEGUIMIENTO"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
-        
-            if permisos.get("ENTREGAS", False) or usuario.upper() == "RIGOBERTO":
-                with st.expander("ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")):
-                    opciones_ent_posibles = ["AGC", "AMAZON", "BARCELO", "NACIONAL"]
-                    opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
-                    for s in opciones_ent:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_ent_{s}2"):
-                            st.session_state.menu_main = "ENTREGAS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            if s == "AGC":
-                                st.switch_page("pages/entregas_agc.py")
-                            elif s == "NACIONAL":
-                                st.switch_page("pages/envios.py")
-                            else:
-                                st.rerun()
-        
-            if permisos.get("REPORTES", False) or usuario.upper() == "RIGOBERTO":
-                with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                    opciones_rep_posibles = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
-                    opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
-                    for s in opciones_rep:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
-                            st.session_state.menu_main = "REPORTES"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            if s == "ENVIO DE MUESTRAS":
-                                st.switch_page("pages/muestras.py")
-                            else:
-                                st.rerun()
-        
-            if permisos.get("FORMATOS", False) or usuario.upper() == "RIGOBERTO":
-                with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                    opciones_for_posibles = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
-                    opciones_for = [s for s in opciones_for_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
-                    for s in opciones_for:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
-                            st.session_state.menu_main = "FORMATOS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
-        
-            if permisos.get("CENTRO DE DATOS", False) or usuario.upper() == "RIGOBERTO":
-                with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
-                    opciones_hub_posibles = ["FACTURACIÓN", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]
-                    opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
-                    for s in opciones_hub:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
-                            st.session_state.menu_main = "CENTRO DE DATOS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            if s == "FACTURACIÓN":
-                                st.switch_page("pages/facturacion.py")
-                            else:
-                                st.rerun()
-        
-            if permisos.get("FINANZAS", False) or usuario.upper() == "RIGOBERTO":
-                with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
-                    opciones_fin_posibles = ["WALLET", "CAJA CHICA", "GASTOS"]
-                    opciones_fin = [s for s in opciones_fin_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
-                    for s in opciones_fin:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
-                            st.session_state.menu_main = "FINANZAS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
-
-            if permisos.get("ENFOQUE", False) or usuario.upper() == "RIGOBERTO":
-                with st.expander("ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
-                    opciones_enf_posibles = ["MORENO", "VAZQUEZ", "MIGUEL"]
-                    opciones_enf = [s for s in opciones_enf_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
-                    for s in opciones_enf:
-                        label = f"» {s}" if st.session_state.get("menu_sub") == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
-                            st.session_state.menu_main = "ENFOQUE"
-                            st.session_state.menu_sub = s
-                            st.rerun()
-        
-            if permisos.get("ACCESS CONTROL", False) or usuario.upper() == "RIGOBERTO":
-                if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl"):
-                    st.session_state.menu_main = "ACCESS CONTROL"
-                    st.session_state.menu_sub = "SETTINGS"
-                    st.switch_page("pages/accesscontrol.py")
-        
-            st.markdown("<hr style='margin: 4px 0; opacity: 0.1;'>", unsafe_allow_html=True)
             if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
                 st.session_state.autenticado = False
-                st.session_state.splash_completado = False
                 st.rerun()
-
-    if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
-        resultados = st.session_state.resultado_busqueda
-        total = len(resultados)
-        tipo = st.session_state.get("tipo_resultado", "OPERACION")
-        inv_color = "#36b9cc"
-        azul_premium = "#00D4FF"
-
-        col_espacio, col_cerrar = st.columns([0.85, 0.15])
-        with col_cerrar:
-            if st.button("✕ CERRAR", key="btn_cerrar_top", use_container_width=True):
-                st.session_state.busqueda_activa = False
-                st.session_state.resultado_busqueda = None
-                st.session_state.search_key_version += 1
-                st.rerun()
-
-        if tipo == "INVENTARIO":
-            st.markdown(f"<style>.card-inv {{ transition: all 0.3s ease; cursor: pointer; }} .card-inv:hover {{ transform: translateX(8px); border-color: {inv_color} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(54, 185, 204, 0.1); }}</style>", unsafe_allow_html=True)
-            st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div style='background:{inv_color};width:5px;height:20px;border-radius:2px;box-shadow:0 0 10px {inv_color};'></div><span style='color:white;font-size:14px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;'>EXISTENCIAS EN INVENTARIO <span style='color:{inv_color};'>({total})</span></span></div>", unsafe_allow_html=True)
-            for _, i in resultados.iterrows():
-                st.markdown(f"<div class='card-inv' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {inv_color};border-radius:10px;padding:10px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CÓDIGO / SKU</span><br><b style='font-size:16px;color:{inv_color};letter-spacing:1px;'>{i.get('CODIGO','')}</b></div><div style='flex:3;padding-left:20px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>DESCRIPCIÓN</span><br><span style='font-size:13px;color:white;font-weight:600;line-height:1.2;'>{i.get('DESCRIPCION','')}</span></div><div style='flex:1;text-align:right;'><span style='background:{inv_color}15;color:{inv_color};padding:3px 8px;border-radius:4px;font-size:9px;font-weight:800;border:1px solid {inv_color}30;text-transform:uppercase;'>DISPONIBLE</span></div></div>", unsafe_allow_html=True)
-        else:
-            if total == 1:
-                envio = resultados.iloc[0]
-                entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
-                f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
-                trigger_val = str(envio.get("TRIGGER", "")).strip()
-                tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
-
-                if tiene_guia:
-                    n_guia = envio["NÚMERO DE GUÍA"]
-                elif trigger_val == "Enviada":
-                    n_guia = "GENERANDO GUÍA..."
-                else:
-                    n_guia = "EN ESPERA DE SURTIDO"
-
-                f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors="coerce")
-                if pd.notnull(f_promesa_dt):
-                    f_promesa_dt = f_promesa_dt.normalize()
-                hoy = pd.Timestamp(datetime.now()).normalize()
-
-                if not tiene_guia:
-                    status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
-                elif not entregado_real:
-                    status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
-                else:
-                    f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors="coerce")
-                    if pd.notnull(f_entrega_dt):
-                        f_entrega_dt = f_entrega_dt.normalize()
-                    status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
-
-                tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: #00FFAA; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: #00FFAA; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: #00FFAA; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: #00FFAA;">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: #00FFAA; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
-                st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
-            else:
-                st.markdown(f"<div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'><div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div><span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span></span></div>", unsafe_allow_html=True)
-                st.markdown(f"<style>.card-nexion {{ transition: all 0.3s ease !important; cursor: pointer; }} .card-nexion:hover {{ transform: translateX(10px); border-color: {azul_premium} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }}</style>", unsafe_allow_html=True)
-
-                for _, d in resultados.iterrows():
-                    status_text = d["COMENTARIOS"] if pd.notna(d.get("COMENTARIOS")) else "OK"
-                    st.markdown(f"<div class='card-nexion' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {azul_premium};border-radius:12px;padding:18px 25px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:18px;color:{azul_premium};letter-spacing:0.5px;'># {d.get('NÚMERO DE PEDIDO','')}</b><br><span style='font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;'>Envío: {d.get('FECHA DE ENVÍO','')}</span></div><div style='flex:2.5;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('NOMBRE DEL CLIENTE','')}</b><br><i style='font-size:11px;color:rgba(255,255,255,0.5);font-style:normal;font-weight:600;'>{d.get('DESTINO','')}</i></div><div style='flex:1.8;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>TRANSPORTE Y GUÍA</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('FLETERA', d.get('TRANSPORTE', 'LOGÍSTICA'))}</b><br><span style='font-size:12px;color:{azul_premium};font-weight:700;font-family:monospace;'>{d.get('NÚMERO DE GUÍA','')}</span></div><div style='flex:1.2;text-align:right;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>ESTATUS ENTREGA</span><br><b style='font-size:14px;color:{azul_premium};'>{d.get('FECHA DE ENTREGA REAL','')}</b><br><span style='font-size:10px;color:white;font-weight:800;text-transform:uppercase;opacity:0.8;'>{status_text}</span></div></div>", unsafe_allow_html=True)
-
-        st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
-
-    st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (MÓDULO DE FACTURACIÓN Y ASIGNACIÓN)
+# 5. INTERFAZ PRINCIPAL
 # ==========================================
 def main():
-    if "animacion_cargada" not in st.session_state:
-        time.sleep(0.08)
-        st.session_state.animacion_cargada = True
-    
     usuario_actual = st.session_state.get("usuario_activo", "").upper()
     es_rigoberto = (usuario_actual == "RIGOBERTO")
 
-    st.markdown(
-        f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T FACTURATION & PREPARATION MODULE</p>",
-        unsafe_allow_html=True,
-    )
+    st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T FACTURATION & PREPARATION MODULE</p>", unsafe_allow_html=True)
 
-    # Si es Rigoberto (o para pruebas totales), puede alternar o ver ambas secciones
     if es_rigoberto:
         modo_operacion = st.radio("SELECCIONAR MODO DE TRABAJO:", ["FLUJO DE CYNTHIA (CARGA Y FILTRADO)", "MOTOR DE ASIGNACIÓN Y SELLADO (RIGOBERTO)"], horizontal=True)
     else:
         modo_operacion = "FLUJO DE CYNTHIA (CARGA Y FILTRADO)"
 
     if "FLUJO DE CYNTHIA" in modo_operacion:
-        st.markdown("### 📥 Panel de Carga y Filtrado de Facturación")
-        uploaded_file = st.file_uploader(
-            "Subir archivo ERP completo en Excel o CSV",
-            type=["xlsx", "csv"],
-            key="erp_file_uploader_cynthia",
-        )
+        st.markdown("### 📥 Panel de Carga y Filtrado de Facturación (Cynthia)")
+        uploaded_file = st.file_uploader("Subir archivo ERP completo en Excel o CSV", type=["xlsx", "csv"], key="erp_file_uploader_cynthia")
 
         if uploaded_file is not None:
             try:
-                df = (
-                    pd.read_csv(uploaded_file, sep=None, engine="python")
-                    if uploaded_file.name.endswith(".csv")
-                    else pd.read_excel(uploaded_file)
-                )
+                df = pd.read_csv(uploaded_file, sep=None, engine="python") if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
                 df.columns = [str(c).strip().replace("\n", "") for c in df.columns]
-                col_folio = next(
-                    (
-                        c
-                        for c in df.columns
-                        if "factura" in c.lower()
-                        or "docnum" in c.lower()
-                        or "folio" in c.lower()
-                    ),
-                    df.columns[0],
-                )
+                col_folio = next((c for c in df.columns if "factura" in c.lower() or "docnum" in c.lower() or "folio" in c.lower()), df.columns[0])
                 df[col_folio] = pd.to_numeric(df[col_folio], errors="coerce")
 
                 col_left, col_right = st.columns([1, 2], gap="large")
 
                 with col_left:
-                    st.markdown("<p>FILTROS DE FOLIOS</p>", unsafe_allow_html=True)
-                    folios_manuales = st.text_input(
-                        "Folios específicos (separados por coma):",
-                        placeholder="Ej: 1001, 1002, 1005",
-                    )
+                    st.markdown("<p><b>PASO 1: SELECCIÓN Y GUARDADO EN FACTURACION.CSV</b></p>", unsafe_allow_html=True)
+                    folios_manuales = st.text_input("Folios específicos (separados por coma):", placeholder="Ej: 1001, 1002, 1005")
                     serie = df[col_folio].dropna()
-                    inicio = st.number_input(
-                        "Desde:", value=int(serie.min()) if not serie.empty else 0
-                    )
-                    final = st.number_input(
-                        "Hasta:", value=int(serie.max()) if not serie.empty else 0
-                    )
+                    inicio = st.number_input("Desde:", value=int(serie.min()) if not serie.empty else 0)
+                    final = st.number_input("Hasta:", value=int(serie.max()) if not serie.empty else 0)
 
                     if folios_manuales:
-                        lista_manual = [
-                            int(x.strip())
-                            for x in folios_manuales.split(",")
-                            if x.strip().isdigit()
-                        ]
+                        lista_manual = [int(x.strip()) for x in folios_manuales.split(",") if x.strip().isdigit()]
                         df_rango = df[df[col_folio].isin(lista_manual)].copy()
                     else:
-                        df_rango = df[
-                            (df[col_folio] >= inicio) & (df[col_folio] <= final)
-                        ].copy()
+                        df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
+
+                    st.markdown("---")
+                    nombre_lote_input = st.text_input("Nombre / Identificador del Lote:", placeholder="Ej: LOTE_MATUTINO")
+                    
+                    if st.button("GUARDAR EN FACTURACION.CSV (SIN DUPLICADOS)", type="primary", use_container_width=True):
+                        if not nombre_lote_input.strip():
+                            st.error("Ingresa un nombre para el lote.")
+                        elif df_rango.empty:
+                            st.error("El rango está vacío.")
+                        else:
+                            df_a_guardar = df_rango.rename(columns={col_folio: "Factura"})
+                            exito = guardar_facturacion_github(df_a_guardar, nombre_lote_input.strip())
+                            if exito:
+                                st.success(f"¡Lote '{nombre_lote_input.strip()}' procesado! Se omitieron facturas repetidas y se guardó en `facturacion.csv`.")
 
                 with col_right:
-                    st.markdown("<p>SELECCIÓN DE LÍNEAS</p>", unsafe_allow_html=True)
+                    st.markdown("<p><b>PASO 2: FILTRAR LÍNEAS NO DESEADAS PARA EL ARCHIVO FINAL</b></p>", unsafe_allow_html=True)
                     if not df_rango.empty:
-                        info = df_rango.drop_duplicates(subset=[col_folio])[[col_folio]]
-                        info.insert(0, "Incluir", True)
-                        edited_df = st.data_editor(
-                            info, hide_index=True, use_container_width=True, key="ed_v_cynthia"
-                        )
+                        info = df_rango.copy()
+                        info.insert(0, "Incluir_Linea", True)
+                        edited_df = st.data_editor(info, hide_index=True, use_container_width=True, key="ed_v_cynthia")
                     else:
                         st.warning("Rango vacío")
                         edited_df = pd.DataFrame()
 
                 if not df_rango.empty and not edited_df.empty:
-                    folios_ok = edited_df[edited_df["Incluir"] == True][
-                        col_folio
-                    ].tolist()
+                    df_filtrado_final = edited_df[edited_df["Incluir_Linea"] == True].drop(columns=["Incluir_Linea"])
 
                     st.markdown("---")
-                    if st.button("RENDERIZAR TABLA FILTRADA", use_container_width=True):
-                        st.session_state.df_filtrado_cynthia = df_rango[
-                            df_rango[col_folio].isin(folios_ok)
-                        ]
+                    st.markdown("#### 💾 Guardar / Descargar Archivo Personalizado para Rigoberto")
+                    nombre_archivo_custom = st.text_input("Nombre del archivo que se generará:", value=f"{nombre_lote_input.strip() or 'Archivo_Cynthia'}.xlsx")
 
-                    if "df_filtrado_cynthia" in st.session_state:
-                        df_st = st.session_state.df_filtrado_cynthia
-                        st.dataframe(df_st, use_container_width=True)
-
-                        # Opciones de descarga / impresión
-                        towrite = io.BytesIO()
-                        df_st.to_excel(towrite, index=False, engine="openpyxl")
-                        st.download_button(
-                            label="DESCARGAR ARCHIVO FILTRADO",
-                            data=towrite.getvalue(),
-                            file_name="Facturacion_Filtrada.xlsx",
-                            use_container_width=True,
-                        )
-
-                        st.markdown("---")
-                        st.markdown("#### 💾 Guardar Bloque en Facturación")
-                        nombre_bloque_input = st.text_input("Asignar nombre/identificador a este bloque:", placeholder="Ej: LOTE_MATUTINO_CYNTHIA")
-
-                        if st.button("GUARDAR EN FACTURACION.CSV", type="primary", use_container_width=True):
-                            if not nombre_bloque_input.strip():
-                                st.error("Por favor, ingresa un nombre para identificar este bloque.")
-                            else:
-                                df_a_guardar = df_st.rename(columns={col_folio: "Factura"})
-                                exito_guardado = guardar_facturacion_github(df_a_guardar, nombre_bloque_input.strip())
-                                if exito_guardado:
-                                    st.success(f"¡Bloque '{nombre_bloque_input}' guardado con éxito en facturacion.csv sin repetir facturas!")
-                                else:
-                                    st.error("Hubo un error al guardar en GitHub.")
+                    towrite = io.BytesIO()
+                    df_filtrado_final.to_excel(towrite, index=False, engine="openpyxl")
+                    st.download_button(
+                        label=f"📥 DESCARGAR ARCHIVO: {nombre_archivo_custom.upper()}",
+                        data=towrite.getvalue(),
+                        file_name=nombre_archivo_custom.strip(),
+                        use_container_width=True,
+                        type="primary"
+                    )
 
             except Exception as e:
                 st.error(f"Error procesando el archivo ERP: {e}")
 
     else:
-        # Panel de Rigoberto (Motor de asignación y selección de matrices guardadas)
         st.markdown("### ⚙️ Panel de Motor de Asignación y Sellado (Rigoberto)")
         
         df_fact_historico = cargar_facturacion_github()
         if df_fact_historico.empty:
-            st.warning("No hay registros en `facturacion.csv` todavía. Sube datos desde el flujo de Cynthia o guarda un lote primero.")
+            st.warning("No hay registros en `facturacion.csv` todavía.")
         else:
             st.success(f"Se cargaron {len(df_fact_historico)} registros acumulados desde `facturacion.csv`.")
             
-            # Selector de matriz / lote guardado por Cynthia
             lotes_disponibles = []
             if "LOTE_CREACION" in df_fact_historico.columns:
                 lotes_disponibles = [str(x) for x in df_fact_historico["LOTE_CREACION"].dropna().unique() if str(x).strip()]
             
             if lotes_disponibles:
-                lote_seleccionado = st.selectbox("Seleccionar matriz / lote guardado por Cynthia:", lotes_disponibles)
+                lote_seleccionado = st.selectbox("Seleccionar lote guardado:", lotes_disponibles)
                 df_trabajo = df_fact_historico[df_fact_historico["LOTE_CREACION"].astype(str) == lote_seleccionado].copy()
             else:
-                st.info("No se encontraron etiquetas de lote específicas. Se usará toda la matriz de facturación.")
                 df_trabajo = df_fact_historico.copy()
 
             st.dataframe(df_trabajo, use_container_width=True)
@@ -1012,76 +556,29 @@ def main():
             if st.button("EJECUTAR SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
                 try:
                     matriz_db = obtener_matriz_github()
-
-                    col_dir_erp = next(
-                        (c for c in df_trabajo.columns if "DIRECCION" in c.upper()), None
-                    )
-                    col_dest_matriz = (
-                        "DESTINO"
-                        if "DESTINO" in matriz_db.columns
-                        else matriz_db.columns[0]
-                    )
-                    col_flet_matriz = (
-                        "TRANSPORTE"
-                        if "TRANSPORTE" in matriz_db.columns
-                        else "FLETERA"
-                    )
-                    col_tarifa_matriz = (
-                        "PRECIO POR CAJA"
-                        if "PRECIO POR CAJA" in matriz_db.columns
-                        else "COSTO"
-                    )
+                    col_dir_erp = next((c for c in df_trabajo.columns if "DIRECCION" in c.upper()), None)
+                    col_dest_matriz = "DESTINO" if "DESTINO" in matriz_db.columns else matriz_db.columns[0]
+                    col_flet_matriz = "TRANSPORTE" if "TRANSPORTE" in matriz_db.columns else "FLETERA"
+                    col_tarifa_matriz = "PRECIO POR CAJA" if "PRECIO POR CAJA" in matriz_db.columns else "COSTO"
 
                     def motor_v4(row):
                         if not col_dir_erp:
                             return "ERROR: COL DIRECCION", 0.0
                         dir_limpia = limpiar_texto(row[col_dir_erp])
-                        if any(
-                            loc in dir_limpia
-                            for loc in [
-                                "GDL",
-                                "GUADALAJARA",
-                                "ZAPOPAN",
-                                "TLAQUEPAQUE",
-                                "TONALA",
-                                "TLAJOMULCO",
-                            ]
-                        ):
+                        if any(loc in dir_limpia for loc in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA", "TLAJOMULCO"]):
                             return "LOCAL", 0.0
                         for _, fila in matriz_db.iterrows():
                             dest_key = limpiar_texto(fila[col_dest_matriz])
                             if dest_key and (dest_key in dir_limpia):
-                                flet = fila.get(col_flet_matriz, "ASIGNADO")
-                                costo_val = pd.to_numeric(
-                                    fila.get(col_tarifa_matriz, 0.0), errors="coerce"
-                                )
-                                return flet, costo_val
+                                return fila.get(col_flet_matriz, "ASIGNADO"), pd.to_numeric(fila.get(col_tarifa_matriz, 0.0), errors="coerce")
                         return "REVISIÓN MANUAL", 0.0
 
                     res = df_trabajo.apply(motor_v4, axis=1)
                     df_trabajo["RECOMENDACION"] = [r[0] for r in res]
                     df_trabajo["COSTO"] = [r[1] for r in res]
-                    
-                    fecha_prog_calculada = calcular_fecha_programacion()
-                    df_trabajo["FECHA DE PROGRAMACION"] = fecha_prog_calculada
+                    df_trabajo["FECHA DE PROGRAMACION"] = calcular_fecha_programacion()
 
-                    if "FECHA DE PROGRAMACION" in df_trabajo.columns:
-                        df_trabajo["FECHA DE PROGRAMACION"] = pd.to_datetime(
-                            df_trabajo["FECHA DE PROGRAMACION"], errors="coerce", dayfirst=True
-                        ).dt.strftime("%d/%m/%Y").fillna(df_trabajo["FECHA DE PROGRAMACION"])
-
-                    cols_deseadas = [
-                        "Factura",
-                        "FECHA DE PROGRAMACION",
-                        "RECOMENDACION",
-                        "Transporte",
-                        "DIRECCION",
-                        "COSTO",
-                        "Nombre_Cliente",
-                        "Nombre_Extran",
-                        "Quantity",
-                        "DESTINO",
-                    ]
+                    cols_deseadas = ["Factura", "FECHA DE PROGRAMACION", "RECOMENDACION", "Transporte", "DIRECCION", "COSTO", "Nombre_Cliente", "DESTINO"]
                     cols_finales = [c for c in cols_deseadas if c in df_trabajo.columns]
 
                     st.session_state.df_analisis = df_trabajo[cols_finales]
@@ -1091,113 +588,28 @@ def main():
                 except Exception as e:
                     st.error(f"Error en el motor de asignación: {e}")
 
-        # ==========================================
-        # LOGISTICS INTELLIGENCE & SISTEMA DE SELLADO
-        # ==========================================
         if "df_analisis" in st.session_state:
             st.markdown("---")
-            st.markdown(
-                f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>",
-                unsafe_allow_html=True,
-            )
-
             p = st.session_state.df_analisis.copy()
-            p.columns = [str(c) for c in p.columns]
-
-            if p.columns.duplicated().any():
-                cols = []
-                for col in p.columns:
-                    cols.append(f"{col}_dup" if col in cols else col)
-                p.columns = cols
-
-            p = p.loc[:, ~p.columns.isna()]
             modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
-                        
-            p_editado = st.data_editor(
-                p, use_container_width=True, hide_index=True,
-                column_config={
-                    "FECHA DE PROGRAMACION": st.column_config.TextColumn("FECHA PROG.", disabled=not modo_edicion),
-                    "RECOMENDACION": st.column_config.TextColumn("FLETERA", disabled=not modo_edicion),
-                    "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f", disabled=not modo_edicion),
-                },
-                key="editor_final_github"
-            )
+            
+            p_editado = st.data_editor(p, use_container_width=True, hide_index=True, key="editor_final_github")
             
             if st.button("FIJAR CAMBIOS Y ACUMULAR EN ENVIOS", use_container_width=True, type="primary"):
-                st.session_state.df_analisis = p_editado
-                exito = actualizar_historial_envios_github(p_editado)
-                if exito:
-                    st.toast("¡Cambios guardados y acumulados en envios.csv!", icon="✅")
-                else:
-                    st.toast("Guardado localmente, pero falló la sincronización con envios.csv", icon="⚠️")
-            
-            st.write("") 
-            
-            output_xlsx = io.BytesIO()
-            p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
-            st.download_button(
-                label="DESCARGAR ANÁLISIS FINAL", 
-                data=output_xlsx.getvalue(), 
-                file_name="Analisis_Final.xlsx", 
-                use_container_width=True,
-                type="primary" 
-            )
-            
+                actualizar_historial_envios_github(p_editado)
+                st.toast("¡Sincronizado en envios.csv!", icon="✅")
+
             with st.expander("SISTEMA DE SELLADO", expanded=False):
                 cx, cy = st.columns(2)
                 ax = cx.slider("X", 0, 612, 399)
                 ay = cy.slider("Y", 0, 792, 760)
                 
-                st.markdown("###### Opciones de Impresión Física")
-                s1, s2 = st.columns(2)
-                
-                with s1:
-                    st.download_button(
-                        label="GENERAR SELLOS NORMAL", 
-                        data=generar_sellos_fisicos(p_editado, ax, ay), 
-                        file_name="Sellos_Normales.pdf", 
-                        use_container_width=True,
-                        type="primary" 
-                    )
-                    
-                with s2:
-                    p_invertido = p_editado.iloc[::-1].reset_index(drop=True)
-                    st.download_button(
-                        label="GENERAR SELLOS MODO INVERSO", 
-                        data=generar_sellos_fisicos(p_invertido, ax, ay), 
-                        file_name="Sellos_Inversos.pdf", 
-                        use_container_width=True,
-                        type="primary"
-                    )
-                        
-                st.markdown("---")
-                st.markdown("###### 💻 Opciones de Sellado Digital")
-                pdfs = st.file_uploader("📄 Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
-                
-                if pdfs:
-                    if st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
-                        mapa_fletera = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
-                        z_io = io.BytesIO()
-                        with zipfile.ZipFile(z_io, "a") as zf:
-                            for pdf in pdfs:
-                                f_id = next((k for k in mapa_fletera.keys() if k in pdf.name.upper()), None)
-                                if f_id: 
-                                    fletera_val = mapa_fletera[f_id]
-                                    zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, fletera_val, f_id, ax, ay))
-                        
-                        st.download_button(
-                            label="📦 DESCARGAR ZIP", 
-                            data=z_io.getvalue(), 
-                            file_name="Sellado.zip", 
-                            use_container_width=True,
-                            type="primary"
-                        )
+                st.download_button("GENERAR SELLOS NORMAL", data=generar_sellos_fisicos(p_editado, ax, ay), file_name="Sellos.pdf", use_container_width=True, type="primary")
 
 
 if __name__ == "__main__":
     main()
 
-# ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
 st.markdown(
     f"""
     <div class="footer">
