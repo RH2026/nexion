@@ -48,14 +48,14 @@ DESTINOS_VALIDOS = {
     "etiquetas":
         "pages/etiquetas.py",
 
-    "indicadores":
-        "pages/indicadores.py",
+    "dashboard":
+        "dashboard.py",
 
     "locales":
         "pages/locales.py",
 
     "log":
-        "pages/log.py",
+        "log.py",
 
     "muestras":
         "pages/muestras.py",
@@ -65,9 +65,9 @@ DESTINOS_VALIDOS = {
 
     "qrup":
         "pages/qrup.py",
+        
     "facturacion":
         "pages/facturacion.py",
-    
 }
 
 
@@ -281,7 +281,7 @@ def obtener_destino():
     # SIN DESTINO
     # ========================================================
 
-    return "pages/indicadores.py"
+    return "dashboard.py"
 
 
 # ============================================================
