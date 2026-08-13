@@ -17,9 +17,16 @@ import streamlit.components.v1 as components
 import streamlit as st
 from auth import exigir_autenticacion
 
-exigir_autenticacion("dashboard")
+# ==========================================
+# 2. CONTROL DE ACCESO DIRECTO EN RAÍZ
+# ==========================================
+if not st.session_state.get("autenticado", False):
+    # Si no está autenticado, mostramos la pantalla de login directamente
+    log.login_screen() # O el método que dibuje tu login
+    st.stop()
 
 st.query_params["page"] = "dashboard"
+
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
