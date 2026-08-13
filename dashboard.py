@@ -17,9 +17,9 @@ import streamlit.components.v1 as components
 import streamlit as st
 from auth import exigir_autenticacion
 
-exigir_autenticacion("indicadores")
+exigir_autenticacion("dashboard")
 
-st.query_params["page"] = "indicadores"
+st.query_params["page"] = "dashboard"
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
@@ -150,7 +150,7 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
 )
 
 
-#----registraas usuario------
+#----registra usuario------
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
@@ -189,8 +189,8 @@ def registrar_acceso_github(usuario, modulo):
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/indicadores.py"
-    st.switch_page("pages/log.py")
+    st.session_state.pagina_destino = "dashboard.py"
+    st.switch_page("log.py")
 
 def verificar_permiso_pagina(modulo, submodulo=None):
     permisos = st.session_state.get("permisos", {})
@@ -230,7 +230,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         col_regresar_m, col_vacia_m = st.columns([1.5, 4])
         with col_regresar_m:
             if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
-                st.switch_page("pages/indicadores.py")
+                st.switch_page("dashboard.py")
         st.stop()
             
     if submodulo and not permisos.get(submodulo.upper(), False):
@@ -266,7 +266,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         col_regresar_s, col_vacia_s = st.columns([1.5, 4])
         with col_regresar_s:
             if st.button("REGRESAR AL INICIO", key="btn_regresar_submodulo", use_container_width=True):
-                st.switch_page("pages/indicadores.py")
+                st.switch_page("dashboard.py")
         st.stop()
 
 # Blindaje de Módulo DASHBOARD
@@ -436,23 +436,20 @@ with header_zone:
             except Exception:
                 pass
 
-            # 3. CRUCE DE INFORMACIÓN (Si está en Matriz Global pero le falta la guía, se la inyectamos desde T1)
+            # 3. CRUCE DE INFORMACIÓN
             if not res_ops.empty and not res_t1.empty:
                 for idx, row in res_ops.iterrows():
                     guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
                     if guia_actual in ["", "nan", "0", "None"]:
                         pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        # Buscamos coincidencia en T1 por número de pedido/factura
                         match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
                         if not match_en_t1.empty:
-                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
                             res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
                             res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
                             if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
                                 res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
 
-            # 4. Búsqueda en Inventario (Por si acaso se busca un SKU/Código)
+            # 4. Búsqueda en Inventario
             res_inv = pd.DataFrame()
             if res_ops.empty and res_t1.empty:
                 try:
@@ -467,7 +464,6 @@ with header_zone:
                 except Exception:
                     pass
 
-            # Asignación final de resultados
             if not res_ops.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
@@ -507,7 +503,7 @@ with header_zone:
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
-                    st.switch_page("pages/indicadores.py")
+                    st.switch_page("dashboard.py")
         
             if permisos.get("SEGUIMIENTO", False):
                 with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
