@@ -197,13 +197,9 @@ def calcular_fecha_programacion():
 
 
 # ==========================================
-# 3.1 GESTIÓN DE ARCHIVOS GITHUB (FACTURACIÓN SIN DUPLICADOS)
+# 3.1 GESTIÓN DE ARCHIVOS GITHUB
 # ==========================================
 def guardar_facturacion_github(df_nuevos):
-    """
-    Descarga facturacion.csv, filtra las facturas que YA EXISTEN para que no se vuelvan
-    a subir (evita duplicados con registros previos), concatena las nuevas y sube a GitHub.
-    """
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "facturacion.csv"
@@ -212,10 +208,7 @@ def guardar_facturacion_github(df_nuevos):
         st.error("Falta configurar el GITHUB_TOKEN en los Secrets de Streamlit.")
         return False
 
-    headers = {
-        "Authorization": f"Bearer {TOKEN}",
-        "Accept": "application/vnd.github+json"
-    }
+    headers = {"Authorization": f"Bearer {TOKEN}", "Accept": "application/vnd.github+json"}
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
     
     df_procesado = df_nuevos.copy()
@@ -233,8 +226,6 @@ def guardar_facturacion_github(df_nuevos):
     
     if not df_existente.empty and col_fact_nuevos:
         col_fact_existente = next((c for c in df_existente.columns if "FACTURA" in c.upper() or c.upper() == "FACTURA"), col_fact_nuevos)
-        
-        # Filtrar solo aquellas facturas que NO están previamente registradas
         facturas_existentes_set = set(df_existente[col_fact_existente].astype(str).str.strip().unique())
         df_procesado = df_procesado[~df_procesado[col_fact_nuevos].astype(str).str.strip().isin(facturas_existentes_set)].copy()
         
@@ -262,6 +253,77 @@ def guardar_facturacion_github(df_nuevos):
     return put_response.status_code in [200, 201]
 
 
+def guardar_archivo_rigoberto_github(df_datos, nombre_archivo):
+    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+    REPO_NAME = "RH2026/nexion"
+    
+    if not nombre_archivo.endswith(".csv"):
+        nombre_archivo = nombre_archivo.split(".")[0] + ".csv"
+        
+    FILE_PATH = f"lotes_rigoberto/{nombre_archivo}"
+    
+    if not TOKEN:
+        st.error("Falta configurar el GITHUB_TOKEN.")
+        return False
+
+    headers = {"Authorization": f"Bearer {TOKEN}", "Accept": "application/vnd.github+json"}
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+    
+    r = requests.get(url, headers=headers)
+    sha = r.json().get("sha") if r.status_code == 200 else None
+    
+    csv_buffer = io.StringIO()
+    df_datos.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
+    content_base64 = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
+    
+    data = {
+        "message": f"Subida de archivo personalizado para Rigoberto: {nombre_archivo}",
+        "content": content_base64,
+        "branch": "main"
+    }
+    if sha:
+        data["sha"] = sha 
+
+    put_response = requests.put(url, headers=headers, json=data)
+    return put_response.status_code in [200, 201]
+
+
+def listar_archivos_rigoberto_github():
+    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+    REPO_NAME = "RH2026/nexion"
+    FOLDER_PATH = "lotes_rigoberto"
+    
+    headers = {"Authorization": f"Bearer {TOKEN}", "Accept": "application/vnd.github+json"} if TOKEN else {}
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FOLDER_PATH}"
+    
+    try:
+        r = requests.get(url, headers=headers)
+        if r.status_code == 200:
+            files = r.json()
+            return [f["name"] for f in files if f["name"].endswith(".csv")]
+    except Exception:
+        pass
+    return []
+
+
+def cargar_archivo_rigoberto_github(nombre_archivo):
+    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+    REPO_NAME = "RH2026/nexion"
+    FILE_PATH = f"lotes_rigoberto/{nombre_archivo}"
+    
+    headers = {"Authorization": f"Bearer {TOKEN}", "Accept": "application/vnd.github+json"} if TOKEN else {}
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+    
+    try:
+        r = requests.get(url, headers=headers)
+        if r.status_code == 200:
+            content_decoded = base64.b64decode(r.json()["content"]).decode("utf-8-sig")
+            return pd.read_csv(io.StringIO(content_decoded))
+    except Exception:
+        pass
+    return pd.DataFrame()
+
+
 @st.cache_data(ttl=30)
 def cargar_facturacion_github():
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
@@ -272,8 +334,7 @@ def cargar_facturacion_github():
     try:
         r = requests.get(url, headers=headers)
         if r.status_code == 200:
-            file_info = r.json()
-            content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
+            content_decoded = base64.b64decode(r.json()["content"]).decode("utf-8-sig")
             return pd.read_csv(io.StringIO(content_decoded))
     except Exception:
         pass
@@ -498,7 +559,6 @@ def main():
                 with col_right:
                     st.markdown("<p><b>PASO 2: SELECCIÓN DE FACTURAS (UNA PARTIDA POR FACTURA)</b></p>", unsafe_allow_html=True)
                     if not df_rango.empty:
-                        # Agrupar para que aparezca solo una partida por factura
                         df_unico_factura = df_rango.drop_duplicates(subset=[col_folio]).copy()
                         df_unico_factura.insert(0, "Incluir_Factura", True)
                         
@@ -511,18 +571,29 @@ def main():
                     df_filtrado_final = edited_df[edited_df["Incluir_Factura"] == True].drop(columns=["Incluir_Factura"])
 
                     st.markdown("---")
-                    st.markdown("#### 💾 Guardar Archivo Personalizado para Rigoberto")
-                    nombre_archivo_custom = st.text_input("Nombre del archivo para Rigoberto:", value="Archivo_Rigoberto.xlsx")
+                    st.markdown("#### 💾 Guardar Archivo Personalizado en GitHub para Rigoberto")
+                    nombre_archivo_custom = st.text_input("Nombre del archivo (ej. lote_matutino.csv):", value="lote_rigoberto.csv")
 
-                    towrite = io.BytesIO()
-                    df_filtrado_final.to_excel(towrite, index=False, engine="openpyxl")
-                    st.download_button(
-                        label=f"📥 DESCARGAR ARCHIVO: {nombre_archivo_custom.upper()}",
-                        data=towrite.getvalue(),
-                        file_name=nombre_archivo_custom.strip(),
-                        use_container_width=True,
-                        type="primary"
-                    )
+                    col_btn1, col_btn2 = st.columns(2)
+                    with col_btn1:
+                        if st.button("SUBIR A GITHUB", type="primary", use_container_width=True):
+                            if not nombre_archivo_custom.strip():
+                                st.error("Ingresa un nombre de archivo válido.")
+                            else:
+                                ok_gh = guardar_archivo_rigoberto_github(df_filtrado_final, nombre_archivo_custom.strip())
+                                if ok_gh:
+                                    st.success(f"¡Archivo '{nombre_archivo_custom.strip()}' guardado con éxito en GitHub!")
+                                else:
+                                    st.error("Error al guardar en GitHub.")
+                    with col_btn2:
+                        towrite = io.BytesIO()
+                        df_filtrado_final.to_excel(towrite, index=False, engine="openpyxl")
+                        st.download_button(
+                            label="📥 DESCARGAR LOCAL",
+                            data=towrite.getvalue(),
+                            file_name=nombre_archivo_custom.strip().replace(".csv", ".xlsx"),
+                            use_container_width=True
+                        )
 
             except Exception as e:
                 st.error(f"Error procesando el archivo ERP: {e}")
@@ -530,13 +601,22 @@ def main():
     else:
         st.markdown("### ⚙️ Panel de Motor de Asignación y Sellado (Rigoberto)")
         
-        uploaded_rigoberto = st.file_uploader("Subir archivo preparado por Cynthia", type=["xlsx", "csv"], key="uploader_rigoberto")
+        archivos_disponibles = listar_archivos_rigoberto_github()
         
-        if uploaded_rigoberto is not None:
-            df_trabajo = pd.read_csv(uploaded_rigoberto, sep=None, engine="python") if uploaded_rigoberto.name.endswith(".csv") else pd.read_excel(uploaded_rigoberto)
+        if archivos_disponibles:
+            archivo_elegido = st.selectbox("Seleccionar archivo preparado por Cynthia desde GitHub:", archivos_disponibles)
+            if archivo_elegido:
+                df_trabajo = cargar_archivo_rigoberto_github(archivo_elegido)
+        else:
+            st.info("No hay archivos en la carpeta de GitHub de Cynthia. Puedes subir uno localmente si lo prefieres:")
+            uploaded_rigoberto = st.file_uploader("Subir archivo preparado", type=["xlsx", "csv"], key="uploader_rigoberto")
+            if uploaded_rigoberto is not None:
+                df_trabajo = pd.read_csv(uploaded_rigoberto, sep=None, engine="python") if uploaded_rigoberto.name.endswith(".csv") else pd.read_excel(uploaded_rigoberto)
+            else:
+                df_trabajo = pd.DataFrame()
+
+        if not df_trabajo.empty:
             df_trabajo.columns = [str(c).strip().replace("\n", "") for c in df_trabajo.columns]
-            
-            # Asegurar que exista columna Factura
             if "Factura" not in df_trabajo.columns:
                 col_f = next((c for c in df_trabajo.columns if "factura" in c.lower() or "docnum" in c.lower() or "folio" in c.lower()), df_trabajo.columns[0])
                 df_trabajo = df_trabajo.rename(columns={col_f: "Factura"})
