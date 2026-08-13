@@ -46,9 +46,6 @@ def guardar_destino(pagina_actual):
 
     # --------------------------------------------------------
     # GUARDAR EN SESSION STATE
-    #
-    # Esto permite conservar el destino mientras navegamos
-    # entre las páginas de Streamlit.
     # --------------------------------------------------------
 
     st.session_state["pagina_pendiente"] = (
@@ -58,8 +55,6 @@ def guardar_destino(pagina_actual):
 
     # --------------------------------------------------------
     # GUARDAR TAMBIÉN EN LA URL
-    #
-    # Esto funciona como respaldo.
     # --------------------------------------------------------
 
     st.query_params["return_to"] = (
@@ -77,8 +72,7 @@ def guardar_destino(pagina_actual):
 def obtener_destino():
 
     # --------------------------------------------------------
-    # PRIMERA OPCIÓN:
-    # SESSION STATE
+    # PRIMERA OPCIÓN: SESSION STATE
     # --------------------------------------------------------
 
     destino = st.session_state.get(
@@ -98,8 +92,7 @@ def obtener_destino():
 
 
     # --------------------------------------------------------
-    # SEGUNDA OPCIÓN:
-    # QUERY PARAMS
+    # SEGUNDA OPCIÓN: QUERY PARAMS
     # --------------------------------------------------------
 
     try:
@@ -132,7 +125,7 @@ def obtener_destino():
 
 
 # ============================================================
-# ENVIAR AL LOGIN
+# ENVIAR AL LOGIN (CORREGIDO)
 # ============================================================
 
 def ir_a_login(pagina_actual):
@@ -147,8 +140,7 @@ def ir_a_login(pagina_actual):
 
 
     # --------------------------------------------------------
-    # Si la página no existe en nuestro mapa,
-    # usamos dashboard como último recurso.
+    # Si la página no existe, usamos dashboard por defecto
     # --------------------------------------------------------
 
     if not destino_guardado:
@@ -159,15 +151,14 @@ def ir_a_login(pagina_actual):
 
 
     # --------------------------------------------------------
-    # IR AL LOGIN
-    #
-    # IMPORTANTE:
-    # log.py ahora está en la raíz
+    # RECARGAR PARA MOSTRAR LOG.PY EN LA RAÍZ
+    # --------------------------------------------------------
+    # Al estar log.py en la raíz, limpiamos autenticación 
+    # y recargamos para que Streamlit cargue log.py limpio.
     # --------------------------------------------------------
 
-    st.switch_page(
-        "log.py"
-    )
+    st.session_state["autenticado"] = False
+    st.rerun()
 
 
 # ============================================================
