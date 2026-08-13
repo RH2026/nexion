@@ -18,13 +18,8 @@ import streamlit as st
 from auth import exigir_autenticacion
 import log
 
-# ==========================================
-# 2. CONTROL DE ACCESO DIRECTO EN RAÍZ
-# ==========================================
-if not st.session_state.get("autenticado", False):
-    # Si no está autenticado, mostramos la pantalla de login directamente
-    log.login_screen() # O el método que dibuje tu login
-    st.stop()
+# Exigimos autenticación (esto frena la carga si no hay sesión)
+exigir_autenticacion("dashboard")
 
 st.query_params["page"] = "dashboard"
 
