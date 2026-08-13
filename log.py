@@ -48,14 +48,14 @@ DESTINOS_VALIDOS = {
     "etiquetas":
         "pages/etiquetas.py",
 
-    "indicadores":
-        "pages/indicadores.py",
+    "dashboard":
+        "dashboard.py",
 
     "locales":
         "pages/locales.py",
 
     "log":
-        "pages/log.py",
+        "log.py",
 
     "muestras":
         "pages/muestras.py",
@@ -65,9 +65,9 @@ DESTINOS_VALIDOS = {
 
     "qrup":
         "pages/qrup.py",
+        
     "facturacion":
         "pages/facturacion.py",
-    
 }
 
 
@@ -281,7 +281,7 @@ def obtener_destino():
     # SIN DESTINO
     # ========================================================
 
-    return "pages/indicadores.py"
+    return "dashboard.py"
 
 
 # ============================================================
@@ -609,51 +609,45 @@ def login_screen():
 
 
 # ============================================================
-# 10. SPLASH
+# BLOQUE DE EJECUCIÓN PRINCIPAL
 # ============================================================
 
-if not st.session_state.splash_completado:
+if __name__ == "__main__":
 
-    p = st.empty()
+    # SPLASH
+    if not st.session_state.splash_completado:
 
-    for m in [
-        "ESTABLISHING SECURE ACCESS...",
-        "AUTHENTICATING NEXION GATEWAY...",
-        "LOGISTICS DATA FLOW INITIALIZING...",
-        "SYSTEM READY..."
-    ]:
+        p = st.empty()
 
-        html_splash = f'<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><div style="width:90px;height:90px;border:2px solid rgba(130,212,230,0.15);border-top:2px solid #82D4E6;border-radius:50%;animation:nexionSpin 1s linear infinite;margin-bottom:25px;"></div><p style="font-family:monospace;font-size:11px;letter-spacing:4px;color:#FFFFFF;text-transform:uppercase;">{m}</p></div><style>@keyframes nexionSpin{{100%{{transform:rotate(360deg);}}}}</style>'
+        for m in [
+            "ESTABLISHING SECURE ACCESS...",
+            "AUTHENTICATING NEXION GATEWAY...",
+            "LOGISTICS DATA FLOW INITIALIZING...",
+            "SYSTEM READY..."
+        ]:
 
-        p.markdown(
-            html_splash,
-            unsafe_allow_html=True
-        )
+            html_splash = f'<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><div style="width:90px;height:90px;border:2px solid rgba(130,212,230,0.15);border-top:2px solid #82D4E6;border-radius:50%;animation:nexionSpin 1s linear infinite;margin-bottom:25px;"></div><p style="font-family:monospace;font-size:11px;letter-spacing:4px;color:#FFFFFF;text-transform:uppercase;">{m}</p></div><style>@keyframes nexionSpin{{100%{{transform:rotate(360deg);}}}}</style>'
 
-        time.sleep(
-            0.4
-        )
+            p.markdown(
+                html_splash,
+                unsafe_allow_html=True
+            )
 
-    p.empty()
+            time.sleep(
+                0.4
+            )
 
-    st.session_state.splash_completado = True
+        p.empty()
 
-    st.rerun()
+        st.session_state.splash_completado = True
 
+        st.rerun()
 
-# ============================================================
-# 13. CONTROL DE AUTENTICACIÓN
-# ============================================================
+    # CONTROL DE AUTENTICACIÓN
+    elif not st.session_state.autenticado:
 
-elif not st.session_state.autenticado:
+        login_screen()
 
-    login_screen()
+    else:
 
-
-# ============================================================
-# 14. SI YA ESTÁ AUTENTICADO
-# ============================================================
-
-else:
-
-    st.stop()
+        st.stop()
