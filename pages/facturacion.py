@@ -531,22 +531,30 @@ def main():
                 col_folio = next((c for c in df.columns if "factura" in c.lower() or "docnum" in c.lower() or "folio" in c.lower()), df.columns[0])
                 df[col_folio] = pd.to_numeric(df[col_folio], errors="coerce")
 
-                col_left, col_right = st.columns([1, 2], gap="large")
-
-                with col_left:
-                    st.markdown("<p><b>PASO 1: SELECCIÓN Y GUARDADO EN FACTURACION.CSV</b></p>", unsafe_allow_html=True)
+                # Diseño secuencial vertical: Paso 1 arriba, Paso 2 abajo
+                st.markdown("<p><b>PASO 1: SELECCIÓN Y GUARDADO EN FACTURACION.CSV</b></p>", unsafe_allow_html=True)
+                
+                col_i1, col_i2, col_i3 = st.columns(3, gap="medium")
+                with col_i1:
                     folios_manuales = st.text_input("Folios específicos (separados por coma):", placeholder="Ej: 1001, 1002, 1005")
+                with col_i2:
                     serie = df[col_folio].dropna()
                     inicio = st.number_input("Desde:", value=int(serie.min()) if not serie.empty else 0)
+                with col_i3:
                     final = st.number_input("Hasta:", value=int(serie.max()) if not serie.empty else 0)
 
-                    if folios_manuales:
-                        lista_manual = [int(x.strip()) for x in folios_manuales.split(",") if x.strip().isdigit()]
-                        df_rango = df[df[col_folio].isin(lista_manual)].copy()
-                    else:
-                        df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
+                if folios_manuales:
+                    lista_manual = [int(x.strip()) for x in folios_manuales.split(",") if x.strip().isdigit()]
+                    df_rango = df[df[col_folio].isin(lista_manual)].copy()
+                else:
+                    df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
 
-                    st.markdown("---")
+                st.markdown("---")
+
+                # LOS 3 BOTONES EN LÍNEA EXACTA COMO LO PEDISTE
+                col_b1, col_b2, col_b3 = st.columns(3, gap="medium")
+                
+                with col_b1:
                     if st.button("GUARDAR EN FACTURACION.CSV (SIN DUPLICADOS)", type="primary", use_container_width=True):
                         if df_rango.empty:
                             st.error("El rango está vacío.")
@@ -556,44 +564,51 @@ def main():
                             if exito:
                                 st.success("¡Rango procesado! Se omitieron facturas repetidas y se guardó en `facturacion.csv` con éxito.")
 
-                with col_right:
-                    st.markdown("<p><b>PASO 2: SELECCIÓN DE FACTURAS (UNA PARTIDA POR FACTURA)</b></p>", unsafe_allow_html=True)
-                    if not df_rango.empty:
-                        df_unico_factura = df_rango.drop_duplicates(subset=[col_folio]).copy()
-                        df_unico_factura.insert(0, "Incluir_Factura", True)
-                        
-                        edited_df = st.data_editor(df_unico_factura, hide_index=True, use_container_width=True, key="ed_v_cynthia")
-                    else:
-                        st.warning("Rango vacío")
-                        edited_df = pd.DataFrame()
-
-                if not df_rango.empty and not edited_df.empty:
-                    df_filtrado_final = edited_df[edited_df["Incluir_Factura"] == True].drop(columns=["Incluir_Factura"])
-
-                    st.markdown("---")
-                    st.markdown("<p style='font-size: 16px; font-weight: 400;'>GUARDAR ARCHIVO PERSONALIZADO EN GITHUB PARA RIGOBERTO</p>", unsafe_allow_html=True)
-                    nombre_archivo_custom = st.text_input("Nombre del archivo (ej. lote_matutino.csv):", value="lote_rigoberto.csv")
-
-                    col_btn1, col_btn2 = st.columns(2)
-                    with col_btn1:
-                        if st.button("SUBIR A GITHUB", type="primary", use_container_width=True):
-                            if not nombre_archivo_custom.strip():
-                                st.error("Ingresa un nombre de archivo válido.")
+                with col_b2:
+                    nombre_archivo_custom = st.text_input("Nombre del archivo (ej. lote_matutino.csv):", value="lote_rigoberto.csv", label_visibility="collapsed")
+                    if st.button("SUBIR A GITHUB", type="primary", use_container_width=True):
+                        if not df_rango.empty:
+                            df_unico_val = df_rango.drop_duplicates(subset=[col_folio]).copy()
+                            ok_gh = guardar_archivo_rigoberto_github(df_unico_val, nombre_archivo_custom.strip())
+                            if ok_gh:
+                                st.success(f"¡Archivo guardado con éxito en GitHub!")
                             else:
-                                ok_gh = guardar_archivo_rigoberto_github(df_filtrado_final, nombre_archivo_custom.strip())
-                                if ok_gh:
-                                    st.success(f"¡Archivo '{nombre_archivo_custom.strip()}' guardado con éxito en GitHub!")
-                                else:
-                                    st.error("Error al guardar en GitHub.")
-                    with col_btn2:
+                                st.error("Error al guardar en GitHub.")
+                        else:
+                            st.error("Rango vacío.")
+
+                with col_b3:
+                    if not df_rango.empty:
+                        df_unico_dl = df_rango.drop_duplicates(subset=[col_folio]).copy()
                         towrite = io.BytesIO()
-                        df_filtrado_final.to_excel(towrite, index=False, engine="openpyxl")
+                        df_unico_dl.to_excel(towrite, index=False, engine="openpyxl")
                         st.download_button(
                             label="📥 DESCARGAR LOCAL",
                             data=towrite.getvalue(),
                             file_name=nombre_archivo_custom.strip().replace(".csv", ".xlsx"),
                             use_container_width=True
                         )
+                    else:
+                        st.button("📥 DESCARGAR LOCAL", disabled=True, use_container_width=True)
+
+                st.markdown("---")
+
+                # PASO 2 Y TABLA ABAJO
+                st.markdown("<p><b>PASO 2: SELECCIÓN DE FACTURAS (UNA PARTIDA POR FACTURA)</b></p>", unsafe_allow_html=True)
+                if not df_rango.empty:
+                    df_unico_factura = df_rango.drop_duplicates(subset=[col_folio]).copy()
+                    df_unico_factura.insert(0, "Incluir_Factura", True)
+                    
+                    edited_df = st.data_editor(df_unico_factura, hide_index=True, use_container_width=True, key="ed_v_cynthia")
+                else:
+                    st.warning("Rango vacío")
+                    edited_df = pd.DataFrame()
+
+                if not df_rango.empty and not edited_df.empty:
+                    df_filtrado_final = edited_df[edited_df["Incluir_Factura"] == True].drop(columns=["Incluir_Factura"])
+
+                    st.markdown("---")
+                    st.markdown("<p style='font-size: 16px; font-weight: 400;'>GUARDAR ARCHIVO PERSONALIZADO EN GITHUB PARA RIGOBERTO</p>", unsafe_allow_html=True)
 
             except Exception as e:
                 st.error(f"Error procesando el archivo ERP: {e}")
