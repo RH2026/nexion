@@ -513,7 +513,7 @@ def main():
     usuario_actual = st.session_state.get("usuario_activo", "").upper()
     es_rigoberto = (usuario_actual == "RIGOBERTO")
 
-    st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T FACTURATION & PREPARATION MODULE</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'></p>", unsafe_allow_html=True)
 
     if es_rigoberto:
         modo_operacion = st.radio("SELECCIONAR MODO DE TRABAJO:", ["FLUJO DE CYNTHIA (CARGA Y FILTRADO)", "MOTOR DE ASIGNACIÓN Y SELLADO (RIGOBERTO)"], horizontal=True)
@@ -521,7 +521,7 @@ def main():
         modo_operacion = "FLUJO DE CYNTHIA (CARGA Y FILTRADO)"
 
     if "FLUJO DE CYNTHIA" in modo_operacion:
-        st.markdown("### 📥 Panel de Carga y Filtrado de Facturación (Cynthia)")
+        st.markdown("<p style='font-size: 12px; font-weight: 600;'>Panel de Carga y Filtrado de Facturación (Cynthia)</p>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader("Subir archivo ERP completo en Excel o CSV", type=["xlsx", "csv"], key="erp_file_uploader_cynthia")
 
         if uploaded_file is not None:
