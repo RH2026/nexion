@@ -1048,10 +1048,17 @@ def main():
                     with col_btn2:
                         towrite = io.BytesIO()
                         df_filtrado_final.to_excel(towrite, index=False, engine="openpyxl")
+                        towrite.seek(0)
+                        
+                        nombre_limpio = nombre_archivo_custom.strip()
+                        if not nombre_limpio.lower().endswith(".xlsx"):
+                            nombre_limpio = nombre_limpio.split(".")[0] + ".xlsx"
+
                         st.download_button(
                             label="📥 DESCARGAR LOCAL",
                             data=towrite.getvalue(),
-                            file_name=nombre_archivo_custom.strip().replace(".csv", ".xlsx"),
+                            file_name=nombre_limpio,
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             use_container_width=True
                         )
 
