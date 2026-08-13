@@ -237,60 +237,83 @@ if "lote_escaneos_pendientes" not in st.session_state:
 
 
 def agregar_escaneo_al_lote(texto_qr):
-    """Agrega el QR escaneado al lote temporal en memoria después de validar
+  """Agrega el QR escaneado al lote temporal en memoria después de validar
 
-    que tenga el formato correcto y exista en el sistema, sin tocar GitHub todavía.
-    """
-    match_factura = re.search(r"FACTURA:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
+  que tenga el formato correcto y exista en el sistema, sin tocar GitHub todavía.
+  """
+  match_factura = re.search(r"FACTURA:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
 
-    if not match_factura:
-        return (
-            False,
-            "El formato del QR no es válido. Asegúrate de que contenga FACTURA.",
-        )
-
-    factura_scans = str(match_factura.group(1)).strip()
-
-    # Obtener fecha y hora actual de Guadalajara en el formato DD/MM/YYYY HH:MM
-    tz_gdl = ZoneInfo("America/Mexico_City")
-    ahora_gdl = datetime.now(tz_gdl)
-    prog_val = ahora_gdl.strftime("%d/%m/%Y %H:%M")
-
-    # Validación previa en la base de datos general (Dashboard) para asegurar existencia real
-    df_dash_val = cargar_datos_dashboard()
-    existe_en_sistema = False
-    if df_dash_val is not None and not df_dash_val.empty:
-        for col_p in ["NÚMERO DE PEDIDO", "PEDIDO", "FACTURA"]:
-            if col_p in df_dash_val.columns:
-                if factura_scans in df_dash_val[col_p].astype(str).str.strip().values:
-                    existe_en_sistema = True
-                    break
-
-    if not existe_en_sistema:
-        return (
-            False,
-            f"❌ La factura {factura_scans} no existe en la base de datos general.",
-        )
-
-    # Verificar si ya está agregado en el lote actual pendiente de sincronizar
-    for item in st.session_state.lote_escaneos_pendientes:
-        if item["factura"] == factura_scans:
-            return (
-                False,
-                f"⚠️ La factura {factura_scans} ya está en el lote pendiente de sincronización.",
-            )
-
-    # Agregar al lote temporal
-    st.session_state.lote_escaneos_pendientes.append(
-        {
-            "factura": factura_scans,
-            "fecha_envio": prog_val,
-            "qr_completo": texto_qr,
-            "hora": ahora_gdl.strftime("%H:%M:%S"),
-        }
+  if not match_factura:
+    return (
+        False,
+        "El formato del QR no es válido. Asegúrate de que contenga FACTURA.",
     )
 
-    return True, f"✅ Factura {factura_scans} agregada al lote temporal."
+  factura_scans = str(match_factura.group(1)).strip()
+  # Limpiar posible punto decimal si pandas leyó el número como flotante
+  if factura_scans.endswith(".0"):
+    factura_scans = factura_scans[:-2]
+
+  # Obtener fecha y hora actual de Guadalajara en el formato DD/MM/YYYY HH:MM
+  tz_gdl = ZoneInfo("America/Mexico_City")
+  ahora_gdl = datetime.now(tz_gdl)
+  prog_val = ahora_gdl.strftime("%d/%m/%Y %H:%M")
+
+  # Validación previa en la base de datos general (Dashboard)
+  df_dash_val = cargar_datos_dashboard()
+  existe_en_sistema = False
+
+  if df_dash_val is not None and not df_dash_val.empty:
+    # Normalizar nombres de columnas del dashboard para buscar con mayor flexibilidad
+    df_dash_val.columns = [str(c).strip().upper() for c in df_dash_val.columns]
+    columnas_posibles = [
+        "NÚMERO DE PEDIDO",
+        "NUMERO DE PEDIDO",
+        "PEDIDO",
+        "FACTURA",
+        "FOLIO",
+        "DOCNUM",
+    ]
+
+    for col_p in columnas_posibles:
+      if col_p in df_dash_val.columns:
+        # Convertir toda la columna a string, quitar espacios y limpiar '.0' si aplica
+        serie_limpia = (
+            df_dash_val[col_p]
+            .astype(str)
+            .str.strip()
+            .str.replace(r"\.0$", "", regex=True)
+        )
+        if factura_scans in serie_limpia.values:
+          existe_en_sistema = True
+          break
+
+  if not existe_en_sistema:
+    return (
+        False,
+        f"❌ La factura {factura_scans} no existe en la base de datos general.",
+    )
+
+  # Verificar si ya está agregado en el lote actual pendiente de sincronizar
+  for item in st.session_state.lote_escaneos_pendientes:
+    if item["factura"] == factura_scans:
+      return (
+          False,
+          f"⚠️ La factura {factura_scans} ya está en el lote pendiente de"
+          " sincronización.",
+      )
+
+  # Agregar al lote temporal
+  st.session_state.lote_escaneos_pendientes.append(
+      {
+          "factura": factura_scans,
+          "fecha_envio": prog_val,
+          "qr_completo": texto_qr,
+          "hora": ahora_gdl.strftime("%H:%M:%S"),
+      }
+  )
+
+  return True, f"✅ Factura {factura_scans} agregada al lote temporal."
 
 
 def sincronizar_lote_con_github():
