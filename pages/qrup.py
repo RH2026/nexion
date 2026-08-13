@@ -239,7 +239,7 @@ if "lote_escaneos_pendientes" not in st.session_state:
 def agregar_escaneo_al_lote(texto_qr):
   """Agrega el QR escaneado al lote temporal en memoria después de validar
 
-  que tenga el formato correcto y exista en el sistema, sin tocar GitHub todavía.
+  que la factura exista en envios.csv, sin tocar GitHub todavía.
   """
   match_factura = re.search(r"FACTURA:\s*([^|\n]+)", texto_qr, re.IGNORECASE)
 
@@ -250,48 +250,61 @@ def agregar_escaneo_al_lote(texto_qr):
     )
 
   factura_scans = str(match_factura.group(1)).strip()
-  # Limpiar posible punto decimal si pandas leyó el número como flotante
   if factura_scans.endswith(".0"):
     factura_scans = factura_scans[:-2]
 
-  # Obtener fecha y hora actual de Guadalajara en el formato DD/MM/YYYY HH:MM
+  # Obtener fecha y hora actual de Guadalajara
   tz_gdl = ZoneInfo("America/Mexico_City")
   ahora_gdl = datetime.now(tz_gdl)
   prog_val = ahora_gdl.strftime("%d/%m/%Y %H:%M")
 
-  # Validación previa en la base de datos general (Dashboard)
-  df_dash_val = cargar_datos_dashboard()
+  # Descargar envios.csv directamente desde GitHub para validar la existencia
+  TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+  REPO_NAME = "RH2026/nexion"
+  FILE_PATH = "envios.csv"
+
   existe_en_sistema = False
 
-  if df_dash_val is not None and not df_dash_val.empty:
-    # Normalizar nombres de columnas del dashboard para buscar con mayor flexibilidad
-    df_dash_val.columns = [str(c).strip().upper() for c in df_dash_val.columns]
-    columnas_posibles = [
-        "NÚMERO DE PEDIDO",
-        "NUMERO DE PEDIDO",
-        "PEDIDO",
-        "FACTURA",
-        "FOLIO",
-        "DOCNUM",
-    ]
+  try:
+    headers = {
+        "Authorization": f"Bearer {TOKEN}" if TOKEN else "",
+        "Accept": "application/vnd.github+json",
+        "Cache-Control": "no-cache",
+    }
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+    r = requests.get(url, headers=headers)
 
-    for col_p in columnas_posibles:
-      if col_p in df_dash_val.columns:
-        # Convertir toda la columna a string, quitar espacios y limpiar '.0' si aplica
-        serie_limpia = (
-            df_dash_val[col_p]
-            .astype(str)
-            .str.strip()
-            .str.replace(r"\.0$", "", regex=True)
-        )
-        if factura_scans in serie_limpia.values:
-          existe_en_sistema = True
-          break
+    if r.status_code == 200:
+      file_info = r.json()
+      content_decoded = base64.b64decode(file_info["content"]).decode(
+          "utf-8-sig"
+      )
+      df_envios_val = pd.read_csv(io.StringIO(content_decoded))
+      df_envios_val.columns = [str(c).strip().upper() for c in df_envios_val.columns]
+
+      # Buscar en las columnas comunes de facturas/folios de envios.csv
+      columnas_posibles = ["FACTURA", "FOLIO", "DOCNUM", "NÚMERO DE PEDIDO", "PEDIDO"]
+
+      for col_p in columnas_posibles:
+        if col_p in df_envios_val.columns:
+          serie_limpia = (
+              df_envios_val[col_p]
+              .astype(str)
+              .str.strip()
+              .str.replace(r"\.0$", "", regex=True)
+          )
+          if factura_scans in serie_limpia.values:
+            existe_en_sistema = True
+            break
+    else:
+      return False, "❌ No se pudo conectar con envios.csv en GitHub para validar."
+  except Exception as e:
+    return False, f"Error al validar en envios.csv: {str(e)}"
 
   if not existe_en_sistema:
     return (
         False,
-        f"❌ La factura {factura_scans} no existe en la base de datos general.",
+        f"❌ La factura {factura_scans} no existe en el archivo envios.csv.",
     )
 
   # Verificar si ya está agregado en el lote actual pendiente de sincronizar
