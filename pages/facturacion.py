@@ -521,7 +521,7 @@ def main():
         modo_operacion = "FLUJO DE CYNTHIA (CARGA Y FILTRADO)"
 
     if "FLUJO DE CYNTHIA" in modo_operacion:
-        st.markdown("<p style='font-size: 12px; font-weight: 600;'>Panel de Carga y Filtrado de Facturación (Cynthia)</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 12px; font-weight: 600;'></p>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader("Subir archivo ERP completo en Excel o CSV", type=["xlsx", "csv"], key="erp_file_uploader_cynthia")
 
         if uploaded_file is not None:
