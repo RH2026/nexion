@@ -531,9 +531,10 @@ def main():
                 col_folio = next((c for c in df.columns if "factura" in c.lower() or "docnum" in c.lower() or "folio" in c.lower()), df.columns[0])
                 df[col_folio] = pd.to_numeric(df[col_folio], errors="coerce")
 
-                # Diseño secuencial vertical: Paso 1 arriba, Paso 2 abajo
+                # PASO 1: SELECCIÓN Y GUARDADO EN FACTURACION.CSV
                 st.markdown("<p><b>PASO 1: SELECCIÓN Y GUARDADO EN FACTURACION.CSV</b></p>", unsafe_allow_html=True)
                 
+                # 3 controles de selección arriba en línea
                 col_i1, col_i2, col_i3 = st.columns(3, gap="medium")
                 with col_i1:
                     folios_manuales = st.text_input("Folios específicos (separados por coma):", placeholder="Ej: 1001, 1002, 1005")
@@ -549,51 +550,21 @@ def main():
                 else:
                     df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
 
-                st.markdown("---")
+                st.markdown("")
 
-                # LOS 3 BOTONES EN LÍNEA EXACTA COMO LO PEDISTE
-                col_b1, col_b2, col_b3 = st.columns(3, gap="medium")
-                
-                with col_b1:
-                    if st.button("GUARDAR EN FACTURACION.CSV (SIN DUPLICADOS)", type="primary", use_container_width=True):
-                        if df_rango.empty:
-                            st.error("El rango está vacío.")
-                        else:
-                            df_a_guardar = df_rango.rename(columns={col_folio: "Factura"})
-                            exito = guardar_facturacion_github(df_a_guardar)
-                            if exito:
-                                st.success("¡Rango procesado! Se omitieron facturas repetidas y se guardó en `facturacion.csv` con éxito.")
-
-                with col_b2:
-                    nombre_archivo_custom = st.text_input("Nombre del archivo (ej. lote_matutino.csv):", value="lote_rigoberto.csv", label_visibility="collapsed")
-                    if st.button("SUBIR A GITHUB", type="primary", use_container_width=True):
-                        if not df_rango.empty:
-                            df_unico_val = df_rango.drop_duplicates(subset=[col_folio]).copy()
-                            ok_gh = guardar_archivo_rigoberto_github(df_unico_val, nombre_archivo_custom.strip())
-                            if ok_gh:
-                                st.success(f"¡Archivo guardado con éxito en GitHub!")
-                            else:
-                                st.error("Error al guardar en GitHub.")
-                        else:
-                            st.error("Rango vacío.")
-
-                with col_b3:
-                    if not df_rango.empty:
-                        df_unico_dl = df_rango.drop_duplicates(subset=[col_folio]).copy()
-                        towrite = io.BytesIO()
-                        df_unico_dl.to_excel(towrite, index=False, engine="openpyxl")
-                        st.download_button(
-                            label="📥 DESCARGAR LOCAL",
-                            data=towrite.getvalue(),
-                            file_name=nombre_archivo_custom.strip().replace(".csv", ".xlsx"),
-                            use_container_width=True
-                        )
+                # Botón grande de guardar en facturacion.csv abarcando todo el ancho
+                if st.button("GUARDAR EN FACTURACION.CSV (SIN DUPLICADOS)", type="primary", use_container_width=True):
+                    if df_rango.empty:
+                        st.error("El rango está vacío.")
                     else:
-                        st.button("📥 DESCARGAR LOCAL", disabled=True, use_container_width=True)
+                        df_a_guardar = df_rango.rename(columns={col_folio: "Factura"})
+                        exito = guardar_facturacion_github(df_a_guardar)
+                        if exito:
+                            st.success("¡Rango procesado! Se omitieron facturas repetidas y se guardó en `facturacion.csv` con éxito.")
 
                 st.markdown("---")
 
-                # PASO 2 Y TABLA ABAJO
+                # PASO 2: SELECCIÓN DE FACTURAS (TABLA ABAJO)
                 st.markdown("<p><b>PASO 2: SELECCIÓN DE FACTURAS (UNA PARTIDA POR FACTURA)</b></p>", unsafe_allow_html=True)
                 if not df_rango.empty:
                     df_unico_factura = df_rango.drop_duplicates(subset=[col_folio]).copy()
@@ -609,6 +580,30 @@ def main():
 
                     st.markdown("---")
                     st.markdown("<p style='font-size: 16px; font-weight: 400;'>GUARDAR ARCHIVO PERSONALIZADO EN GITHUB PARA RIGOBERTO</p>", unsafe_allow_html=True)
+                    
+                    # Nombre del archivo y los dos botones abajo de la tabla
+                    nombre_archivo_custom = st.text_input("Nombre del archivo (ej. lote_matutino.csv):", value="lote_rigoberto.csv")
+
+                    col_btn1, col_btn2 = st.columns(2, gap="medium")
+                    with col_btn1:
+                        if st.button("SUBIR A GITHUB", type="primary", use_container_width=True):
+                            if not nombre_archivo_custom.strip():
+                                st.error("Ingresa un nombre de archivo válido.")
+                            else:
+                                ok_gh = guardar_archivo_rigoberto_github(df_filtrado_final, nombre_archivo_custom.strip())
+                                if ok_gh:
+                                    st.success(f"¡Archivo '{nombre_archivo_custom.strip()}' guardado con éxito en GitHub!")
+                                else:
+                                    st.error("Error al guardar en GitHub.")
+                    with col_btn2:
+                        towrite = io.BytesIO()
+                        df_filtrado_final.to_excel(towrite, index=False, engine="openpyxl")
+                        st.download_button(
+                            label="📥 DESCARGAR LOCAL",
+                            data=towrite.getvalue(),
+                            file_name=nombre_archivo_custom.strip().replace(".csv", ".xlsx"),
+                            use_container_width=True
+                        )
 
             except Exception as e:
                 st.error(f"Error procesando el archivo ERP: {e}")
