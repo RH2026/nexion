@@ -16,7 +16,7 @@ import streamlit as st
 import pytz
 from auth import exigir_autenticacion
 
-exigir_autenticacion("asignacionfletera")
+exigir_autenticacion("facturacion")
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
@@ -154,7 +154,7 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/asignacionfletera.py"
+    st.session_state.pagina_destino = "pages/facturacion.py"
     st.switch_page("pages/log.py")
 
 def verificar_permiso_pagina(modulo, submodulo=None):
@@ -195,7 +195,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         col_regresar_m, col_vacia_m = st.columns([1.5, 4])
         with col_regresar_m:
             if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
-                st.switch_page("pages/asignacionfletera.py")
+                st.switch_page("pages/facturacion.py")
         st.stop()
         
     if submodulo and not permisos.get(submodulo.upper(), False):
@@ -231,10 +231,10 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         col_regresar_s, col_vacia_s = st.columns([1.5, 4])
         with col_regresar_s:
             if st.button("REGRESAR AL INICIO", key="btn_regresar_submodulo", use_container_width=True):
-                st.switch_page("pages/asignacionfletera.py")
+                st.switch_page("pages/facturacion.py")
         st.stop()
 
-verificar_permiso_pagina("CENTRO DE DATOS", "ASIGNAR FLETERA")
+verificar_permiso_pagina("CENTRO DE DATOS", "FACTURACIÓN")
 
 
 # ==========================================
@@ -444,7 +444,7 @@ def marcar_pdf_digital(pdf_file, fletera_val, factura_val, x_pos, y_pos):
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "CENTRO DE DATOS"
 if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "ASIGNAR FLETERA"
+    st.session_state.menu_sub = "FACTURACIÓN"
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 if "resultado_busqueda" not in st.session_state:
@@ -686,7 +686,7 @@ with header_zone:
         
             if permisos.get("CENTRO DE DATOS", False):
                 with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
-                    opciones_hub_posibles = ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]
+                    opciones_hub_posibles = ["FACTURACIÓN", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]
                     opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False)]
                     for s in opciones_hub:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -694,8 +694,8 @@ with header_zone:
                             st.session_state.menu_main = "CENTRO DE DATOS"
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
-                            if s == "ASIGNAR FLETERA":
-                                st.switch_page("pages/asignacionfletera.py")
+                            if s == "FACTURACIÓN":
+                                st.switch_page("pages/facturacion.py")
                             else:
                                 st.rerun()
         
