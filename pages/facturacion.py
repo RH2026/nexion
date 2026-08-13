@@ -199,7 +199,7 @@ def calcular_fecha_programacion():
 # ==========================================
 # 3.1 GESTIÓN DE ARCHIVOS GITHUB (FACTURACIÓN SIN DUPLICADOS)
 # ==========================================
-def guardar_facturacion_github(df_nuevos, nombre_bloque=""):
+def guardar_facturacion_github(df_nuevos):
     """
     Descarga facturacion.csv, filtra las facturas que YA EXISTEN para que no se vuelvan
     a subir (evita duplicados con registros previos), concatena las nuevas y sube a GitHub.
@@ -219,9 +219,6 @@ def guardar_facturacion_github(df_nuevos, nombre_bloque=""):
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
     
     df_procesado = df_nuevos.copy()
-    if nombre_bloque:
-        df_procesado["LOTE_CREACION"] = nombre_bloque
-    
     r = requests.get(url, headers=headers)
     df_existente = pd.DataFrame()
     sha = None
@@ -254,7 +251,7 @@ def guardar_facturacion_github(df_nuevos, nombre_bloque=""):
     content_base64 = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
     
     data = {
-        "message": f"Actualización limpia de facturacion.csv - Bloque: {nombre_bloque or 'General'}",
+        "message": "Actualización limpia de facturacion.csv sin duplicados",
         "content": content_base64,
         "branch": "main"
     }
@@ -489,35 +486,33 @@ def main():
                         df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
 
                     st.markdown("---")
-                    nombre_lote_input = st.text_input("Nombre / Identificador del Lote:", placeholder="Ej: LOTE_MATUTINO")
-                    
                     if st.button("GUARDAR EN FACTURACION.CSV (SIN DUPLICADOS)", type="primary", use_container_width=True):
-                        if not nombre_lote_input.strip():
-                            st.error("Ingresa un nombre para el lote.")
-                        elif df_rango.empty:
+                        if df_rango.empty:
                             st.error("El rango está vacío.")
                         else:
                             df_a_guardar = df_rango.rename(columns={col_folio: "Factura"})
-                            exito = guardar_facturacion_github(df_a_guardar, nombre_lote_input.strip())
+                            exito = guardar_facturacion_github(df_a_guardar)
                             if exito:
-                                st.success(f"¡Lote '{nombre_lote_input.strip()}' procesado! Se omitieron facturas repetidas y se guardó en `facturacion.csv`.")
+                                st.success("¡Rango procesado! Se omitieron facturas repetidas y se guardó en `facturacion.csv` con éxito.")
 
                 with col_right:
-                    st.markdown("<p><b>PASO 2: FILTRAR LÍNEAS NO DESEADAS PARA EL ARCHIVO FINAL</b></p>", unsafe_allow_html=True)
+                    st.markdown("<p><b>PASO 2: SELECCIÓN DE FACTURAS (UNA PARTIDA POR FACTURA)</b></p>", unsafe_allow_html=True)
                     if not df_rango.empty:
-                        info = df_rango.copy()
-                        info.insert(0, "Incluir_Linea", True)
-                        edited_df = st.data_editor(info, hide_index=True, use_container_width=True, key="ed_v_cynthia")
+                        # Agrupar para que aparezca solo una partida por factura
+                        df_unico_factura = df_rango.drop_duplicates(subset=[col_folio]).copy()
+                        df_unico_factura.insert(0, "Incluir_Factura", True)
+                        
+                        edited_df = st.data_editor(df_unico_factura, hide_index=True, use_container_width=True, key="ed_v_cynthia")
                     else:
                         st.warning("Rango vacío")
                         edited_df = pd.DataFrame()
 
                 if not df_rango.empty and not edited_df.empty:
-                    df_filtrado_final = edited_df[edited_df["Incluir_Linea"] == True].drop(columns=["Incluir_Linea"])
+                    df_filtrado_final = edited_df[edited_df["Incluir_Factura"] == True].drop(columns=["Incluir_Factura"])
 
                     st.markdown("---")
-                    st.markdown("#### 💾 Guardar / Descargar Archivo Personalizado para Rigoberto")
-                    nombre_archivo_custom = st.text_input("Nombre del archivo que se generará:", value=f"{nombre_lote_input.strip() or 'Archivo_Cynthia'}.xlsx")
+                    st.markdown("#### 💾 Guardar Archivo Personalizado para Rigoberto")
+                    nombre_archivo_custom = st.text_input("Nombre del archivo para Rigoberto:", value="Archivo_Rigoberto.xlsx")
 
                     towrite = io.BytesIO()
                     df_filtrado_final.to_excel(towrite, index=False, engine="openpyxl")
@@ -535,21 +530,16 @@ def main():
     else:
         st.markdown("### ⚙️ Panel de Motor de Asignación y Sellado (Rigoberto)")
         
-        df_fact_historico = cargar_facturacion_github()
-        if df_fact_historico.empty:
-            st.warning("No hay registros en `facturacion.csv` todavía.")
-        else:
-            st.success(f"Se cargaron {len(df_fact_historico)} registros acumulados desde `facturacion.csv`.")
+        uploaded_rigoberto = st.file_uploader("Subir archivo preparado por Cynthia", type=["xlsx", "csv"], key="uploader_rigoberto")
+        
+        if uploaded_rigoberto is not None:
+            df_trabajo = pd.read_csv(uploaded_rigoberto, sep=None, engine="python") if uploaded_rigoberto.name.endswith(".csv") else pd.read_excel(uploaded_rigoberto)
+            df_trabajo.columns = [str(c).strip().replace("\n", "") for c in df_trabajo.columns]
             
-            lotes_disponibles = []
-            if "LOTE_CREACION" in df_fact_historico.columns:
-                lotes_disponibles = [str(x) for x in df_fact_historico["LOTE_CREACION"].dropna().unique() if str(x).strip()]
-            
-            if lotes_disponibles:
-                lote_seleccionado = st.selectbox("Seleccionar lote guardado:", lotes_disponibles)
-                df_trabajo = df_fact_historico[df_fact_historico["LOTE_CREACION"].astype(str) == lote_seleccionado].copy()
-            else:
-                df_trabajo = df_fact_historico.copy()
+            # Asegurar que exista columna Factura
+            if "Factura" not in df_trabajo.columns:
+                col_f = next((c for c in df_trabajo.columns if "factura" in c.lower() or "docnum" in c.lower() or "folio" in c.lower()), df_trabajo.columns[0])
+                df_trabajo = df_trabajo.rename(columns={col_f: "Factura"})
 
             st.dataframe(df_trabajo, use_container_width=True)
 
@@ -599,12 +589,28 @@ def main():
                 actualizar_historial_envios_github(p_editado)
                 st.toast("¡Sincronizado en envios.csv!", icon="✅")
 
+            st.write("")
+            output_xlsx = io.BytesIO()
+            p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
+            st.download_button(
+                label="DESCARGAR ANÁLISIS FINAL", 
+                data=output_xlsx.getvalue(), 
+                file_name="Analisis_Final.xlsx", 
+                use_container_width=True,
+                type="primary" 
+            )
+
             with st.expander("SISTEMA DE SELLADO", expanded=False):
                 cx, cy = st.columns(2)
                 ax = cx.slider("X", 0, 612, 399)
                 ay = cy.slider("Y", 0, 792, 760)
                 
-                st.download_button("GENERAR SELLOS NORMAL", data=generar_sellos_fisicos(p_editado, ax, ay), file_name="Sellos.pdf", use_container_width=True, type="primary")
+                s1, s2 = st.columns(2)
+                with s1:
+                    st.download_button("GENERAR SELLOS NORMAL", data=generar_sellos_fisicos(p_editado, ax, ay), file_name="Sellos_Normales.pdf", use_container_width=True, type="primary")
+                with s2:
+                    p_invertido = p_editado.iloc[::-1].reset_index(drop=True)
+                    st.download_button("GENERAR SELLOS MODO INVERSO", data=generar_sellos_fisicos(p_invertido, ax, ay), file_name="Sellos_Inversos.pdf", use_container_width=True, type="primary")
 
 
 if __name__ == "__main__":
