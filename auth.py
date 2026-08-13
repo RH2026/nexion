@@ -11,9 +11,9 @@ PAGINAS = {
     "entregas_agc": "pages/entregas_agc.py",
     "envios": "pages/envios.py",
     "etiquetas": "pages/etiquetas.py",
-    "indicadores": "pages/indicadores.py",
+    "dashboard": "dashboard.py",
     "locales": "pages/locales.py",
-    "log": "pages/log.py",
+    "log": "log.py",
     "muestras": "pages/muestras.py",
     "picking": "pages/picking.py",
     "qrup": "pages/qrup.py",
@@ -148,13 +148,13 @@ def ir_a_login(pagina_actual):
 
     # --------------------------------------------------------
     # Si la página no existe en nuestro mapa,
-    # usamos indicadores como último recurso.
+    # usamos dashboard como último recurso.
     # --------------------------------------------------------
 
     if not destino_guardado:
 
         guardar_destino(
-            "indicadores"
+            "dashboard"
         )
 
 
@@ -162,11 +162,11 @@ def ir_a_login(pagina_actual):
     # IR AL LOGIN
     #
     # IMPORTANTE:
-    # log.py está dentro de /pages
+    # log.py ahora está en la raíz
     # --------------------------------------------------------
 
     st.switch_page(
-        "pages/log.py"
+        "log.py"
     )
 
 
