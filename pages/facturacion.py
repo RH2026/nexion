@@ -158,10 +158,11 @@ if not st.session_state.get("autenticado", False):
     st.switch_page("pages/log.py")
 
 def verificar_permiso_pagina(modulo, submodulo=None):
-    permisos = st.session_state.get("permisos", {})
-    if st.session_state.get("usuario_activo", "").upper() == "RIGOBERTO":
+    usuario_actual = st.session_state.get("usuario_activo", "").upper()
+    if usuario_actual == "RIGOBERTO":
         return True
-        
+    
+    permisos = st.session_state.get("permisos", {})
     if not permisos.get(modulo.upper(), False):
         st.markdown(
             f"""
@@ -288,18 +289,18 @@ def calcular_fecha_programacion():
     else:
         return ahora_gdl.strftime("%d/%m/%Y")
 
+
 # ==========================================
-# 3.1 FUNCIÓN PARA ACUMULAR, ELIMINAR DUPLICADOS Y AÑADIR COLUMNAS VACÍAS
+# 3.1 FUNCIONES DE GESTIÓN DE FACTURACIÓN (CYNTHIA / GITHUB)
 # ==========================================
-def actualizar_historial_envios_github(df_nuevos):
+def guardar_facturacion_github(df_nuevos, nombre_bloque=""):
     """
-    Descarga envios.csv de GitHub, le añade columnas vacías (FECHA DE ENVIO, ESTATUS, FECHA ACTUAL, SERVICIO),
-    concatena los nuevos datos, elimina duplicados por Factura (conservando el más reciente)
-    y lo vuelve a subir. Si no existe, lo crea desde cero.
+    Descarga facturacion.csv de GitHub, concatena los nuevos datos evitando duplicados por Factura,
+    y vuelve a subirlo. Si no existe, lo crea desde cero.
     """
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
-    FILE_PATH = "envios.csv"
+    FILE_PATH = "facturacion.csv"
     
     if not TOKEN:
         st.error("Falta configurar el GITHUB_TOKEN en los Secrets de Streamlit.")
@@ -313,17 +314,90 @@ def actualizar_historial_envios_github(df_nuevos):
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
     
     df_procesado = df_nuevos.copy()
+    if nombre_bloque:
+        df_procesado["LOTE_CREACION"] = nombre_bloque
+    
+    r = requests.get(url, headers=headers)
+    df_existente = pd.DataFrame()
+    sha = None
+    
+    if r.status_code == 200:
+        file_info = r.json()
+        sha = file_info["sha"]
+        content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
+        df_existente = pd.read_csv(io.StringIO(content_decoded))
+    
+    if not df_existente.empty:
+        df_combinado = pd.concat([df_existente, df_procesado], ignore_index=True)
+    else:
+        df_combinado = df_procesado
+
+    # Evitar duplicados por Factura, conservando el más reciente
+    col_factura_key = next((c for c in df_combinado.columns if "FACTURA" in c.upper() or c.upper() == "FACTURA"), None)
+    if col_factura_key:
+        df_combinado = df_combinado.drop_duplicates(subset=[col_factura_key], keep="last")
+
+    csv_buffer = io.StringIO()
+    df_combinado.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
+    csv_str = csv_buffer.getvalue()
+    content_base64 = base64.b64encode(csv_str.encode("utf-8")).decode("utf-8")
+    
+    data = {
+        "message": f"Actualización de facturacion.csv - Bloque: {nombre_bloque or 'General'}",
+        "content": content_base64,
+        "branch": "main"
+    }
+    if sha:
+        data["sha"] = sha 
+
+    put_response = requests.put(url, headers=headers, json=data)
+    
+    if put_response.status_code in [200, 201]:
+        return True
+    else:
+        st.error(f"Error al actualizar facturacion.csv en GitHub: {put_response.json().get('message', 'Desconocido')}")
+        return False
+
+
+@st.cache_data(ttl=30)
+def cargar_facturacion_github():
+    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+    REPO_NAME = "RH2026/nexion"
+    FILE_PATH = "facturacion.csv"
+    headers = {"Authorization": f"Bearer {TOKEN}", "Accept": "application/vnd.github+json"} if TOKEN else {}
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+    try:
+        r = requests.get(url, headers=headers)
+        if r.status_code == 200:
+            file_info = r.json()
+            content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
+            return pd.read_csv(io.StringIO(content_decoded))
+    except Exception:
+        pass
+    return pd.DataFrame()
+
+
+def actualizar_historial_envios_github(df_nuevos):
+    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+    REPO_NAME = "RH2026/nexion"
+    FILE_PATH = "envios.csv"
+    
+    if not TOKEN:
+        st.error("Falta configurar el GITHUB_TOKEN en los Secrets de Streamlit.")
+        return False
+
+    headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+    
+    df_procesado = df_nuevos.copy()
     if "FECHA DE PROGRAMACION" not in df_procesado.columns:
-        fecha_prog = calcular_fecha_programacion()
-        df_procesado["FECHA DE PROGRAMACION"] = fecha_prog
-    if "FECHA DE ENVIO" not in df_procesado.columns:
-        df_procesado["FECHA DE ENVIO"] = ""
-    if "ESTATUS" not in df_procesado.columns:
-        df_procesado["ESTATUS"] = ""
-    if "FECHA ACTUAL" not in df_procesado.columns:
-        df_procesado["FECHA ACTUAL"] = ""
-    if "SERVICIO" not in df_procesado.columns:
-        df_procesado["SERVICIO"] = ""
+        df_procesado["FECHA DE PROGRAMACION"] = calcular_fecha_programacion()
+    for col in ["FECHA DE ENVIO", "ESTATUS", "FECHA ACTUAL", "SERVICIO"]:
+        if col not in df_procesado.columns:
+            df_procesado[col] = ""
 
     r = requests.get(url, headers=headers)
     df_existente = pd.DataFrame()
@@ -339,7 +413,6 @@ def actualizar_historial_envios_github(df_nuevos):
         for col in ["FECHA DE PROGRAMACION", "FECHA DE ENVIO", "ESTATUS", "FECHA ACTUAL", "SERVICIO"]:
             if col not in df_existente.columns:
                 df_existente[col] = ""
-                
         df_combinado = pd.concat([df_existente, df_procesado], ignore_index=True)
     else:
         df_combinado = df_procesado
@@ -349,11 +422,10 @@ def actualizar_historial_envios_github(df_nuevos):
 
     csv_buffer = io.StringIO()
     df_combinado.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
-    csv_str = csv_buffer.getvalue()
-    content_base64 = base64.b64encode(csv_str.encode("utf-8")).decode("utf-8")
+    content_base64 = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
     
     data = {
-        "message": "Actualización automática, fecha de programación y limpieza de duplicados en envios.csv",
+        "message": "Actualización automática en envios.csv",
         "content": content_base64,
         "branch": "main"
     }
@@ -361,12 +433,7 @@ def actualizar_historial_envios_github(df_nuevos):
         data["sha"] = sha 
 
     put_response = requests.put(url, headers=headers, json=data)
-    
-    if put_response.status_code in [200, 201]:
-        return True
-    else:
-        st.error(f"Error al actualizar envios.csv en GitHub: {put_response.json().get('message', 'Desconocido')}")
-        return False
+    return put_response.status_code in [200, 201]
 
 
 # ==========================================
@@ -386,7 +453,6 @@ def crear_imagen_qr(contenido_qr):
 def generar_sellos_fisicos(df_datos, x_pos, y_pos):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(612, 792)) 
-    
     tz_gdl = pytz.timezone("America/Mexico_City")
     fecha_programacion = datetime.now(tz_gdl).strftime("%d/%m/%Y %H:%M")
     
@@ -400,7 +466,6 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
         texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
         qr_io = crear_imagen_qr(texto_qr)
         c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 37, width=55, height=55)
-        
         c.showPage()
     c.save()
     buffer.seek(0)
@@ -410,26 +475,22 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
 def marcar_pdf_digital(pdf_file, fletera_val, factura_val, x_pos, y_pos):
     reader = PdfReader(pdf_file)
     writer = PdfWriter()
-    
     tz_gdl = pytz.timezone("America/Mexico_City")
     fecha_programacion = datetime.now(tz_gdl).strftime("%d/%m/%Y %H:%M")
     
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=letter) 
-    
     can.setFont("Helvetica-Bold", 12)
     can.drawString(x_pos, y_pos, f"{fletera_val}")
     
     texto_qr = f"FLETERA: {fletera_val} | FACTURA: {factura_val} | PROG: {fecha_programacion}"
     qr_io = crear_imagen_qr(texto_qr)
     can.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 14, width=35, height=35)
-    
     can.save()
     packet.seek(0)
     
     overlay_reader = PdfReader(packet)
     overlay_page = overlay_reader.pages[0]
-    
     for page in reader.pages:
         page.merge_page(overlay_page)
         writer.add_page(page)
@@ -521,13 +582,7 @@ with header_zone:
 
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
-                cols_op = [
-                    "NÚMERO DE GUÍA",
-                    "NÚMERO DE PEDIDO",
-                    "NO CLIENTE",
-                    "NOMBRE DEL CLIENTE",
-                    "DESTINO",
-                ]
+                cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
                 cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
                 if cols_op_disp:
                     mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
@@ -539,15 +594,12 @@ with header_zone:
             try:
                 df_t1_temp = pd.read_excel("T1.xlsx") 
                 df_t1_temp.columns = df_t1_temp.columns.str.strip().str.upper()
-                
                 cols_t1 = [c for c in ["OBSERVACION 1", "TALON", "DESTINATARIO", "DESTINO"] if c in df_t1_temp.columns]
-                
                 if cols_t1:
                     mask_t1 = df_t1_temp[cols_t1].astype(str).apply(
                         lambda x: x.str.contains(query, case=False, na=False)
                     ).any(axis=1)
                     match_t1 = df_t1_temp[mask_t1].copy()
-                    
                     if not match_t1.empty:
                         match_t1 = match_t1.rename(columns={
                             "TALON": "NÚMERO DE GUÍA",
@@ -621,17 +673,17 @@ with header_zone:
                 unsafe_allow_html=True,
             )
         
-            if permisos.get("DASHBOARD", False):
+            if permisos.get("DASHBOARD", False) or usuario.upper() == "RIGOBERTO":
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
                     st.switch_page("pages/indicadores.py")
         
-            if permisos.get("SEGUIMIENTO", False):
+            if permisos.get("SEGUIMIENTO", False) or usuario.upper() == "RIGOBERTO":
                 with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
                     opciones_seg_posibles = ["ALERTAS", "GANTT", "QUEJAS"]
-                    opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
+                    opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
                     for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
@@ -640,10 +692,10 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-            if permisos.get("ENTREGAS", False):
+            if permisos.get("ENTREGAS", False) or usuario.upper() == "RIGOBERTO":
                 with st.expander("ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")):
                     opciones_ent_posibles = ["AGC", "AMAZON", "BARCELO", "NACIONAL"]
-                    opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False)]
+                    opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
                     for s in opciones_ent:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_ent_{s}2"):
@@ -657,10 +709,10 @@ with header_zone:
                             else:
                                 st.rerun()
         
-            if permisos.get("REPORTES", False):
+            if permisos.get("REPORTES", False) or usuario.upper() == "RIGOBERTO":
                 with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                     opciones_rep_posibles = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
-                    opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False)]
+                    opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
@@ -672,10 +724,10 @@ with header_zone:
                             else:
                                 st.rerun()
         
-            if permisos.get("FORMATOS", False):
+            if permisos.get("FORMATOS", False) or usuario.upper() == "RIGOBERTO":
                 with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
                     opciones_for_posibles = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
-                    opciones_for = [s for s in opciones_for_posibles if permisos.get(s, False)]
+                    opciones_for = [s for s in opciones_for_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
                     for s in opciones_for:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
@@ -684,10 +736,10 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
         
-            if permisos.get("CENTRO DE DATOS", False):
+            if permisos.get("CENTRO DE DATOS", False) or usuario.upper() == "RIGOBERTO":
                 with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
                     opciones_hub_posibles = ["FACTURACIÓN", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]
-                    opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False)]
+                    opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
                     for s in opciones_hub:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
@@ -699,10 +751,10 @@ with header_zone:
                             else:
                                 st.rerun()
         
-            if permisos.get("FINANZAS", False):
+            if permisos.get("FINANZAS", False) or usuario.upper() == "RIGOBERTO":
                 with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
                     opciones_fin_posibles = ["WALLET", "CAJA CHICA", "GASTOS"]
-                    opciones_fin = [s for s in opciones_fin_posibles if permisos.get(s, False)]
+                    opciones_fin = [s for s in opciones_fin_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
                     for s in opciones_fin:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
@@ -711,10 +763,10 @@ with header_zone:
                             st.session_state.busqueda_activa = False
                             st.rerun()
 
-            if permisos.get("ENFOQUE", False):
+            if permisos.get("ENFOQUE", False) or usuario.upper() == "RIGOBERTO":
                 with st.expander("ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
                     opciones_enf_posibles = ["MORENO", "VAZQUEZ", "MIGUEL"]
-                    opciones_enf = [s for s in opciones_enf_posibles if permisos.get(s, False)]
+                    opciones_enf = [s for s in opciones_enf_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
                     for s in opciones_enf:
                         label = f"» {s}" if st.session_state.get("menu_sub") == s else s
                         if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
@@ -801,304 +853,345 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (MÓDULO DE ASIGNACIÓN)
+# 5. INTERFAZ PRINCIPAL (MÓDULO DE FACTURACIÓN Y ASIGNACIÓN)
 # ==========================================
 def main():
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
     
+    usuario_actual = st.session_state.get("usuario_activo", "").upper()
+    es_rigoberto = (usuario_actual == "RIGOBERTO")
+
     st.markdown(
-        f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T PREPARATION MODULE</p>",
+        f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T FACTURATION & PREPARATION MODULE</p>",
         unsafe_allow_html=True,
     )
 
-    uploaded_file = st.file_uploader(
-        "Subir archivo ERP",
-        type=["xlsx", "csv"],
-        label_visibility="collapsed",
-        key="erp_file_uploader",
-    )
+    # Si es Rigoberto (o para pruebas totales), puede alternar o ver ambas secciones
+    if es_rigoberto:
+        modo_operacion = st.radio("SELECCIONAR MODO DE TRABAJO:", ["FLUJO DE CYNTHIA (CARGA Y FILTRADO)", "MOTOR DE ASIGNACIÓN Y SELLADO (RIGOBERTO)"], horizontal=True)
+    else:
+        modo_operacion = "FLUJO DE CYNTHIA (CARGA Y FILTRADO)"
 
-    if uploaded_file is not None:
-        try:
-            df = (
-                pd.read_csv(uploaded_file, sep=None, engine="python")
-                if uploaded_file.name.endswith(".csv")
-                else pd.read_excel(uploaded_file)
-            )
-            df.columns = [str(c).strip().replace("\n", "") for c in df.columns]
-            col_folio = next(
-                (
-                    c
-                    for c in df.columns
-                    if "factura" in c.lower()
-                    or "docnum" in c.lower()
-                    or "folio" in c.lower()
-                ),
-                df.columns[0],
-            )
-            df[col_folio] = pd.to_numeric(df[col_folio], errors="coerce")
-
-            col_left, col_right = st.columns([1, 2], gap="large")
-
-            with col_left:
-                st.markdown("<p>FILTROS</p>", unsafe_allow_html=True)
-                folios_manuales = st.text_input(
-                    "Folios específicos (separados por coma):",
-                    placeholder="Ej: 1001, 1002, 1005",
-                )
-                serie = df[col_folio].dropna()
-                inicio = st.number_input(
-                    "Desde:", value=int(serie.min()) if not serie.empty else 0
-                )
-                final = st.number_input(
-                    "Hasta:", value=int(serie.max()) if not serie.empty else 0
-                )
-
-                if folios_manuales:
-                    lista_manual = [
-                        int(x.strip())
-                        for x in folios_manuales.split(",")
-                        if x.strip().isdigit()
-                    ]
-                    df_rango = df[df[col_folio].isin(lista_manual)].copy()
-                else:
-                    df_rango = df[
-                        (df[col_folio] >= inicio) & (df[col_folio] <= final)
-                    ].copy()
-
-            with col_right:
-                st.markdown("<p>SELECCIÓN</p>", unsafe_allow_html=True)
-                if not df_rango.empty:
-                    info = df_rango.drop_duplicates(subset=[col_folio])[[col_folio]]
-                    info.insert(0, "Incluir", True)
-                    edited_df = st.data_editor(
-                        info, hide_index=True, use_container_width=True, key="ed_v4"
-                    )
-                else:
-                    st.warning("Rango vacío")
-                    edited_df = pd.DataFrame()
-
-            if not df_rango.empty and not edited_df.empty:
-                folios_ok = edited_df[edited_df["Incluir"] == True][
-                    col_folio
-                ].tolist()
-
-                st.markdown("---")
-                if st.button(
-                    "RENDERIZAR TABLA", use_container_width=True
-                ):
-                    st.session_state.df_final_st = df_rango[
-                        df_rango[col_folio].isin(folios_ok)
-                    ]
-
-                if "df_final_st" in st.session_state:
-                    df_st = st.session_state.df_final_st
-                    st.dataframe(df_st, use_container_width=True)
-
-                    towrite = io.BytesIO()
-                    df_st.to_excel(towrite, index=False, engine="openpyxl")
-                    st.download_button(
-                        label="DESCARGAR S&T",
-                        data=towrite.getvalue(),
-                        file_name="ST_DATA.xlsx",
-                        use_container_width=True,
-                    )
-
-                    if st.button(
-                        "SMART ROUTING (MOTOR DE ASIGNACIÓN)",
-                        type="primary",
-                        use_container_width=True,
-                    ):
-                        try:
-                            df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
-                            matriz_db = obtener_matriz_github()
-
-                            col_dir_erp = next(
-                                (c for c in df_log.columns if "DIRECCION" in c.upper()), None
-                            )
-                            col_dest_matriz = (
-                                "DESTINO"
-                                if "DESTINO" in matriz_db.columns
-                                else matriz_db.columns[0]
-                            )
-                            col_flet_matriz = (
-                                "TRANSPORTE"
-                                if "TRANSPORTE" in matriz_db.columns
-                                else "FLETERA"
-                            )
-                            col_tarifa_matriz = (
-                                "PRECIO POR CAJA"
-                                if "PRECIO POR CAJA" in matriz_db.columns
-                                else "COSTO"
-                            )
-
-                            def motor_v4(row):
-                                if not col_dir_erp:
-                                    return "ERROR: COL DIRECCION", 0.0
-                                dir_limpia = limpiar_texto(row[col_dir_erp])
-                                if any(
-                                    loc in dir_limpia
-                                    for loc in [
-                                        "GDL",
-                                        "GUADALAJARA",
-                                        "ZAPOPAN",
-                                        "TLAQUEPAQUE",
-                                        "TONALA",
-                                        "TLAJOMULCO",
-                                    ]
-                                ):
-                                    return "LOCAL", 0.0
-                                for _, fila in matriz_db.iterrows():
-                                    dest_key = limpiar_texto(fila[col_dest_matriz])
-                                    if dest_key and (dest_key in dir_limpia):
-                                        flet = fila.get(col_flet_matriz, "ASIGNADO")
-                                        costo_val = pd.to_numeric(
-                                            fila.get(col_tarifa_matriz, 0.0), errors="coerce"
-                                        )
-                                        return flet, costo_val
-                                return "REVISIÓN MANUAL", 0.0
-
-                            res = df_log.apply(motor_v4, axis=1)
-                            df_log["RECOMENDACION"] = [r[0] for r in res]
-                            df_log["COSTO"] = [r[1] for r in res]
-                            
-                            fecha_prog_calculada = calcular_fecha_programacion()
-                            df_log["FECHA DE PROGRAMACION"] = fecha_prog_calculada
-
-                            if "FECHA DE PROGRAMACION" in df_log.columns:
-                                df_log["FECHA DE PROGRAMACION"] = pd.to_datetime(
-                                    df_log["FECHA DE PROGRAMACION"], errors="coerce", dayfirst=True
-                                ).dt.strftime("%d/%m/%Y").fillna(df_log["FECHA DE PROGRAMACION"])
-
-                            df_log = df_log.rename(columns={col_folio: "Factura"})
-                            cols_deseadas = [
-                                "Factura",
-                                "FECHA DE PROGRAMACION",
-                                "RECOMENDACION",
-                                "Transporte",
-                                "DIRECCION",
-                                "COSTO",
-                                "Nombre_Cliente",
-                                "Nombre_Extran",
-                                "Quantity",
-                                "DESTINO",
-                            ]
-                            cols_finales = [c for c in cols_deseadas if c in df_log.columns]
-
-                            st.session_state.df_analisis = df_log[cols_finales]
-                            st.success("¡Motor sincronizado con datos recientes y fecha de programación ajustada!")
-                            st.rerun()
-
-                        except Exception as e:
-                            st.error(f"Error en el motor de asignación: {e}")
-
-        except Exception as e:
-            st.error(f"Error procesando el archivo ERP: {e}")
-
-    # ==========================================
-    # LOGISTICS INTELLIGENCE & SISTEMA DE SELLADO
-    # ==========================================
-    if "df_analisis" in st.session_state:
-        st.markdown("---")
-        st.markdown(
-            f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>",
-            unsafe_allow_html=True,
+    if "FLUJO DE CYNTHIA" in modo_operacion:
+        st.markdown("### 📥 Panel de Carga y Filtrado de Facturación")
+        uploaded_file = st.file_uploader(
+            "Subir archivo ERP completo en Excel o CSV",
+            type=["xlsx", "csv"],
+            key="erp_file_uploader_cynthia",
         )
 
-        p = st.session_state.df_analisis.copy()
-        p.columns = [str(c) for c in p.columns]
+        if uploaded_file is not None:
+            try:
+                df = (
+                    pd.read_csv(uploaded_file, sep=None, engine="python")
+                    if uploaded_file.name.endswith(".csv")
+                    else pd.read_excel(uploaded_file)
+                )
+                df.columns = [str(c).strip().replace("\n", "") for c in df.columns]
+                col_folio = next(
+                    (
+                        c
+                        for c in df.columns
+                        if "factura" in c.lower()
+                        or "docnum" in c.lower()
+                        or "folio" in c.lower()
+                    ),
+                    df.columns[0],
+                )
+                df[col_folio] = pd.to_numeric(df[col_folio], errors="coerce")
 
-        if p.columns.duplicated().any():
-            cols = []
-            for col in p.columns:
-                cols.append(f"{col}_dup" if col in cols else col)
-            p.columns = cols
+                col_left, col_right = st.columns([1, 2], gap="large")
 
-        p = p.loc[:, ~p.columns.isna()]
-        modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
-                    
-        p_editado = st.data_editor(
-            p, use_container_width=True, hide_index=True,
-            column_config={
-                "FECHA DE PROGRAMACION": st.column_config.TextColumn("FECHA PROG.", disabled=not modo_edicion),
-                "RECOMENDACION": st.column_config.TextColumn("FLETERA", disabled=not modo_edicion),
-                "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f", disabled=not modo_edicion),
-            },
-            key="editor_final_github"
-        )
+                with col_left:
+                    st.markdown("<p>FILTROS DE FOLIOS</p>", unsafe_allow_html=True)
+                    folios_manuales = st.text_input(
+                        "Folios específicos (separados por coma):",
+                        placeholder="Ej: 1001, 1002, 1005",
+                    )
+                    serie = df[col_folio].dropna()
+                    inicio = st.number_input(
+                        "Desde:", value=int(serie.min()) if not serie.empty else 0
+                    )
+                    final = st.number_input(
+                        "Hasta:", value=int(serie.max()) if not serie.empty else 0
+                    )
+
+                    if folios_manuales:
+                        lista_manual = [
+                            int(x.strip())
+                            for x in folios_manuales.split(",")
+                            if x.strip().isdigit()
+                        ]
+                        df_rango = df[df[col_folio].isin(lista_manual)].copy()
+                    else:
+                        df_rango = df[
+                            (df[col_folio] >= inicio) & (df[col_folio] <= final)
+                        ].copy()
+
+                with col_right:
+                    st.markdown("<p>SELECCIÓN DE LÍNEAS</p>", unsafe_allow_html=True)
+                    if not df_rango.empty:
+                        info = df_rango.drop_duplicates(subset=[col_folio])[[col_folio]]
+                        info.insert(0, "Incluir", True)
+                        edited_df = st.data_editor(
+                            info, hide_index=True, use_container_width=True, key="ed_v_cynthia"
+                        )
+                    else:
+                        st.warning("Rango vacío")
+                        edited_df = pd.DataFrame()
+
+                if not df_rango.empty and not edited_df.empty:
+                    folios_ok = edited_df[edited_df["Incluir"] == True][
+                        col_folio
+                    ].tolist()
+
+                    st.markdown("---")
+                    if st.button("RENDERIZAR TABLA FILTRADA", use_container_width=True):
+                        st.session_state.df_filtrado_cynthia = df_rango[
+                            df_rango[col_folio].isin(folios_ok)
+                        ]
+
+                    if "df_filtrado_cynthia" in st.session_state:
+                        df_st = st.session_state.df_filtrado_cynthia
+                        st.dataframe(df_st, use_container_width=True)
+
+                        # Opciones de descarga / impresión
+                        towrite = io.BytesIO()
+                        df_st.to_excel(towrite, index=False, engine="openpyxl")
+                        st.download_button(
+                            label="DESCARGAR ARCHIVO FILTRADO",
+                            data=towrite.getvalue(),
+                            file_name="Facturacion_Filtrada.xlsx",
+                            use_container_width=True,
+                        )
+
+                        st.markdown("---")
+                        st.markdown("#### 💾 Guardar Bloque en Facturación")
+                        nombre_bloque_input = st.text_input("Asignar nombre/identificador a este bloque:", placeholder="Ej: LOTE_MATUTINO_CYNTHIA")
+
+                        if st.button("GUARDAR EN FACTURACION.CSV", type="primary", use_container_width=True):
+                            if not nombre_bloque_input.strip():
+                                st.error("Por favor, ingresa un nombre para identificar este bloque.")
+                            else:
+                                df_a_guardar = df_st.rename(columns={col_folio: "Factura"})
+                                exito_guardado = guardar_facturacion_github(df_a_guardar, nombre_bloque_input.strip())
+                                if exito_guardado:
+                                    st.success(f"¡Bloque '{nombre_bloque_input}' guardado con éxito en facturacion.csv sin repetir facturas!")
+                                else:
+                                    st.error("Hubo un error al guardar en GitHub.")
+
+            except Exception as e:
+                st.error(f"Error procesando el archivo ERP: {e}")
+
+    else:
+        # Panel de Rigoberto (Motor de asignación y selección de matrices guardadas)
+        st.markdown("### ⚙️ Panel de Motor de Asignación y Sellado (Rigoberto)")
         
-        if st.button("FIJAR CAMBIOS", use_container_width=True, type="primary"):
-            st.session_state.df_analisis = p_editado
+        df_fact_historico = cargar_facturacion_github()
+        if df_fact_historico.empty:
+            st.warning("No hay registros en `facturacion.csv` todavía. Sube datos desde el flujo de Cynthia o guarda un lote primero.")
+        else:
+            st.success(f"Se cargaron {len(df_fact_historico)} registros acumulados desde `facturacion.csv`.")
             
-            exito = actualizar_historial_envios_github(p_editado)
-            if exito:
-                st.toast("¡Cambios guardados, duplicados depurados y acumulados en envios.csv!", icon="✅")
+            # Selector de matriz / lote guardado por Cynthia
+            lotes_disponibles = []
+            if "LOTE_CREACION" in df_fact_historico.columns:
+                lotes_disponibles = [str(x) for x in df_fact_historico["LOTE_CREACION"].dropna().unique() if str(x).strip()]
+            
+            if lotes_disponibles:
+                lote_seleccionado = st.selectbox("Seleccionar matriz / lote guardado por Cynthia:", lotes_disponibles)
+                df_trabajo = df_fact_historico[df_fact_historico["LOTE_CREACION"].astype(str) == lote_seleccionado].copy()
             else:
-                st.toast("Guardado localmente, pero falló la sincronización con GitHub", icon="⚠️")
-        
-        st.write("") 
-        
-        output_xlsx = io.BytesIO()
-        p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
-        st.download_button(
-            label="DESCARGAR ANÁLISIS", 
-            data=output_xlsx.getvalue(), 
-            file_name="Analisis_Final.xlsx", 
-            use_container_width=True,
-            type="primary" 
-        )
-        
-        with st.expander("SISTEMA DE SELLADO", expanded=False):
-            cx, cy = st.columns(2)
-            ax = cx.slider("X", 0, 612, 399)
-            ay = cy.slider("Y", 0, 792, 760)
-            
-            st.markdown("###### Opciones de Impresión Física")
-            s1, s2 = st.columns(2)
-            
-            with s1:
-                st.download_button(
-                    label="GENERAR SELLOS NORMAL", 
-                    data=generar_sellos_fisicos(p_editado, ax, ay), 
-                    file_name="Sellos_Normales.pdf", 
-                    use_container_width=True,
-                    type="primary" 
-                )
-                
-            with s2:
-                p_invertido = p_editado.iloc[::-1].reset_index(drop=True)
-                st.download_button(
-                    label="GENERAR SELLOS MODO INVERSO", 
-                    data=generar_sellos_fisicos(p_invertido, ax, ay), 
-                    file_name="Sellos_Inversos.pdf", 
-                    use_container_width=True,
-                    type="primary"
-                )
+                st.info("No se encontraron etiquetas de lote específicas. Se usará toda la matriz de facturación.")
+                df_trabajo = df_fact_historico.copy()
+
+            st.dataframe(df_trabajo, use_container_width=True)
+
+            if st.button("EJECUTAR SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
+                try:
+                    matriz_db = obtener_matriz_github()
+
+                    col_dir_erp = next(
+                        (c for c in df_trabajo.columns if "DIRECCION" in c.upper()), None
+                    )
+                    col_dest_matriz = (
+                        "DESTINO"
+                        if "DESTINO" in matriz_db.columns
+                        else matriz_db.columns[0]
+                    )
+                    col_flet_matriz = (
+                        "TRANSPORTE"
+                        if "TRANSPORTE" in matriz_db.columns
+                        else "FLETERA"
+                    )
+                    col_tarifa_matriz = (
+                        "PRECIO POR CAJA"
+                        if "PRECIO POR CAJA" in matriz_db.columns
+                        else "COSTO"
+                    )
+
+                    def motor_v4(row):
+                        if not col_dir_erp:
+                            return "ERROR: COL DIRECCION", 0.0
+                        dir_limpia = limpiar_texto(row[col_dir_erp])
+                        if any(
+                            loc in dir_limpia
+                            for loc in [
+                                "GDL",
+                                "GUADALAJARA",
+                                "ZAPOPAN",
+                                "TLAQUEPAQUE",
+                                "TONALA",
+                                "TLAJOMULCO",
+                            ]
+                        ):
+                            return "LOCAL", 0.0
+                        for _, fila in matriz_db.iterrows():
+                            dest_key = limpiar_texto(fila[col_dest_matriz])
+                            if dest_key and (dest_key in dir_limpia):
+                                flet = fila.get(col_flet_matriz, "ASIGNADO")
+                                costo_val = pd.to_numeric(
+                                    fila.get(col_tarifa_matriz, 0.0), errors="coerce"
+                                )
+                                return flet, costo_val
+                        return "REVISIÓN MANUAL", 0.0
+
+                    res = df_trabajo.apply(motor_v4, axis=1)
+                    df_trabajo["RECOMENDACION"] = [r[0] for r in res]
+                    df_trabajo["COSTO"] = [r[1] for r in res]
                     
+                    fecha_prog_calculada = calcular_fecha_programacion()
+                    df_trabajo["FECHA DE PROGRAMACION"] = fecha_prog_calculada
+
+                    if "FECHA DE PROGRAMACION" in df_trabajo.columns:
+                        df_trabajo["FECHA DE PROGRAMACION"] = pd.to_datetime(
+                            df_trabajo["FECHA DE PROGRAMACION"], errors="coerce", dayfirst=True
+                        ).dt.strftime("%d/%m/%Y").fillna(df_trabajo["FECHA DE PROGRAMACION"])
+
+                    cols_deseadas = [
+                        "Factura",
+                        "FECHA DE PROGRAMACION",
+                        "RECOMENDACION",
+                        "Transporte",
+                        "DIRECCION",
+                        "COSTO",
+                        "Nombre_Cliente",
+                        "Nombre_Extran",
+                        "Quantity",
+                        "DESTINO",
+                    ]
+                    cols_finales = [c for c in cols_deseadas if c in df_trabajo.columns]
+
+                    st.session_state.df_analisis = df_trabajo[cols_finales]
+                    st.success("¡Motor sincronizado con éxito!")
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"Error en el motor de asignación: {e}")
+
+        # ==========================================
+        # LOGISTICS INTELLIGENCE & SISTEMA DE SELLADO
+        # ==========================================
+        if "df_analisis" in st.session_state:
             st.markdown("---")
-            st.markdown("###### 💻 Opciones de Sellado Digital")
-            pdfs = st.file_uploader("📄 Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
+            st.markdown(
+                f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>",
+                unsafe_allow_html=True,
+            )
+
+            p = st.session_state.df_analisis.copy()
+            p.columns = [str(c) for c in p.columns]
+
+            if p.columns.duplicated().any():
+                cols = []
+                for col in p.columns:
+                    cols.append(f"{col}_dup" if col in cols else col)
+                p.columns = cols
+
+            p = p.loc[:, ~p.columns.isna()]
+            modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
+                        
+            p_editado = st.data_editor(
+                p, use_container_width=True, hide_index=True,
+                column_config={
+                    "FECHA DE PROGRAMACION": st.column_config.TextColumn("FECHA PROG.", disabled=not modo_edicion),
+                    "RECOMENDACION": st.column_config.TextColumn("FLETERA", disabled=not modo_edicion),
+                    "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f", disabled=not modo_edicion),
+                },
+                key="editor_final_github"
+            )
             
-            if pdfs:
-                if st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
-                    mapa_fletera = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
-                    z_io = io.BytesIO()
-                    with zipfile.ZipFile(z_io, "a") as zf:
-                        for pdf in pdfs:
-                            f_id = next((k for k in mapa_fletera.keys() if k in pdf.name.upper()), None)
-                            if f_id: 
-                                fletera_val = mapa_fletera[f_id]
-                                zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, fletera_val, f_id, ax, ay))
-                    
+            if st.button("FIJAR CAMBIOS Y ACUMULAR EN ENVIOS", use_container_width=True, type="primary"):
+                st.session_state.df_analisis = p_editado
+                exito = actualizar_historial_envios_github(p_editado)
+                if exito:
+                    st.toast("¡Cambios guardados y acumulados en envios.csv!", icon="✅")
+                else:
+                    st.toast("Guardado localmente, pero falló la sincronización con envios.csv", icon="⚠️")
+            
+            st.write("") 
+            
+            output_xlsx = io.BytesIO()
+            p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
+            st.download_button(
+                label="DESCARGAR ANÁLISIS FINAL", 
+                data=output_xlsx.getvalue(), 
+                file_name="Analisis_Final.xlsx", 
+                use_container_width=True,
+                type="primary" 
+            )
+            
+            with st.expander("SISTEMA DE SELLADO", expanded=False):
+                cx, cy = st.columns(2)
+                ax = cx.slider("X", 0, 612, 399)
+                ay = cy.slider("Y", 0, 792, 760)
+                
+                st.markdown("###### Opciones de Impresión Física")
+                s1, s2 = st.columns(2)
+                
+                with s1:
                     st.download_button(
-                        label="📦 DESCARGAR ZIP", 
-                        data=z_io.getvalue(), 
-                        file_name="Sellado.zip", 
+                        label="GENERAR SELLOS NORMAL", 
+                        data=generar_sellos_fisicos(p_editado, ax, ay), 
+                        file_name="Sellos_Normales.pdf", 
+                        use_container_width=True,
+                        type="primary" 
+                    )
+                    
+                with s2:
+                    p_invertido = p_editado.iloc[::-1].reset_index(drop=True)
+                    st.download_button(
+                        label="GENERAR SELLOS MODO INVERSO", 
+                        data=generar_sellos_fisicos(p_invertido, ax, ay), 
+                        file_name="Sellos_Inversos.pdf", 
                         use_container_width=True,
                         type="primary"
                     )
+                        
+                st.markdown("---")
+                st.markdown("###### 💻 Opciones de Sellado Digital")
+                pdfs = st.file_uploader("📄 Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
+                
+                if pdfs:
+                    if st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
+                        mapa_fletera = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
+                        z_io = io.BytesIO()
+                        with zipfile.ZipFile(z_io, "a") as zf:
+                            for pdf in pdfs:
+                                f_id = next((k for k in mapa_fletera.keys() if k in pdf.name.upper()), None)
+                                if f_id: 
+                                    fletera_val = mapa_fletera[f_id]
+                                    zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, fletera_val, f_id, ax, ay))
+                        
+                        st.download_button(
+                            label="📦 DESCARGAR ZIP", 
+                            data=z_io.getvalue(), 
+                            file_name="Sellado.zip", 
+                            use_container_width=True,
+                            type="primary"
+                        )
 
 
 if __name__ == "__main__":
