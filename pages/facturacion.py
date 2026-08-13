@@ -571,7 +571,7 @@ def main():
                     df_filtrado_final = edited_df[edited_df["Incluir_Factura"] == True].drop(columns=["Incluir_Factura"])
 
                     st.markdown("---")
-                    st.markdown("#### 💾 Guardar Archivo Personalizado en GitHub para Rigoberto")
+                    st.markdown("<p style='font-size: 14px; font-weight: 700;'>Guardar Archivo Personalizado en GitHub para Rigoberto</p>", unsafe_allow_html=True)
                     nombre_archivo_custom = st.text_input("Nombre del archivo (ej. lote_matutino.csv):", value="lote_rigoberto.csv")
 
                     col_btn1, col_btn2 = st.columns(2)
@@ -599,7 +599,7 @@ def main():
                 st.error(f"Error procesando el archivo ERP: {e}")
 
     else:
-        st.markdown("### ⚙️ Panel de Motor de Asignación y Sellado (Rigoberto)")
+        st.markdown("")
         
         archivos_disponibles = listar_archivos_rigoberto_github()
         
