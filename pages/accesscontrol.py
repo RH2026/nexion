@@ -22,27 +22,6 @@ import pytz
 exigir_autenticacion("accesscontrol")
 
 
-
-# Inyectar script para forzar el color de la línea activa
-def forzar_color_linea_tabs(color):
-    js_code = f"""
-    <script>
-    function cambiarColorLinea() {{
-        const divs = window.parent.document.querySelectorAll('div[data-baseweb="tab-highlight"]');
-        divs.forEach(div => {{
-            div.style.backgroundColor = '{color} !important';
-        }});
-    }}
-    // Intentar cambiarlo cada 200ms para asegurar que se aplique aunque Streamlit recargue
-    setInterval(cambiarColorLinea, 200);
-    </script>
-    """
-    components.html(js_code, height=0, width=0)
-
-# Llamada para poner la línea en color ORO (puedes poner el hex que quieras)
-forzar_color_linea_tabs("#FFD700")
-
-
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
     page_title="JYPESA | Centro de Control",
