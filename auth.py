@@ -22,51 +22,24 @@ PAGINAS = {
 
 
 # ============================================================
-# GUARDAR PÁGINA DESTINO
+# GUARDAR DESTINO
 # ============================================================
 
 def guardar_destino(pagina_actual):
-
-    # --------------------------------------------------------
-    # Normalizar nombre
-    # --------------------------------------------------------
 
     pagina_actual = str(
         pagina_actual
     ).strip().lower()
 
-
-    # --------------------------------------------------------
-    # Validar página
-    # --------------------------------------------------------
-
     if pagina_actual not in PAGINAS:
-        return False
+        pagina_actual = "dashboard"
 
-
-    # --------------------------------------------------------
-    # GUARDAR EN SESSION STATE
-    # --------------------------------------------------------
-
-    st.session_state["pagina_pendiente"] = (
-        pagina_actual
-    )
-
-
-    # --------------------------------------------------------
-    # GUARDAR TAMBIÉN EN LA URL
-    # --------------------------------------------------------
+    st.session_state["pagina_pendiente"] = pagina_actual
 
     try:
-
-        st.query_params["return_to"] = (
-            pagina_actual
-        )
-
+        st.query_params["return_to"] = pagina_actual
     except Exception:
-
         pass
-
 
     return True
 
@@ -76,10 +49,6 @@ def guardar_destino(pagina_actual):
 # ============================================================
 
 def obtener_destino():
-
-    # --------------------------------------------------------
-    # PRIMERA OPCIÓN: SESSION STATE
-    # --------------------------------------------------------
 
     destino = st.session_state.get(
         "pagina_pendiente",
@@ -93,13 +62,7 @@ def obtener_destino():
         ).strip().lower()
 
         if destino in PAGINAS:
-
             return destino
-
-
-    # --------------------------------------------------------
-    # SEGUNDA OPCIÓN: QUERY PARAMS
-    # --------------------------------------------------------
 
     try:
 
@@ -115,67 +78,12 @@ def obtener_destino():
             ).strip().lower()
 
             if destino in PAGINAS:
-
                 return destino
 
     except Exception:
-
         pass
 
-
-    # --------------------------------------------------------
-    # NO SE ENCONTRÓ DESTINO
-    # --------------------------------------------------------
-
-    return None
-
-
-# ============================================================
-# ENVIAR AL LOGIN
-# ============================================================
-
-def ir_a_login(pagina_actual):
-
-    # --------------------------------------------------------
-    # Guardar exactamente la página que quería abrir
-    # --------------------------------------------------------
-
-    destino_guardado = guardar_destino(
-        pagina_actual
-    )
-
-
-    # --------------------------------------------------------
-    # Si la página no existe, usar dashboard
-    # --------------------------------------------------------
-
-    if not destino_guardado:
-
-        guardar_destino(
-            "dashboard"
-        )
-
-
-    # --------------------------------------------------------
-    # Marcar como NO autenticado
-    # --------------------------------------------------------
-
-    st.session_state["autenticado"] = False
-
-
-    # --------------------------------------------------------
-    # IR DIRECTAMENTE A LOG.PY
-    # --------------------------------------------------------
-    # IMPORTANTE:
-    # Antes utilizábamos st.rerun(), lo cual provocaba
-    # que la página actual se ejecutara nuevamente.
-    #
-    # Ahora cambiamos directamente a log.py.
-    # --------------------------------------------------------
-
-    st.switch_page(
-        "log.py"
-    )
+    return "dashboard"
 
 
 # ============================================================
@@ -189,15 +97,14 @@ def exigir_autenticacion(pagina_actual):
         False
     )
 
-
-    # --------------------------------------------------------
-    # SI NO ESTÁ AUTENTICADO
-    # --------------------------------------------------------
-
     if not autenticado:
 
-        ir_a_login(
+        guardar_destino(
             pagina_actual
+        )
+
+        st.switch_page(
+            "log.py"
         )
 
         st.stop()
