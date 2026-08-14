@@ -57,9 +57,15 @@ def guardar_destino(pagina_actual):
     # GUARDAR TAMBIÉN EN LA URL
     # --------------------------------------------------------
 
-    st.query_params["return_to"] = (
-        pagina_actual
-    )
+    try:
+
+        st.query_params["return_to"] = (
+            pagina_actual
+        )
+
+    except Exception:
+
+        pass
 
 
     return True
@@ -125,13 +131,13 @@ def obtener_destino():
 
 
 # ============================================================
-# ENVIAR AL LOGIN (CORREGIDO)
+# ENVIAR AL LOGIN
 # ============================================================
 
 def ir_a_login(pagina_actual):
 
     # --------------------------------------------------------
-    # Guardar exactamente la página actual
+    # Guardar exactamente la página que quería abrir
     # --------------------------------------------------------
 
     destino_guardado = guardar_destino(
@@ -140,7 +146,7 @@ def ir_a_login(pagina_actual):
 
 
     # --------------------------------------------------------
-    # Si la página no existe, usamos dashboard por defecto
+    # Si la página no existe, usar dashboard
     # --------------------------------------------------------
 
     if not destino_guardado:
@@ -151,14 +157,25 @@ def ir_a_login(pagina_actual):
 
 
     # --------------------------------------------------------
-    # RECARGAR PARA MOSTRAR LOG.PY EN LA RAÍZ
-    # --------------------------------------------------------
-    # Al estar log.py en la raíz, limpiamos autenticación 
-    # y recargamos para que Streamlit cargue log.py limpio.
+    # Marcar como NO autenticado
     # --------------------------------------------------------
 
     st.session_state["autenticado"] = False
-    st.rerun()
+
+
+    # --------------------------------------------------------
+    # IR DIRECTAMENTE A LOG.PY
+    # --------------------------------------------------------
+    # IMPORTANTE:
+    # Antes utilizábamos st.rerun(), lo cual provocaba
+    # que la página actual se ejecutara nuevamente.
+    #
+    # Ahora cambiamos directamente a log.py.
+    # --------------------------------------------------------
+
+    st.switch_page(
+        "log.py"
+    )
 
 
 # ============================================================
