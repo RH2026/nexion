@@ -43,6 +43,7 @@ st.markdown(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
+
 /* --- ANIMACIONES DE ENTRADA --- */
 @keyframes fadeInUp {{
     from {{
@@ -57,6 +58,16 @@ st.markdown(
 
 [data-testid="stVerticalBlock"] > div:not(:has(.footer)) {{
     animation: fadeInUp 0.6s ease-out;
+}}
+
+/* --- LÍNEA DE PESTAÑA SELECCIONADA CON DOBLE LLAVE --- */
+[data-testid="stTabs"] button[aria-selected="true"] {{
+    border-bottom-color: #FFD700 !important; 
+}}
+
+/* Opcional: Color del texto de la pestaña activa */
+[data-testid="stTabs"] button[aria-selected="true"] p {{
+    color: #FFD700 !important;
 }}
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
