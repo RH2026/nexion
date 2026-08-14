@@ -908,7 +908,7 @@ def main():
         # Asegurar que df_editado refleje de forma reactiva el session_state actual
         df_editado = st.session_state["df_permisos_local"].copy()
 
-        def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
+    def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
         c_m1, c_m2, c_esp = st.columns([1.5, 1.5, 4])
         with c_m1:
             if st.button("✅ Marcar Todo", key=f"btn_marcar_todo_{tab_key}", use_container_width=True):
