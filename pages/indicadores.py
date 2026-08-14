@@ -269,8 +269,8 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("pages/indicadores.py")
         st.stop()
 
-# Blindaje de Módulo DASHBOARD
-verificar_permiso_pagina("DASHBOARD")
+# Blindaje de Módulo CENTRO DE DATOS
+verificar_permiso_pagina("CENTRO DE DATOS", "CARGAR DATOS")
 
 
 # ==========================================
@@ -507,7 +507,7 @@ with header_zone:
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
-                    st.switch_page("pages/indicadores.py")
+                    st.switch_page("dashboard.py")
         
             if permisos.get("SEGUIMIENTO", False):
                 with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
@@ -581,7 +581,7 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             if s == "ASIGNAR FLETERA":
-                                st.switch_page("pages/asignacionfletera.py")
+                                st.switch_page("pages/facturacion_af.py")
                             elif s == "ETIQUETAS":
                                 st.switch_page("pages/etiquetas.py")
                             elif s == "ESCANEAR QR":
@@ -703,172 +703,198 @@ def main():
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
     
-    def cargar_datos():
-        t = int(time.time())
-        url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
-        try:
-            df = pd.read_csv(url, encoding='utf-8-sig')
-            df.columns = df.columns.str.strip()
-            return df
-        except Exception as e:
-            st.error(f"Error al cargar datos: {e}")
-            return None         
-    
-    def render_kpi(valor, total, titulo, color):
-        porc = (valor / total * 100) if total > 0 else 0
-        circunferencia = 238.76
-        offset = circunferencia - (porc / 100 * circunferencia)
-        
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="metric-title">{titulo}</div>
-                <div style="position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;">
-                    <svg class="stat-circle" viewBox="0 0 100 100">
-                        <circle class="stat-bg" cx="50" cy="50" r="38"></circle>
-                        <circle class="stat-progress" cx="50" cy="50" r="38" 
-                                style="stroke: {color}; 
-                                       stroke-dasharray: {circunferencia}; 
-                                       stroke-dashoffset: {offset};">
-                        </circle>
-                    </svg>
-                    <div class="stat-value">{valor}</div>
-                </div>
-                <div class="stat-percent" style="color: {color};">{porc:.1f}%</div>
-            </div>
-        """, unsafe_allow_html=True)
+    # ── VALIDACIÓN DE ACCESO EXCLUSIVO (CONECTADO A TU LOGIN) ──
+    # Usamos 'usuario_activo' porque es la que definiste en tu login_screen()
+    current_user = st.session_state.get("usuario_activo", "UNKNOWN")
+    AUTHORIZED_USERS = ["JMoreno", "Rigoberto"]
 
-    st.markdown(f"""
-    <style>
-        .stApp {{ background-color: {vars_css['bg']} !important; }}
-        .spacer-menu {{ margin-top: 30px; }}
-        .metric-container {{
+    if current_user not in AUTHORIZED_USERS:
+        st.markdown(f'<div style="background: linear-gradient(90deg, #1A1F2A 0%, #11141B 100%); border-radius: 8px; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 20px; border-left: 6px solid #EF4444; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: sans-serif;"><div style="display: flex; align-items: center; gap: 18px;"><div style="font-size: 24px;">🔐</div><div style="display: flex; flex-direction: column;"><span style="color: #EF4444; font-weight: 800; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin: 0;">ÁREA RESTRINGIDA</span><span style="color: #F8FAFC; font-size: 14px; margin-top: 2px;">El perfil de operador <strong style="color: #EF4444;">{current_user}</strong> no cuenta con privilegios de nivel Logística.</span></div></div><div style="border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 4px; padding: 4px 12px; color: #EF4444; font-family: monospace; font-size: 12px; font-weight: 700; background: rgba(239, 68, 68, 0.05); letter-spacing: 1px;">ID ACCESO: {current_user}</div></div>', unsafe_allow_html=True)
+        st.stop()
+    
+    # 1. Definir la zona horaria de Guadalajara
+    tz_gdl = pytz.timezone('America/Mexico_City')
+    
+    # ── ESTADO INICIAL ──
+    st.toast("Nexion Core: Active | Nodes: Online", icon="🌐")
+    
+    # ── ESTILO VISUAL PRO + ALERTA NEÓN (CSS) ──
+    st.markdown("""
+        <style>
+        .main { background-color: #0E1117; }
+        .main-header-pro {
+            background: linear-gradient(90deg, rgba(96, 165, 250, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+            border-left: 4px solid #60A5FA;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        .status-card-pro {
+            background: rgba(30, 41, 59, 0.5); 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .status-label {
+            font-size: 10px;
+            color: #94A3B8;
+            letter-spacing: 2px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .status-value {
+            font-size: 16px;
+            font-weight: 800;
+            color: #F8FAFC;
+        }
+        /* Animación para el borde de alerta */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .protocol-violation-card {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #EF4444;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            animation: pulse-red 2s infinite;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            width: 100%;
-        }}
-        .metric-title {{ color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-weight: 600; }}
-        .stat-circle {{ transform: rotate(-90deg); width: 160px; height: 160px; overflow: visible; }}
-        .stat-circle circle {{ fill: none; stroke-width: 15; }}
-        .stat-bg {{ stroke: #2F3E45; }}
-        .stat-progress {{ transition: stroke-dashoffset 0.8s ease-in-out; stroke-linecap: butt; }}
-        .stat-value {{ position: absolute; color: white; font-size: 22px; font-weight: 800; top: 50%; left: 50%; transform: translate(-50%, -50%); }}
-        .stat-percent {{ font-size: 16px; margin-top: 5px; font-weight: 700; }}
-    </style>
+            gap: 15px;
+        }
+        .violation-text {
+            color: #FCA5A5;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+        }
+        </style>
     """, unsafe_allow_html=True)
-
-    df_raw = cargar_datos()
     
-    if df_raw is not None:
-        import pytz
-        from datetime import datetime
-        tz_gdl = pytz.timezone('America/Mexico_City')
-        hoy_gdl = datetime.now(tz_gdl).date()
-        hoy_dt = pd.Timestamp(hoy_gdl)
-        meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
+    # ── CONFIGURACIÓN DE SEGURIDAD ──
+    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+    REPO_NAME = "RH2026/nexion"
+    DASHBOARD_NAME = "Matriz_Excel_Dashboard.csv"
+    CONSIGNAS_FILE = "consignas.csv"  # <--- Agregamos esta variable
+    PEDIDOS_FILE = "pedidos.csv"  # <--- Agregamos esta variable
+    MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx"]
+    
+    # Actualizamos la lista completa para incluirlo
+    TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME, CONSIGNAS_FILE, PEDIDOS_FILE] + MATRICES_EXCEL
+
+    # ── HEADER VISUAL ──
+    st.markdown(f'<div class="main-header-pro"><h2 style="margin:0; color:#F8FAFC;">Central Data Hub</h2><p style="margin:0; color:#94A3B8; font-size:14px;">Nexion Logistic Node // Multiple Uplink</p></div>', unsafe_allow_html=True)
+    
+    # ── DASHBOARD DE ESTADO RÁPIDO (RESTAURADO) ──
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(f'''<div class="status-card-pro">
+            <div class="status-label">Repository Node</div>
+            <div class="status-value" style="color:#60A5FA;">{REPO_NAME.split("/")[1].upper()}</div>
+        </div>''', unsafe_allow_html=True)
+    with c2:
+        st.markdown(f'''<div class="status-card-pro">
+            <div class="status-label">Active Protocol</div>
+            <div class="status-value">BATCH // SYNC</div>
+        </div>''', unsafe_allow_html=True)
+    with c3:
+        color_token = "#10B981" if TOKEN else "#EF4444"
+        st.markdown(f'''<div class="status-card-pro">
+            <div class="status-label">Token Auth</div>
+            <div class="status-value" style="color:{color_token};">{"ENCRYPTED" if TOKEN else "MISSING"}</div>
+        </div>''', unsafe_allow_html=True)
+
+    st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
+    
+    # ── ÁREA DE CARGA MULTIPLE ──
+    # ── ÁREA DE CARGA MULTIPLE ──
+    with st.container(border=True):
+        st.markdown("### :material/security: SECURE MULTI-UPLINK")
+        st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}`, `{PEDIDOS_FILE}` and `T1, T2, T3` (XLSX)")
+        
+        uploaded_files = st.file_uploader("", type=["csv", "xlsx"], accept_multiple_files=True, key="multi_uploader")
+    
+        if uploaded_files:
+            archivos_validos = []
+            errores = False
+    
+            for uploaded_file in uploaded_files:
+                if uploaded_file.name not in TODOS_LOS_PERMITIDOS:
+                    st.markdown(f"""
+                        <div class="protocol-violation-card">
+                            <div style="font-size: 30px;">⚠️</div>
+                            <div class="violation-text">
+                                <strong style="color: #EF4444;">CRITICAL: PROTOCOL VIOLATION</strong><br>
+                                Unauthorized asset: <span style="color: white;">`{uploaded_file.name}`</span><br>
+                                <small>SYSTEM_ACTION: Uplink Blocked.</small>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    errores = True
+                else:
+                    archivos_validos.append(uploaded_file)
+    
+            if archivos_validos and not errores:
+                with st.expander(":material/list: Batch Preview", expanded=True):
+                    for f in archivos_validos:
+                        st.write(f"✔ Prepared for Uplink: `{f.name}`")
                 
-        mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
-        
-        df_raw = cargar_datos()
-
-        if df_raw is not None:
-            df_raw["FECHA DE ENVÍO DT"] = pd.to_datetime(df_raw["FECHA DE ENVÍO"], dayfirst=True, errors='coerce')
-            num_mes_sel = meses.index(mes_sel) + 1
-            
-            df_filtrado_mes = df_raw[df_raw["FECHA DE ENVÍO DT"].dt.month == num_mes_sel].copy()
-            df_filtrado_mes = df_filtrado_mes.sort_values(by="FECHA DE ENVÍO DT", ascending=False)
-            
-            st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic;'>Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}</p>", unsafe_allow_html=True)
-        
-        df = df_raw.copy()
-        for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-            df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
+                hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
+                commit_msg = st.text_input("Global Sync Message", value=f"BATCH_UPDATE // {hora_actual_gdl}")
     
-        df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
-    
-        total_p = len(df_mes)
-        entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
-        df_trans = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
-        en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
-        retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
-        total_t = len(df_trans)  
+                if st.button("EXECUTE GLOBAL SINCRONIZATION", type="primary", use_container_width=True):
+                    with st.status("Initializing Batch Uplink...", expanded=True) as status:
+                        try:
+                            from github import Github
+                            g = Github(TOKEN)
+                            repo = g.get_repo(REPO_NAME)
+                            
+                            for f in archivos_validos:
+                                status.write(f"Syncing `{f.name}`...")
+                                content = f.getvalue()
+                                try:
+                                    target = repo.get_contents(f.name)
+                                    repo.update_file(target.path, commit_msg, content, target.sha)
+                                except:
+                                    repo.create_file(f.name, commit_msg, content)
+                            
+                            status.update(label="All Assets Synced Successfully", state="complete", expanded=False)
+                            st.toast("Nexion Repositories Updated", icon="🛡️")
+                            st.cache_data.clear()
+                            time.sleep(1)
+                            st.rerun()
+                        except Exception as e:
+                            status.update(label=f"Uplink Failed: {str(e)}", state="error")
 
-        st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-        c1, c2, c3, c4, c5 = st.columns(5)
-        with c1: render_kpi(total_p, total_p, "Pedidos", "#f6c23e")
-        with c2: render_kpi(entregados, total_p, "Entregados", "#1cc88a")
-        with c3: render_kpi(total_t, total_p, "Tránsito", "#4e73df")
-        with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#36b9cc")
-        with c5: render_kpi(retrasados, total_p, "Retraso", "#fb7185")
+    # ── LÓGICA DE HISTORIAL DE ACTIVIDAD (Audit Logs) ──
+    st.markdown("<br>", unsafe_allow_html=True)
+    with st.expander(":material/terminal: System Audit Logs", expanded=False):
+        if TOKEN:
+            try:
+                from github import Github
+                g = Github(TOKEN)
+                repo = g.get_repo(REPO_NAME)
+                commits = repo.get_commits()
+                
+                for i, commit in enumerate(commits):
+                    if i >= 5: break 
+                    fecha_utc = commit.commit.author.date.replace(tzinfo=pytz.utc)
+                    fecha_local = fecha_utc.astimezone(tz_gdl)
                     
-        st.markdown("<br>", unsafe_allow_html=True)
-    
-        st.markdown(f"""
-            <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 40px 0; opacity: 0.3;">
-            <div style="
-                color: {vars_css['sub']}; 
-                font-size: 14px; 
-                font-weight: 500; 
-                letter-spacing: 2px; 
-                margin-bottom: 20px; 
-                text-transform: uppercase;
-            ">
-                Distribución de Carga actual
-            </div>
-        """, unsafe_allow_html=True)
-        
-        color_transito = "#36b9cc"
-        color_retraso = "#fb7185"
-        
-        col_graf1, col_graf2 = st.columns(2)
-        
-        with col_graf1:
-            df_t = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] >= hoy_dt)].copy()
-            df_t_count = df_t.groupby("FLETERA").size().reset_index(name="CANTIDAD")
-            total_t_graf = df_t_count["CANTIDAD"].sum()
-        
-            st.markdown(f"""
-                <div style='background: linear-gradient(90deg, {color_transito}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_transito};'>
-                    <p style='margin:0; color:{color_transito}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔵 En tránsito en tiempo</p>
-                    <h2 style='margin:0; color:white; font-size:28px;'>{total_t_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
-                </div>
-            """, unsafe_allow_html=True)
-        
-            import altair as alt
-            if not df_t_count.empty:
-                h_t = len(df_t_count) * 35 + 50
-                chart_t = alt.Chart(df_t_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_transito).encode(
-                    x=alt.X("CANTIDAD:Q", title=None, axis=None),
-                    y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
-                )
-                text_t = chart_t.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
-                st.altair_chart((chart_t + text_t).properties(height=h_t).configure_view(strokeOpacity=0), use_container_width=True)
-            else:
-                st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin carga en tránsito</div>", unsafe_allow_html=True)
-        
-        with col_graf2:
-            df_r = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] < hoy_dt)].copy()
-            df_r_count = df_r.groupby("FLETERA").size().reset_index(name="CANTIDAD")
-            total_r_graf = df_r_count["CANTIDAD"].sum()
-        
-            st.markdown(f"""
-                <div style='background: linear-gradient(90deg, {color_retraso}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_retraso};'>
-                    <p style='margin:0; color:{color_retraso}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔴 En tránsito con Retraso</p>
-                    <h2 style='margin:0; color:white; font-size:28px;'>{total_r_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
-                </div>
-            """, unsafe_allow_html=True)
-        
-            if not df_r_count.empty:
-                h_r = len(df_r_count) * 35 + 50
-                chart_r = alt.Chart(df_r_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_retraso).encode(
-                    x=alt.X("CANTIDAD:Q", title=None, axis=None),
-                    y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
-                )
-                text_r = chart_r.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
-                st.altair_chart((chart_r + text_r).properties(height=h_r).configure_view(strokeOpacity=0), use_container_width=True)
-            else:
-                st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
+                    col_h1, col_h2 = st.columns([1, 3])
+                    with col_h1:
+                        st.markdown(f"**{fecha_local.strftime('%H:%M')}**")
+                        st.caption(fecha_local.strftime('%d/%m/%Y'))
+                    with col_h2:
+                        st.markdown(f":material/history: {commit.commit.message}")
+                        st.code(f"USER: {commit.commit.author.name} | SHA: {commit.sha[:7]}", language="bash")
+                    st.divider()
+            except Exception as e:
+                st.error(f"Error al conectar con los logs: {e}")
 
 if __name__ == "__main__":
     main()
