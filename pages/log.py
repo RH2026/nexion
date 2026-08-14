@@ -44,6 +44,7 @@ DESTINOS_VALIDOS = {
     "picking": "pages/picking.py",
     "qrup": "pages/qrup.py",
     "facturacion": "pages/facturacion_af.py",
+    "main": "pages/main.py",
 }
 
 
