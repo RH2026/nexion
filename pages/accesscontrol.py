@@ -60,13 +60,14 @@ st.markdown(
     animation: fadeInUp 0.6s ease-out;
 }}
 
-/* Selector agresivo para el Tab List de Streamlit */
-[data-baseweb="tab-list"] button[aria-selected="true"] {{
-    border-bottom: 3px solid #FFD700 !important;
+/* Forzar color de la línea inferior de la pestaña activa */
+div[data-baseweb="tab-highlight"] {{
+    background-color: #FFD700 !important;
 }}
 
-[data-baseweb="tab-list"] button {{
-    border-bottom: 3px solid transparent !important;
+/* Por si la línea usa un borde en lugar de background */
+div[data-testid="stTabs"] div[data-baseweb="tab-border"] {{
+    background-color: #FFD700 !important;
 }}
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
