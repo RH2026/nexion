@@ -696,205 +696,285 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (SOLO DONITAS Y GRÁFICOS)
+# 5. INTERFAZ PRINCIPAL (DATA HUB PREMIUM)
 # ==========================================
 def main():    
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
-    
-    # ── VALIDACIÓN DE ACCESO EXCLUSIVO (CONECTADO A TU LOGIN) ──
-    # Usamos 'usuario_activo' porque es la que definiste en tu login_screen()
+
+    # ── VALIDACIÓN DE ACCESO EXCLUSIVO ──
     current_user = st.session_state.get("usuario_activo", "UNKNOWN")
     AUTHORIZED_USERS = ["JMoreno", "Rigoberto"]
 
     if current_user not in AUTHORIZED_USERS:
-        st.markdown(f'<div style="background: linear-gradient(90deg, #1A1F2A 0%, #11141B 100%); border-radius: 8px; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 20px; border-left: 6px solid #EF4444; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: sans-serif;"><div style="display: flex; align-items: center; gap: 18px;"><div style="font-size: 24px;">🔐</div><div style="display: flex; flex-direction: column;"><span style="color: #EF4444; font-weight: 800; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin: 0;">ÁREA RESTRINGIDA</span><span style="color: #F8FAFC; font-size: 14px; margin-top: 2px;">El perfil de operador <strong style="color: #EF4444;">{current_user}</strong> no cuenta con privilegios de nivel Logística.</span></div></div><div style="border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 4px; padding: 4px 12px; color: #EF4444; font-family: monospace; font-size: 12px; font-weight: 700; background: rgba(239, 68, 68, 0.05); letter-spacing: 1px;">ID ACCESO: {current_user}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'''
+            <div style="background: linear-gradient(135deg, #1A1515 0%, #110A0A 100%); border: 1px solid rgba(239, 68, 68, 0.2); border-left: 5px solid #EF4444; border-radius: 10px; padding: 20px 25px; display: flex; align-items: center; justify-content: space-between; margin-top: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(239,68,68,0.3);"><span style="font-size: 20px;">🛑</span></div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="color: #EF4444; font-weight: 900; font-size: 13px; letter-spacing: 2px; text-transform: uppercase;">ACCESO RESTRINGIDO AL NODO</span>
+                        <span style="color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 4px;">El operador <strong style="color: white;">{current_user}</strong> no tiene clearance para el Hub de Datos.</span>
+                    </div>
+                </div>
+                <div style="border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 6px; padding: 6px 15px; color: #EF4444; font-family: monospace; font-size: 11px; font-weight: 800; background: rgba(239, 68, 68, 0.05); letter-spacing: 2px;">ID: {current_user}</div>
+            </div>
+        ''', unsafe_allow_html=True)
         st.stop()
-    
-    # 1. Definir la zona horaria de Guadalajara
+
+    import pytz
     tz_gdl = pytz.timezone('America/Mexico_City')
-    
-    # ── ESTADO INICIAL ──
-    st.toast("Nexion Core: Active | Nodes: Online", icon="🌐")
-    
-    # ── ESTILO VISUAL PRO + ALERTA NEÓN (CSS) ──
+
+    # ── ESTILO VISUAL PREMIUM (CSS) ──
     st.markdown("""
         <style>
-        .main { background-color: #0E1117; }
-        .main-header-pro {
-            background: linear-gradient(90deg, rgba(96, 165, 250, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
-            border-left: 4px solid #60A5FA;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-        }
-        .status-card-pro {
-            background: rgba(30, 41, 59, 0.5); 
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        /* Fondo profundo */
+        .main { background-color: #0A0D12; }
+        
+        /* Panel Principal (Header) con Glassmorphism */
+        .hud-header {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.04) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.12);
+            border-left: 5px solid #00D4FF;
+            padding: 24px 30px;
             border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        .status-label {
-            font-size: 10px;
-            color: #94A3B8;
-            letter-spacing: 2px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-        }
-        .status-value {
-            font-size: 16px;
-            font-weight: 800;
-            color: #F8FAFC;
-        }
-        /* Animación para el borde de alerta */
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-        .protocol-violation-card {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid #EF4444;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            animation: pulse-red 2s infinite;
+            margin-bottom: 30px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
-        .violation-text {
-            color: #FCA5A5;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
+        
+        /* Tarjetas de Estatus (Nodos) */
+        .node-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 20px 22px;
+            text-align: left;
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        .node-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 15px 35px -5px rgba(0, 212, 255, 0.15);
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+        }
+        
+        /* Destello interno en las tarjetas */
+        .node-card::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .node-icon {
+            font-size: 22px;
+            background: rgba(0, 0, 0, 0.3);
+            width: 46px;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .node-label {
+            font-size: 9px;
+            color: #64748B;
+            letter-spacing: 2.5px;
+            font-weight: 800;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .node-value {
+            font-size: 16px;
+            font-weight: 900;
+            color: #F8FAFC;
+            letter-spacing: 0.5px;
+        }
+
+        /* Consola de Logs (Terminal Hacker) */
+        .terminal-log {
+            background: #0D1117;
+            border: 1px solid #1E293B;
+            border-left: 3px solid #00FFAA;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            transition: all 0.2s ease;
+        }
+        .terminal-log:hover {
+            background: #111823;
+            border-left-color: #00D4FF;
         }
         </style>
     """, unsafe_allow_html=True)
-    
+
     # ── CONFIGURACIÓN DE SEGURIDAD ──
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
     DASHBOARD_NAME = "Matriz_Excel_Dashboard.csv"
-    CONSIGNAS_FILE = "consignas.csv"  # <--- Agregamos esta variable
-    PEDIDOS_FILE = "pedidos.csv"  # <--- Agregamos esta variable
+    CONSIGNAS_FILE = "consignas.csv" 
+    PEDIDOS_FILE = "pedidos.csv" 
     MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx"]
-    
-    # Actualizamos la lista completa para incluirlo
     TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME, CONSIGNAS_FILE, PEDIDOS_FILE] + MATRICES_EXCEL
 
-    # ── HEADER VISUAL ──
-    st.markdown(f'<div class="main-header-pro"><h2 style="margin:0; color:#F8FAFC;">Central Data Hub</h2><p style="margin:0; color:#94A3B8; font-size:14px;">Nexion Logistic Node // Multiple Uplink</p></div>', unsafe_allow_html=True)
-    
-    # ── DASHBOARD DE ESTADO RÁPIDO (RESTAURADO) ──
+    # ── HEADER VISUAL PREMIUM ──
+    st.markdown('''
+        <div class="hud-header">
+            <div style="font-size: 32px; filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));">🗄️</div>
+            <div>
+                <h2 style="margin:0; color:#FFFFFF; font-size: 22px; font-weight: 900; letter-spacing: 1.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">CENTRAL DATA HUB</h2>
+                <p style="margin:2px 0 0 0; color:#00D4FF; font-size:10px; letter-spacing: 4px; font-weight: 700; opacity: 0.9;">NEXION LOGISTIC NODE // MULTIPLE UPLINK</p>
+            </div>
+        </div>
+    ''', unsafe_allow_html=True)
+
+    # ── DASHBOARD DE ESTADOS (NODOS) ──
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown(f'''<div class="status-card-pro">
-            <div class="status-label">Repository Node</div>
-            <div class="status-value" style="color:#60A5FA;">{REPO_NAME.split("/")[1].upper()}</div>
-        </div>''', unsafe_allow_html=True)
+        st.markdown(f'''
+            <div class="node-card">
+                <div class="node-icon">📦</div>
+                <div>
+                    <div class="node-label">Repository Node</div>
+                    <div class="node-value" style="color:#00D4FF;">{REPO_NAME.split("/")[1].upper()}</div>
+                </div>
+            </div>
+        ''', unsafe_allow_html=True)
     with c2:
-        st.markdown(f'''<div class="status-card-pro">
-            <div class="status-label">Active Protocol</div>
-            <div class="status-value">BATCH // SYNC</div>
-        </div>''', unsafe_allow_html=True)
+        st.markdown('''
+            <div class="node-card">
+                <div class="node-icon">⚡</div>
+                <div>
+                    <div class="node-label">Active Protocol</div>
+                    <div class="node-value">BATCH // SYNC</div>
+                </div>
+            </div>
+        ''', unsafe_allow_html=True)
     with c3:
-        color_token = "#10B981" if TOKEN else "#EF4444"
-        st.markdown(f'''<div class="status-card-pro">
-            <div class="status-label">Token Auth</div>
-            <div class="status-value" style="color:{color_token};">{"ENCRYPTED" if TOKEN else "MISSING"}</div>
-        </div>''', unsafe_allow_html=True)
+        color_token = "#00FFAA" if TOKEN else "#FF453A"
+        icon_token = "🔐" if TOKEN else "🔓"
+        st.markdown(f'''
+            <div class="node-card">
+                <div class="node-icon">{icon_token}</div>
+                <div>
+                    <div class="node-label">Token Auth</div>
+                    <div class="node-value" style="color:{color_token}; text-shadow: 0 0 10px {color_token}40;">{"ENCRYPTED" if TOKEN else "MISSING"}</div>
+                </div>
+            </div>
+        ''', unsafe_allow_html=True)
 
-    st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
-    
-    # ── ÁREA DE CARGA MULTIPLE ──
+    st.markdown("<div style='margin: 25px 0;'></div>", unsafe_allow_html=True)
+
     # ── ÁREA DE CARGA MULTIPLE ──
     with st.container(border=True):
-        st.markdown("### :material/security: SECURE MULTI-UPLINK")
+        st.markdown("<h4 style='color: white; font-weight: 700; font-size: 16px; letter-spacing: 1px;'>🛡️ SECURE MULTI-UPLINK</h4>", unsafe_allow_html=True)
         st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}`, `{PEDIDOS_FILE}` and `T1, T2, T3` (XLSX)")
-        
+
         uploaded_files = st.file_uploader("", type=["csv", "xlsx"], accept_multiple_files=True, key="multi_uploader")
-    
+
         if uploaded_files:
             archivos_validos = []
             errores = False
-    
+
             for uploaded_file in uploaded_files:
                 if uploaded_file.name not in TODOS_LOS_PERMITIDOS:
                     st.markdown(f"""
-                        <div class="protocol-violation-card">
-                            <div style="font-size: 30px;">⚠️</div>
-                            <div class="violation-text">
-                                <strong style="color: #EF4444;">CRITICAL: PROTOCOL VIOLATION</strong><br>
-                                Unauthorized asset: <span style="color: white;">`{uploaded_file.name}`</span><br>
-                                <small>SYSTEM_ACTION: Uplink Blocked.</small>
+                        <div style="background: rgba(255, 69, 58, 0.08); border: 1px solid #FF453A; border-left: 4px solid #FF453A; border-radius: 8px; padding: 15px 20px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+                            <div style="font-size: 24px;">⚠️</div>
+                            <div>
+                                <strong style="color: #FF453A; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;">CRITICAL: PROTOCOL VIOLATION</strong><br>
+                                <span style="color: rgba(255,255,255,0.7); font-size: 13px;">Asset no autorizado: <span style="color: white; font-weight: 700;">{uploaded_file.name}</span></span><br>
+                                <small style="color: #FF453A; opacity: 0.8; font-weight: 600;">[ SYSTEM ACTION: UPLINK BLOCKED ]</small>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
                     errores = True
                 else:
                     archivos_validos.append(uploaded_file)
-    
+
             if archivos_validos and not errores:
-                with st.expander(":material/list: Batch Preview", expanded=True):
+                with st.expander("📋 Lote preparado para Sincronización", expanded=True):
                     for f in archivos_validos:
-                        st.write(f"✔ Prepared for Uplink: `{f.name}`")
-                
+                        st.markdown(f"<div style='color: #00FFAA; font-size: 13px; margin-bottom: 5px; font-weight: 600;'>✓ Asset Validado: <span style='color: white;'>{f.name}</span></div>", unsafe_allow_html=True)
+
                 hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
                 commit_msg = st.text_input("Global Sync Message", value=f"BATCH_UPDATE // {hora_actual_gdl}")
-    
+
                 if st.button("EXECUTE GLOBAL SINCRONIZATION", type="primary", use_container_width=True):
-                    with st.status("Initializing Batch Uplink...", expanded=True) as status:
+                    with st.status("Iniciando Batch Uplink hacia la matriz...", expanded=True) as status:
                         try:
                             from github import Github
                             g = Github(TOKEN)
                             repo = g.get_repo(REPO_NAME)
-                            
+
                             for f in archivos_validos:
-                                status.write(f"Syncing `{f.name}`...")
+                                status.write(f"Sincronizando nodo: `{f.name}`...")
                                 content = f.getvalue()
                                 try:
                                     target = repo.get_contents(f.name)
                                     repo.update_file(target.path, commit_msg, content, target.sha)
                                 except:
                                     repo.create_file(f.name, commit_msg, content)
-                            
-                            status.update(label="All Assets Synced Successfully", state="complete", expanded=False)
-                            st.toast("Nexion Repositories Updated", icon="🛡️")
+
+                            status.update(label="Assets Sincronizados Correctamente", state="complete", expanded=False)
+                            st.toast("Matriz Nexion Actualizada", icon="🛡️")
                             st.cache_data.clear()
                             time.sleep(1)
                             st.rerun()
                         except Exception as e:
-                            status.update(label=f"Uplink Failed: {str(e)}", state="error")
+                            status.update(label=f"Fallo en Uplink: {str(e)}", state="error")
 
-    # ── LÓGICA DE HISTORIAL DE ACTIVIDAD (Audit Logs) ──
+    # ── LOGS DEL SISTEMA (ESTILO TERMINAL) ──
     st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander(":material/terminal: System Audit Logs", expanded=False):
+    with st.expander("💻 SYSTEM AUDIT LOGS (GITHUB COMMITS)", expanded=False):
         if TOKEN:
             try:
                 from github import Github
                 g = Github(TOKEN)
                 repo = g.get_repo(REPO_NAME)
                 commits = repo.get_commits()
-                
+
                 for i, commit in enumerate(commits):
                     if i >= 5: break 
                     fecha_utc = commit.commit.author.date.replace(tzinfo=pytz.utc)
                     fecha_local = fecha_utc.astimezone(tz_gdl)
                     
-                    col_h1, col_h2 = st.columns([1, 3])
-                    with col_h1:
-                        st.markdown(f"**{fecha_local.strftime('%H:%M')}**")
-                        st.caption(fecha_local.strftime('%d/%m/%Y'))
-                    with col_h2:
-                        st.markdown(f":material/history: {commit.commit.message}")
-                        st.code(f"USER: {commit.commit.author.name} | SHA: {commit.sha[:7]}", language="bash")
-                    st.divider()
+                    # Consola estilo Terminal
+                    st.markdown(f"""
+                        <div class="terminal-log">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: #64748B; font-size: 11px; font-weight: 600;">[{fecha_local.strftime('%d/%m/%Y %H:%M:%S')}]</span>
+                                <span style="color: #00D4FF; font-size: 11px; font-weight: 600;">SHA: {commit.sha[:8]}</span>
+                            </div>
+                            <div style="color: #E2E8F0; font-size: 13px; font-weight: 600; margin-bottom: 6px; line-height: 1.4;">
+                                <span style="color: #00FFAA;">></span> {commit.commit.message}
+                            </div>
+                            <div style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 700; letter-spacing: 1px;">
+                                AUTHORIZED_AGENT: <span style="color: white;">{commit.commit.author.name}</span>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
             except Exception as e:
-                st.error(f"Error al conectar con los logs: {e}")
+                st.error(f"Error de conexión con la terminal de logs: {e}")
 
 if __name__ == "__main__":
     main()
