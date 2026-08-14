@@ -60,15 +60,15 @@ st.markdown(
     animation: fadeInUp 0.6s ease-out;
 }}
 
-/* --- LÍNEA DE PESTAÑA SELECCIONADA CON DOBLE LLAVE --- */
-[data-testid="stTabs"] button[aria-selected="true"] {{
-    border-bottom-color: #FFD700 !important; 
+/* --- LÍNEA DE PESTAÑA SELECCIONADA (FORZADA) --- */
+div[data-testid="stTabs"] button[aria-selected="true"] {{
+    border-bottom: 2px solid #FFD700 !important;
 }}
 
-/* Opcional: Color del texto de la pestaña activa */
-[data-testid="stTabs"] button[aria-selected="true"] p {{
-    color: #FFD700 !important;
+div[data-testid="stTabs"] button {{
+    border-bottom: 2px solid transparent !important;
 }}
+
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
 header, footer, [data-testid="stHeader"] {{
