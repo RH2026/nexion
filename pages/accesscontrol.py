@@ -61,14 +61,62 @@ st.markdown(
     animation: fadeInUp 0.6s ease-out;
 }}
 
-/* Forzar color de la línea inferior de la pestaña activa */
-div[data-baseweb="tab-highlight"] {{
-    background-color: #FFD700 !important;
+/* ============================================================
+   TABS NEXION | TEXTO Y LINEA TOTALMENTE INDEPENDIENTES
+   ============================================================ */
+
+/* CONTENEDOR GENERAL */
+div[data-testid="stTabs"] div[data-baseweb="tab-list"] {{
+    gap: 18px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.12) !important;
 }}
 
-/* Por si la línea usa un borde en lugar de background */
-div[data-testid="stTabs"] div[data-baseweb="tab-border"] {{
+/* TODAS LAS TABS */
+div[data-testid="stTabs"] div[data-baseweb="tab"] {{
+    color: #D7DEE3 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+
+/* TEXTO DE TODAS LAS TABS */
+div[data-testid="stTabs"] div[data-baseweb="tab"] *,
+div[data-testid="stTabs"] div[data-baseweb="tab"] button,
+div[data-testid="stTabs"] div[data-baseweb="tab"] span {{
+    color: #D7DEE3 !important;
+    font-weight: 600 !important;
+}}
+
+/* TAB ACTIVA */
+div[data-testid="stTabs"] div[data-baseweb="tab"][aria-selected="true"],
+div[data-testid="stTabs"] div[data-baseweb="tab"][aria-selected="true"] *,
+div[data-testid="stTabs"] div[data-baseweb="tab"][aria-selected="true"] button,
+div[data-testid="stTabs"] div[data-baseweb="tab"][aria-selected="true"] span {{
+    color: #00D4FF !important;
+    font-weight: 700 !important;
+}}
+
+/* LINEA ACTIVA */
+div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
     background-color: #FFD700 !important;
+    height: 2px !important;
+    border-radius: 0 !important;
+}}
+
+/* BORDE INFERIOR GENERAL */
+div[data-testid="stTabs"] div[data-baseweb="tab-border"] {{
+    background-color: rgba(255,255,255,0.12) !important;
+}}
+
+/* HOVER */
+div[data-testid="stTabs"] div[data-baseweb="tab"]:hover {{
+    background-color: transparent !important;
+}}
+
+div[data-testid="stTabs"] div[data-baseweb="tab"]:hover *,
+div[data-testid="stTabs"] div[data-baseweb="tab"]:hover span {{
+    color: #00D4FF !important;
 }}
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
