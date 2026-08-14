@@ -321,20 +321,17 @@ def limpiar_destino():
 
 def ir_a_pagina_post_login():
 
-    # --------------------------------------------------------
-    # Obtener destino ANTES de limpiarlo
-    # --------------------------------------------------------
-
     destino = obtener_destino()
-
-
-    # --------------------------------------------------------
-    # Limpiar destino
-    # --------------------------------------------------------
 
     limpiar_destino()
 
+    st.session_state["autenticado"] = True
 
+    st.switch_page(
+        destino
+    )
+
+    
     # --------------------------------------------------------
     # Ir exactamente a donde estaba el usuario
     # --------------------------------------------------------
