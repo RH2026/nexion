@@ -103,8 +103,6 @@ def exigir_autenticacion(pagina_actual):
             pagina_actual
         )
 
-        st.switch_page(
-            "log.py"
-        )
+        st.switch_page("pages/log.py")
 
         st.stop()
