@@ -320,28 +320,24 @@ def limpiar_destino():
 # ============================================================
 
 def ir_a_pagina_post_login():
-
-    # --------------------------------------------------------
-    # Obtener destino ANTES de limpiarlo
-    # --------------------------------------------------------
-
-    destino = obtener_destino()
-
-
-    # --------------------------------------------------------
-    # Limpiar destino
-    # --------------------------------------------------------
-
-    limpiar_destino()
-
-
-    # --------------------------------------------------------
-    # Ir exactamente a donde estaba el usuario
-    # --------------------------------------------------------
-
-    st.switch_page(
-        destino
-    )
+    # 1. Obtenemos el destino guardado; si no hay, por defecto vamos a la raíz
+    destino = st.session_state.get("pagina_destino", "dashboard.py")
+    
+    # 2. Hacemos unas autocorrecciones por si la ruta quedó mal guardada en la seguridad
+    if destino == "indicadores.py":
+        destino = "pages/indicadores.py"
+    elif destino == "log.py":
+        destino = "pages/log.py"
+    elif destino == "dashboard":
+        destino = "dashboard.py"
+        
+    # 3. Intentamos hacer el cambio de página de forma segura
+    try:
+        st.switch_page(destino)
+    except Exception:
+        # Si Streamlit no encuentra la página (ruta inválida o rota), 
+        # te mandamos directo a tu pantalla principal en lugar de mostrar error.
+        st.switch_page("dashboard.py")
 
 
 # ============================================================
