@@ -340,36 +340,50 @@ def asegurar_y_actualizar_matriz_en_github():
 
 asegurar_y_actualizar_matriz_en_github()
 
-# Función para registrar acceso automáticamente en auditoría y sincronizar con GitHub
+# Función de registro optimizada para no congelar la app (con control de tiempo)
 def registrar_acceso_github(usuario, modulo):
+    # Control para evitar registrar el mismo módulo repetidas veces en menos de 30 segundos
+    clave_sesion = f"ultimo_registro_{modulo}"
+    ahora_timestamp = time.time()
+    if st.session_state.get(clave_sesion, 0) + 30 > ahora_timestamp:
+        return # Si ya entró a este módulo hace unos segundos, omite la petición a GitHub para que vuele
+
+    st.session_state[clave_sesion] = ahora_timestamp
+
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/auditoria_accesos.csv"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    r = requests.get(url, headers=headers)
     
-    fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    if r.status_code == 200:
-        file_data = r.json()
-        sha = file_data.get("sha", "")
-        content_decoded = base64.b64decode(file_data.get("content", "")).decode("utf-8")
-        df_aud = pd.read_csv(io.StringIO(content_decoded))
-    else:
-        df_aud = pd.DataFrame(columns=["FECHA_HORA", "USUARIO", "MODULO"])
-        sha = ""
-
-    # Agregar nuevo registro
-    nuevo_registro = pd.DataFrame([{"FECHA_HORA": fecha_hora, "USUARIO": usuario, "MODULO": modulo}])
-    df_aud = pd.concat([df_aud, nuevo_registro], ignore_index=True)
-    
-    csv_string = df_aud.to_csv(index=False)
-    payload = {
-        "message": f"Registro de acceso de {usuario} al módulo {modulo}",
-        "content": base64.b64encode(csv_string.encode()).decode()
-    }
-    if sha:
-        payload["sha"] = sha
+    try:
+        r = requests.get(url, headers=headers, timeout=3)
+        fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-    requests.put(url, json=payload, headers=headers)
+        if r.status_code == 200:
+            file_data = r.json()
+            sha = file_data.get("sha", "")
+            content_decoded = base64.b64decode(file_data.get("content", "")).decode("utf-8")
+            df_aud = pd.read_csv(io.StringIO(content_decoded))
+        else:
+            df_aud = pd.DataFrame(columns=["FECHA_HORA", "USUARIO", "MODULO"])
+            sha = ""
+
+        nuevo_registro = pd.DataFrame([{"FECHA_HORA": fecha_hora, "USUARIO": usuario, "MODULO": modulo}])
+        df_aud = pd.concat([df_aud, nuevo_registro], ignore_index=True)
+        
+        # Mantener solo los últimos 200 registros para que el archivo CSV no pese y cargue ultra rápido
+        if len(df_aud) > 200:
+            df_aud = df_aud.tail(200)
+
+        csv_string = df_aud.to_csv(index=False)
+        payload = {
+            "message": f"Log: {usuario} -> {modulo}",
+            "content": base64.b64encode(csv_string.encode()).decode()
+        }
+        if sha:
+            payload["sha"] = sha
+            
+        requests.put(url, json=payload, headers=headers, timeout=3)
+    except Exception:
+        pass # Si falla el internet o GitHub se pone lento, la app jamás se traba
 
 # Registrar la visita actual a Access Control
 usuario_actual = st.session_state.get("usuario_activo", "GUEST")
@@ -411,7 +425,7 @@ def guardar_matriz_en_github(df_actualizado):
     res = requests.put(url, json=payload, headers=headers)
     return res.status_code in [200, 201]
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=2)
 def cargar_datos_auditoria():
     url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/auditoria_accesos.csv?nocache={int(time.time())}"
     try:
@@ -976,12 +990,19 @@ def main():
             df_editado = renderizar_pestana_compacta(cols_acc, "acc", df_editado)
 
         with tab_aud:
-            st.markdown(f"""
-                <div style='display:flex;align-items:center;gap:10px;margin:15px 0;'>
-                    <div style='background:#FF4B4B;width:5px;height:25px;border-radius:2px;box-shadow:0 0 10px #FF4B4B;'></div>
-                    <span style='color:white;font-size:16px;font-weight:800;letter-spacing:2px;text-transform:uppercase;'>MONITOR DE ACTIVIDAD // AUDITORÍA EN TIEMPO REAL</span>
-                </div>
-            """, unsafe_allow_html=True)
+            c_aud1, c_aud2 = st.columns([3, 1])
+            with c_aud1:
+                st.markdown(f"""
+                    <div style='display:flex;align-items:center;gap:10px;margin:15px 0;'>
+                        <div style='background:#FF4B4B;width:5px;height:25px;border-radius:2px;box-shadow:0 0 10px #FF4B4B;'></div>
+                        <span style='color:white;font-size:16px;font-weight:800;letter-spacing:2px;text-transform:uppercase;'>MONITOR DE ACTIVIDAD // AUDITORÍA EN TIEMPO REAL</span>
+                    </div>
+                """, unsafe_allow_html=True)
+            with c_aud2:
+                st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                if st.button("🔄 ACTUALIZAR LOGS", use_container_width=True):
+                    st.cache_data.clear()
+                    st.rerun()
             
             try:
                 df_logs = cargar_datos_auditoria()
