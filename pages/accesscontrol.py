@@ -61,48 +61,6 @@ st.markdown(
     animation: fadeInUp 0.6s ease-out;
 }}
 
-/* --- CORRECCIÓN DEFINITIVA PARA EL COLOR DE LOS TABS --- */
-
-/* Texto de las pestañas inactivas */
-div[data-testid="stTabs"] button[role="tab"] {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    padding: 0px 15px !important;
-}}
-
-div[data-testid="stTabs"] button[role="tab"] p {{
-    color: rgba(255, 255, 255, 0.6) !important;
-    font-size: 10px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-}}
-
-/* Pestaña activa (Fondo y texto) */
-div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
-    background-color: #00A3A3 !important;
-    border-color: #00A3A3 !important;
-}}
-
-div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p {{
-    color: #ffffff !important;
-}}
-
-/* Línea inferior de selección */
-div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
-    background-color: #00FFAA !important;
-    height: 2px !important;
-}}
-
-/* Contenedor del panel interno de las tabs */
-div[data-testid="stTabs"] [data-testid="stTabPanel"] {{
-    background-color: {vars_css['card']} !important;
-    padding: 20px !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 8px !important;
-    margin-top: 10px !important;
-}}
-
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
 header, footer, [data-testid="stHeader"] {{
