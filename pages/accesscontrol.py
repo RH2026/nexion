@@ -60,15 +60,14 @@ st.markdown(
     animation: fadeInUp 0.6s ease-out;
 }}
 
-/* --- LÍNEA DE PESTAÑA SELECCIONADA (FORZADA) --- */
-div[data-testid="stTabs"] button[aria-selected="true"] {{
-    border-bottom: 2px solid #FFD700 !important;
+/* Selector agresivo para el Tab List de Streamlit */
+[data-baseweb="tab-list"] button[aria-selected="true"] {{
+    border-bottom: 3px solid #FFD700 !important;
 }}
 
-div[data-testid="stTabs"] button {{
-    border-bottom: 2px solid transparent !important;
+[data-baseweb="tab-list"] button {{
+    border-bottom: 3px solid transparent !important;
 }}
-
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
 header, footer, [data-testid="stHeader"] {{
