@@ -17,10 +17,11 @@ import streamlit.components.v1 as components
 import streamlit as st
 from auth import exigir_autenticacion
 
-# Exigimos autenticación (esto frena la carga si no hay sesión)
-exigir_autenticacion("dashboard")
+# ============================================================
+# AUTENTICACIÓN
+# ============================================================
 
-st.query_params["page"] = "dashboard"
+exigir_autenticacion("dashboard")
 
 
 # 1. CONFIGURACIÓN DE PÁGINA
