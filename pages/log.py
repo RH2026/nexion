@@ -4,7 +4,6 @@ from datetime import datetime
 import os
 import time
 import pytz
-import requests
 import pandas as pd
 
 
@@ -48,7 +47,7 @@ DESTINOS_VALIDOS = {
 
 
 # ============================================================
-# 4. REGISTRAR ACCESO
+# 4. REGISTRAR ACCESO (LOCAL)
 # ============================================================
 
 def registrar_acceso(usuario):
@@ -89,7 +88,7 @@ def cargar_datos_usuario(usuario):
             data = user_row.iloc[0].to_dict()
             st.session_state.permisos = data
 
-            # Blindaje estricto para que sea string plano
+            # Blindaje para asegurar que siempre sea string
             nombre_raw = data.get("NOMBRE REAL", usuario)
             st.session_state.nombre_completo = str(nombre_raw if pd.notna(nombre_raw) else usuario).strip()
 
