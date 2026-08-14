@@ -61,41 +61,6 @@ st.markdown(
     animation: fadeInUp 0.6s ease-out;
 }}
 
-/* ============================================================
-   TABS NEXION - TEXTO Y LINEA INDEPENDIENTES
-   ============================================================ */
-
-div[data-testid="stTabs"] [data-baseweb="tab-list"] {{
-    border-bottom: 1px solid rgba(255,255,255,0.12) !important;
-    gap: 18px !important;
-}}
-
-/* TEXTO */
-div[data-testid="stTabs"] button[data-baseweb="tab"] p {{
-    color: #D7DEE3 !important;
-    font-weight: 600 !important;
-}}
-
-/* TEXTO ACTIVO */
-div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {{
-    color: #00D4FF !important;
-    font-weight: 700 !important;
-}}
-
-/* ELIMINA EL INDICADOR NATIVO */
-div[data-testid="stTabs"] button[data-baseweb="tab"] > div {{
-    border-bottom: none !important;
-    background: transparent !important;
-}}
-
-div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {{
-    display: none !important;
-}}
-
-/* NUESTRA LINEA */
-div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {{
-    border-bottom: 2px solid #FFD700 !important;
-}}
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
 header, footer, [data-testid="stHeader"] {{
