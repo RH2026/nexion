@@ -17,9 +17,8 @@ import streamlit.components.v1 as components
 import streamlit as st
 from auth import exigir_autenticacion
 
-exigir_autenticacion("indicadores")
+exigir_autenticacion("cargardt")
 
-st.query_params["page"] = "indicadores"
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
