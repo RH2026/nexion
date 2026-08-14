@@ -61,12 +61,16 @@ st.markdown(
     animation: fadeInUp 0.6s ease-out;
 }}
 
+/* ============================================================
+   TABS NEXION - TEXTO Y LINEA INDEPENDIENTES
+   ============================================================ */
+
 div[data-testid="stTabs"] [data-baseweb="tab-list"] {{
-    gap: 18px !important;
     border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+    gap: 18px !important;
 }}
 
-/* TEXTO INACTIVO */
+/* TEXTO */
 div[data-testid="stTabs"] button[data-baseweb="tab"] p {{
     color: #D7DEE3 !important;
     font-weight: 600 !important;
@@ -78,12 +82,17 @@ div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {{
     font-weight: 700 !important;
 }}
 
-/* OCULTAR LINEA NATIVA */
-div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {{
+/* ELIMINA EL INDICADOR NATIVO */
+div[data-testid="stTabs"] button[data-baseweb="tab"] > div {{
+    border-bottom: none !important;
     background: transparent !important;
 }}
 
-/* LINEA ACTIVA NUESTRA */
+div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {{
+    display: none !important;
+}}
+
+/* NUESTRA LINEA */
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {{
     border-bottom: 2px solid #FFD700 !important;
 }}
