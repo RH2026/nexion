@@ -62,60 +62,72 @@ st.markdown(
 }}
 
 /* ============================================================
-   TABS NEXION | TEXTO Y LINEA TOTALMENTE INDEPENDIENTES
+   TABS NEXION
+   TEXTO Y LINEA INDEPENDIENTES
    ============================================================ */
 
-/* CONTENEDOR GENERAL */
-div[data-testid="stTabs"] div[data-baseweb="tab-list"] {{
+/* CONTENEDOR DE LAS TABS */
+div[data-testid="stTabs"] [data-baseweb="tab-list"] {{
     gap: 18px !important;
     border-bottom: 1px solid rgba(255,255,255,0.12) !important;
 }}
 
+
+/* ============================================================
+   TEXTO DE LAS TABS
+   ============================================================ */
+
 /* TODAS LAS TABS */
-div[data-testid="stTabs"] div[data-baseweb="tab"] {{
-    color: #D7DEE3 !important;
+div[data-testid="stTabs"] button[data-baseweb="tab"] {{
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     font-family: 'Inter', sans-serif !important;
+    opacity: 1 !important;
 }}
 
-/* TEXTO DE TODAS LAS TABS */
-div[data-testid="stTabs"] div[data-baseweb="tab"] *,
-div[data-testid="stTabs"] div[data-baseweb="tab"] button,
-div[data-testid="stTabs"] div[data-baseweb="tab"] span {{
+/* TEXTO INACTIVO */
+div[data-testid="stTabs"] button[data-baseweb="tab"] p {{
     color: #D7DEE3 !important;
     font-weight: 600 !important;
 }}
 
-/* TAB ACTIVA */
-div[data-testid="stTabs"] div[data-baseweb="tab"][aria-selected="true"],
-div[data-testid="stTabs"] div[data-baseweb="tab"][aria-selected="true"] *,
-div[data-testid="stTabs"] div[data-baseweb="tab"][aria-selected="true"] button,
-div[data-testid="stTabs"] div[data-baseweb="tab"][aria-selected="true"] span {{
+/* TEXTO ACTIVO */
+div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {{
     color: #00D4FF !important;
     font-weight: 700 !important;
 }}
 
-/* LINEA ACTIVA */
-div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
+
+/* ============================================================
+   LINEA DE LA TAB ACTIVA
+   ============================================================ */
+
+/* ESTA ES LA LINEA */
+div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {{
     background-color: #FFD700 !important;
     height: 2px !important;
-    border-radius: 0 !important;
 }}
 
-/* BORDE INFERIOR GENERAL */
-div[data-testid="stTabs"] div[data-baseweb="tab-border"] {{
+
+/* ============================================================
+   LINEA BASE
+   ============================================================ */
+
+div[data-testid="stTabs"] [data-baseweb="tab-border"] {{
     background-color: rgba(255,255,255,0.12) !important;
 }}
 
-/* HOVER */
-div[data-testid="stTabs"] div[data-baseweb="tab"]:hover {{
-    background-color: transparent !important;
+
+/* ============================================================
+   HOVER
+   ============================================================ */
+
+div[data-testid="stTabs"] button[data-baseweb="tab"]:hover {{
+    background: transparent !important;
 }}
 
-div[data-testid="stTabs"] div[data-baseweb="tab"]:hover *,
-div[data-testid="stTabs"] div[data-baseweb="tab"]:hover span {{
+div[data-testid="stTabs"] button[data-baseweb="tab"]:hover p {{
     color: #00D4FF !important;
 }}
 
