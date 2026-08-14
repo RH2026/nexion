@@ -509,7 +509,7 @@ with header_zone:
                     st.session_state.menu_main = "DASHBOARD"
                     st.session_state.menu_sub = "GENERAL"
                     st.session_state.busqueda_activa = False
-                    st.switch_page("pages/indicadores.py")
+                    st.switch_page("dashboard.py")
         
             if permisos.get("SEGUIMIENTO", False):
                 with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
@@ -578,7 +578,7 @@ with header_zone:
                             st.session_state.menu_sub = s
                             st.session_state.busqueda_activa = False
                             if s == "ASIGNAR FLETERA":
-                                st.switch_page("pages/asignacionfletera.py")
+                                st.switch_page("pages/facturacion_af.py")
                             elif s == "ETIQUETAS":
                                 st.switch_page("pages/etiquetas.py")
                             elif s == "ESCANEAR QR":
