@@ -856,64 +856,13 @@ with header_zone:
 # ==========================================
 # 6. INTERFAZ PRINCIPAL (CENTRO DE CONTROL ULTRA COMPACTO + AUDITORÍA PRO)
 # ==========================================
-def main():
-    if "animacion_cargada" not in st.session_state:
-        time.sleep(0.08)
-        st.session_state.animacion_cargada = True
 
-    st.markdown("<p style='font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: white; margin-bottom: 2px;'>MATRIZ GLOBAL DE ACCESOS Y PERMISOS</p>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 12px;'>Configura los permisos tanto de los módulos principales como de cada uno de sus submenús individuales por operador.</p>", unsafe_allow_html=True)
-
-    df_permisos = cargar_matriz_permisos()
-
-    # 2. El bloque nuevo para agregar usuarios
-    st.markdown("---")
-    with st.expander("➕ AGREGAR NUEVO OPERADOR AL SISTEMA"):
-        col1, col2 = st.columns(2)
-        nuevo_usuario = col1.text_input("NOMBRE DE USUARIO (ID)")
-        if col2.button("REGISTRAR EN MATRIZ"):
-            if nuevo_usuario and nuevo_usuario not in df_permisos["USUARIO"].values:
-                nueva_fila = pd.DataFrame([{"USUARIO": nuevo_usuario}])
-                for col in df_permisos.columns:
-                    if col != "USUARIO":
-                        nueva_fila[col] = False
-                df_permisos = pd.concat([df_permisos, nueva_fila], ignore_index=True)
-                st.session_state["df_permisos_local"] = df_permisos
-                st.rerun() 
-            else:
-                st.error("El usuario ya existe o el campo está vacío.")
-    
-    
-
-    if not df_permisos.empty:
-        for col in df_permisos.columns:
-            if col != "USUARIO":
-                df_permisos[col] = df_permisos[col].astype(bool)
-
-        cols_dash = ["USUARIO", "DASHBOARD"]
-        cols_seg = ["USUARIO", "SEGUIMIENTO", "ALERTAS", "GANTT", "QUEJAS"]
-        cols_ent = ["USUARIO", "ENTREGAS", "AGC", "AMAZON", "BARCELO", "NACIONAL"]
-        cols_rep = ["USUARIO", "REPORTES", "COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS", "PANEL MUESTRAS"]
-        cols_for = ["USUARIO", "FORMATOS", "SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
-        cols_dat = ["USUARIO", "CENTRO DE DATOS", "ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "ESCANEAR QR", "HERRAMIENTAS"]
-        cols_fin = ["USUARIO", "FINANZAS", "WALLET", "CAJA CHICA", "GASTOS"]
-        cols_enf = ["USUARIO", "ENFOQUE", "MORENO", "VAZQUEZ", "MIGUEL"]
-        cols_acc = ["USUARIO", "ACCESS CONTROL"]
-
-        tab_dash, tab_seg, tab_ent, tab_rep, tab_for, tab_dat, tab_fin, tab_enf, tab_acc, tab_aud = st.tabs([
-            "DASHBOARD", "SEGUIMIENTO", "ENTREGAS", "REPORTES", 
-            "FORMATOS", "DATOS", "FINANZAS", "ENFOQUE", "ACCESS CTRL", "AUDITORÍA"
-        ])
-
-        # Asegurar que df_editado refleje de forma reactiva el session_state actual
-        df_editado = st.session_state["df_permisos_local"].copy()
-
+# FUNCIÓN DECLARADA FUERA DE MAIN PARA EVITAR ERRORES DE INDENTACIÓN
 def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
     c_m1, c_m2, c_esp = st.columns([1.5, 1.5, 4])
     with c_m1:
         if st.button("✅ Marcar Todo", key=f"btn_marcar_todo_{tab_key}", use_container_width=True):
             for c in cols_tab:
-                # SOLO MARCAR LOS CHECKBOXES, NO LAS COLUMNAS DE TEXTO
                 if c not in ["USUARIO", "NOMBRE REAL", "GENERO"]:
                     df_fuente.loc[:, c] = True
             st.session_state["df_permisos_local"] = df_fuente
@@ -929,16 +878,13 @@ def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
 
     st.markdown("<hr style='border-top:1px solid rgba(255,255,255,0.08); margin:8px 0;'>", unsafe_allow_html=True)
 
-    # CONFIGURACIÓN MAESTRA: ESTO ES LO QUE TE FALTABA
     column_config = {}
     for col in cols_tab:
         if col in ["USUARIO", "NOMBRE REAL", "GENERO"]:
-            # ESTO BLOQUEA LA COLUMNA PARA QUE SEA SOLO LECTURA Y NO SE VUELVA CHECKBOX
             column_config[col] = st.column_config.TextColumn(col, disabled=True)
         else:
             column_config[col] = st.column_config.CheckboxColumn(col)
 
-    # RENDERIZAMOS CON LA CONFIGURACIÓN ESTRICTA
     df_t = df_fuente[[c for c in cols_tab if c in df_fuente.columns]].copy()
     
     sub_ed = st.data_editor(
@@ -947,10 +893,9 @@ def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
         hide_index=True, 
         key=f"ed_{tab_key}", 
         height=360,
-        column_config=column_config # <-- APLICANDO LA RESTRICCIÓN
+        column_config=column_config
     )
     
-    # ACTUALIZACIÓN SEGURA
     for c in sub_ed.columns:
         if c not in ["USUARIO", "NOMBRE REAL", "GENERO"]:
             for idx, val in sub_ed[c].items():
@@ -959,6 +904,58 @@ def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
     
     st.session_state["df_permisos_local"] = df_fuente
     return df_fuente
+
+
+def main():
+    if "animacion_cargada" not in st.session_state:
+        time.sleep(0.08)
+        st.session_state.animacion_cargada = True
+
+    st.markdown("<p style='font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: white; margin-bottom: 2px;'>MATRIZ GLOBAL DE ACCESOS Y PERMISOS</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 12px;'>Configura los permisos tanto de los módulos principales como de cada uno de sus submenús individuales por operador.</p>", unsafe_allow_html=True)
+
+    df_permisos = cargar_matriz_permisos()
+
+    st.markdown("---")
+    with st.expander("➕ AGREGAR NUEVO OPERADOR AL SISTEMA"):
+        col1, col2, col3 = st.columns(3)
+        nuevo_usuario = col1.text_input("NOMBRE DE USUARIO (ID)")
+        nombre_real_nuevo = col2.text_input("NOMBRE REAL")
+        genero_nuevo = col3.selectbox("GÉNERO", ["F", "M"])
+        
+        if st.button("REGISTRAR EN MATRIZ"):
+            if nuevo_usuario and nuevo_usuario not in df_permisos["USUARIO"].values:
+                nueva_fila = pd.DataFrame([{"USUARIO": nuevo_usuario, "NOMBRE REAL": nombre_real_nuevo, "GENERO": genero_nuevo}])
+                for col in df_permisos.columns:
+                    if col not in ["USUARIO", "NOMBRE REAL", "GENERO"]:
+                        nueva_fila[col] = False
+                df_permisos = pd.concat([df_permisos, nueva_fila], ignore_index=True)
+                st.session_state["df_permisos_local"] = df_permisos
+                st.rerun() 
+            else:
+                st.error("El usuario ya existe o el campo está vacío.")
+
+    if not df_permisos.empty:
+        for col in df_permisos.columns:
+            if col not in ["USUARIO", "NOMBRE REAL", "GENERO"]:
+                df_permisos[col] = df_permisos[col].astype(bool)
+
+        cols_dash = ["USUARIO", "NOMBRE REAL", "GENERO", "DASHBOARD"]
+        cols_seg = ["USUARIO", "NOMBRE REAL", "GENERO", "SEGUIMIENTO", "ALERTAS", "GANTT", "QUEJAS"]
+        cols_ent = ["USUARIO", "NOMBRE REAL", "GENERO", "ENTREGAS", "AGC", "AMAZON", "BARCELO", "NACIONAL"]
+        cols_rep = ["USUARIO", "NOMBRE REAL", "GENERO", "REPORTES", "COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS", "PANEL MUESTRAS"]
+        cols_for = ["USUARIO", "NOMBRE REAL", "GENERO", "FORMATOS", "SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
+        cols_dat = ["USUARIO", "NOMBRE REAL", "GENERO", "CENTRO DE DATOS", "ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "ESCANEAR QR", "HERRAMIENTAS"]
+        cols_fin = ["USUARIO", "NOMBRE REAL", "GENERO", "FINANZAS", "WALLET", "CAJA CHICA", "GASTOS"]
+        cols_enf = ["USUARIO", "NOMBRE REAL", "GENERO", "ENFOQUE", "MORENO", "VAZQUEZ", "MIGUEL"]
+        cols_acc = ["USUARIO", "NOMBRE REAL", "GENERO", "ACCESS CONTROL"]
+
+        tab_dash, tab_seg, tab_ent, tab_rep, tab_for, tab_dat, tab_fin, tab_enf, tab_acc, tab_aud = st.tabs([
+            "DASHBOARD", "SEGUIMIENTO", "ENTREGAS", "REPORTES", 
+            "FORMATOS", "DATOS", "FINANZAS", "ENFOQUE", "ACCESS CTRL", "AUDITORÍA"
+        ])
+
+        df_editado = st.session_state["df_permisos_local"].copy()
 
         with tab_dash:
             df_editado = renderizar_pestana_compacta(cols_dash, "dash", df_editado)
