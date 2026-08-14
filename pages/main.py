@@ -1,0 +1,14748 @@
+import base64
+import calendar
+from datetime import date, datetime, timedelta
+import io
+from io import BytesIO, StringIO
+import json
+import math
+import os
+import random
+import re
+import time
+import unicodedata
+import zipfile
+
+import altair as alt
+from fpdf import FPDF
+from github import Github
+import google.generativeai as genai
+import numpy as np
+import pandas as pd
+
+# CAMBIO 1: Pillow con alias para no chocar con ReportLab
+from PIL import Image as PILImage, ImageDraw, ImageFont
+
+import plotly.express as px
+import plotly.graph_objects as go
+from pypdf import PdfReader, PdfWriter
+import pytz
+import qrcode
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.lib.utils import ImageReader, simpleSplit
+from reportlab.pdfgen import canvas
+
+# CAMBIO 2: Importamos platypus completo para usar platypus.Image sin perder ningún elemento
+import reportlab.platypus as platypus
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, Image
+
+
+import requests
+import streamlit as st
+import streamlit.components.v1 as components
+
+# 1. Inicialización del estado para controlar qué se debe imprimir
+if "reporte_a_imprimir" not in st.session_state:
+    st.session_state.reporte_a_imprimir = None
+
+
+# 1. CONFIGURACIÓN DE PÁGINA
+st.set_page_config(page_title="JYPESA | Logistics", layout="wide", initial_sidebar_state="collapsed")
+
+
+
+def registrar_acceso(usuario):
+    # Usamos tus imports globales: os, pandas (pd), datetime y pytz
+    archivo_log = "log_accesos.csv"
+    
+    # 1. Configuramos la zona horaria de Guadalajara
+    zona_horaria = pytz.timezone('America/Mexico_City')
+    
+    # 2. Obtenemos la hora exacta (6:54 PM ahorita)
+    ahora = datetime.now(zona_horaria).strftime("%Y-%m-%d %I:%M %p")
+    
+    # 3. Creamos el DataFrame para el registro
+    nuevo_registro = pd.DataFrame([[usuario, ahora]], columns=["Usuario", "Fecha/Hora"])
+    
+    # 4. Guardado Forzoso: Si falla aquí, la app se detiene (SIN TRY/EXCEPT)
+    if not os.path.isfile(archivo_log):
+        # Crea el archivo por primera vez
+        nuevo_registro.to_csv(archivo_log, index=False)
+    else:
+        # Añade al archivo existente
+        nuevo_registro.to_csv(archivo_log, mode='a', header=False, index=False)
+
+
+
+
+# --- MOTOR DE INTELIGENCIA LOGÍSTICA (XENOCODE CORE) ---
+def d_local(dir_val):
+    """Detecta si una dirección pertenece a la ZMG basada en CPs."""
+    # Rangos de Zapopan, Guadalajara, Tonalá y Tlaquepaque
+    rangos = [(44100, 44990), (45010, 45245), (45400, 45429), (45500, 45595)]
+    cps = re.findall(r'\b\d{5}\b', str(dir_val))
+    for cp in cps:
+        try:
+            if any(inicio <= int(cp) <= fin for inicio, fin in rangos): 
+                return "LOCAL"
+        except: 
+            continue
+    return "FORÁNEO"
+
+@st.cache_data
+def motor_logistico_central():
+    """Carga la matriz historial para recomendaciones de fleteras."""
+    try:
+        if os.path.exists("matriz_historial.csv"):
+            h = pd.read_csv("matriz_historial.csv", encoding='utf-8-sig')
+            h.columns = [str(c).upper().strip() for c in h.columns]
+            c_pre = [c for c in h.columns if 'PRECIO' in c][0]
+            c_flet = [c for c in h.columns if 'FLETERA' in c or 'TRANSPORTE' in c][0]
+            c_dir = [c for c in h.columns if 'DIRECCION' in c][0]
+            h[c_pre] = pd.to_numeric(h[c_pre], errors='coerce').fillna(0)
+            mejores = h.loc[h.groupby(c_dir)[c_pre].idxmin()]
+            return mejores.set_index(c_dir)[c_flet].to_dict(), mejores.set_index(c_dir)[c_pre].to_dict()
+    except: 
+        pass
+    return {}, {}
+
+def load_lottieurl(url: str):
+    """Carga la animación Lottie desde una URL"""
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+@st.cache_data
+def cargar_matriz_nexion():
+    url = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+    try:
+        df = pd.read_csv(url)
+        df.columns = df.columns.str.strip()
+        return df
+    except:
+        return None
+
+df_matriz = cargar_matriz_nexion()
+
+# ── LOGIN ──────────────────────────
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+if "splash_completado" not in st.session_state:
+    st.session_state.splash_completado = False
+if "busqueda_activa" not in st.session_state:
+    st.session_state.busqueda_activa = False
+if "resultado_busqueda" not in st.session_state:
+    st.session_state.resultado_busqueda = None
+if "search_key_version" not in st.session_state:
+    st.session_state.search_key_version = 0
+
+# ── TEMA FIJO (MODO OSCURO FORZADO - ONIX AZULADO) ──────────────────────────
+if "tema" not in st.session_state:
+    st.session_state.tema = "oscuro"
+if "menu_main" not in st.session_state:
+    st.session_state.menu_main = "DASHBOARD"
+if "menu_sub" not in st.session_state:
+    st.session_state.menu_sub = "GENERAL"
+
+
+vars_css = {
+    "bg": "#384A52",           # Fondo profundo (Base)
+    "card": "#2B343B",         # Azul grisáceo oscuro para celdas
+    "text": "#FFFFFF",         # Blanco Perla Ultra Chic (Texto principal)
+    "sub": "#FFFFFF",          # Gris Azulado Claro (Subtítulos/Secundario)
+    "border": "#4B5D67",       # Contorno sutil para elevación
+    "table_header": "#ffffff",
+    "table_bg": "#2B343B",     # Tono profundo para encabezados de tabla
+    "logo": "n1.png"           # Tu archivo de imagen
+}
+
+st.markdown(f"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+/* Diccionario de colores de acento por prioridad */
+:root {{
+    --color-urgente: #ff4b4b; /* Rojo Intenso */
+    --color-alta: #f97316;    /* Naranja Eléctrico */
+    --color-media: #38bdf8;   /* Azul Neón */
+    --color-baja: #00FFAA;    /* Verde Esmeralda */
+}}
+
+.nexion-task-card {{
+    background: rgba(30, 39, 46, 0.6); /* Fondo Glass traslúcido */
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Borde de luz sutil */
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    border-left: 5px solid #94a3b8; /* Borde de acento por defecto */
+    height: auto;
+}}
+
+/* EFECTO HOVER DISCRETO Y PRO */
+.nexion-task-card:hover {{
+    transform: translateX(8px); /* Desplazamiento sutil a la derecha */
+    background: rgba(45, 52, 54, 0.8); /* Se aclara un poco */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3); /* Sombra de profundidad */
+}}
+
+/* Variaciones de color por prioridad */
+.task-urgente {{ border-left-color: var(--color-urgente) !important; }}
+.task-alta {{ border-left-color: var(--color-alta) !important; }}
+.task-media {{ border-left-color: var(--color-media) !important; }}
+.task-baja {{ border-left-color: var(--color-baja) !important; }}
+
+/* Tipografía Elite */
+.task-header-folio {{
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: white;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}}
+.task-client-title {{
+    font-size: 14px;
+    font-weight: 800;
+    color: white;
+    line-height: 1.2;
+}}
+.task-sub-info {{
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-top: 4px;
+}}
+.task-status-label {{
+    background: rgba(255,255,255,0.05);
+    color: white;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    margin-top: 10px;
+    align-self: flex-start;
+}}
+
+#-----RENDER DE MODULO ALERTAS------
+.kpi-slim-card {{
+    background: rgba(30, 39, 46, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 12px 18px; /* Más delgada verticalmente */
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-left: 4px solid #94a3b8; /* El acento de color lateral */
+}}
+.kpi-slim-card:hover {{
+    transform: translateX(5px); /* Movimiento lateral discreto */
+    background: rgba(30, 39, 46, 0.9);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}}
+.slim-label {{
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}}
+.slim-value {{
+    font-size: 22px; /* Tamaño reducido para elegancia */
+    font-weight: 800;
+    line-height: 1;
+}}
+
+/* --- ESTILOS MAESTROS DE NEXION (SECCIÓN SEMÁFORO ALERTAS) --- */   
+.base-card-alerta {{
+    background: rgba(30, 39, 46, 0.8); /* Negro Obsidiana ultra oscuro y glass */
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Borde de luz súper fino */
+    border-radius: 12px;
+    padding: 15px 20px;
+    border-left: 5px solid; /* Mantenemos el borde lateral de color */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 70px; /* Misma altura que tus KPIs de arriba para simetría */
+    transition: all 0.3s ease !important;
+    cursor: pointer;
+}}
+
+.base-card-alerta:hover {{
+    transform: translateY(-5px);
+    background: rgba(10, 15, 20, 0.9) !important;
+    filter: brightness(1.15);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5); /* Sombra de profundidad */
+}}
+
+/* 1. Limpieza de Interfaz */
+header, footer, [data-testid="stHeader"] {{
+    visibility: hidden;
+    height: 0px;
+}}
+
+/* APP BASE */
+html, body {{
+    background-color: {vars_css['bg']} !important;
+    color: {vars_css['text']} !important;
+}}
+
+.stApp {{ 
+    background-color: {vars_css['bg']} !important; 
+    color: {vars_css['text']} !important; 
+    font-family: 'Inter', sans-serif !important; 
+}}
+
+/* CONTENEDOR PRINCIPAL */
+.block-container {{ 
+    padding-top: 0.8rem !important; 
+    padding-bottom: 5rem !important; 
+    background-color: {vars_css['bg']} !important;
+}}
+
+/* 2. ANIMACIÓN DE ENTRADA (BLINDADA) */
+@keyframes fadeInUp {{ 
+    from {{ opacity: 0; transform: translateY(15px); }} 
+    to {{ opacity: 1; transform: translateY(0); }} 
+}}
+
+[data-testid="stVerticalBlock"] > div {{
+    animation: fadeInUp 0.6s ease-out;
+}}
+
+/* 3. TÍTULOS Y OPERATIONAL QUERY */
+h3, .op-query-text {{ 
+    font-size: 11px !important; 
+    letter-spacing: 8px !important; 
+    text-align: center !important; 
+    margin-top: 8px !important; 
+    margin-bottom: 18px !important; 
+    color: {vars_css['sub']} !important; 
+    display: block !important; 
+    width: 100% !important; 
+}}
+
+/* 4. BOTONES SLIM */
+div.stButton > button {{ 
+    background-color: {vars_css['card']} !important; 
+    color: {vars_css['text']} !important; 
+    border: 1px solid {vars_css['border']} !important; 
+    border-radius: 2px !important; 
+    font-weight: 700 !important; 
+    text-transform: uppercase; 
+    font-size: 10px !important; 
+    height: 28px !important; 
+    min-height: 28px !important; 
+    line-height: 28px !important; 
+    transition: all 0.2s ease !important; 
+    width: 100% !important; 
+}}
+
+div.stButton > button:hover {{ 
+    background-color: #00A3A3 !important; 
+    color: #ffffff !important; 
+    border-color: #00A3A3 !important; 
+}}
+
+/* ========================================================================= */
+/* 5. SOLUCIÓN DEFINITIVA Y AGRESIVA (SELECTBOX, INPUTS Y TABS)              */
+/* ========================================================================= */
+
+/* --- FORZAR TEXT INPUT (BÚSQUEDA) A 30PX --- */
+div[data-testid="stTextInput"] > div > div {{
+    min-height: 34px !important;
+    height: 34px !important;
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    transition: all 0.3s ease-in-out !important;
+}}
+
+div[data-testid="stTextInput"] > div > div:focus-within {{
+    border: 1px solid #00A0A8 !important;
+    box-shadow: 0 0 0 1px #00A0A8 !important;
+}}
+
+div[data-testid="stTextInput"] input {{
+    min-height: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    background-color: transparent !important; 
+    color: {vars_css['text']} !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    text-align: center !important; 
+    letter-spacing: 2px; 
+    outline: none !important;
+}}
+
+div[data-testid="stTextInput"] input::placeholder {{
+    font-size: 12px !important; 
+    color: {vars_css['sub']} !important; 
+    opacity: 0.7 !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+}}
+
+/* --- FORZAR SELECTBOX A 30PX --- */
+div[data-testid="stSelectbox"] div[role="combobox"],
+div[data-testid="stSelectbox"] div[role="button"],
+div[data-testid="stSelectbox"] > div > div {{
+    min-height: 34px !important;
+    height: 34px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+}}
+
+/* Focus del SelectBox */
+div[data-testid="stSelectbox"] > div > div:focus-within {{
+    border-color: #00A0A8 !important;
+    box-shadow: 0 0 0 1px #00A0A8 !important;
+    outline: none !important;
+}}
+
+/* Centra el texto dentro del Selectbox */
+div[data-testid="stSelectbox"] div[data-testid="stMarkdownContainer"] p {{
+    line-height: 1.5 !important; 
+    margin: 0 !important;
+    font-size: 11px !important;
+    color: {vars_css['text']} !important;
+    text-transform: uppercase !important;
+}}
+
+/* El menú desplegable del Selectbox y sus colores (Mantenido intacto) */
+div[data-baseweb="popover"] ul {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    padding: 0 !important;
+}}
+div[data-baseweb="popover"] li {{
+    background-color: transparent !important;
+    color: {vars_css['text']} !important;
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+    text-transform: uppercase !important;
+    transition: background 0.2s ease !important;
+}}
+div[data-baseweb="popover"] li:hover {{
+    background-color: #00A3A3 !important;
+    color: #ffffff !important;
+}}
+
+/* --- FORZAR NUMBER INPUT (CANTIDAD DE CAJAS) A 34PX (NUCLEAR) --- */
+div[data-testid="stNumberInput"] > div > div,
+div[data-testid="stNumberInput"] div[data-baseweb="input"] {{
+    min-height: 34px !important;
+    height: 34px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+}}
+
+/* Focus del Number Input */
+div[data-testid="stNumberInput"] > div > div:focus-within {{
+    border: 1px solid #00A0A8 !important;
+    box-shadow: 0 0 0 1px #00A0A8 !important;
+}}
+
+/* El campo de texto de los números */
+div[data-testid="stNumberInput"] input {{
+    min-height: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    background-color: transparent !important; 
+    color: {vars_css['text']} !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    text-align: center !important; 
+    outline: none !important;
+}}
+
+/* Aplastar los contenedores de los botones + y - */
+div[data-testid="stNumberInputStepDown"],
+div[data-testid="stNumberInputStepUp"],
+div[data-testid="stNumberInput"] button {{
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0px !important;
+    margin: 0px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: transparent !important;
+    color: {vars_css['sub']} !important;
+    border: none !important;
+}}
+
+/* El icono SVG dentro de los botones para que no estorbe */
+div[data-testid="stNumberInput"] button svg {{
+    height: 12px !important;
+    width: 12px !important;
+}}
+
+div[data-testid="stNumberInput"] button:hover {{
+    color: #00FFAA !important;
+}}
+
+/* --- FORZAR DATE INPUT (CALENDARIO) A 34PX --- */
+div[data-testid="stDateInput"] > div > div {{
+    min-height: 34px !important;
+    height: 34px !important;
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    transition: all 0.3s ease-in-out !important;
+    display: flex !important;
+    align-items: center !important;
+}}
+
+/* Focus del Date Input (Borde iluminado) */
+div[data-testid="stDateInput"] > div > div:focus-within {{
+    border: 1px solid #00A0A8 !important;
+    box-shadow: 0 0 0 1px #00A0A8 !important;
+}}
+
+/* El campo de texto de las fechas */
+div[data-testid="stDateInput"] input {{
+    min-height: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    background-color: transparent !important; 
+    color: {vars_css['text']} !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    text-align: center !important; 
+    outline: none !important;
+}}
+
+/* Centrar el ícono del calendario si aparece */
+div[data-testid="stDateInput"] svg {{
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+}}
+
+/* ===================== TABS - ESTILO NEXION ===================== */
+
+/* CONTENEDOR DE LAS PESTAÑAS */
+div[data-testid="stTabs"] [role="tablist"] {{
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 36px !important;          /* <-- Espacio entre pestañas */
+    margin: 0 !important;
+    padding: 0 !important;
+}}
+
+/* CADA PESTAÑA */
+div[data-testid="stTabs"] button,
+div[data-testid="stTabs"] div[data-baseweb="tab"],
+div[data-testid="stTabs"] [role="tab"] {{
+    min-height: 30px !important;
+    height: 30px !important;
+
+    padding: 0px 8px !important;   /* <-- Ancho de la pestaña */
+    margin: 0 !important;
+
+    background: transparent !important;
+    background-color: transparent !important;
+
+    border: none !important;
+    border-radius: 0 !important;
+
+    color: {vars_css['sub']} !important;
+    font-weight: 400 !important;
+
+    transition: all .25s ease !important;
+
+    flex: 0 0 auto !important;
+}}
+
+/* HOVER */
+div[data-testid="stTabs"] button:hover,
+div[data-testid="stTabs"] div[data-baseweb="tab"]:hover,
+div[data-testid="stTabs"] [role="tab"]:hover {{
+    background: transparent !important;
+    color: #00FFAA !important;
+}}
+
+/* TAB ACTIVA */
+div[data-testid="stTabs"] button[aria-selected="true"],
+div[data-testid="stTabs"] div[aria-selected="true"],
+div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
+    background: transparent !important;
+    color: {vars_css['text']} !important;
+    font-weight: 700 !important;
+}}
+
+/* ELIMINAR FOCUS */
+div[data-testid="stTabs"] button:focus,
+div[data-testid="stTabs"] button:active,
+div[data-testid="stTabs"] [role="tab"]:focus {{
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}}
+
+/* LÍNEA INFERIOR */
+div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
+    background-color: #00FFAA !important;
+    height: 2px !important;
+}}
+
+
+
+/* ========================================================================= */
+
+/* Bajar tamaño de los nombres de los filtros (Labels) */
+[data-testid="stWidgetLabel"] p {{
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    color: {vars_css['sub']} !important;
+    font-weight: 600 !important;
+}}
+
+input[data-testid="stDateInputView"] {{
+    font-size: 10px !important;
+    color: {vars_css['text']} !important;
+}}
+
+/* 6. FOOTER FIJO */
+.footer {{ 
+    position: fixed; 
+    bottom: 0 !important; 
+    left: 0 !important; 
+    width: 100% !important; 
+    background-color: {vars_css['bg']} !important; 
+    color: {vars_css['sub']} !important; 
+    text-align: center; 
+    padding: 12px 0px !important; 
+    font-size: 9px; 
+    letter-spacing: 2px; 
+    border-top: 1px solid {vars_css['border']} !important; 
+    z-index: 999999 !important; 
+    animation: none !important; 
+    transform: none !important; 
+}}
+
+/* ───────── RECUPERACIÓN DEL AZUL EN FILTROS (SIN TOCAR NADA MÁS) ───────── */
+div[data-baseweb="tag"] {{
+    background-color: #718096 !important;
+    border-radius: 4px !important;
+    height: 22px !important;
+    margin: 2px !important;
+}}
+div[data-baseweb="tag"] span {{
+    color: #ffffff !important;
+    font-size: 12px !important; 
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+}}
+div[data-baseweb="tag"] svg {{
+    fill: #ffffff !important;
+    height: 12px !important;
+    width: 12px !important;
+}}
+
+/* ───────── POPOVER ESTILO PERSONALIZADO ───────── */
+div[data-baseweb="layer"] div[data-baseweb="popover"] > div {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+}}
+
+div[data-baseweb="popover"] {{
+    color: {vars_css['text']} !important;
+}}
+
+button[kind="secondary"] {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    height: 35px !important;
+    min-height: 32px !important;
+    padding: 0 12px !important;
+    font-size: 8px !important;
+    line-height: 30px !important;
+}}
+
+button[kind="secondary"]:hover {{
+    background-color: #617F8D !important;   
+    color: {vars_css['text']} !important;
+    border-color: #617F8D !important;
+}}
+
+/* --- WIDGET DE RUTA PREMIUM --- */
+.kpi-ruta-container {{
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+    font-family: 'Inter', sans-serif;
+}}
+
+.kpi-ruta-card {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 12px !important;
+    padding: 30px !important;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+}}
+
+.kpi-ruta-card::before {{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #00FFAA, #00A3A3);
+}}
+
+.kpi-tag {{
+    font-size: 16px !important;
+    letter-spacing: 3px;
+    color: #00FFAA;
+    font-weight: 500;
+    text-transform: uppercase;
+    opacity: 0.9;
+}}
+
+.kpi-route-flow {{
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}}
+
+.city {{
+    font-size: 20px !important;
+    font-weight: 600;
+    color: {vars_css['text']};
+    letter-spacing: 1px;
+}}
+
+.arrow {{
+    color: #00FFAA;
+    font-size: 34px;
+    font-weight: bold;
+}}
+
+.kpi-value {{
+    font-size: 28px !important;
+    font-weight: 900;
+    color: {vars_css['text']};
+    margin: 5px 0;
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(0,255,170,0.2);
+}}
+
+.kpi-value small {{
+    font-size: 18px !important;
+    color: {vars_css['sub']};
+    letter-spacing: 2px;
+    font-weight: 400;
+}}
+
+.kpi-subtext {{
+    font-size: 16px !important;
+    color: {vars_css['sub']};
+    margin-top: 15px;
+    line-height: 1.4;
+}}
+
+.kpi-subtext b {{
+    color: #00FFAA;
+}}
+
+.data-section-header {{
+    font-size: 13px !important;
+    letter-spacing: 3px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    color: {vars_css['sub']} !important;
+    margin-bottom: 15px !important;
+    margin-top: 25px !important;
+    border-left: 3px solid #00FFAA; 
+    padding-left: 10px !important;
+}}
+
+/* ───────── REFINAMIENTO GENERAL DEL POPOVER ───────── */
+div[data-baseweb="popover"] button {{
+    font-size: 10px !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+}}
+
+div[data-baseweb="popover"] .st-expanderHeader p {{
+    font-size: 10px !important;
+    letter-spacing: 1.5px !important;
+    font-weight: 600 !important;
+}}
+
+div[data-baseweb="popover"] p, 
+div[data-baseweb="popover"] span {{
+    font-size: 10px !important;
+    letter-spacing: 1px !important;
+}}
+
+div[data-baseweb="popover"] button[kind="primary"] {{
+    font-size: 10px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    line-height: 26px !important;
+    background-color: #ff4b4b !important; 
+    border: 1px solid #ff4b4b !important;
+    color: white !important;
+    border-radius: 4px !important; 
+    transition: background-color 0.3s ease !important;
+}}
+
+div[data-baseweb="popover"] button[kind="primary"]:hover {{
+    background-color: #FF7C80 !important; 
+    border-color: #FF7C80 !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+}}
+
+/* ───────── SOLUCIÓN NUCLEAR: ICONO RESPONSIVE ───────── */
+button[data-testid="stBaseButton-secondary"] p {{
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+}}
+
+@media (max-width: 1200px) {{
+    div[data-testid="stPopover"] > button {{
+        width: 45px !important;
+        height: 45px !important;
+        min-width: 45px !important;
+        max-width: 45px !important;
+        padding: 0 !important;
+        border-radius: 50% !important; 
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }}
+
+    div[data-testid="stPopover"] > button * {{
+        display: none !important; 
+    }}
+
+    div[data-testid="stPopover"] > button::after {{
+        content: "☰";
+        display: block !important;
+        font-size: 22px !important;
+        color: {vars_css['text']} !important;
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+    }}
+}}
+</style>
+""", unsafe_allow_html=True)
+
+
+# ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
+# ── DEFINICIÓN DE INTERFAZ DE LOGIN ────────────────────
+def login_screen():
+    # --- HACK PARA CENTRADO ABSOLUTO ---
+    # Leemos la imagen y la convertimos a base64 para poder usarla en HTML
+    with open("n2.png", "rb") as f:
+        data = f.read()
+        encoded = base64.b64encode(data).decode()
+
+    _, col, _ = st.columns([2, 2, 2]) 
+    
+    with col:
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        
+        # Este es el contenedor mágico: usamos Flexbox para centrar
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                <img src="data:image/png;base64,{encoded}" width="180">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        with st.form("login_form", clear_on_submit=False):
+            user_input = st.text_input("USUARIO", placeholder="Introduce tu usuario")
+            pass_input = st.text_input("CONTRASEÑA", type="password", placeholder="••••••••")
+            
+            st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+            
+            submit_button = st.form_submit_button("VERIFY IDENTITY", use_container_width=True)
+            
+            if submit_button:
+                lista_usuarios = st.secrets.get("usuarios", {})
+                
+                             
+                # 1. Diccionario para convertir Operator ID en Nombre Real
+                nombres_reales = {
+                    "Rigoberto": "Rigoberto Hernández",
+                    "AGomez": "Ale Gomez",
+                    "JMoreno": "Jesus Moreno",
+                    "Cynthia": "Cynthia",
+                    "Brenda": "Brenda",
+                    "Fialko": "Fialko",
+                    "Atencion3G": "Sandra Yaneli",
+                    "Claudia": "Claudia",
+                    "Ruth": "Ruth Buenrostro",
+                    "Carlos": "Carlos Vazquez",
+                    "Sandra": "Sandra, Analista",
+                    "ASanchez": "Alejandra",
+                    "MarthaC" : "Martha Casas",
+                }
+                
+                # 2. Diccionario de géneros (F = Femenino, M = Masculino)
+                # Esto hará que el saludo sea dinámico
+                generos = {
+                    "Rigoberto": "M",
+                    "AGomez": "F",
+                    "JMoreno": "M",
+                    "Cynthia": "F",
+                    "Brenda": "F",
+                    "Fialko": "M",
+                    "Yaneli": "F",
+                    "Claudia": "F",
+                    "Arturo": "M",
+                    "Ruth" : "F",
+                    "Carlos": "M",
+                    "Sandra": "F",
+                    "ASanchez":"F",
+                    "MarthaC" : "F"
+                }
+                
+                # --- VALIDACIÓN EXITOSA ---
+                if user_input in lista_usuarios and str(lista_usuarios[user_input]) == pass_input:
+                    st.session_state.autenticado = True
+                    st.session_state.usuario_activo = user_input
+                    registrar_acceso(user_input)
+                    
+                    nombre_completo = nombres_reales.get(user_input, user_input)
+                    st.session_state.nombre_completo = nombre_completo 
+                    
+                    gen = generos.get(user_input, "M")
+                    saludo = "BIENVENIDA" if gen == "F" else "BIENVENIDO"
+                    
+                    # --- REDIRECCIÓN INTELIGENTE ---
+                    if user_input.upper() == "RIGOBERTO":
+                        # Para ti, amor, reseteamos el módulo para que veas la pantalla de cuadros
+                        st.session_state.ejecutivo_modulo = None 
+                    elif user_input.upper() == "VENTAS":
+                        st.session_state.menu_main = "REPORTES"
+                        st.session_state.menu_sub = "ENVIO DE MUESTRAS"
+                        st.session_state.ejecutivo_modulo = "CORE" # Ellos van directo
+                    elif user_input.upper() == "ATENCION3G":
+                        st.session_state.menu_main = "SEGUIMIENTO"
+                        st.session_state.menu_sub = "ALERTAS"
+                        st.session_state.ejecutivo_modulo = "CORE" # Ellos van directo
+                    else:
+                        st.session_state.menu_main = "DASHBOARD"
+                        st.session_state.menu_sub = "GENERAL"
+                        st.session_state.ejecutivo_modulo = "CORE"
+
+                    st.success(f"¡{saludo}!, {nombre_completo.upper()}") 
+                    time.sleep(1) 
+                    st.rerun()
+                
+                # MANEJO DEL ERROR
+                else:
+                    st.error("ERROR: ACCESS DENIED. INVALID CREDENTIALS.")
+                    
+# ── FLUJO DE CONTROL (SPLASH -> LOGIN -> APP)
+# 1. ¿FALTA MOSTRAR EL SPLASH?
+if not st.session_state.get('splash_completado', False):
+    p = st.empty()
+    
+    mensajes = [
+        "ESTABLISHING SECURE ACCESS...",
+        "AUTHENTICATING NEXION GATEWAY...",
+        "LOGISTICS DATA FLOW INITIALIZING...",
+        "SYSTEM READY..."
+    ]
+    
+    for m in mensajes:
+        # Círculo minimalista azul con texto en blanco
+        splash_html = f'''
+        <div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+            <div style="width:90px;height:90px;border:2px solid rgba(130, 212, 230, 0.15);border-top:2px solid #82D4E6;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:25px;"></div>
+            <p style="font-family:monospace;font-size:11px;letter-spacing:4px;color:#FFFFFF;text-transform:uppercase;">
+                {m}
+            </p>
+            <style>
+                @keyframes spin {{ 100% {{ transform: rotate(360deg); }} }}
+            </style>
+        </div>
+        '''
+        
+        with p.container():
+            st.markdown(splash_html, unsafe_allow_html=True)
+            time.sleep(0.7)
+            
+    p.empty()
+    st.session_state.splash_completado = True
+    st.rerun()
+
+# 2. ¿SPLASH LISTO PERO NO SE HA LOGGEADO?
+elif not st.session_state.get('autenticado', False):
+    # Llamamos a tu función de login existente
+    login_screen()
+
+
+# ── 3. ¿YA SE LOGUEÓ PERO ES RIGOBERTO Y NO HA ELEGIDO MÓDULO? (PUERTA ÉLITE LOGO CENTRADO) ──
+elif st.session_state.usuario_activo.upper() == "RIGOBERTO" and st.session_state.get('ejecutivo_modulo') is None:
+    
+    # 💎 CSS DE ALTA GAMA: Centrado absoluto con Flexbox
+    st.markdown("""
+        <style>
+        /* Título NEXION Protagonista (Arriba, Grande, Fuerte) */
+        .brand-title {
+            text-align: center;
+            font-size: 55px; /* Gigante y potente */
+            font-weight: 900;
+            letter-spacing: 25px; /* Ultra espaciado ejecutivo */
+            color: #ffffff;
+            margin-top: 40px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.15); /* Brillo sutil blanco */
+        }
+    
+        /* Subtítulo Versión Discreto */
+        .brand-version {
+            text-align: center;
+            font-size: 10px;
+            color: #FFFFFF; /* Muy tenue */
+            letter-spacing: 5px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+    
+        /* Saludo CEO Discreto (Abajo, Pequeño, Elegante) */
+        .ceo-protocol-greet {
+            text-align: center;
+            font-size: 12px; /* Pequeño y sutil */
+            font-weight: 400;
+            letter-spacing: 4px;
+            color: #8fa3b0; /* Color sub de NEXION */
+            margin-bottom: 45px; /* Espacio antes de los módulos */
+            text-transform: uppercase;
+        }
+    
+        /* --- RESTO DEL CSS DE LAS TARJETAS (Mantenemos el look compacto) --- */
+        .ceo-card {
+            background: rgba(30, 39, 46, 0.85) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            height: 190px; /* Un pelín más compactas */
+            margin-bottom: 15px;
+        }
+    
+        .ceo-card:hover {
+            transform: translateY(-8px);
+            background: rgba(45, 52, 54, 0.98) !important;
+            border-color: #00D4FF !important;
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2);
+        }
+    
+        .ceo-icon { 
+            font-size: 48px; 
+            margin-bottom: 12px; 
+            filter: drop-shadow(0 0 8px rgba(255,255,255,0.1)); 
+        }
+    
+        .ceo-title { 
+            font-size: 11px; 
+            font-weight: 800; 
+            color: #ffffff; 
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
+            text-align: center; 
+        }
+    
+        .stButton>button { 
+            border-radius: 8px !important; 
+            font-size: 10px !important; 
+            padding: 2px 10px !important; 
+            background: rgba(255,255,255,0.03) !important; 
+            transition: all 0.3s ease !important; 
+        }
+    
+        [data-testid="stHorizontalBlock"] { 
+            max-width: 900px; 
+            margin: 0 auto; 
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # --- LOGO Y SALUDOS ---
+    st.markdown('<div class="brand-logo-full-center">', unsafe_allow_html=True)
+    try:
+        st.image("n2.png", width=180) 
+    except:
+        st.markdown("<h1 style='text-align:center; color:white; letter-spacing:10px;'>NEXION</h1>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown("<div class='brand-version'>CORPORATE OPERATIVE SYSTEM v3.0</div>", unsafe_allow_html=True)
+    st.markdown("<div class='ceo-protocol-greet'>BIENVENIDO // SECURE ACCESS GRANTED</div>", unsafe_allow_html=True)
+
+    # ⚡ REPARACIÓN: Definimos las columnas antes de usarlas
+    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+    
+    with m_col1:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm-40-82v-78q-33 0-56.5-23.5T360-320v-40L168-552q-8 35-8 72 0 140 89.5 246T440-162Zm282-192q30-42 44-90t14-96q0-128-78.5-224T520-800v40q0 33-23.5 56.5T440-680h-80v80q0 33-23.5 56.5T280-520h-40v80h200q33 0 56.5 23.5T520-360v80h40q33 0 56.5 23.5T640-233v23q48-26 82-72Z'/></svg></div><div class='ceo-title'>Panel Operativo<br>Global</div></div>", unsafe_allow_html=True)
+        if st.button("ACCEDER", key="btn_dash", use_container_width=True):
+            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "DASHBOARD"; st.rerun()
+
+    with m_col2:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M240-160q-33 0-56.5-23.5T160-240v-440q0-33 23.5-56.5T240-760h440l120 160v360q0 33-23.5 56.5T720-160H240Zm0-80h480v-330L655-680H240v440Zm240-100q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Z'/></svg></div><div class='ceo-title'>Seguimiento<br>Entregas</div></div>", unsafe_allow_html=True)
+        if st.button("GESTIONAR", key="btn_seg", use_container_width=True):
+            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "SEGUIMIENTO"; st.session_state.menu_sub = "ALERTAS"; st.rerun()
+    
+    with m_col3:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520Z'/></svg></div><div class='ceo-title'>Reportes<br>Ejecutivos</div></div>", unsafe_allow_html=True)
+        if st.button("VISUALIZAR", key="btn_rep", use_container_width=True):
+            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "REPORTES"; st.session_state.menu_sub = "ANALISIS MENSUAL"; st.rerun()
+    
+    with m_col4:
+        st.markdown("<div class='ceo-card'><div class='ceo-icon'><svg xmlns='http://www.w3.org/2000/svg' height='40px' viewBox='0 -960 960 960' width='40px' fill='#60A5FA'><path d='M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z'/></svg></div><div class='ceo-title'>Admin<br>Hub Log</div></div>", unsafe_allow_html=True)
+        if st.button("CONFIGURAR", key="btn_hub", use_container_width=True):
+            st.session_state.ejecutivo_modulo = "CORE"; st.session_state.menu_main = "CENTRO DE DATOS"; st.session_state.menu_sub = "ASIGNAR FLETERA"; st.rerun()
+
+
+   
+
+else:      
+    
+    # ── HEADER CON 4 COLUMNAS (BÚSQUEDA OPTIMIZADA) ───────────────────────────
+    header_zone = st.container()
+    with header_zone:
+        # c1: Logo | c2: Título | c3: Búsqueda (Reducida) | c4: Popover (Ampliada)
+        c1, c2, c3, c4 = st.columns([1.5, 3.5, 0.9, 0.9], vertical_alignment="center")
+        
+        with c1:
+            try:
+                st.image(vars_css["logo"], width=160)
+            except:
+                st.write("**NEXION**")
+    
+        with c2:
+            # --- INTERCEPTAMOS "DASHBOARD" PARA CAMBIAR EL TEXTO VISUAL ---
+            texto_principal = st.session_state.menu_main
+            azul_nexion = "#82D4E6"
+            # Usamos un dorado mucho más vivo y brillante
+            oro_brillante = "#FFD700" 
+            
+            # Si el menú es DASHBOARD, aplicamos el diseño con la línea azul
+            if texto_principal == "DASHBOARD":
+                texto_principal = f"NEXION <span style='color: {azul_nexion}; font-weight: 500; margin: 0 10px; font-size: 16px;'>|</span> SMART LOGISTICS"
+            
+            # RUTA DINÁMICA
+            if st.session_state.menu_sub != "GENERAL":
+                # Aplicamos el color brillante y un efecto de sombra sutil para el resplandor
+                ruta = (
+                    f"{texto_principal} "
+                    f"<span style='color: {azul_nexion}; opacity: 0.8; margin: 0 15px;'>/</span> "
+                    f"<span style='color: {oro_brillante}; font-weight: 500; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);'>"
+                    f"{st.session_state.menu_sub}</span>"
+                )
+            else:
+                ruta = texto_principal
+            
+            st.markdown(f"""
+                <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
+                    <p style='font-size: 13px; letter-spacing: 5px; color: {vars_css['sub']}; margin: 0; font-weight: 500; text-transform: uppercase; text-align: center;'>
+                        {ruta}
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+    
+        with c3:
+            # Verificamos si es Atencion3G para desactivar el input
+            es_atencion3g = (st.session_state.get("usuario_activo", "").upper() == "ATENCION3G")
+            
+            key_actual = f"main_search_v{st.session_state.search_key_version}"
+            
+            query = st.text_input(
+                "Buscar", 
+                placeholder="🔍 BUSCADOR DESACTIVADO" if es_atencion3g else "🔍 Buscar...", 
+                label_visibility="collapsed", 
+                key=key_actual,
+                disabled=es_atencion3g  # <--- Aquí sucede la magia
+            )
+            
+            if query:
+                # ── FUERZA LECTURA DE DATOS MÁS RECIENTES (MATRIZ) ──
+                url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+                try:
+                    # Cargamos directamente de la URL para evitar datos viejos en caché
+                    df_matriz_fresco = pd.read_csv(url_raw)
+                except Exception:
+                    df_matriz_fresco = df_matriz # Si falla, vuelve al anterior por seguridad
+
+                # 1. BÚSQUEDA EN MATRIZ DE OPERACIONES (df_matriz_fresco)
+                res_ops = pd.DataFrame()
+                if df_matriz_fresco is not None:
+                    res_ops = df_matriz_fresco[
+                        (df_matriz_fresco['NÚMERO DE GUÍA'].astype(str).str.contains(query, case=False, na=False)) | 
+                        (df_matriz_fresco['NÚMERO DE PEDIDO'].astype(str).str.contains(query, case=False, na=False)) |
+                        (df_matriz_fresco['NO CLIENTE'].astype(str).str.contains(query, case=False, na=False)) |
+                        (df_matriz_fresco['NOMBRE DEL CLIENTE'].astype(str).str.contains(query, case=False, na=False))
+                    ]
+                
+                # 2. BÚSQUEDA EN INVENTARIO (inventario.csv)
+                res_inv = pd.DataFrame()
+                try:
+                    df_inv_temp = pd.read_csv("inventario.csv")
+                    res_inv = df_inv_temp[
+                        (df_inv_temp['CODIGO'].astype(str).str.contains(query, case=False, na=False)) |
+                        (df_inv_temp['DESCRIPCION'].astype(str).str.contains(query, case=False, na=False))
+                    ]
+                except Exception:
+                    pass
+        
+                # Lógica de asignación de resultados
+                if not res_ops.empty:
+                    st.session_state.busqueda_activa = True
+                    st.session_state.tipo_resultado = "OPERACION"
+                    st.session_state.resultado_busqueda = res_ops
+                elif not res_inv.empty:
+                    st.session_state.busqueda_activa = True
+                    st.session_state.tipo_resultado = "INVENTARIO"
+                    st.session_state.resultado_busqueda = res_inv
+                else:
+                    st.session_state.busqueda_activa = False
+                    st.toast("No se encontró ningún registro", icon="🔍")
+        
+        with c4:
+            # --- BOTÓN POPOVER (NAVEGACIÓN + PERFIL) ---
+            with st.popover("☰ Menú", use_container_width=True):
+            
+                # 1. IDENTIFICACIÓN DE USUARIO
+                usuario = st.session_state.get("usuario_activo", "GUEST")
+                
+                # Definimos los roles
+                es_admin = (usuario.upper() == "RIGOBERTO")
+                es_ventas = (usuario.upper() == "VENTAS")
+                es_atencion3g = (usuario.upper() == "ATENCION3G") # <--- Usuario Atencion3G
+                
+                nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
+                
+                st.markdown(f"""
+                    <div style='background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #00D4FF;'>
+                        <p style='color:#00D4FF; font-size:9px; font-weight:500; margin:0; letter-spacing:1px;'>USUARIO ACTIVO</p>
+                        <p style='color:{vars_css['text']}; font-size:14px; font-weight:500; margin:0;'>{nombre_display.upper()}</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown("<p style='color:#f0f0f0; font-size:10px; font-weight:400; text-align:center; margin:10px 0; letter-spacing:1px;'>MENÚ PRINCIPAL</p>", unsafe_allow_html=True)
+                
+                # 2. BOTONES DE NAVEGACIÓN (Restricciones dinámicas)
+
+                # --- DASHBOARD: Oculto para Ventas y Atencion3G ---
+                if not es_ventas and not es_atencion3g:
+                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                        st.session_state.menu_main = "DASHBOARD"
+                        st.session_state.menu_sub = "GENERAL"
+                        st.session_state.busqueda_activa = False
+                        st.rerun()
+            
+                # --- SEGUIMIENTO: Aquí es donde entra Atencion3G ---
+                # --- SEGUIMIENTO: Gestión de opciones según rol y usuario ---
+                if not es_ventas:
+                    with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                        
+                        # Obtenemos el usuario actual de forma segura
+                        usuario_actual = str(st.session_state.get("usuario", st.session_state.get("usuario_activo", ""))).strip()
+                        
+                        # Definimos las opciones según los permisos
+                        if es_admin:
+                            opciones_seg = ["ALERTAS", "GANTT", "QUEJAS"]
+                        elif usuario_actual == "Cynthia":
+                            opciones_seg = ["ALERTAS", "QUEJAS"]  # Ve alertas y quejas, pero NO Gantt
+                        else:
+                            opciones_seg = ["ALERTAS"] # Atencion3G y otros solo ven alertas
+                            
+                        for s in opciones_seg:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_sub_{s}"):
+                                st.session_state.menu_main = "SEGUIMIENTO"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+                          
+            
+                # --- REPORTES: Oculto para Atencion3G ---
+                if not es_atencion3g:
+                    with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                        
+                        # Obtenemos el usuario de la sesión cubriendo ambas claves comunes
+                        usuario_actual = str(st.session_state.get("usuario", st.session_state.get("usuario_activo", ""))).strip()
+                        
+                        # Verificamos si es admin o si el usuario es exactamente Carlos
+                        if es_admin or usuario_actual == "Carlos":
+                            opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+                        else:
+                            opciones_rep = ["ENVIO DE MUESTRAS"] # Filtro para Ventas y otros
+                            
+                        for s in opciones_rep:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_rep_{s}"):
+                                st.session_state.menu_main = "REPORTES"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+            
+                # --- FORMATOS: Oculto para Ventas y Atencion3G ---
+                if not es_ventas and not es_atencion3g:
+                    with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]                        
+                        for s in opciones_for:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_for_{s}"):
+                                st.session_state.menu_main = "FORMATOS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+            
+                # --- HUB LOG: Oculto para Ventas y Atencion3G ---
+                if not es_ventas and not es_atencion3g:
+                    with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
+                        for s in ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "HERRAMIENTAS"]:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_hub_{s}"):
+                                st.session_state.menu_main = "CENTRO DE DATOS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+
+                # --- FINANZAS: Estrictamente confidencial ---
+                if st.session_state.get("usuario_activo") == "Rigoberto": 
+                    with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
+                        opciones_fin = ["WALLET", "CAJA CHICA", "GASTOS"] 
+                        for s in opciones_fin:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_fin_{s}"):
+                                st.session_state.menu_main = "FINANZAS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                st.rerun()
+
+                # --- NUEVO: SECCIÓN ENFOQUE (Solo visible para Rigoberto, Jmoreno y Carlos) ---
+                usuario_actual = st.session_state.get("usuario_activo", "").upper()
+                if usuario_actual in ["RIGOBERTO", "JMORENO", "CARLOS"]:
+                    with st.expander("ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
+                        for s in ["MORENO", "VAZQUEZ", "MIGUEL"]:
+                            label = f"» {s}" if st.session_state.get("menu_sub") == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_enf_{s}"):
+                                st.session_state.menu_main = "ENFOQUE"
+                                st.session_state.menu_sub = s
+                                st.rerun()
+            
+                # 3. SECCIÓN DE CIERRE DE SESIÓN
+                st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+                if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
+                    for key in list(st.session_state.keys()):
+                        del st.session_state[key]
+                    st.session_state.autenticado = False
+                    st.session_state.splash_completado = False
+                    st.rerun()
+           
+                
+                    
+        # ── RENDERIZADO DE CONSULTA ──────────────────────────────────────────────────
+        if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
+            resultados = st.session_state.resultado_busqueda
+            total = len(resultados)
+            tipo = st.session_state.get("tipo_resultado", "OPERACION")
+            accent_color = "#1cc88a"
+            inv_color = "#36b9cc" 
+        
+            # Botón Cerrar discreto
+            col_espacio, col_cerrar = st.columns([0.85, 0.15])
+            with col_cerrar:
+                if st.button("✕ CERRAR", key="btn_cerrar_top", use_container_width=True):
+                    st.session_state.busqueda_activa = False
+                    st.session_state.resultado_busqueda = None
+                    st.session_state.search_key_version += 1
+                    st.rerun()
+        
+            if tipo == "INVENTARIO":
+          
+                # 1. Estilo para el efecto hover (Sutil y elegante)
+                st.markdown(f"<style>.card-inv {{ transition: all 0.3s ease; cursor: pointer; }} .card-inv:hover {{ transform: translateX(8px); border-color: {inv_color} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(54, 185, 204, 0.1); }}</style>", unsafe_allow_html=True)
+                
+                # 2. Encabezado con indicador lateral
+                st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div style='background:{inv_color};width:5px;height:20px;border-radius:2px;box-shadow:0 0 10px {inv_color};'></div><span style='color:white;font-size:14px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;'>EXISTENCIAS EN INVENTARIO <span style='color:{inv_color};'>({total})</span></span></div>", unsafe_allow_html=True)
+                
+                # 3. Bucle de tarjetas DELGADAS y OSCURAS
+                for index, i in resultados.iterrows():
+                    st.markdown(f"<div class='card-inv' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {inv_color};border-radius:10px;padding:10px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CÓDIGO / SKU</span><br><b style='font-size:16px;color:{inv_color};letter-spacing:1px;'>{i['CODIGO']}</b></div><div style='flex:3;padding-left:20px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>DESCRIPCIÓN</span><br><span style='font-size:13px;color:white;font-weight:600;line-height:1.2;'>{i['DESCRIPCION']}</span></div><div style='flex:1;text-align:right;'><span style='background:{inv_color}15;color:{inv_color};padding:3px 8px;border-radius:4px;font-size:9px;font-weight:800;border:1px solid {inv_color}30;text-transform:uppercase;'>DISPONIBLE</span></div></div>", unsafe_allow_html=True)
+            else: 
+                if total == 1:
+                    # --- 3. RENDERIZADO DEL TIMELINE (REPARADO) ---
+                    df_timeline = resultados
+                    if not df_timeline.empty:
+                        envio = df_timeline.iloc[0]
+                        f_envio = envio.get("FECHA DE ENVÍO", "N/A")
+                        f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
+                        entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
+                        f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
+                        
+                        trigger_val = str(envio.get("TRIGGER", "")).strip()
+                        tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
+                        
+                        if tiene_guia:
+                            n_guia = envio["NÚMERO DE GUÍA"]
+                        elif trigger_val == "Enviada":
+                            n_guia = "GENERANDO GUÍA..."
+                        else:
+                            n_guia = "EN ESPERA DE SURTIDO"
+                    
+                        # Colores base
+                        color_envio, color_guia, color_promesa = "#38bdf8", ("#38bdf8" if tiene_guia else vars_css['border']), ("#a855f7" if tiene_guia else vars_css['border'])
+                        linea_1_2, linea_2_3 = ("#38bdf8" if tiene_guia else vars_css['border']), ("#a855f7" if tiene_guia else vars_css['border'])
+                        
+                        # --- FIX ANTICRASH ---
+                        # Convertimos primero a datetime
+                        f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors='coerce')
+                        # Solo aplicamos normalize si NO es nulo para evitar el AttributeError
+                        if pd.notnull(f_promesa_dt):
+                            f_promesa_dt = f_promesa_dt.normalize()
+                        
+                        hoy = pd.Timestamp(datetime.now()).normalize()
+                    
+                        # --- LÓGICA DE ESTATUS Y COLORES FINALES ---
+                        if not tiene_guia:
+                            if trigger_val == "Enviada":
+                                status_text, status_color = "GENERANDO GUÍA", "#38bdf8"
+                            else:
+                                status_text, status_color = "SURTIENDO", "#FFA500"
+                            color_entrega, linea_3_4 = vars_css['border'], vars_css['border']
+                            
+                        elif not entregado_real:
+                            status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
+                            color_entrega, linea_3_4 = vars_css['border'], vars_css['border']
+                            
+                        else:
+                            # Aplicamos la misma seguridad para la fecha de entrega real por si acaso
+                            f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors='coerce')
+                            if pd.notnull(f_entrega_dt): f_entrega_dt = f_entrega_dt.normalize()
+                            
+                            status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
+                            color_entrega, linea_3_4 = status_color, status_color
+                    
+                        # HTML en una sola línea
+                        timeline_html = f'<div style="background:{vars_css["card"]}; padding:20px; border-radius:8px; border:1px solid {vars_css["border"]}; margin-bottom:25px; font-family:sans-serif;"><div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:30px;"><h2 style="margin:0; color:{vars_css["text"]}; font-size:14px; letter-spacing:1px; text-transform:uppercase; font-weight:800;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}15; color:{status_color}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:10px; border:1px solid {status_color}; letter-spacing:1px; white-space:nowrap;">{status_text}</span></div><div style="display:flex; align-items:center; justify-content:space-between; width:100%; position:relative; margin-bottom:30px; overflow-x:auto; padding-bottom:10px;"><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:10px; font-weight:700;">ENVÍO</div><div style="font-size:10px; color:white;">{f_envio}</div></div><div style="flex-grow:1; height:2px; background:{linea_1_2}; margin-top:-35px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:10px; font-weight:700;">GUÍA</div><div style="font-size:10px; color:white;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow:1; height:2px; background:{linea_2_3}; margin-top:-35px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:10px; font-weight:700;">PROMESA</div><div style="font-size:10px; color:white;">{f_promesa}</div></div><div style="flex-grow:1; height:2px; background:{linea_3_4}; margin-top:-35px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; box-shadow:{"0 0 10px "+color_entrega+"44" if entregado_real else "none"}; z-index:2;"></div><div style="font-size:9px; color:{vars_css["sub"]}; margin-top:8px; font-weight:700;">ENTREGA</div><div style="font-size:10px; color:white;">{f_entrega_val}</div></div></div><div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:15px; border-top:1px solid {vars_css["border"]}; padding-top:20px;"><div style="flex:1; min-width:80px;"><div style="color:{vars_css["sub"]}; font-size:10px; font-weight:700; letter-spacing:1px;">FLETERA</div><div style="color:white; font-size:14px; font-weight:800; margin-top:5px;">{envio["FLETERA"]}</div></div><div style="flex:1; min-width:80px; text-align:center;"><div style="color:{vars_css["sub"]}; font-size:10px; font-weight:700; letter-spacing:1px;">GUÍA</div><div style="color:white; font-size:14px; font-weight:800; margin-top:5px;">{n_guia}</div></div><div style="flex:1; min-width:80px; text-align:right;"><div style="color:{vars_css["sub"]}; font-size:10px; font-weight:700; letter-spacing:1px;">DESTINO</div><div style="color:white; font-size:14px; font-weight:800; margin-top:5px;">{envio["DESTINO"]}</div></div></div></div>'
+                        st.markdown(timeline_html, unsafe_allow_html=True)
+                    
+                    # --- RENDERIZADO DE DETALLES (TU BLOQUE ORIGINAL) ---
+                    # --- RENDERIZADO DE DETALLES (TU BLOQUE ORIGINAL) ---
+                    d = resultados.iloc[0]
+                    st.markdown(f"""
+                        <div class="kpi-ruta-container">
+                            <div class="kpi-ruta-card" style="background: rgba(255,255,255,0.05); border-top: 4px solid {accent_color}; position: relative; padding: 20px; border-radius: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <span style="color: {accent_color}; font-weight: 800; font-size: 14px; letter-spacing: 1px;">DETALLES DE OPERACIÓN</span>
+                                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                                        <span style="font-size:16px; font-weight:600; color: white; opacity: 0.9;">FACTURA:</span>
+                                        <span style="color:{accent_color}; font-weight:800; font-size:22px;">{d['NÚMERO DE PEDIDO']}</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-route-flow" style="margin-bottom: 25px; display: flex; align-items: center;">
+                                    <div class="city" style="color: white; font-weight:bold;">GDL</div>
+                                    <div class="arrow" style="color: {accent_color}; margin: 0 15px;">→</div>
+                                    <div class="city" style="color: white; font-weight:bold;">{d['DESTINO']}</div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
+                                    <div>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">CLIENTE</p>
+                                        <p style="font-size:14px; margin:0; color:white;"><b>{d['NOMBRE DEL CLIENTE']}</b></p>
+                                        <p style="font-size:11px; color:#E0E0E0; margin-bottom:2px;">ID: {d['NO CLIENTE']}</p>
+                                        <p style="font-size:11px; color:#E0E0E0; opacity:0.9;">{d['DOMICILIO']}</p>
+                                    </div>
+                                    <div>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">LOGÍSTICA</p>
+                                        <p style="font-size:12px; margin:0; color:white;">GUÍA: <b>{d['NÚMERO DE GUÍA']}</b></p>
+                                        <p style="font-size:12px; margin:0; color:white;">FLETERA: <b>{d['FLETERA']}</b></p>
+                                        <p style="font-size:12px; margin:0; color:white;">COSTO: <b>${d['COSTO DE LA GUÍA']}</b></p>
+                                    </div>
+                                    <div>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">TIEMPOS</p>
+                                        <p style="font-size:12px; margin:0; color:white;">ENVÍO: {d['FECHA DE ENVÍO']}</p>
+                                        <p style="font-size:12px; margin:0; color:{accent_color}; font-weight:bold;">PROMESA: {d['PROMESA DE ENTREGA']}</p>
+                                    </div>
+                                    <div>
+                                        <p style="color:{accent_color}; font-weight:800; font-size:10px; margin-bottom:5px; border-left: 2px solid {accent_color}; padding-left: 8px;">CARGA</p>
+                                        <p style="font-size:12px; margin:0; color:white;">CAJAS: {d['CANTIDAD DE CAJAS']}</p>
+                                        <p style="font-size:11px; color:#E0E0E0;">STATUS: {d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'SIN OBSERVACIONES'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    # Definimos el nuevo color azulito para esta sección
+                    azul_premium = "#00D4FF"
+                    
+                    # Encabezado de la sección con el indicador azul
+                    st.markdown(f"""
+                        <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'>
+                            <div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div>
+                            <span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>
+                                MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span>
+                            </span>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <style>
+                        .card-nexion {{
+                            transition: all 0.3s ease !important;
+                            cursor: pointer;
+                        }}
+                        .card-nexion:hover {{
+                            transform: translateX(10px);
+                            border-color: {azul_premium} !important;
+                            background: rgba(30, 39, 46, 0.9) !important;
+                            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+                        }}
+                        </style>
+                    """, unsafe_allow_html=True)
+                    
+                    for index, d in resultados.iterrows():
+                        status_text = d['COMENTARIOS'] if pd.notna(d['COMENTARIOS']) else 'OK'
+                        
+                        st.markdown(f"<div class='card-nexion' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {azul_premium};border-radius:12px;padding:18px 25px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:18px;color:{azul_premium};letter-spacing:0.5px;'># {d['NÚMERO DE PEDIDO']}</b><br><span style='font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;'>Envío: {d['FECHA DE ENVÍO']}</span></div><div style='flex:2.5;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d['NOMBRE DEL CLIENTE']}</b><br><i style='font-size:11px;color:rgba(255,255,255,0.5);font-style:normal;font-weight:600;'>{d['DESTINO']}</i></div><div style='flex:1.8;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>TRANSPORTE Y GUÍA</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('TRANSPORTE', 'LOGÍSTICA')}</b><br><span style='font-size:12px;color:{azul_premium};font-weight:700;font-family:monospace;'>{d['NÚMERO DE GUÍA']}</span></div><div style='flex:1.2;text-align:right;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>ESTATUS ENTREGA</span><br><b style='font-size:14px;color:{azul_premium};'>{d['FECHA DE ENTREGA REAL']}</b><br><span style='font-size:10px;color:white;font-weight:800;text-transform:uppercase;opacity:0.8;'>{status_text}</span></div></div>", unsafe_allow_html=True)    
+        
+        # Línea decorativa final
+        st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+    
+    
+    # ── ALERTAS!!!!!!!!!!
+    # --- MONITOR Y ALERTA GLOBAL EXCLUSIVA PARA RIGOBERTO (BOTÓN INTEGRADO A LA IZQUIERDA) ---
+    @st.fragment(run_every=3)
+    def monitor_global_rigoberto():
+        if st.session_state.get("usuario_activo") == "Rigoberto":
+            
+            try:
+                import time
+                import pandas as pd
+                
+                t_fresco = int(time.time() * 1000)
+                url_nube = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/muestras.csv?v={t_fresco}"
+                
+                df_vigia = pd.read_csv(url_nube, encoding='utf-8-sig')
+                df_vigia.columns = df_vigia.columns.str.strip()
+                
+                if not df_vigia.empty and "FOLIO" in df_vigia.columns:
+                    folio_actual_nube = int(pd.to_numeric(df_vigia["FOLIO"]).max())
+                    
+                    if "ultimo_folio_visto" not in st.session_state:
+                        st.session_state.ultimo_folio_visto = folio_actual_nube
+                    
+                    elif folio_actual_nube > st.session_state.ultimo_folio_visto:
+                        st.session_state.alerta_folio_pendiente = folio_actual_nube
+                        st.session_state.ultimo_folio_visto = folio_actual_nube
+                        st.rerun()
+                        
+            except Exception as e:
+                pass
+    
+            # Renderizado visual con la alerta y el botón de cierre integrado al lado izquierdo
+            if "alerta_folio_pendiente" in st.session_state:
+                folio = st.session_state.alerta_folio_pendiente
+                
+                st.markdown(f"""
+                <div style="
+                    background-color: #202c36; 
+                    border-left: 6px solid #FF4500; 
+                    padding: 20px 25px; 
+                    border-radius: 5px; 
+                    margin-bottom: 10px;
+                    color: white;
+                    font-family: sans-serif;
+                    box-shadow: none !important;
+                ">
+                    <h2 style="margin: 0; padding: 0; font-size: 14px; color: #ffffff;">
+                        NUEVA SOLICITUD DE MUESTRAS, FOLIO: JYP-{folio}
+                    </h2>
+                    <p style="margin: 5px 0 8px 0; font-size: 09px; color: #a0b0c0; text-transform: uppercase; letter-spacing: 1px;">
+                        Nexion Logistic // Alerta Exclusiva Admin
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Usamos un botón de Streamlit nativo pero colocado al margen izquierdo sin columnas rebeldes
+                # Inyectamos CSS exclusivo para achicar la letra y padding de este botón en específico
+                st.markdown("""
+                    <style>
+                    div[data-testid="stButton"] > button[kind="secondary"] {
+                        font-size: 09px !important;
+                        padding: 4px 12px !important;
+                        min-height: unset !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+    
+                if st.button("✖ CERRAR ALERTA", key="btn_cerrar_alerta_rigoberto"):
+                    del st.session_state.alerta_folio_pendiente
+                    st.rerun()
+    
+    monitor_global_rigoberto()
+
+
+    
+                
+    # ── CONTENEDOR DE CONTENIDO ──────────────────────────────────
+    main_container = st.container()
+    with main_container:
+        # 1. DASHBOARD
+        if st.session_state.menu_main == "DASHBOARD":
+            
+            # --- 1. DEFINICIÓN DE FUNCIONES ---
+            def cargar_datos():
+                import time
+                t = int(time.time())
+                url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+                try:
+                    df = pd.read_csv(url, encoding='utf-8-sig')
+                    df.columns = df.columns.str.strip()
+                    return df
+                except Exception as e:
+                    st.error(f"Error al cargar datos: {e}")
+                    return None
+            
+            def render_listado_operativo_premium(df):
+                # --- FORMATEO DE FECHAS ANTES DE CONVERTIR ---
+                df_display = df.copy()
+                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                    if col in df_display.columns:
+                        # Convertimos a fecha y luego a texto con formato día-mes-año
+                        df_display[col] = pd.to_datetime(df_display[col], errors='coerce').dt.strftime('%d-%m-%Y').fillna('')
+            
+                # Llenamos vacíos y convertimos a diccionario
+                data = df_display.fillna('').to_dict('records')
+                
+                html_content = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <script src="https://cdn.tailwindcss.com"></script>
+                    <style>
+                        body {{ background-color: transparent; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; }}
+                        .row-logistica {{
+                            background-color: #263238;
+                            border: 1px solid rgba(255, 255, 255, 0.05);
+                            border-radius: 12px;
+                            margin-bottom: 10px;
+                            padding: 16px;
+                            transition: all 0.3s ease;
+                        }}
+                        .row-logistica:hover {{
+                            border-color: #00FFAA;
+                            transform: translateX(5px);
+                            background-color: #2d3b42;
+                        }}
+                        .label-mini {{
+                            font-size: 8px;
+                            text-transform: uppercase;
+                            color: rgba(255,255,255,0.5);
+                            font-weight: 800;
+                            letter-spacing: 1px;
+                        }}
+                        .valor {{ font-size: 13px; font-weight: 700; color: #FFFFFF; }}
+                        .highlight {{ color: #00FFAA; font-family: monospace; }}
+                        
+                        /* Scrollbar */
+                        ::-webkit-scrollbar {{ width: 8px; }}
+                        ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.2); }}
+                        ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                        ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                    </style>
+                </head>
+                <body>
+                    <div style="padding: 10px;">
+                        {"".join([f'''
+                        <div class="row-logistica">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                                <div>
+                                    <div class="label-mini">Pedido / Factura</div>
+                                    <div class="valor highlight text-lg">{str(item.get('NÚMERO DE PEDIDO', ''))}</div>
+                                    <div class="text-[10px] text-blue-300 opacity-80">Envío: {str(item.get('FECHA DE ENVÍO', ''))}</div>
+                                </div>
+                                
+                                <div>
+                                    <div class="label-mini">Cliente / Destino</div>
+                                    <div class="valor truncate text-xs uppercase">{str(item.get('NOMBRE DEL CLIENTE', ''))[:40]}</div>
+                                    <div class="text-[10px] text-white/50 italic">{str(item.get('DESTINO', ''))}</div>
+                                </div>
+            
+                                <div class="border-x border-white/5 px-4">
+                                    <div class="label-mini">Transporte y Guía</div>
+                                    <div class="valor text-[11px]">{str(item.get('FLETERA', ''))}</div>
+                                    <div class="text-[10px] {"text-emerald-400" if item.get('NÚMERO DE GUÍA') else "text-orange-400"}">
+                                        {str(item.get('NÚMERO DE GUÍA', 'PENDIENTE'))}
+                                    </div>
+                                </div>
+            
+                                <div class="text-right">
+                                    <div class="label-mini">Estatus Entrega</div>
+                                    <div class="valor text-sm {"text-emerald-400" if item.get('FECHA DE ENTREGA REAL') else "text-orange-400"}">
+                                        {str(item.get('FECHA DE ENTREGA REAL', 'EN TRÁNSITO'))}
+                                    </div>
+                                    <div class="text-[9px] text-white/40 uppercase">Promesa: {str(item.get('PROMESA DE ENTREGA', ''))}</div>
+                                </div>
+                            </div>
+                        </div>
+                        ''' for item in data])}
+                    </div>
+                </body>
+                </html>
+                """
+                return components.html(html_content, height=600, scrolling=True)
+            
+            # --- EJECUCIÓN DEL MÓDULO ---
+            # --- EJECUCIÓN DEL MÓDULO ---
+            df_raw = cargar_datos()
+
+            if df_raw is not None:
+                # 1. Convertimos la columna a formato fecha (ajusta el nombre si es necesario)
+                # Usamos errors='coerce' por si hay celdas vacías o con texto extraño
+                df_raw["FECHA DE ENVÍO"] = pd.to_datetime(df_raw["FECHA DE ENVÍO"], dayfirst=True, errors='coerce')
+            
+                # 2. Ordenamos: el más reciente (fecha más grande) arriba
+                df_raw = df_raw.sort_values(by="FECHA DE ENVÍO", ascending=False)
+                    
+            
+            if df_raw is not None:               
+                with st.expander("Ver / Ocultar, Listado de pedidos completo", expanded=False):
+                    # --- BÚSQUEDA MAESTRA ---
+                    busqueda_manual = st.text_input("", key="bus_maestra_log", placeholder="🔍 Buscar por pedido, guía o cliente...").strip()
+                    
+                    df_final = df_raw.copy() 
+                    
+                    # Solo ejecutamos la lógica del Timeline si el usuario escribió algo
+                    if busqueda_manual:
+                        mask = (
+                            df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(busqueda_manual, case=False, na=False) |
+                            df_raw["NÚMERO DE GUÍA"].astype(str).str.contains(busqueda_manual, case=False, na=False) |
+                            df_raw["NOMBRE DEL CLIENTE"].astype(str).str.contains(busqueda_manual, case=False, na=False)
+                        )
+                        df_final = df_raw[mask].copy()
+                    
+                        st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic;'>Mostrando {len(df_final)} registros</p>", unsafe_allow_html=True)
+                        
+                        if not df_final.empty:
+                            # --- PREPARACIÓN DE DATOS ---
+                            envio = df_final.iloc[0]
+                            
+                            # Función auxiliar interna para no repetir código y evitar errores
+                            def formatear_fecha_safe(valor):
+                                if pd.isna(valor) or valor == "":
+                                    return "N/A"
+                                try:
+                                    return pd.to_datetime(valor, errors='coerce').strftime('%d-%m-%Y')
+                                except:
+                                    return str(valor)
+                        
+                            f_envio = formatear_fecha_safe(envio.get("FECHA DE ENVÍO"))
+                            f_promesa = formatear_fecha_safe(envio.get("PROMESA DE ENTREGA"))
+                            
+                            entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
+                            f_entrega_val = formatear_fecha_safe(envio.get("FECHA DE ENTREGA REAL")) if entregado_real else "PENDIENTE"
+                            
+                            trigger_val = str(envio.get("TRIGGER", "")).strip()
+                            tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
+                            
+                            if tiene_guia:
+                                n_guia = envio["NÚMERO DE GUÍA"]
+                            elif trigger_val == "Enviada":
+                                n_guia = "GENERANDO GUÍA..."
+                            else:
+                                n_guia = "EN ESPERA DE SURTIDO"
+                
+                            # --- LÓGICA DE FECHAS (ANTICRASH) ---
+                            f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors='coerce')
+                            if pd.notnull(f_promesa_dt): f_promesa_dt = f_promesa_dt.normalize()
+                            hoy = pd.Timestamp(datetime.now()).normalize()
+                            
+                            v_border = "rgba(255,255,255,0.1)"
+                            v_sub = "rgba(255,255,255,0.6)"
+                
+                            # --- LÓGICA DE ESTATUS Y COLORES ---
+                            if not tiene_guia:
+                                status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
+                                color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", v_border, v_border, v_border
+                                linea_1_2, linea_2_3, linea_3_4 = v_border, v_border, v_border
+                            elif not entregado_real:
+                                status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
+                                color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", v_border
+                                linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", v_border
+                            else:
+                                f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors='coerce')
+                                if pd.notnull(f_entrega_dt): f_entrega_dt = f_entrega_dt.normalize()
+                                status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
+                                color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", status_color
+                                linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", status_color
+                
+                            # --- RENDERIZADO COMPACTO (UNA SOLA LÍNEA) ---
+                            t_html = f'<div style="background:#263238; padding:20px; border-radius:12px; border:1px solid {v_border}; margin-bottom:25px; font-family:sans-serif;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;"><h2 style="margin:0; color:white; font-size:14px; letter-spacing:1px; text-transform:uppercase; font-weight:800;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}15; color:{status_color}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:10px; border:1px solid {status_color}; letter-spacing:1px;">{status_text}</span></div><div style="display:flex; align-items:center; justify-content:space-between; width:100%; position:relative; margin-bottom:10px;"><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">ENVÍO</div><div style="font-size:10px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow:1; height:2px; background:{linea_1_2}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="font-size:10px; color:white; font-weight:600;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow:1; height:2px; background:{linea_2_3}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">PROMESA</div><div style="font-size:10px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow:1; height:2px; background:{linea_3_4}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; z-index:2; box-shadow:0 0 12px {color_entrega if entregado_real else "#00000000"}"></div><div style="font-size:9px; color:{v_sub}; margin-top:8px; font-weight:800; letter-spacing:1px;">ENTREGA</div><div style="font-size:10px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px; margin-top:15px;"><div style="text-align:left;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">FLETERA</div><div style="color:white; font-size:12px; font-weight:700;">{envio["FLETERA"]}</div></div><div style="text-align:center;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="color:white; font-size:12px; font-weight:700;">{n_guia}</div></div><div style="text-align:right;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">DESTINO</div><div style="color:white; font-size:12px; font-weight:700;">{envio["DESTINO"]}</div></div></div></div>'
+                            st.markdown(t_html, unsafe_allow_html=True)
+                        else:
+                            st.warning("No se encontraron resultados para tu búsqueda.")
+                    
+                        
+                    # --- RENDER DEL LISTADO CHINGÓN ---
+                    st.markdown(f"<p style='color:#00FFAA; font-size:11px; italic;'>Mostrando {len(df_final)} registros</p>", unsafe_allow_html=True)
+                    render_listado_operativo_premium(df_final)
+                
+                   
+            
+            #INICIO DONITAS-------------------
+            def render_kpi(valor, total, titulo, color):
+                porc = (valor / total * 100) if total > 0 else 0
+                # Circunferencia basada en radio 38
+                circunferencia = 238.76
+                offset = circunferencia - (porc / 100 * circunferencia)
+                
+                st.markdown(f"""
+                    <div class="metric-container">
+                        <div class="metric-title">{titulo}</div>
+                        <div style="position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;">
+                            <svg class="stat-circle" viewBox="0 0 100 100">
+                                <circle class="stat-bg" cx="50" cy="50" r="38"></circle>
+                                <circle class="stat-progress" cx="50" cy="50" r="38" 
+                                        style="stroke: {color}; 
+                                               stroke-dasharray: {circunferencia}; 
+                                               stroke-dashoffset: {offset};">
+                                </circle>
+                            </svg>
+                            <div class="stat-value">{valor}</div>
+                        </div>
+                        <div class="stat-percent" style="color: {color};">{porc:.1f}%</div>
+                    </div>
+                """, unsafe_allow_html=True)
+    
+            # --- 2. CONFIGURACIÓN DE ESTILOS (CSS) ---
+            st.markdown(f"""
+            <style>
+                .stApp {{ background-color: {vars_css['bg']} !important; }}
+                
+                /* ESPACIO EXTRA ENTRE EL MENÚ Y LAS DONAS */
+                .spacer-menu {{
+                    margin-top: 50px; /* Ajusta este valor si quieres más o menos espacio */
+                }}
+    
+                /* ESTILOS DE LOS TABS (SUBMENÚ) */
+                .stTabs [data-baseweb="tab-list"] {{
+                    gap: 15px;
+                    border-bottom: 1px solid #1e293b;
+                }}
+    
+                .stTabs [data-baseweb="tab"] {{
+                    background-color: #1a2432;
+                    border-radius: 4px 4px 0px 0px;
+                    color: #94a3b8;
+                    padding: 10px 20px;
+                    transition: all 0.3s ease;
+                }}
+    
+                /* EFECTO HOVER */
+                .stTabs [data-baseweb="tab"]:hover {{
+                    background-color: #26354a;
+                    color: #ffffff;
+                }}
+    
+                /* ESTADO ACTIVO (DÓNDE ESTÁS) */
+                .stTabs [aria-selected="true"] {{
+                    background-color: #003399 !important; /* El azul de tu imagen */
+                    color: white !important;
+                    border-bottom: 2px solid #00FFAA !important;
+                }}
+    
+                /* ESTILOS DE TUS DONAS (KPIs) */
+                .metric-container {{
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                }}
+                .metric-title {{ color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-weight: 600; }}
+                .stat-circle {{ transform: rotate(-90deg); width: 160px; height: 160px; overflow: visible; }}
+                .stat-circle circle {{ fill: none; stroke-width: 15; }}
+                .stat-bg {{ stroke: #2F3E45; }}
+                .stat-progress {{ transition: stroke-dashoffset 0.8s ease-in-out; stroke-linecap: butt; }}
+                .stat-value {{ position: absolute; color: white; font-size: 22px; font-weight: 800; top: 50%; left: 50%; transform: translate(-50%, -50%); }}
+                .stat-percent {{ font-size: 16px; margin-top: 5px; font-weight: 700; }}
+            </style>
+            """, unsafe_allow_html=True)
+    
+            # --- 3. CARGA Y PROCESAMIENTO ---
+            df_raw = cargar_datos()
+            
+            if df_raw is not None:
+                import pytz
+                from datetime import datetime
+                tz_gdl = pytz.timezone('America/Mexico_City')
+                hoy_gdl = datetime.now(tz_gdl).date()
+                hoy_dt = pd.Timestamp(hoy_gdl)
+                meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
+                
+                # BUSCAR GUIA INTELIGENTE--- CSS GLOBAL PARA EL EFECTO HOVER ---
+                st.markdown("""
+                    <style>
+                    /* Efecto Hover para las tarjetas Nexion */
+                    .nexion-hover-card {
+                        transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+                        cursor: pointer;
+                    }
+                    .nexion-hover-card:hover {
+                        transform: translateY(-5px); /* Se levanta un poquito */
+                        background-color: #252e35 !important; /* Se aclara el fondo */
+                        box-shadow: 0px 10px 20px rgba(0, 255, 204, 0.1); /* Brillo neón sutil */
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                
+                # --- 2. FUNCIÓN PARA CARGAR DESDE REPOSITORIO ---
+                def cargar_desde_repo(archivo):
+                    if os.path.exists(archivo):
+                        try:
+                            df_preview = pd.read_excel(archivo, nrows=50, header=None)
+                            claves = ['CARTA_PORTE', 'FACTURA_INTERNA', 'TALON', 'OBSERVACION 1', 'OBSERVACIONES', 'GUIA', 'PAQUETES_AMPARA', 'SUB TOTAL _ GUIA']
+                            fila_head = -1
+                            for i, row in df_preview.iterrows():
+                                row_str = row.astype(str).str.upper().tolist()
+                                if any(clave in s for s in row_str for clave in claves):
+                                    fila_head = i
+                                    break
+                            df = pd.read_excel(archivo, header=fila_head if fila_head != -1 else 0)
+                            df.columns = df.columns.astype(str).str.strip()
+                            return df
+                        except:
+                            return None
+                    return None
+                
+                # --- 3. CARGA DE DATOS ---
+                df_t1 = cargar_desde_repo("T1.xlsx")
+                df_t2 = cargar_desde_repo("T2.xlsx")
+                df_t3 = cargar_desde_repo("T3.xlsx")
+                
+                
+                # --- ZONA DE CONTROL (FILTROS + BUSCADOR) ---
+                col_f1, col_busqueda_zona = st.columns([1, 2])  
+                
+                with col_f1:
+                    mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
+                
+                with col_busqueda_zona:
+                    # Inicializamos el estado del input si no existe
+                    if "busqueda_input" not in st.session_state:
+                        st.session_state.busqueda_input = ""
+                        
+                    # Usamos st.text_input conectado al session_state mediante key
+                    query = st.text_input(
+                        "BUSQUEDA AUXILIAR DE GUIAS", 
+                        placeholder="Ingresa el numero de factura...",
+                        key="busqueda_input"
+                    )
+
+                # Si el usuario escribió algo, evaluamos la búsqueda y mostramos el render + botón de cierre
+                if query:
+                    encontrado = False
+                    html_resultado = ""
+                    
+                    # --- PASO 1: BUSCAR EN LAS FLETERAS (T1, T2, T3) ---
+                    for df_source, nombre_f in [(df_t1, "TRES GUERRAS"), (df_t2, "TINY PACK"), (df_t3, "ONE")]:
+                        if df_source is not None and not encontrado:
+                            cols_busqueda = ['OBSERVACION 1', 'FACTURA_INTERNA', 'Observaciones', 'TALON', 'CARTA_PORTE', 'Guia']
+                            cols_presentes = [c for c in cols_busqueda if c in df_source.columns]
+                            
+                            if cols_presentes:
+                                mask = df_source[cols_presentes].astype(str).apply(
+                                    lambda x: x.str.contains(query, case=False, na=False)
+                                ).any(axis=1)
+                                res = df_source[mask]
+                            else:
+                                res = pd.DataFrame()
+                            
+                            if not res.empty:
+                                encontrado = True
+                                f = res.iloc[0]
+                                
+                                # --- LÓGICA DE ESTATUS CORREGIDA ---
+                                col_fechas = ['F.ENTREGA', 'FECHA_ENTREGA', 'FECHA DE ENTREGA']
+                                columnas_presentes = [col for col in col_fechas if col in df_source.columns]
+                                
+                                fecha_valida = False
+                                if columnas_presentes:
+                                    for col in columnas_presentes:
+                                        valor = f[col]
+                                        fecha_dt = pd.to_datetime(valor, errors='coerce')
+                                        if pd.notnull(fecha_dt):
+                                            fecha_valida = True
+                                            break
+                                    estatus = "ESTATUS: ENTREGADO" if fecha_valida else "ESTATUS: EN TRANSITO"
+                                else:
+                                    estatus = "ESTATUS: ACTUALIZANDO DATOS"
+                                
+                                # --- MAPEO DATOS ---
+                                guia = f.get("TALON") or f.get("CARTA_PORTE") or f.get("Guia") or "S/N"
+                                factura = f.get("OBSERVACION 1") or f.get("FACTURA_INTERNA") or f.get("Observaciones") or "S/N"
+                                cliente = f.get("CLIENTE_DESTINO") or f.get("DESTINATARIO") or f.get("Destinatario") or "CLIENTE NO REGISTRADO"
+                                origen = f.get("ORIGEN") or "PLANTA GDL"
+                                destino = f.get("DESTINO") or f.get("CIUDAD") or f.get("Oficina_Destino") or "N/A"
+                                bultos = f.get("BULTOS") or f.get("PIEZAS") or f.get("Paquetes_Ampara") or "0"
+                                importe = f.get("Sub total _ Guia") or f.get("TOTAL") or f.get("SUBTOTAL") or "0.00"
+                                
+                                color_estatus = "#004d40" if "ENTREGADO" in estatus else ("#ff9800" if "TRANSITO" in estatus else "#1e262c")
+                                html_resultado = f'<div class="nexion-hover-card" style="background-color:#1e262c; border-radius:10px; padding:20px; border-left:5px solid {color_estatus}; margin-top:5px; margin-bottom:20px; color:white; font-family:sans-serif;"><div style="display:flex; justify-content:space-between; align-items:flex-start;"><div style="min-width:150px; flex:1;"><div style="color:#00ffcc; font-size:0.7rem; font-weight:bold; letter-spacing:1.5px; margin-bottom:5px;">{nombre_f}</div><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase;">TALÓN / FOLIO</div><div style="color:#00ffcc; font-size:1.6rem; font-weight:bold; line-height:1.2;">{guia}</div><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase; margin-top:5px;">REF: <span style="color:white; font-size:1rem;">{factura}</span></div></div><div style="min-width:200px; flex:1.5;"><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase;">DESTINATARIO / RUTA</div><div style="color:white; font-weight:bold; font-size:1.2rem;">{cliente}</div><div style="font-size:0.9rem; color:#8899a6; margin-top:5px;"><span style="color:#00ffcc;">📍</span> GDL ➔ {destino}</div></div><div style="min-width:150px; flex:1; border-left:2px solid #3d464d; padding-left:15px;"><div style="color:#8899a6; font-size:0.75rem; text-transform:uppercase;">RESUMEN FINANCIERO</div><div style="color:white; font-weight:bold; font-size:0.95rem;">BULTOS: <span style="color:#00ffcc;">{bultos}</span></div><div style="color:#00ffcc; font-weight:bold; font-size:1.2rem; margin-top:10px;">$ {importe}</div></div><div><span style="background-color:{color_estatus}; color:white; padding:4px 12px; border-radius:15px; font-size:0.85rem; font-weight:bold; text-transform:uppercase; white-space:nowrap;">{estatus}</span></div></div></div>'
+                    
+                    # --- PASO 2: SI NO SE HALLÓ EN FLETERAS, BUSCAR EN EL LISTADO MAESTRO (df_raw) ---
+                    if not encontrado and df_raw is not None:
+                        mask_i = (
+                            df_raw["NÚMERO DE PEDIDO"].astype(str).str.contains(query, case=False, na=False) |
+                            df_raw["NÚMERO DE GUÍA"].astype(str).str.contains(query, case=False, na=False) |
+                            df_raw["NOMBRE DEL CLIENTE"].astype(str).str.contains(query, case=False, na=False)
+                        )
+                        res_i = df_raw[mask_i].copy()
+                        
+                        if not res_i.empty:
+                            encontrado = True
+                            envio = res_i.iloc[0] 
+                            f_envio = envio.get("FECHA DE ENVÍO", "N/A")
+                            f_promesa = envio.get("PROMESA DE ENTREGA", "N/A")
+                            entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
+                            f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
+                            trigger_val = str(envio.get("TRIGGER", "")).strip()
+                            tiene_guia = pd.notna(envio.get("NÚMERO DE GUÍA")) and str(envio.get("NÚMERO DE GUÍA")).strip() not in ["", "0", "nan"]
+                            n_guia = envio["NÚMERO DE GUÍA"] if tiene_guia else ("GENERANDO GUÍA..." if trigger_val == "Enviada" else "EN ESPERA DE SURTIDO")
+                
+                            f_promesa_dt = pd.to_datetime(envio.get("PROMESA DE ENTREGA"), dayfirst=True, errors='coerce')
+                            if pd.notnull(f_promesa_dt): f_promesa_dt = f_promesa_dt.normalize()
+                            hoy = pd.Timestamp(datetime.now()).normalize()
+                            v_border, v_sub = "rgba(255,255,255,0.1)", "rgba(255,255,255,0.6)"
+                
+                            if not tiene_guia:
+                                status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
+                                color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", v_border, v_border, v_border
+                                linea_1_2, linea_2_3, linea_3_4 = v_border, v_border, v_border
+                            elif not entregado_real:
+                                status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
+                                color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", v_border
+                                linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", v_border
+                            else:
+                                f_entrega_dt = pd.to_datetime(envio.get("FECHA DE ENTREGA REAL"), dayfirst=True, errors='coerce')
+                                if pd.notnull(f_entrega_dt): f_entrega_dt = f_entrega_dt.normalize()
+                                status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
+                                color_envio, color_guia, color_promesa, color_entrega = "#38bdf8", "#38bdf8", "#a855f7", status_color
+                                linea_1_2, linea_2_3, linea_3_4 = "#38bdf8", "#a855f7", status_color
+                
+                            html_resultado = f'<div class="nexion-hover-card" style="background:#263238; padding:20px; border-radius:12px; border:1px solid {v_border}; margin-bottom:25px; font-family:sans-serif;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;"><h2 style="margin:0; color:white; font-size:14px; letter-spacing:1px; text-transform:uppercase; font-weight:800;">{envio["NOMBRE DEL CLIENTE"]}</h2><span style="background:{status_color}15; color:{status_color}; padding:4px 12px; border-radius:4px; font-weight:700; font-size:10px; border:1px solid {status_color}; letter-spacing:1px;">{status_text}</span></div><div style="display:flex; align-items:center; justify-content:space-between; width:100%; position:relative; margin-bottom:10px;"><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_envio}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">ENVÍO</div><div style="font-size:10px; color:white; font-weight:600;">{f_envio}</div></div><div style="flex-grow:1; height:2px; background:{linea_1_2}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_guia}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="font-size:10px; color:white; font-weight:600;">{"LISTA" if tiene_guia else "PENDIENTE"}</div></div><div style="flex-grow:1; height:2px; background:{linea_2_3}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:12px; height:12px; background:{color_promesa}; border-radius:50%; z-index:2;"></div><div style="font-size:9px; color:{v_sub}; margin-top:10px; font-weight:800; letter-spacing:1px;">PROMESA</div><div style="font-size:10px; color:white; font-weight:600;">{f_promesa}</div></div><div style="flex-grow:1; height:2px; background:{linea_3_4}; margin-top:-38px;"></div><div style="display:flex; flex-direction:column; align-items:center; flex:1;"><div style="width:16px; height:16px; background:{color_entrega}; border-radius:50%; z-index:2; box-shadow:0 0 12px {color_entrega if entregado_real else "#00000000"}"></div><div style="font-size:9px; color:{v_sub}; margin-top:8px; font-weight:800; letter-spacing:1px;">ENTREGA</div><div style="font-size:10px; color:white; font-weight:600;">{f_entrega_val}</div></div></div><div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px; margin-top:15px;"><div style="text-align:left;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">FLETERA</div><div style="color:white; font-size:12px; font-weight:700;">{envio["FLETERA"]}</div></div><div style="text-align:center;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">GUÍA</div><div style="color:white; font-size:12px; font-weight:700;">{n_guia}</div></div><div style="text-align:right;"><div style="color:{v_sub}; font-size:8px; font-weight:800; letter-spacing:1px;">DESTINO</div><div style="color:white; font-size:12px; font-weight:700;">{envio["DESTINO"]}</div></div></div></div>'
+                    
+                    # --- RENDERIZADO DEL BOTÓN Y RESULTADOS ---
+                    if encontrado:
+                        _, col_btn_cerrar = st.columns([5, 1])
+                        with col_btn_cerrar:
+                            st.markdown('<div style="margin-top: -5px;"></div>', unsafe_allow_html=True)
+                            
+                            # Función interna para limpiar el estado de forma segura antes del rerun
+                            def limpiar_busqueda():
+                                st.session_state.busqueda_input = ""
+
+                            # Usamos on_click para limpiar el input limpiamente sin romper las reglas de Streamlit
+                            if st.button("✕ CERRAR", key="btn_cerrar_render", use_container_width=True, on_click=limpiar_busqueda):
+                                pass
+                        
+                        st.markdown(html_resultado, unsafe_allow_html=True)
+                    
+                    else:
+                        st.markdown(f"""
+                            <div class="nexion-hover-card" style="
+                                background-color: #1e262c; 
+                                border-radius: 8px; 
+                                padding: 20px; 
+                                border-left: 5px solid #ff4b4b; 
+                                margin-top: 15px; 
+                                margin-bottom: 35px;
+                            ">
+                                <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px;">Estado de Búsqueda</div>
+                                <div style="color: #ff4b4b; font-weight: bold; font-size: 1.3rem; line-height: 1.1; letter-spacing: 1px;">SIN COINCIDENCIAS</div>
+                                <div style="margin-top: 15px; border-top: 1px solid #3d464d; padding-top: 12px;">
+                                    <div style="color: #8899a6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 3px;">Referencia consultada</div>
+                                    <div style="color: white; font-weight: bold; font-size: 1.1rem;">{query}</div>
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+
+                #AQUI TERMINA LA BUSQUEDA INTELIGENTE DE GUIAS
+                
+                df = df_raw.copy()
+                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                    df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
+            
+                df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
+            
+                total_p = len(df_mes)
+                entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
+                df_trans = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
+                en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
+                retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
+                total_t = len(df_trans)  
+    
+                # --- 4. SUBMENÚ Y RENDERIZADO ---
+                # Definimos las pestañas base que todos ven
+                nombres_tabs = ["KPI´S", "TIEMPOS DE TRÁNSITO", "EFICIENCIA DESPACHOS", "DIST. CARGA", "ENTREGAS AGC", "CONSIGNAS", "AMAZON","DESPACHOS"]
+                
+                # Si eres tú, Rigoberto, añadimos la pestaña secreta al final
+                es_admin = st.session_state.get("usuario_activo") == "Rigoberto"
+                if es_admin:
+                    nombres_tabs.append("🔒 ADMIN CONTROL")
+
+                if st.session_state.get("ir_a_entregas_agc", False):
+                    st.session_state.ir_a_entregas_agc = False
+
+                # Creamos las pestañas dinámicamente
+                tabs = st.tabs(nombres_tabs)
+                
+                # Asignamos las variables de siempre
+                tab_kpis = tabs[0]
+                tab_tiempos = tabs[1]
+                tab_despachos = tabs[2]
+                tab_participacion = tabs[3]
+                tab_entregas_agc = tabs[4]
+                tab_consignas = tabs[5]
+                tab_amazon = tabs[6]
+                tab_pedidos = tabs[7]
+                
+                
+                # Si eres admin, creamos la variable para la séptima pestaña
+                if es_admin:
+                    tab_admin = tabs[8]
+    
+                # PESTAÑA 1: KPI'S (Tus donitas)
+                with tab_kpis:
+                    st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
+                    c1, c2, c3, c4, c5 = st.columns(5)
+                    with c1: render_kpi(total_p, total_p, "Pedidos", "#f6c23e")      # El Amarillo que te encantó
+                    with c2: render_kpi(entregados, total_p, "Entregados", "#1cc88a") # Verde Esmeralda (Éxito)
+                    with c3: render_kpi(total_t, total_p, "Tránsito", "#4e73df")    # Azul Real (Logística)
+                    with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#36b9cc")  # Turquesa (Precisión)
+                    with c5: render_kpi(retrasados, total_p, "Retraso", "#fb7185")   # Rojo Coral (Alerta)
+                                    
+                    # Espacio estético al final para que no se vea cortado el contenedor
+                    st.markdown("<br>", unsafe_allow_html=True)
+            
+                    #--- SEPARADOR Y GRÁFICOS DE CARGA ACTIVA POR FLETERA ------
+                    st.markdown(f"""
+                        <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 40px 0; opacity: 0.3;">
+                        <div style="
+                            color: {vars_css['sub']}; 
+                            font-size: 14px; 
+                            font-weight: 500; 
+                            letter-spacing: 2px; 
+                            margin-bottom: 20px; 
+                            text-transform: uppercase;
+                        ">
+                            Distribución de Carga actual
+                        </div>
+                    """, unsafe_allow_html=True)
+                    # Definimos los colores del estilo actual
+                    color_transito = "#36b9cc" # Azul claro
+                    color_retraso = "#fb7185"  # Rojo
+                    
+                    # Creamos las dos columnas directas en el contenedor
+                    col_graf1, col_graf2 = st.columns(2)
+                    
+                    # --- COLUMNA 1: EN TRÁNSITO ---
+                    with col_graf1:
+                        df_t = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] >= hoy_dt)].copy()
+                        df_t_count = df_t.groupby("FLETERA").size().reset_index(name="CANTIDAD")
+                        total_t_graf = df_t_count["CANTIDAD"].sum()
+                    
+                        st.markdown(f"""
+                            <div style='background: linear-gradient(90deg, {color_transito}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_transito};'>
+                                <p style='margin:0; color:{color_transito}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔵 En tránsito en tiempo</p>
+                                <h2 style='margin:0; color:white; font-size:28px;'>{total_t_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    
+                        if not df_t_count.empty:
+                            h_t = len(df_t_count) * 35 + 50
+                            chart_t = alt.Chart(df_t_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_transito).encode(
+                                x=alt.X("CANTIDAD:Q", title=None, axis=None),
+                                y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
+                            )
+                            text_t = chart_t.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
+                            st.altair_chart((chart_t + text_t).properties(height=h_t).configure_view(strokeOpacity=0), use_container_width=True)
+                        else:
+                            st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin carga en tránsito</div>", unsafe_allow_html=True)
+                    
+                    # --- COLUMNA 2: RETRASADOS ---
+                    with col_graf2:
+                        df_r = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] < hoy_dt)].copy()
+                        df_r_count = df_r.groupby("FLETERA").size().reset_index(name="CANTIDAD")
+                        total_r_graf = df_r_count["CANTIDAD"].sum()
+                    
+                        st.markdown(f"""
+                            <div style='background: linear-gradient(90deg, {color_retraso}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_retraso};'>
+                                <p style='margin:0; color:{color_retraso}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔴 En tránsito con Retraso</p>
+                                <h2 style='margin:0; color:white; font-size:28px;'>{total_r_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    
+                        if not df_r_count.empty:
+                            h_r = len(df_r_count) * 35 + 50
+                            chart_r = alt.Chart(df_r_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_retraso).encode(
+                                x=alt.X("CANTIDAD:Q", title=None, axis=None),
+                                y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
+                            )
+                            text_r = chart_r.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
+                            st.altair_chart((chart_r + text_r).properties(height=h_r).configure_view(strokeOpacity=0), use_container_width=True)
+                        else:
+                            st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
+            
+                # PESTAÑA 2: RASTREO (Donde pondremos el buscador tipo DHL)
+                with tab_tiempos: 
+                    st.write("") 
+                    # =========================================================
+                    # 1. PROCESAMIENTO DE DATOS
+                    # =========================================================
+                    df['FECHA DE ENVÍO'] = pd.to_datetime(df['FECHA DE ENVÍO'], errors='coerce')
+                    df['FECHA DE ENTREGA REAL'] = pd.to_datetime(df['FECHA DE ENTREGA REAL'], errors='coerce')
+                    df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
+                    
+                    # =========================================================
+                    # 2. SECCIÓN DEL CALCULADOR INTELIGENTE
+                    # =========================================================                
+                    usuario_actual = st.session_state.get('usuario_activo', 'Cielo')
+                    
+                    c1, c2, c3 = st.columns([1, 1, 0.8])
+                    
+                    with c1:
+                        st.text_input("ORIGEN", value="GUADALAJARA (GDL)", disabled=True, key="orig_fix")
+                    
+                    with c2:
+                        busqueda_manual = st.text_input(
+                            "BUSCAR POR DESTINO, CP O DOMICILIO", 
+                            placeholder="Ej: 63734, Litibu, Cancún...",
+                            key="busqueda_manual_v6"
+                        )
+                    
+                    with c3:
+                        num_cajas = st.number_input("CANTIDAD DE CAJAS", min_value=1, value=1, step=1)
+                    
+                    # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO ---
+                    if not busqueda_manual:
+                        df_validos = df[df['DIAS_REALES'].notna()]
+                        rutas_dos_dias = df_validos[df_validos['DIAS_REALES'] == 2]
+                        if not rutas_dos_dias.empty:
+                            busqueda_activa = rutas_dos_dias['DESTINO'].iloc[0]
+                            texto_mostrar = f"{busqueda_activa}"
+                        elif not df_validos.empty:
+                            busqueda_activa = df_validos.groupby('DESTINO')['DIAS_REALES'].mean().idxmin()
+                            texto_mostrar = f"{busqueda_activa} (Ruta sugerida)"
+                        else:
+                            busqueda_activa = ""
+                            texto_mostrar = "CONSULTA DE RUTA"
+                    else:
+                        busqueda_activa = busqueda_manual
+                        texto_mostrar = busqueda_manual.upper()
+                    
+                    # --- FILTRADO ORIGINAL (SIN ROMPER NADA) ---                   
+                    # Validamos que busqueda_activa no sea nula y la forzamos a ser texto seguro
+                    busqueda_aux = str(busqueda_activa).lower() if pd.notna(busqueda_activa) else ""
+                    mask = (
+                        df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
+                        df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
+                    )
+                    
+                    historial = df[mask & (df['DIAS_REALES'].notna())].copy()
+                    
+                    if not historial.empty:
+                        # --- CÁLCULO DE TIEMPOS ---
+                        fletera_recomendada = historial['FLETERA'].value_counts().idxmax()
+                        promedio_dias = historial['DIAS_REALES'].mean()
+                        total_viajes = len(historial)
+                        dias_redondeados = math.ceil(promedio_dias)
+                
+                        # --- MOTOR LÓGICO DE PRECIOS NEXION ELITE ---
+
+                        # 1. Preparación del texto de búsqueda
+                        texto_domicilio = str(historial['DOMICILIO'].iloc[0]).upper()
+                        
+                        # 2. Lista Maestra de Región $65 (Convenio Especial + Bajío/Centro)
+                        regiones_65 = [
+                            # TUS DESTINOS DEL NORTE/PACÍFICO (FORMATO DOBLE)
+                            "HERMOSILLO", "HERMOSILLO, SON", "GUAYMAS", "GUAYMAS, SON", 
+                            "DURANGO", "DURANGO, DUR", "SALTILLO", "SALTILLO, COA", 
+                            "TEPIC", "TEPIC, NAY", "MAZATLAN", "MAZATLAN, SIN", 
+                            "CANANEA", "CANANEA, SON", "TORREON", "TORREON, COA", 
+                            "CULIACAN", "CULIACAN, SIN", "CIUDAD OBREGON", "CIUDAD OBREGON, SON", 
+                            "LOS MOCHIS", "LOS MOCHIS, SIN", "OBREGON", "OBREGON, SON", 
+                            "CABORCA", "CABORCA, SON", "NOGALES", "NOGALES, SON", 
+                            "NAVOJOA", "NAVOJOA, SON", "MONTERREY", "MONTERREY, NL",
+                            "APODACA", "APODACA, NL", "PIEDRAS NEGRAS", "PIEDRAS NEGRAS, COA",
+                            "NUEVO VALLARTA", "NUEVO VALLARTA, NAY", "RINCON DE GUAYABITOS", "RINCON DE GUAYABITOS, NAY",
+                            "CAJEME, CIUDAD OBREGON, SON", "TORREON COAHUILA, COA",
+                        
+                            # ESTADOS Y ABREVIACIONES GENERALES (CENTRO/BAJÍO)
+                            "QUERETARO", "QRO", "QUE", "GUANAJUATO", "GTO", "LEON", "CELAYA", 
+                            "AGUASCALIENTES", "AGS", "SAN LUIS POTOSI", "SLP", "HIDALGO", "HID", 
+                            "PUEBLA", "PUE", "JALISCO", "JAL", "ESTADO DE MEXICO", "EDOMEX",
+                            "TLAXCALA", "TLA", "MORELOS", "MOR", "CDMX", "CMX", "DF", "DF2",
+                            
+                            # VARIANTES CDMX Y CIUDAD DE MÉXICO
+                            "MEXICO, DF", "MEXICO, DF2", "CIUDAD DE MEXICO", "MÉXICO, DF2", ", CMX",
+                            "CIUDAD DE MÉXICO, DF2", "DELEGACION CUAUHTEMOC, CMX", "ALCALDIA CUAUHTEMOC, CMX",
+                            "ALCALDIA CUAJIMALPA DE MORELOS, CMX", "CUAJIMALPA DE MORELOS, DF2",
+                            
+                            # CIUDADES ESPECÍFICAS DE TU IMAGEN
+                            "MATEHUALA, SLP", "IXTAPAN DE LA SAL, MEX", "QUERETARO, QUE", "ATITALAQUIA, HID",
+                            "MORELIA, MCH", "SILAO, GTO", "TOLUCA, MEX", "SALAMANCA, GTO", "SANTIAGO DE QUERETARO, QUE",
+                            "JURIQUILLA, QUE", "PACHUCA, HID", "CALVILLO, AGS", "PUEBLA, PUE", "AMEALCO DE BONFIL, QUE",
+                            "TULA DE ALLENDE, HID", "ACAMBARO, GTO", "CUAUTLANCINGO, PUE", "NUEVA ITALIA, MCH", 
+                            "JACONA, MCH", "CORONANGO, PUE", "IRAPUATO, GTO", "GUANAJUATO, GTO", 
+                            "SAN MIGUEL DE ALLENDE, GTO", "ZAMORA, MCH", "CUERNAVACA, MOR", "TOLUCA, DF2", 
+                            "IXTAPALUCA, MEX", "IZTACALCO, CMX", "TETLATLAHUACA, TLA", "NAUCALPAN DE JUAREZ, MEX", 
+                            "NICOLAS ROMERO, MEX", "SAN ANDRES, PUE", "TLANEPANTLA, MEX", "TEPOTZOTLAN, MEX", 
+                            "VALLE DE BRAVO, MEX", "PATZCUARO, MCH", "ALVARO OBREGON, CMX", "TLALPAN, DF2", 
+                            "SAN ANDRES CHOLULA, PUE", "TOLUCA DE LERDO, MEX", "CEDRAL, SLP", "TEQUISQUIAPAN, QUE", 
+                            "TLALNEPANTLA DE BAZ, CMX", "MÉXICO, DF2", "BERNAL, QUE", "SILAO DE LA VICTORIA, GTO", 
+                            "SAN JUAN DEL RIO, QUE", "CUAHUTEMOC, CMX", "METEPEC, MEX", "PACHUCA de SOTO, HID", 
+                            "MUNICIPIO ALVARO OBREGON, MCH", "TLANEPANTLA, CMX", "ATLIXCO, PUE", "MIGUEL HIDALGO, CMX", 
+                            "SANTA CRUZ TECÁMAC, MEX", "EL MARQUES, QUE", "MARINA NACIONAL, CMX", "MEXICO, DF2", 
+                            "CUAJIMALPA DE MORELOS, CMX", "URUAPAN, MCH", "CIUDAD DE MEXICO, DF2", "BENITO JUAREZ, CMX", 
+                            "YAUHQUEMEHCAN, TLA", "NAUCALPAN DE JUAREZ, CMX", "GUADALAJARA, JAL", "ZAPOTLAN EL GRANDE, JAL",
+                            "ARANDAS, JAL", "SAN JUAN DE LOS LAGOS, JAL", "JOCOTEPEC, JAL", "CD GUZMAN, JAL"
+                        ]
+                        
+                        # 3. Aplicación del "SEGURO VERACRUZ" y Evaluación de Región
+                        # Si detecta Veracruz en el domicilio, bloquea los $65 inmediatamente
+                        if any(x in texto_domicilio for x in ["VERACRUZ", " VER ", " VER.", ", VER"]):
+                            es_region_65 = False
+                        else:
+                            es_region_65 = any(region in texto_domicilio for region in regiones_65)
+                        
+                        # 4. Cálculo de Tarifas según cantidad de cajas
+                        if 1 <= num_cajas <= 4:
+                            precio_unitario = 450 / num_cajas
+                            total_sin_iva = 450
+                            leyenda_region = "Tarifa Plana Nacional (1-4 cajas)"
+                        else:
+                            if es_region_65:
+                                precio_unitario = 65
+                                leyenda_region = "Zona con Tarifa Preferencial"
+                            else:
+                                precio_unitario = 95
+                                leyenda_region = "Zona Norte / Sur / Costa"
+                            total_sin_iva = num_cajas * precio_unitario
+                        
+                        # 5. Impuesto y Total Final
+                        total_con_iva = total_sin_iva * 1.16
+                
+                        # --- RENDERIZADO ESTILO ONYX REPOTENCIADO ---
+                        st.markdown(f"""<div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;"><div class="kpi-ruta-card" style="flex: 1; min-width: 280px; border-left: 5px solid #A4B9C8; position: relative; overflow: hidden;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 0.7rem; color: #A4B9C8; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Tiempo Estimado</span><span style="font-size: 1.1rem; color: #FFFFFF; font-weight: 900;">{fletera_recomendada}</span></div><div class="kpi-route-flow" style="margin: 15px 0;"><span class="city" style="font-size: 1.2rem;">GDL</span><div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><span style="font-size: 0.7rem; color: #A4B9C8; letter-spacing: 2px;">TRANSIT</span><div style="width: 80%; height: 2px; background: linear-gradient(90deg, transparent, #A4B9C8, transparent);"></div></div><span class="city" style="font-size: 1.2rem; color: #FFFFFF;">{texto_mostrar[:15]}</span></div><div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 2.2rem; font-weight: 900; color: #FFFFFF;">{dias_redondeados}</span><span style="font-size: 1rem; color: #A4B9C8; font-weight: bold;">DÍAS HÁBILES</span></div><div style="margin-top: 10px; font-size: 0.9rem; color: #A4B9C8; border-top: 1px solid rgba(164, 185, 200, 0.1); padding-top: 8px;">Basado en {total_viajes} entregas exitosas a esta zona.</div></div><div class="kpi-ruta-card" style="flex: 1; min-width: 280px; border-left: 5px solid #D4AF37; background: linear-gradient(145deg, #1c2a35, #111b22);"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="color: #D4AF37; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px;">Costo de Flete</span></div><div style="margin-top: 5px;"><div style="font-size: 0.75rem; color: #A4B9C8; text-transform: uppercase; letter-spacing: 1px;">Inversión Total</div><div style="display: flex; align-items: baseline; gap: 5px;"><span style="font-size: 2.2rem; font-weight: 400; color: #D4AF37;">${total_con_iva:,.2f}</span><span style="font-size: 0.8rem; color: #A4B9C8;">MXN</span></div></div><div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; margin-top: 10px; border: 1px solid rgba(212, 175, 55, 0.1);"><div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #E0E6ED;"><span>Cajas: <b>{num_cajas}</b></span><span>Unit: <b>${precio_unitario:,.2f}</b></span></div><div style="font-size: 0.7rem; color: #D4AF37; margin-top: 5px; text-transform: uppercase; font-weight: bold;">✓ {leyenda_region}</div></div><div style="text-align: right; margin-top: 8px; font-size: 0.6rem; color: #A4B9C8; font-style: italic;">*Incluye 16% de IVA</div></div></div>""", unsafe_allow_html=True) # 3. Tabla de Detalles (Tu código original)
+                        #------------
+                        # --- HISTORIAL DE ENVÍOS ENCONTRADOS (DISEÑO PREMIUM) ---
+                        if not historial.empty:
+                            st.markdown('<p style="color:#FFFFFF; font-weight:800; letter-spacing:2px; font-size:14px; margin-bottom:15px; border-left: 4px solid #00FFAA; padding-left: 10px;">HISTORIAL DE ENVÍOS ENCONTRADOS</p>', unsafe_allow_html=True)
+                            
+                            # Preparación de datos
+                            historial_sorted = historial[['NÚMERO DE PEDIDO','NOMBRE DEL CLIENTE','DOMICILIO','FECHA DE ENVÍO','FLETERA']].sort_values(by='FECHA DE ENVÍO', ascending=False).copy()
+                            historial_sorted['FECHA_STR'] = historial_sorted['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
+                            data_hist = historial_sorted.fillna('').to_dict('records')
+                        
+                            # Renderizado de Tarjetas
+                            html_historial = f"""
+                            <div style="padding: 5px; font-family: 'Inter', sans-serif;">
+                                <style>
+                                    .card-historial {{
+                                        background-color: #263238;
+                                        border: 1px solid rgba(255, 255, 255, 0.05);
+                                        border-radius: 10px;
+                                        padding: 14px 20px;
+                                        margin-bottom: 10px;
+                                        transition: all 0.3s ease;
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                        width: 100%;
+                                        box-sizing: border-box;
+                                    }}
+                                    .card-historial:hover {{
+                                        border-color: #38bdf8;
+                                        background-color: #2d3b42;
+                                        transform: translateX(4px);
+                                    }}
+                                    .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px; }}
+                                    .valor-id {{ font-size: 15px; font-weight: 800; color: #00FFAA; font-family: monospace; }}
+                                    .valor-text {{ font-size: 12px; font-weight: 600; color: #FFFFFF; }}
+                                    .sub-text {{ font-size: 10px; color: rgba(255,255,255,0.6); font-style: italic; }}
+                                    
+                                    /* Scrollbar */
+                                    ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                    ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); }}
+                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                                    ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                                </style>
+                                {"".join([f'''
+                                <div class="card-historial">
+                                    <div style="flex: 1;">
+                                        <div class="label-mini">Pedido</div>
+                                        <div class="valor-id">{str(item.get('NÚMERO DE PEDIDO', ''))}</div>
+                                    </div>
+                                    <div style="flex: 2; padding: 0 15px;">
+                                        <div class="label-mini">Cliente / Domicilio</div>
+                                        <div class="valor-text uppercase truncate">{str(item.get('NOMBRE DEL CLIENTE', ''))[:35]}</div>
+                                        <div class="sub-text truncate">{str(item.get('DOMICILIO', ''))[:50]}</div>
+                                    </div>
+                                    <div style="flex: 1; text-align: right;">
+                                        <div class="label-mini">Fletera / Fecha</div>
+                                        <div style="color: #38bdf8; font-size: 12px; font-weight: 700;">{str(item.get('FLETERA', ''))}</div>
+                                        <div class="valor-text" style="font-size: 11px; opacity: 0.8;">{item.get('FECHA_STR', '')}</div>
+                                    </div>
+                                </div>
+                                ''' for item in data_hist])}
+                            </div>
+                            """
+                            components.html(html_historial, height=450, scrolling=True)
+                        
+                        else:
+                            st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")   
+                
+               
+                # PESTAÑA 3: DESPACHOS (Análisis de Despachos 24h)-
+                with tab_despachos:
+                    st.markdown("""
+                        <style>
+                            div[data-testid="stDownloadButton"] > button {
+                                background-color: #2B343B !important; 
+                                color: #FFFFFF !important;            
+                                border: 1px solid #2B343B !important; 
+                                border-radius: 5px !important;
+                                transition: all 0.3s ease !important;
+                                width: 100% !important;
+                            }
+                            div[data-testid="stDownloadButton"] > button:hover {
+                                background-color: #00A3A3 !important; 
+                                color: #FFFFFF !important;            
+                                border-color: #00A3A3 !important;
+                            }
+                            div[data-testid="stDownloadButton"] > button:active {
+                                background-color: #00A3A3 !important;
+                                border-color: #00A3A3 !important;
+                            }
+                            /* Forzamos que el texto interno no se ponga gris/transparente */
+                            div[data-testid="stDownloadButton"] > button p {
+                                color: #FFFFFF !important;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
+                
+                    # 1. Copia y limpieza inmediata
+                    df_vol = df_mes.copy()
+                    
+                    # Forzamos la lectura de fechas ignorando errores de formato
+                    df_vol['EMISION'] = pd.to_datetime(df_vol['EMISION'], dayfirst=True, errors='coerce')
+                    df_vol['FECHA DE ENVÍO'] = pd.to_datetime(df_vol['FECHA DE ENVÍO'], dayfirst=True, errors='coerce')
+                
+                    # 2. Configuración de Feriados
+                    lista_feriados = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']
+                    feriados_np = np.array(lista_feriados, dtype='datetime64[D]')
+                
+                    # 3. Función de Cálculo (Sin rodeos)
+                    def calcular_kpi_24h(row):
+                        ini = row['EMISION']
+                        fin = row['FECHA DE ENVÍO']
+                        
+                        # Si en tu matriz ves el dato pero Python dice NaT, usamos 'fin' para rescatar la fila
+                        if pd.isna(ini) and not pd.isna(fin):
+                            ini = fin
+                            
+                        if pd.isna(ini) or pd.isna(fin):
+                            return "Sin Datos"
+                        
+                        try:
+                            # Comparación directa
+                            if fin <= ini: return "A Tiempo"
+                            
+                            # Días hábiles (Lunes a Sábado '1111110')
+                            d = np.busday_count(ini.date(), fin.date(), weekmask='1111100', holidays=feriados_np)
+                            
+                            if d == 0: return "A Tiempo"
+                            if d == 1 and fin.time() <= ini.time(): return "A Tiempo"
+                            return "Fuera de Tiempo"
+                        except:
+                            return "Sin Datos"
+                
+                    # 4. Ejecución del cálculo
+                    df_vol['Estado_KPI'] = df_vol.apply(calcular_kpi_24h, axis=1)
+                    
+                    # 5. Métricas para las tarjetas
+                    validos = df_vol[df_vol['Estado_KPI'] != "Sin Datos"]
+                    tot_v = len(validos)
+                    ok_v = len(validos[validos['Estado_KPI'] == "A Tiempo"])
+                    no_v = tot_v - ok_v
+                    
+                    # 6. Interfaz Visual
+                    st.markdown(f'<div style="text-align:center;margin-bottom:30px;"><p style="color:{vars_css["sub"]};font-size:11px;letter-spacing:3px;font-weight:700;text-transform:uppercase;">Desempeño Despachos 24h — {mes_sel}</p></div>', unsafe_allow_html=True)
+                    
+                    c_v1, c_v2, c_v3 = st.columns(3)
+                    
+                    def render_modern_bar(valor, total, label, color):
+                        porcentaje = (valor / total * 100) if total > 0 else 0
+                        st.markdown(f"""
+                            <div style="background: rgba(26, 37, 47, 0.6); padding: 20px; border-radius: 15px; border: 1px solid #243441; text-align: center;">
+                                <p style="color: #A4B9C8; font-size: 10px; margin-bottom: 5px; font-weight: bold;">{label.upper()}</p>
+                                <h2 style="color: white; margin: 0; font-size: 24px;">{valor}</h2>
+                                <p style="color: {color}; font-size: 16px; margin-top: 5px; font-weight: bold;">{porcentaje:.1f}%</p>
+                                <div style="background-color: #0B1014; border-radius: 10px; height: 8px; width: 100%; margin-top: 10px;">
+                                    <div style="background-color: {color}; height: 8px; width: {porcentaje}%; border-radius: 10px; box-shadow: 0 0 10px {color}88;"></div>
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with c_v1: render_modern_bar(tot_v, tot_v, "Total Facturas", "#5a8dee")
+                    with c_v2: render_modern_bar(ok_v, tot_v, "A Tiempo", "#39da8a")
+                    with c_v3: render_modern_bar(no_v, tot_v, "Fuera de Meta", "#ff5b5c")
+                
+                    # --- 7. DETALLE DE OPERACIÓN (SIEMPRE VISIBLE - COLOR SMART) ---
+                    st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; letter-spacing:2px; margin-top:20px; margin-bottom:15px;'>🔍 DETALLE DE OPERACIÓN EN TIEMPO REAL</p>", unsafe_allow_html=True)
+                    
+                    if not df_vol.empty:
+                        # 1. Preparación de datos
+                        df_display = df_vol[['NÚMERO DE PEDIDO','EMISION', 'FECHA DE ENVÍO', 'Estado_KPI']].copy()
+                        
+                        # Formateo para visualización
+                        df_display['EMISION_STR'] = df_display['EMISION'].dt.strftime('%d/%m/%Y %H:%M').fillna("S/D")
+                        df_display['ENVIO_STR'] = df_display['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y %H:%M').fillna("S/D")
+                        
+                        data_detalle = df_display.to_dict('records')
+                        alto_detalle = min(len(data_detalle) * 90 + 20, 550)
+                    
+                        # 2. Renderizado de Tarjetas
+                        html_detalle = f"""
+                        <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                            <style>
+                                body {{ background: transparent; margin: 0; padding: 0; }}
+                                ::-webkit-scrollbar {{ width: 8px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.05); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; min-height: 50px; }}
+                                ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                    
+                                .card-detalle {{
+                                    background: #263238;
+                                    border: 1px solid rgba(255, 255, 255, 0.05);
+                                    border-left: 5px solid #94a3b8;
+                                    border-radius: 10px;
+                                    padding: 12px 20px;
+                                    margin-bottom: 8px;
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    transition: 0.3s;
+                                }}
+                                .card-detalle:hover {{ border-color: #38bdf8; background: #2d3b42; transform: translateX(5px); }}
+                                .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: normal; letter-spacing: 1px; text-transform: uppercase; }}
+                                .val-pedido {{ color: #00FFAA; font-family: monospace; font-size: 15px; font-weight: 800; }}
+                                .val-fecha {{ color: #FFFFFF; font-size: 11px; font-weight: 400; opacity: 0.9; }}
+                                
+                                .badge-kpi {{ padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-align: center; min-width: 100px; }}
+                                
+                                .st-entregado {{ background: rgba(0, 255, 170, 0.1); color: #00FFAA; border: 1px solid rgba(0, 255, 170, 0.2); }}
+                                .st-transito {{ background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }}
+                                .st-fuera {{ background: rgba(255, 75, 75, 0.1); color: #FF4B4B; border: 1px solid rgba(255, 75, 75, 0.2); }}
+                                .st-otro {{ background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.1); }}
+                            </style>
+                            
+                            {"".join([f'''
+                            <div class="card-detalle" style="border-left-color: {
+                                '#00FFAA' if 'ENTREGADO' in str(item['Estado_KPI']).upper() else 
+                                '#38bdf8' if 'TRANS' in str(item['Estado_KPI']).upper() else 
+                                '#FF4B4B' if 'FUERA DE TIEMPO' in str(item['Estado_KPI']).upper() else '#94a3b8'};">
+                                
+                                <div style="flex: 1;">
+                                    <div class="label-mini">Pedido</div>
+                                    <div class="val-pedido">{item['NÚMERO DE PEDIDO']}</div>
+                                </div>
+                                
+                                <div style="flex: 1.5; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                    <div class="label-mini">Emisión</div>
+                                    <div class="val-fecha">{item['EMISION_STR']}</div>
+                                </div>
+                    
+                                <div style="flex: 1.5; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                    <div class="label-mini">Salida de Almacén</div>
+                                    <div class="val-fecha">{item['ENVIO_STR']}</div>
+                                </div>
+                    
+                                <div style="flex: 1; text-align: right;">
+                                    <div class="badge-kpi {
+                                        'st-entregado' if 'ENTREGADO' in str(item['Estado_KPI']).upper() else 
+                                        'st-transito' if 'TRANS' in str(item['Estado_KPI']).upper() else 
+                                        'st-fuera' if 'FUERA DE TIEMPO' in str(item['Estado_KPI']).upper() else 'st-otro'}">
+                                        {str(item['Estado_KPI']).upper()}
+                                    </div>
+                                </div>
+                            </div>
+                            ''' for item in data_detalle])}
+                        </div>
+                        """
+                        import streamlit.components.v1 as components
+                        components.html(html_detalle, height=alto_detalle, scrolling=True)
+                    
+                        # 3. Botón de Descarga Excel
+                        import io
+                        df_excel = df_display.copy()
+                        # Limpiamos fechas para el Excel (solo fecha sin hora o como prefieras)
+                        df_excel['EMISION'] = df_excel['EMISION'].dt.strftime('%d/%m/%Y')
+                        df_excel['FECHA DE ENVÍO'] = df_excel['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
+                        
+                        buffer = io.BytesIO()
+                        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                            df_excel.to_excel(writer, index=False, sheet_name='Detalle_Operacion')
+                        buffer.seek(0)
+                    
+                        # Aquí también le pusimos type="primary" para forzar a Streamlit a darle fondo oscuro
+                        st.download_button(
+                            label="DESCARGAR REPORTE DE OPERACIÓN (EXCEL)",
+                            data=buffer,
+                            file_name=f"Detalle_Operacion_{mes_sel}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True,
+                            type="primary"
+                        )
+                    else:
+                        st.info("No hay datos disponibles para el detalle.")
+                    
+                # PESTAÑA 4: % PARTICIPACIÓN-
+                with tab_participacion:
+                    # --- CSS BLINDADO: Clases específicas para resultados ---
+                    st.markdown("""
+                        <style>
+                            .metric-card-agc {
+                                background-color: #263238;
+                                border: 1px solid rgba(255, 255, 255, 0.05);
+                                border-radius: 12px;
+                                padding: 12px;
+                                text-align: center;
+                                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                            }
+                            /* Título de la tarjeta (Blanco, pequeño) */
+                            .op-query-text {
+                                color: #FFFFFF !important;
+                                font-weight: 700 !important;
+                                font-size: 10px !important;
+                                letter-spacing: 1.5px !important;
+                                text-transform: uppercase !important;
+                                margin-bottom: 8px !important;
+                                opacity: 0.8;
+                            }
+                            /* CLASE NUEVA: Para los números del Volumen */
+                            .valor-volumen {
+                                color: #FFFFFF !important;
+                                font-weight: 800 !important;
+                                font-family: monospace !important;
+                                font-size: 26px !important; 
+                                letter-spacing: 2px !important;
+                                margin: 0 !important;
+                            }
+                            /* CLASE NUEVA: Para el nombre de la Paquetería */
+                            .valor-carrier {
+                                color: #00FFAA !important;
+                                font-weight: 500 !important;
+                                font-size: 26px !important;
+                                font-style: italic !important;
+                                letter-spacing: 1px !important;
+                                margin: 0 !important;
+                            }
+                            /* Estilo para los Radio Buttons */
+                            div[data-testid="stRadio"] > label {
+                                color: #00FFAA !important;
+                                font-family: 'Inter', sans-serif;
+                                font-weight: 800 !important;
+                                font-size: 11px !important;
+                                text-transform: uppercase;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
+                
+                    URL_LOGISTICA = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+                    
+                    @st.cache_data
+                    def load_data_logistica():
+                        try:
+                            df_l = pd.read_csv(URL_LOGISTICA, low_memory=False)
+                            df_l.columns = [c.replace('_x000D_', '').strip() for c in df_l.columns]
+                            if 'MES' in df_l.columns:
+                                df_l['MES'] = df_l['MES'].astype(str).str.upper().str.strip()
+                            if 'FORMA DE ENVIO' in df_l.columns:
+                                df_l['FORMA DE ENVIO'] = df_l['FORMA DE ENVIO'].astype(str).str.strip()
+                            df_l['CAJAS'] = pd.to_numeric(df_l['CAJAS'], errors='coerce').fillna(0)
+                            return df_l
+                        except Exception as e:
+                            st.error(f"Error de conexión: {e}")
+                            return None
+                    
+                    df_log = load_data_logistica()
+                    
+                    if df_log is not None:
+                        st.markdown("<p class='op-query-text' style='text-align:center;'>DISTRIBUCION DE CARGA MENSUAL</p>", unsafe_allow_html=True)
+                        
+                        tipo_mov = st.radio(
+                            "Selecciona el flujo:",
+                            ["TODOS", "COBRO DESTINO", "COBRO REGRESO"],
+                            index=0,
+                            horizontal=True,
+                            key=f"tipo_mov_{mes_sel}"
+                        )
+                
+                        df_log_filtrado = df_log[df_log["MES"] == mes_sel].copy()
+                
+                        if tipo_mov == "COBRO DESTINO":
+                            df_log_filtrado = df_log_filtrado[df_log_filtrado['FORMA DE ENVIO'].str.contains('DESTINO', case=False, na=False)]
+                        elif tipo_mov == "COBRO REGRESO":
+                            df_log_filtrado = df_log_filtrado[df_log_filtrado['FORMA DE ENVIO'].str.contains('REGRESO', case=False, na=False)]
+                
+                        if not df_log_filtrado.empty:
+                            total_cajas_mes = df_log_filtrado['CAJAS'].sum()
+                            df_part = df_log_filtrado.groupby('TRANSPORTE')['CAJAS'].sum().reset_index()
+                            df_part['PORCENTAJE'] = (df_part['CAJAS'] / total_cajas_mes) * 100
+                            df_part = df_part.sort_values(by='PORCENTAJE', ascending=True)
+                            
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            c1, c2 = st.columns(2)
+                            
+                            with c1:
+                                st.markdown(f"""
+                                    <div class="metric-card-agc">
+                                        <p class="op-query-text">VOLUMEN TOTAL (UNIT)</p>
+                                        <p class="valor-volumen">{int(total_cajas_mes):,}</p>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                                
+                            with c2:
+                                lider_n = df_part.iloc[-1]['TRANSPORTE'] if not df_part.empty else "N/A"
+                                st.markdown(f"""
+                                    <div class="metric-card-agc">
+                                        <p class="op-query-text">CARRIER DOMINANTE</p>
+                                        <p class="valor-carrier">{lider_n}</p>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            
+                            # --- GRÁFICO DE BARRAS ---
+                            altura_ajustada = max(400, len(df_part) * 40)
+
+                            fig_bar = go.Figure(go.Bar(
+                                x=df_part['PORCENTAJE'],
+                                y=df_part['TRANSPORTE'],
+                                orientation='h',
+                                marker=dict(
+                                    color=df_part['PORCENTAJE'],
+                                    # Cambié el inicio de la escala para que combine mejor con el fondo oscuro
+                                    colorscale=['#2c3e50', '#1cc88a'], 
+                                    line=dict(color='rgba(255, 255, 255, 0.1)', width=1) # Un borde sutil
+                                ),
+                                text=df_part['PORCENTAJE'].apply(lambda x: f'{x:.1f}%'),
+                                textposition='outside',
+                                cliponaxis=False 
+                            ))
+                            
+                            fig_bar.update_layout(
+                                height=altura_ajustada,
+                                # El color exacto de tus tarjetas AGC
+                                paper_bgcolor='#263238', 
+                                plot_bgcolor='#263238', 
+                                font=dict(family="Inter", size=12, color="#FFFFFF"),
+                                margin=dict(l=200, r=60, t=30, b=20),
+                                # Añadimos bordes redondeados visuales (vía Streamlit container usualmente)
+                                # pero aquí forzamos que el texto y ejes se vean impecables
+                                xaxis=dict(
+                                    showgrid=False, 
+                                    zeroline=False, 
+                                    showticklabels=True,
+                                    tickfont=dict(color='rgba(255,255,255,0.5)')
+                                ),
+                                yaxis=dict(
+                                    showgrid=False, 
+                                    automargin=True,
+                                    tickfont=dict(color='#FFFFFF', size=11)
+                                ),
+                                showlegend=False,
+                                # Este paso es clave para que no se vea el recuadro blanco al hacer hover
+                                hoverlabel=dict(
+                                    bgcolor='#1a2432',
+                                    font_size=12,
+                                    font_family="Inter"
+                                )
+                            )
+                            
+                            # Renderizado con un toque extra de estilo AGC
+                            st.plotly_chart(
+                                fig_bar, 
+                                use_container_width=True, 
+                                config={'displayModeBar': False}, 
+                                key=f"bar_part_{mes_sel}_{tipo_mov}"
+                            )
+                
+                            # --- EXPANDER: DESGLOSE POR DESTINO ---
+                            # --- EXPANDER: DESGLOSE POR DESTINO ---
+                            st.markdown("<h3 style='color:white; font-size:16px; letter-spacing:2px; font-weight:800; border-left:4px solid #38bdf8; padding-left:10px; margin-bottom:20px;'>🌐 EXPLORADOR DE RUTAS Y DESTINOS</h3>", unsafe_allow_html=True)
+                            
+                            lista_carriers = ["TODOS"] + sorted(df_log_filtrado['TRANSPORTE'].unique())
+                            
+                            # --- AQUÍ ESTÁ EL TRUCO PARA LA ALINEACIÓN PERFECTA ---
+                            # Usamos label_visibility="collapsed" para que el selectbox no tenga espacio arriba
+                            col_sel, col_dl = st.columns([3, 1])
+                            
+                            with col_sel:
+                                carrier_sel = st.selectbox(
+                                    "Selecciona un Carrier:", # Este texto no se verá pero es necesario
+                                    options=lista_carriers,
+                                    key=f"select_carrier_{mes_sel}_{tipo_mov}",
+                                    label_visibility="collapsed" # <--- Esto quita el espacio de arriba
+                                )
+                            
+                            # Lógica de filtrado (se mantiene igual)
+                            if carrier_sel != "TODOS":
+                                df_dest_filtered = df_log_filtrado[df_log_filtrado['TRANSPORTE'] == carrier_sel].copy()
+                            else:
+                                df_dest_filtered = df_log_filtrado.copy()
+                            
+                            if not df_dest_filtered.empty:
+                                df_dest_sum = df_dest_filtered.groupby(['TRANSPORTE', 'DESTINO', 'FORMA DE ENVIO'])['CAJAS'].sum().reset_index()
+                                df_dest_sum = df_dest_sum.sort_values(by=['TRANSPORTE', 'CAJAS'], ascending=[True, False])
+                                total_sel = df_dest_sum['CAJAS'].sum()
+                            
+                                with col_dl:
+                                    csv_data = df_dest_sum.to_csv(index=False).encode('utf-8')
+                                    st.download_button(
+                                        label="📥 DESCARGAR",
+                                        data=csv_data,
+                                        file_name=f"reporte_{carrier_sel}_{mes_sel}.csv",
+                                        mime="text/csv",
+                                        use_container_width=True
+                                    )
+                                
+                                # Bajamos la métrica para que no estorbe la fila de arriba
+                                st.markdown(f"<p style='color:#00FFAA; font-size:13px; font-weight:800; letter-spacing:1px; margin-top:10px; margin-bottom:15px;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel):,}</p>", unsafe_allow_html=True)
+                                                        
+                                data_rutas = df_dest_sum.to_dict('records')
+                            
+                                # --- TU DISEÑO HTML PREMIUM SIGUE IGUAL ABAJO ---
+                                html_rutas = f"""
+                                <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                                    <style>
+                                        body {{ background: transparent; margin: 0; padding: 0; }}
+                                        ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                        ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                        ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; }}
+                                        ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); }}
+                                        .carrier-group {{ background: #263238; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 12px; overflow: hidden; width: 100%; transition: all 0.3s ease; }}
+                                        .carrier-group:hover {{ border-color: rgba(0, 255, 170, 0.3); }}
+                                        .carrier-header {{ background: rgba(56, 189, 248, 0.1); padding: 10px 15px; border-bottom: 1px solid rgba(56, 189, 248, 0.2); display: flex; justify-content: space-between; align-items: center; }}
+                                        .carrier-name {{ color: #38bdf8; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }}
+                                        .route-row {{ display: flex; justify-content: space-between; padding: 12px 15px; align-items: center; }}
+                                        .dest-name {{ color: #FFFFFF; font-size: 12px; font-weight: 600; }}
+                                        .method-tag {{ background: rgba(168, 85, 247, 0.1); color: #a855f7; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; margin-left: 8px; }}
+                                        .unit-badge {{ background: rgba(0, 255, 170, 0.1); color: #00FFAA; padding: 5px 12px; border-radius: 8px; font-family: monospace; font-weight: 800; font-size: 13px; border: 1px solid rgba(0, 255, 170, 0.2); }}
+                                    </style>
+                                    {"".join([f'''
+                                    <div class="carrier-group">
+                                        <div class="carrier-header">
+                                            <span class="carrier-name">{item['TRANSPORTE']}</span>
+                                            <span style="color:rgba(255,255,255,0.3); font-size:8px; font-weight:800;">DETALLE DE RUTA</span>
+                                        </div>
+                                        <div class="route-row">
+                                            <div>
+                                                <span class="dest-name">{item['DESTINO']}</span>
+                                                <span class="method-tag">{item['FORMA DE ENVIO']}</span>
+                                            </div>
+                                            <div class="unit-badge">{int(item['CAJAS']):,} u.</div>
+                                        </div>
+                                    </div>
+                                    ''' for item in data_rutas])}
+                                </div>
+                                """
+                                import streamlit.components.v1 as components
+                                components.html(html_rutas, height=500, scrolling=True)
+                                
+                            else:
+                                st.warning(f"No se encontraron registros para '{tipo_mov}' en el mes seleccionado.")
+                
+                # PESTAÑA 5: AGC---
+                # PESTAÑA 5: AGC ---
+                with tab_entregas_agc:
+                
+                    st.markdown("""
+                        <style>
+                            /* 1. Reset para que el contenedor use todo el ancho */
+                            div[data-testid="stBlock"] { max-width: 100% !important; padding: 0 !important; }
+                            
+                            /* 2. Estilo para los botones personalizados */
+                            div.stButton > button {
+                                background-color: #2B343B !important; 
+                                color: #FFFFFF !important;            
+                                border: 1px solid #2B343B !important; 
+                                border-radius: 5px !important;
+                                transition: all 0.3s ease !important;
+                                width: 100% !important;
+                            }
+                    
+                            div.stButton > button:hover {
+                                background-color: #00A3A3 !important; 
+                                color: #FFFFFF !important;            
+                                border-color: #00A3A3 !important;
+                            }
+                            
+                            div.stButton > button:active {
+                                background-color: #00A3A3 !important;
+                                border-color: #00A3A3 !important;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
+                
+                    # --- VALIDACIÓN DIRECTA CON TU VARIABLE DE SESIÓN DE ADMINISTRADOR ---
+                    usuario_actual = st.session_state.get("usuario_activo", "").upper()
+                    es_admin = (usuario_actual == "RIGOBERTO")
+                
+                    if es_admin:
+                        with st.expander("🔐 Panel de Seguridad / Modo Edición Admin", expanded=False):
+                            st.success("Acceso Concedido: Administrador Reconocido 🔓")
+                            modo_edicion = st.checkbox("Activar Modo Edición de Citas en Pantalla", value=False, key="check_modo_edicion_session")
+                    else:
+                        modo_edicion = False
+                
+                    # --- Lógica de Navegación ---
+                    if 'tipo_entrega' not in st.session_state:
+                        st.session_state.tipo_entrega = 'C A M I O N'
+                
+                    if 'mes_calendario' not in st.session_state:
+                        st.session_state.mes_calendario = 6  # Por defecto inicia en Junio
+                
+                    # Creamos TRES columnas para los botones de navegación superiores
+                    col_btn1, col_btn2, col_btn3 = st.columns(3)
+                
+                    with col_btn1:
+                        btn_type_1 = "primary" if st.session_state.tipo_entrega == 'C A M I O N' else "secondary"
+                        if st.button("ENTREGAS AGC CAMIÓN", use_container_width=True, type=btn_type_1):
+                            st.session_state.tipo_entrega = 'C A M I O N'
+                            st.rerun()
+                
+                    with col_btn2:
+                        btn_type_2 = "primary" if st.session_state.tipo_entrega == 'T R A I L E R' else "secondary"
+                        if st.button("ENTREGAS AGC TRAILER", use_container_width=True, type=btn_type_2):
+                            st.session_state.tipo_entrega = 'T R A I L E R'
+                            st.rerun()
+                
+                    with col_btn3:
+                        btn_type_3 = "primary" if st.session_state.tipo_entrega == 'C A L E N D A R I O' else "secondary"
+                        if st.button("VISTA CALENDARIO GLOBAL", use_container_width=True, type=btn_type_3):
+                            st.session_state.tipo_entrega = 'C A L E N D A R I O'
+                            st.rerun()
+                
+                    # --- Encabezado de Texto Dinámico ---
+                    if st.session_state.tipo_entrega == 'C A M I O N':
+                        titulo_dinamico = "ENTREGAS DE CAMIONES"
+                    elif st.session_state.tipo_entrega == 'T R A I L E R':
+                        titulo_dinamico = "ENTREGAS DE TRAILER"
+                    else:
+                        titulo_dinamico = "CALENDARIO DE ENTREGAS"
+                
+                    st.markdown(f"""
+                        <div style='text-align:center; margin-top:25px; margin-bottom:20px;'>
+                            <span style='color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;'>
+                                {titulo_dinamico}
+                            </span>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                    # --- Función de Renderizado (Tarjetas de Entregas) ---
+                    def render_logistica_flow_responsive(data):
+                        html_content = f"""
+                        <!DOCTYPE html>
+                        <html lang="es">
+                        <head>
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <script src="https://cdn.tailwindcss.com"></script>
+                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+                            <style>
+                                body {{ 
+                                    font-family: 'Inter', sans-serif; 
+                                    background-color: #384A52; 
+                                    color: #e2e8f0; 
+                                    margin: 0;
+                                    padding: 5px;
+                                    width: 100%;
+                                }}
+                                ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; }}
+                                ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                                .list-row {{
+                                    background-color: #263238;
+                                    border: 1px solid rgba(255, 255, 255, 0.05);
+                                    transition: all 0.2s ease;
+                                    margin-bottom: 8px;
+                                    border-radius: 10px;
+                                    overflow: hidden;
+                                    width: 100%;
+                                }}
+                                .list-row:hover {{
+                                    background-color: #2c3b42;
+                                    border-color: rgba(56, 189, 248, 0.3);
+                                }}
+                                .label-mini {{
+                                    font-size: 9px;
+                                    text-transform: uppercase;
+                                    font-weight: 800;
+                                    color: #BFBFBF;
+                                    letter-spacing: 0.5px;
+                                }}
+                            </style>
+                        </head>
+                        <body>
+                            <div class="w-full space-y-2">
+                                {"".join([f'''
+                                <div class="list-row flex items-stretch">
+                                    <div class="w-2 shrink-0 {"bg-emerald-500" if item['estatus'] == "ENTREGADA" else "bg-amber-500"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                                    <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
+                                        
+                                        <div class="w-full md:w-44 shrink-0">
+                                            <div class="label-mini">{item['semana']}</div>
+                                            <div class="text-sm font-black text-white italic tracking-tighter leading-none min-h-[20px]">
+                                                {item['oc']}
+                                            </div>
+                                            <div class="text-[12px] text-sky-400 font-bold mt-1">
+                                                ITEM: {item['item_no']}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                                            <div>
+                                                <div class="label-mini">Fecha Compromiso</div>
+                                                <div class="text-xs text-slate-300 italic truncate min-h-[16px]">
+                                                    {item['entrega_texto']}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="label-mini">Producto</div>
+                                                <div class="text-xs font-semibold text-sky-200 truncate min-h-[16px]">
+                                                    {item['producto']}
+                                                </div>
+                                            </div>
+                                        </div>
+                
+                                        <div class="w-full md:w-[420px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
+                                            <div class="w-2/5 shrink-0">
+                                                <div class="label-mini">Volumen</div>
+                                                <div class="text-sm font-bold text-white min-h-[20px] truncate">{item['cantidad']}</div>
+                                            </div>
+                                            <div class="w-3/5 shrink-0">
+                                                <div class="label-mini">Cita</div>
+                                                <div class="text-sm font-mono font-bold min-h-[20px] truncate {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-sky-400"}">
+                                                    {item['cita']}
+                                                </div>
+                                            </div>
+                                        </div>
+                
+                                        <div class="w-full md:w-40 flex justify-between md:block text-right shrink-0">
+                                            <div class="label-mini md:mb-1">Estatus de Logística</div>
+                                            <div class="text-[11px] font-black uppercase {"text-emerald-400" if item['estatus'] == "ENTREGADA" else "text-orange-400"} tracking-tighter min-h-[16px]">
+                                                {item['estatus']}
+                                            </div>
+                                        </div>
+                
+                                    </div>
+                                </div>
+                                ''' for item in data])}
+                            </div>
+                        </body>
+                        </html>
+                        """
+                        return components.html(html_content, height=800, scrolling=True)
+                
+                    # --- Función: Renderizado de Calendario ---
+                    def render_calendario_visual(data_camion, data_trailer, mes_num, anio=2026):
+                        meses_nombres = {5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE"}
+                        nombre_mes = meses_nombres.get(mes_num, "MES")
+                        
+                        eventos_dias = {}
+                        for item in data_camion:
+                            try:
+                                fecha_str = str(item['cita']).split(" - ")[0].strip()
+                                dt = datetime.strptime(fecha_str, "%d/%m/%m" if len(fecha_str.split('/')[2])==2 else "%d/%m/%Y")
+                                if dt.month == mes_num and dt.year == anio:
+                                    if dt.day not in eventos_dias: 
+                                        eventos_dias[dt.day] = []
+                                    eventos_dias[dt.day].append({"tipo": "CAMIÓN", "oc": item['oc'], "estatus": item['estatus']})
+                            except:
+                                pass 
+                
+                        for item in data_trailer:
+                            try:
+                                fecha_str = str(item['cita']).split(" - ")[0].strip()
+                                dt = datetime.strptime(fecha_str, "%d/%m/%Y")
+                                if dt.month == mes_num and dt.year == anio:
+                                    if dt.day not in eventos_dias: 
+                                        eventos_dias[dt.day] = []
+                                    eventos_dias[dt.day].append({"tipo": "TRAILER", "oc": item['oc'], "estatus": item['estatus']})
+                            except:
+                                pass
+                
+                        cal = calendar.Calendar(firstweekday=6) 
+                        semanas_mes = cal.monthdayscalendar(anio, mes_num)
+                
+                        grid_html = ""
+                        for semana in semanas_mes:
+                            for dia in semana:
+                                if dia == 0:
+                                    grid_html += '<div class="bg-[#2a373d]/40 min-h-[115px] p-1 border border-white/5"></div>'
+                                else:
+                                    eventos_del_dia_html = ""
+                                    if dia in eventos_dias:
+                                        for ev in eventos_dias[dia]:
+                                            bg_badge = "bg-sky-600/90 border-sky-400" if ev['tipo'] == "CAMIÓN" else "bg-emerald-700/90 border-emerald-500"
+                                            texto_badge = f"{ev['tipo']} - {ev['oc']}"
+                                            opacity = "opacity-60" if ev['estatus'] == "ENTREGADA" else "opacity-100 animate-pulse"
+                                            
+                                            eventos_del_dia_html += f'''
+                                            <div class="text-[10px] font-bold text-white px-1.5 py-0.5 rounded border mb-1 truncate tracking-tight {bg_badge} {opacity}">
+                                                {texto_badge}
+                                            </div>
+                                            '''
+                
+                                    grid_html += f'''
+                                    <div class="bg-[#263238] min-h-[115px] p-2 border border-white/5 flex flex-col justify-between hover:bg-[#2c3b42] transition-colors">
+                                        <span class="text-xs font-black text-slate-400 text-left">{dia}</span>
+                                        <div class="overflow-y-auto max-h-[85px] space-y-1 mt-1 pr-0.5">
+                                            {eventos_del_dia_html}
+                                        </div>
+                                    </div>
+                                    '''
+                
+                        html_calendario = f"""
+                        <!DOCTYPE html>
+                        <html lang="es">
+                        <head>
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <script src="https://cdn.tailwindcss.com"></script>
+                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+                            <style>
+                                body {{ font-family: 'Inter', sans-serif; background-color: #384A52; color: #e2e8f0; margin:0; padding:0; width: 100%; }}
+                                ::-webkit-scrollbar {{ width: 4px; }}
+                                ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.2); border-radius: 4px; }}
+                            </style>
+                        </head>
+                        <body class="p-0">
+                            <div class="w-full bg-[#1e272c] rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+                                <div class="bg-[#263238] px-6 py-4 border-b border-white/10 flex justify-between items-center">
+                                    <h2 class="text-xl font-black text-white tracking-widest italic">{nombre_mes} <span style="color: #34D399;" class="font-light">{anio}</span></h2>
+                                    <div class="flex items-center gap-4 text-xs font-semibold">
+                                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-sky-600 rounded"></div>CAMIÓN</div>
+                                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-emerald-700 rounded"></div>TRAILER</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-7 bg-[#212c31] text-center py-2 text-xs font-black text-slate-400 tracking-wider uppercase border-b border-white/5">
+                                    <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+                                </div>
+                                
+                                <div class="grid grid-cols-7 bg-[#1a2327]">
+                                    {grid_html}
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                        """
+                        return components.html(html_calendario, height=750, scrolling=True)
+                
+                    # =====================================================================
+                    # --- EXTRACCIÓN Y GUARDADO AUTOMÁTICO EN GITHUB ---
+                    # =====================================================================
+                    
+                    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                    REPO_NAME = "RH2026/nexion"
+                    FILE_PATH = "agc.csv"
+                    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+                
+                    def get_github_data():
+                        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+                        response = requests.get(CSV_URL, headers=headers)
+                        if response.status_code == 200:
+                            return pd.read_csv(io.StringIO(response.text))
+                        else:
+                            st.error(f"Hubo un error al cargar los datos: {response.status_code}")
+                            return pd.DataFrame()
+                
+                    def guardar_cambios_github(df_nuevo):
+                        import base64
+                        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+                        api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+                        
+                        r_get = requests.get(api_url, headers=headers)
+                        if r_get.status_code != 200:
+                            st.error("No se pudo obtener el identificador actual del archivo en GitHub.")
+                            return False
+                        sha_actual = r_get.json().get("sha")
+                        
+                        csv_buffer = io.StringIO()
+                        df_nuevo.to_csv(csv_buffer, index=False)
+                        csv_content = csv_buffer.getvalue()
+                        
+                        content_encoded = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+                        
+                        payload = {
+                            "message": "Actualización automática de citas desde panel admin seguro de Rigoberto",
+                            "content": content_encoded,
+                            "sha": sha_actual
+                        }
+                        
+                        r_put = requests.put(api_url, json=payload, headers=headers)
+                        if r_put.status_code in [200, 201]:
+                            st.success("¡Citas y cambios guardados en GitHub con éxito, mi amor! 🚀")
+                            st.cache_data.clear()
+                            return True
+                        else:
+                            st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
+                            return False
+                
+                    df_raw = get_github_data()
+                
+                    if not df_raw.empty:
+                        df_raw.columns = df_raw.columns.str.strip()
+                
+                        # --- MODO EDICIÓN BASADO EN TU SESIÓN DE ADMIN ---
+                        if modo_edicion:
+                            st.warning("⚠️ Modo edición activo. Modifica las celdas abajo y haz clic en el botón de guardar para actualizar GitHub automáticamente.")
+                            
+                            df_editado = st.data_editor(df_raw, use_container_width=True, num_rows="dynamic", key="editor_agc_admin_session")
+                            
+                            if st.button("💾 Guardar Cambios en GitHub", key="btn_guardar_github_session"):
+                                if guardar_cambios_github(df_editado):
+                                    st.rerun()
+                            st.markdown("---")
+                
+                        # --- PROCESAMIENTO PARA LAS TARJETAS Y CALENDARIO ---
+                        df_entregas = pd.DataFrame()
+                        df_entregas['oc'] = df_raw.get('PO Customer', pd.Series(dtype=str)).fillna('').astype(str)
+                        df_entregas['item_no'] = df_raw.get('Item No.', pd.Series(dtype=str)).fillna('').astype(str)
+                        df_entregas['producto'] = df_raw.get('PRODUCTO', pd.Series(dtype=str)).fillna('').astype(str)
+                        
+                        cajas = df_raw.get('Cajas a Entregar', pd.Series(dtype=str)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
+                        tarimas = df_raw.get('Tarimas', pd.Series(dtype=str)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
+                        cajas = cajas.replace({'': '0', '0.0': '0'})
+                        tarimas = tarimas.replace({'': '0', '0.0': '0'})
+                        
+                        df_entregas['cantidad'] = cajas + " CXS / " + tarimas + " TAR"
+                        df_entregas['semana'] = "OV: " + df_raw.get('OV Jypesa', pd.Series(dtype=str)).fillna('').astype(str)
+                        df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', pd.Series(dtype=str)).fillna('').astype(str)
+                        
+                        cita_series = df_raw.get('CITA', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+                        hora_series = df_raw.get('HORA', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+                        
+                        valores_nulos = ['', 'nan', '0', '0.0', '-', 'nat']
+                        citas_combinadas = []
+                        for c, h in zip(cita_series, hora_series):
+                            es_cita_vacia = str(c).lower() in valores_nulos
+                            es_hora_vacia = str(h).lower() in valores_nulos
+                            
+                            if es_cita_vacia and es_hora_vacia:
+                                citas_combinadas.append("PENDIENTE DE CITA")
+                            elif not es_cita_vacia and es_hora_vacia:
+                                citas_combinadas.append(f"{c} - POR ASIGNAR")
+                            elif es_cita_vacia and not es_hora_vacia:
+                                citas_combinadas.append(f"PENDIENTE - {h}")
+                            else:
+                                citas_combinadas.append(f"{c} - {h}")
+                                
+                        df_entregas['cita'] = citas_combinadas
+                        df_entregas['estatus'] = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
+                        df_entregas['estatus'] = df_entregas['estatus'].replace('NAN', 'PENDIENTE')
+                        
+                        df_entregas['tipo'] = df_raw.get('Unidad', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
+                        df_entregas['tipo'] = df_entregas['tipo'].str.replace('Ó', 'O') 
+                        
+                        df_entregas = df_entregas.replace(r'(?i)^nan$', '', regex=True)
+                        
+                        data_camion = df_entregas[df_entregas['tipo'] == 'CAMION'].to_dict('records')
+                        data_trailer = df_entregas[df_entregas['tipo'] == 'TRAILER'].to_dict('records')
+                    else:
+                        data_camion = []
+                        data_trailer = []
+                
+                    # --- Lógica de Renderizado Condicional ---
+                    if st.session_state.tipo_entrega == 'C A M I O N':
+                        render_logistica_flow_responsive(data_camion)
+                    elif st.session_state.tipo_entrega == 'T R A I L E R':
+                        render_logistica_flow_responsive(data_trailer)
+                    elif st.session_state.tipo_entrega == 'C A L E N D A R I O':
+                        col_mes_sel, _ = st.columns([2, 4])
+                        with col_mes_sel:
+                            opciones_meses = {"MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9}
+                            
+                            nombre_mes_actual = [k for k, v in opciones_meses.items() if v == st.session_state.mes_calendario][0]
+                            
+                            mes_seleccionado = st.selectbox(
+                                "SELECCIONAR MES A VISUALIZAR", 
+                                list(opciones_meses.keys()),
+                                index=list(opciones_meses.keys()).index(nombre_mes_actual)
+                            )
+                            
+                            if opciones_meses[mes_seleccionado] != st.session_state.mes_calendario:
+                                st.session_state.mes_calendario = opciones_meses[mes_seleccionado]
+                                st.rerun()
+                            
+                        render_calendario_visual(data_camion, data_trailer, st.session_state.mes_calendario)
+                
+                
+                # PESTAÑA 6: CONSIGNAS
+                with tab_consignas:
+                    # --- CONFIGURACIÓN DE CONEXIÓN (GITHUB) ---
+                    GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+                    REPO_NAME = "RH2026/nexion"
+                    FILE_PATH_CON = "consignas.csv"
+                    URL_CONSIGNAS = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_CON}"
+                    
+                    @st.cache_data(ttl=600)
+                    def load_consignas():
+                        try:
+                            headers = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
+                            df = pd.read_csv(URL_CONSIGNAS, storage_options=headers, low_memory=False)
+                            df.columns = [c.strip() for c in df.columns]
+                            
+                            # Lógica de ordenamiento por fecha
+                            if 'F.DOC' in df.columns:
+                                df['F_TEMP'] = pd.to_datetime(df['F.DOC'], errors='coerce', dayfirst=True)
+                                df = df.sort_values(by='F_TEMP', ascending=False).drop(columns=['F_TEMP'])
+                            return df
+                        except Exception as e:
+                            st.error(f"Error cargando consignas: {e}")
+                            return None
+                    
+                    def render_expediente_chingon(df):
+                        df_clean = df.fillna('')
+                        data = df_clean.to_dict('records')
+                        
+                        html_content = f"""
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <script src="https://cdn.tailwindcss.com"></script>
+                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+                            <style>
+                                body {{ background-color: #384A52; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; padding: 10px 15px; }}
+                                ::-webkit-scrollbar {{ width: 8px; height: 10px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.2); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ background: rgba(56, 189, 248, 0.6); border-radius: 10px; border: 2px solid #384A52; }}
+                                ::-webkit-scrollbar-thumb:hover {{ background: rgba(0, 255, 170, 0.8); }}
+                                .row-expediente {{ background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin-bottom: 12px; padding: 18px 24px; transition: all 0.3s ease; width: 100%; box-sizing: border-box; }}
+                                .row-expediente:hover {{ border-color: #00FFAA; background-color: #2d3b42; transform: scale(1.001); }}
+                                .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 800; letter-spacing: 1.5px; }}
+                                .valor {{ font-size: 14px; font-weight: 700; color: #FFFFFF; }}
+                                .highlight {{ color: #00FFAA; font-family: monospace; }}
+                                .text-muted-claro {{ color: rgba(255,255,255,0.7); font-style: italic; }}
+                            </style>
+                        </head>
+                        <body>
+                            <div class="w-full">
+                                {"".join([f'''
+                                <div class="row-expediente">
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                                        <div>
+                                            <div class="label-mini">Talon / Folio</div>
+                                            <div class="valor highlight text-xl leading-none">{str(item.get('TALON', ''))}</div>
+                                            <div class="text-[10px] text-blue-300 mt-1 opacity-90 italic">F. Doc: {str(item.get('F.DOC', ''))}</div>
+                                        </div>
+                                        <div class="md:border-l md:border-white/10 md:pl-6">
+                                            <div class="label-mini">Destinatario</div>
+                                            <div class="valor truncate text-sm uppercase">{str(item.get('DESTINATARIO', ''))[:45]}</div>
+                                            <div class="text-[10px] text-muted-claro">{str(item.get('ORIGEN', ''))} → {str(item.get('DESTINO', ''))}</div>
+                                        </div>
+                                        <div class="md:border-l md:border-white/10 md:pl-6">
+                                            <div class="label-mini">Resumen Financiero</div>
+                                            <div class="flex justify-between items-center"><span class="label-mini">Bultos:</span> <span class="valor text-xs">{str(item.get('BULTOS', '0'))}</span></div>
+                                            <div class="flex justify-between items-center"><span class="label-mini">Total Cargo:</span> <span class="valor text-emerald-400 text-sm">${str(item.get('TOTAL', '0'))}</span></div>
+                                        </div>
+                                        <div class="text-right md:border-l md:border-white/10 md:pl-6">
+                                            <div class="label-mini">Estatus Entrega</div>
+                                            <div class="valor text-sm {'text-orange-400' if not item.get('F.ENTREGA') else 'text-white'}">{str(item.get('F.ENTREGA', 'PENDIENTE'))}</div>
+                                            <div class="text-[10px] text-blue-300 font-bold uppercase tracking-tighter">{str(item.get('QUIEN RECIBIO', ''))[:25]}</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 pt-3 border-t border-white/10 flex flex-col md:flex-row justify-between gap-4">
+                                        <div class="flex-1"><span class="label-mini text-blue-200">Domicilio:</span> <span class="text-[11px] text-white/80 ml-2">{str(item.get('DOMICILIO DEL DESTINATARIO', ''))}</span></div>
+                                        <div class="text-right flex gap-4">
+                                            <div><span class="label-mini text-orange-200">Ref:</span> <span class="text-[11px] text-white/80 italic ml-1">{str(item.get('REFERENCIA', '--'))}</span></div>
+                                            <div><span class="label-mini text-white/60">Notas:</span> <span class="text-[11px] text-white/70 italic ml-1">{str(item.get('OBSERVACION 1', '--'))}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                ''' for item in data])}
+                            </div>
+                        </body>
+                        </html>
+                        """
+                        return components.html(html_content, height=1200, scrolling=True)
+                    
+                    # --- EJECUCIÓN PRINCIPAL ---
+                    df_consignas = load_consignas()
+                    
+                    if df_consignas is not None:
+                        st.markdown("<h3 style='text-align:center; color:white; font-size:18px; letter-spacing:4px; font-weight:900;'>CONSIGNAS BARCELO</h3>", unsafe_allow_html=True)
+                        
+                        # --- FILTROS LINEALES ---
+                        df_filtrado = df_consignas.copy()
+                        
+                        # Preparamos la columna de mes para el filtro
+                        df_filtrado['MES_TEMP'] = pd.to_datetime(df_filtrado['F.DOC'], errors='coerce', dayfirst=True).dt.strftime('%B')
+                        
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        # Filtro Mes (Selectbox única)
+                        with col1:
+                            meses_opciones = ["TODOS"] + sorted([m for m in df_filtrado['MES_TEMP'].dropna().unique()])
+                            mes_sel = st.selectbox("Mes", meses_opciones)
+                            
+                        # Filtros de búsqueda libre
+                        with col2:
+                            cliente_busq = st.text_input("Buscar Cliente")
+                        with col3:
+                            talon_busq = st.text_input("Buscar Talón")
+                        with col4:
+                            ref_busqueda = st.text_input("Ref. (Observación 1)")
+                    
+                        # Aplicar filtros
+                        if mes_sel != "TODOS":
+                            df_filtrado = df_filtrado[df_filtrado['MES_TEMP'] == mes_sel]
+                        if cliente_busq:
+                            df_filtrado = df_filtrado[df_filtrado['DESTINATARIO'].astype(str).str.contains(cliente_busq, case=False, na=False)]
+                        if talon_busq:
+                            df_filtrado = df_filtrado[df_filtrado['TALON'].astype(str).str.contains(talon_busq, case=False, na=False)]
+                        if ref_busqueda:
+                            df_filtrado = df_filtrado[df_filtrado['OBSERVACION 1'].astype(str).str.contains(ref_busqueda, case=False, na=False)]
+                    
+                        # Renderizado final
+                        render_expediente_chingon(df_filtrado)
+                
+                # PESTAÑA 7: AMAZON
+                with tab_amazon:
+                # 1. CSS BLINDADO, RESPONSIVE Y SCROLL DINÁMICO
+                # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
+                   
+                    # 1. CARGA Y LIMPIEZA DE DATOS (Tu lógica original intacta)
+                    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                    REPO_NAME = "RH2026/nexion"
+                    FILE_PATH = "amazon.csv"
+                    API_URL = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+                    headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
+                    
+                    try:
+                        response = requests.get(API_URL, headers=headers)
+                        if response.status_code == 200:
+                            csv_bytes = base64.b64decode(response.json()['content'])
+                            df = pd.read_csv(io.BytesIO(csv_bytes), engine='python')
+                            df.columns = df.columns.str.strip()
+                            df['FECHA'] = pd.to_datetime(df['FECHA'], dayfirst=True, errors='coerce')
+                            df = df.dropna(subset=['FECHA'])
+                            cols_num = ['TOTAL', 'COSTO DE DISTRIBUCION POR CAJA', 'CAJAS', 'VALOR MERCANCIA', 'PORCENTAJE LOGISTICO']
+                            for col in cols_num:
+                                if col in df.columns:
+                                    df[col] = df[col].astype(str).str.replace(r'[\$,%, ]', '', regex=True).replace(['nan', '', 'None'], '0').astype(float)
+                            df = df.sort_values(by='FECHA', ascending=False)
+                    
+                            # --- 1. DASHBOARD PANTALLA ---
+                            st.markdown("<h3 style='text-align:center; color:#eceff1; font-size:12px; letter-spacing:3px; font-weight:800; margin-bottom:15px;'>DASHBOARD OPERATIVO AMAZON</h3>", unsafe_allow_html=True)
+                            
+                            m1, m2, m3, m4 = st.columns(4)
+                            card_style = "background:#1c252c; border-radius:8px; padding:15px 10px; border-bottom:3px solid #2ecc71; text-align:center;"
+                            
+                            m1.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">Cajas Totales</div><div style="color:white; font-size:22px; font-weight:800;">{int(df["CAJAS"].sum()):,}</div></div>', unsafe_allow_html=True)
+                            m2.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">Valor Carga</div><div style="color:white; font-size:22px; font-weight:800;">${df["VALOR MERCANCIA"].sum():,.0f}</div></div>', unsafe_allow_html=True)
+                            m3.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">Costo Flete</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">${df["TOTAL"].sum():,.0f}</div></div>', unsafe_allow_html=True)
+                            m4.markdown(f'<div style="{card_style}"><div style="color:#90a4ae; font-size:9px; text-transform:uppercase;">% Logístico</div><div style="color:#2ecc71; font-size:22px; font-weight:800;">{df["PORCENTAJE LOGISTICO"].mean():.2f}%</div></div>', unsafe_allow_html=True)
+                    
+                            # --- 2. FILTRO ---
+                            st.divider()
+                            df['MES'] = df['FECHA'].dt.strftime('%B %Y')
+                            opciones_mes = ["TODO EL HISTÓRICO"] + list(df['MES'].unique())
+                            mes_sel = st.selectbox("📅 FILTRAR POR MES:", opciones_mes)
+                            df_mes = df if mes_sel == "TODO EL HISTÓRICO" else df[df['MES'] == mes_sel]
+                    
+                            # --- 3. CONTENIDO HTML ---
+                            data_dict = df_mes.fillna('').to_dict('records')
+                            costo_log_real = df_mes["PORCENTAJE LOGISTICO"].mean()
+                            fecha_reporte = datetime.now().strftime('%d/%m/%Y')
+                            
+                            html_content = f"""
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <script src="https://cdn.tailwindcss.com"></script>
+                                <style>
+                                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                                    body {{ background: transparent; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
+                                    #screen-view {{ display: block; }}
+                                    #print-view {{ display: none; }}
+                                    .scroller {{ height: 480px; overflow-y: auto; padding-right: 10px; margin-bottom: 10px; }}
+                                    ::-webkit-scrollbar {{ width: 6px; }}
+                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                                    .scroller:hover::-webkit-scrollbar-thumb {{ background: #2ecc71; }}
+                                    .card-row {{ background: #243038; border-radius: 12px; margin-bottom: 10px; padding: 15px 25px; display: grid; grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr; gap: 15px; align-items: center; border: 1px solid rgba(255,255,255,0.05); }}
+                                    .label {{ font-size: 8px; color: #90a4ae; font-weight: 800; text-transform: uppercase; }}
+                                    .v-main {{ font-size: 14px; font-weight: 800; color: #2ecc71; }}
+                                    .v-txt {{ font-size: 12px; font-weight: 600; color: #ffffff; }}
+                                    .btn-print-master {{ background-color: #243038; color: #ffffff; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 20px; font-size: 12px; font-weight: 400; cursor: pointer; width: 100%; transition: all 0.3s ease; display: flex; justify-content: center; align-items: center; text-transform: uppercase; letter-spacing: 1px; }}
+                                    .btn-print-master:hover {{ background-color: #00A0A8; color: #ffffff; border-color: #00A0A8; }}
+                                    @media print {{ @page {{ size: A4; margin: 10mm; }} #screen-view {{ display: none !important; }} #print-view {{ display: block !important; color: black !important; background: white !important; }} table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }} th {{ background: #f0f0f0 !important; border: 1px solid #000; padding: 6px; font-size: 8px; text-transform: uppercase; }} td {{ border: 1px solid #ddd; padding: 6px; font-size: 8px; }} .header-print {{ border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 15px; }} .resumen-caja {{ border: 1.5px solid #000; padding: 10px; margin: 15px 0; font-size: 11px; }} }}
+                                </style>
+                            </head>
+                            <body>
+                                <div id="screen-view">
+                                    <div class="scroller">
+                                        {"".join([f'''
+                                        <div class="card-row">
+                                            <div>
+                                                <div class="label">FOLIO</div>
+                                                <div class="v-main">{item.get('IDENTIFICADOR ENVIO', 'N/A')}</div>
+                                                <div style="font-size:10px; color:#94a3b8;">{item.get('FECHA').strftime('%d/%m/%Y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</div>
+                                            </div>
+                                            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
+                                                <div class="label">DESTINO / ESTATUS</div>
+                                                <div class="v-txt">{item.get('AMAZON', 'AMAZON')}</div>
+                                                <div style="font-size:10px; color:{'#f39c12' if item.get('ESTATUS') == 'PENDIENTE' else '#2ecc71' if item.get('ESTATUS') == 'ENTREGADA' else '#3498db'};">
+                                                    {item.get('ESTATUS', 'PROCESADO')}
+                                                </div>
+                                            </div>
+                                            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
+                                                <div class="label">BULTOS / COSTO CAJA</div>
+                                                <div class="v-txt">{int(item.get('CAJAS', 0))} BULTOS</div>
+                                                <div style="font-size:10px; color:#94a3b8;">$ {float(item.get('COSTO DE DISTRIBUCION POR CAJA', 0)):,.2f} c/u</div>
+                                            </div>
+                                            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
+                                                <div class="label">VALOR CARGA / KPI</div>
+                                                <div style="color:white; font-size:11px;">$ {float(item.get('VALOR MERCANCIA', 0)):,.0f}</div>
+                                                <div style="color:#2ecc71; font-weight:800; font-size:12px;">{float(item.get('PORCENTAJE LOGISTICO', 0)):,.2f}%</div>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <div class="label">TOTAL FLETE</div>
+                                                <div style="color:white; font-size:16px; font-weight:900;">$ {float(item.get('TOTAL', 0)):,.2f}</div>
+                                            </div>
+                                        </div>
+                                        ''' for item in data_dict])}
+                                    </div>
+                                    <div style="padding: 10px 0;">
+                                        <button class="btn-print-master" onclick="window.print()">GENERAR REPORTE DE OPERACIÓN (PDF)</button>
+                                    </div>
+                                </div>
+                                <div id="print-view">
+                                    <div class="header-print">
+                                        <table style="border:none;">
+                                            <tr style="border:none;">
+                                                <td style="border:none; width:65%;">
+                                                    <h1 style="margin:0; font-size:16px; font-weight:900;">JABONES Y PRODUCTOS ESPECIALIZADOS</h1>
+                                                    <p style="margin:0; font-size:11px; color:#444;">Distribución y Logística Nacional | JYPESA 2026</p>
+                                                </td>
+                                                <td style="border:none; text-align:right; font-size:10px;">
+                                                    <b>FECHA EMISIÓN:</b> {fecha_reporte}<br>
+                                                    <b>PERIODO:</b> {mes_sel.upper()}<br>
+                                                    <b>RESULTADO:</b> {"DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <h2 style="text-align:center; text-decoration:underline; font-size:16px; margin: 15px 0;">REPORTE OPERATIVO DE CONSIGNAS AMAZON</h2>
+                                    <div class="resumen-caja">
+                                        <b>RESUMEN EJECUTIVO:</b> El KPI logístico promedio del periodo es de <b>{costo_log_real:.2f}%</b> contra un target objetivo del <b>7.50%</b>. 
+                                        Se movilizaron un total de <b>{int(df_mes["CAJAS"].sum()):,}</b> cajas con un valor de mercancía de <b>${df_mes["VALOR MERCANCIA"].sum():,.2f}</b>.
+                                    </div>
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>FOLIO</th>
+                                                <th>FECHA</th>
+                                                <th>DESTINATARIO</th>
+                                                <th>ESTATUS</th>
+                                                <th>BULTOS</th>
+                                                <th>$ ECaja</th>
+                                                <th>TOTAL FLETE</th>
+                                                <th>KPI %</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {"".join([f'''
+                                            <tr>
+                                                <td style="font-weight:bold;">{item.get('IDENTIFICADOR ENVIO')}</td>
+                                                <td>{item.get('FECHA').strftime('%d/%m/%Y') if hasattr(item.get('FECHA'), 'strftime') else item.get('FECHA')}</td>
+                                                <td>{item.get('AMAZON')}</td>
+                                                <td>{item.get('ESTATUS')}</td>
+                                                <td style="text-align:center;">{int(item.get('CAJAS', 0))}</td>
+                                                <td style="text-align:right;">$ {float(item.get('COSTO DE DISTRIBUCION POR CAJA', 0)):,.2f}</td>
+                                                <td style="text-align:right;">${float(item.get('TOTAL', 0)):,.2f}</td>
+                                                <td style="text-align:center; font-weight:bold;">{float(item.get('PORCENTAJE LOGISTICO', 0)):,.2f}%</td>
+                                            </tr>
+                                            ''' for item in data_dict])}
+                                        </tbody>
+                                    </table>
+                                    <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+                                        <div style="width: 220px; border-top: 1.5px solid #000; text-align: center; font-size: 10px;">
+                                            <br><b>Rigoberto Hernández</b><br>Coordinador Logística Nacional
+                                        </div>
+                                        <div style="width: 220px; border-top: 1.5px solid #000; text-align: center; font-size: 10px;">
+                                            <br><b>Dirección General</b><br>Autorización JYPESA
+                                        </div>
+                                    </div>
+                                </div>
+                            </body>
+                            </html>
+                            """
+                            components.html(html_content, height=650, scrolling=False)
+                        else:
+                            st.error("Error al conectar con GitHub.")
+                    except Exception as e:
+                        st.error(f"Error crítico: {e}")
+                
+                with tab_pedidos:
+                    # ── 1. CONFIGURACIÓN Y PERMISOS ──
+                    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                    REPO_NAME = "RH2026/nexion"
+                    FILE_PATH = "pedidos.csv"
+                    tz_gdl = pytz.timezone('America/Mexico_City')
+                    
+                    current_user = st.session_state.get("usuario_activo", "UNKNOWN")
+                    
+                    # 🔒 CONTROL DE ACCESO ABSOLUTO: Solo tú puedes editar
+                    AUTHORIZED_EDITORS = ["Rigoberto"]
+                    puede_editar = current_user in AUTHORIZED_EDITORS
+                    
+                    # LISTA CON ICONOS PARA LA VISTA DE LA APP
+                    OPCIONES_ESTATUS = ["🆕 PENDIENTE", "🛑 DETENIDO", "✅ ENVIADO", "❌ CANCELADO"]
+                    OPCIONES_PAQUETERIA = ["", "MAS APRISA", "CANCELADO", "TRES GUERRAS", "CLIENTE PASA", "LOCAL", "CASTORES", "ONE", "PAQMEX", "TAMAZULA", "FLETES REGRESO", "TIBSA", "KORA", "SANCHEZ", "TINY", "POTOSINOS", "FEDEX", "EXPORTACION", "CEDIS CANCUN", "CEDIS MONTERREY", "SOLO FACTURA", "DETENIDA"]
+                    OPCIONES_SURTIDOR = ["", "MARCOS", "SANDRA", "YAZMIN", "KEVIN", "FELIX", "MARISOL", "CANCELADO", "LOCAL", "SOLO FACTURA", "CEDIS", "EXPORTACION"]
+                    
+                    # Función auxiliar global para limpiar textos antes de exportar o guardar
+                    def quitar_iconos(val):
+                        return str(val).replace("🆕 ", "").replace("🛑 ", "").replace("✅ ", "").replace("❌ ", "").strip()
+                    
+                    # Variables directas (ya no hay bloqueos de concurrencia)
+                    puede_editar_efectivo = puede_editar
+                    bloqueado_por_otro = False
+                    
+                    st.markdown(f"### PANEL DE ENVIOS DIARIO {'(MODO EDICIÓN)' if puede_editar_efectivo else '(MODO LECTURA)'}")
+                    
+                    # ── 2. LÓGICA DE CARGA ──
+                    def get_data_nexion_brute():
+                        if 'df_pedidos' not in st.session_state or st.session_state.get('force_reload', False):
+                            try:
+                                g = Github(TOKEN)
+                                repo = g.get_repo(REPO_NAME)
+                                contents = repo.get_contents(FILE_PATH, ref="main")
+                                df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
+                                
+                                columnas_lectura = ["NO CLIENTE", "FACTURA", "NOMBRE DEL CLIENTE", "DESTINO", "PROGRAMACION", "ESTATUS"]
+                                columnas_nuevas = ["FECHA DE ENVIO", "SURTIDOR", "CAJAS", "PAQUETERIA", "HORA PROGRAMADA", "HORA REAL", "INCIDENCIA"]
+                                all_cols = columnas_lectura + columnas_nuevas
+                                
+                                for col in all_cols:
+                                    if col not in df.columns:
+                                        df[col] = ""
+                                    else:
+                                        df[col] = df[col].astype(str).replace(['nan', 'NaN', 'None'], '').str.strip().str.upper()
+                                
+                                if "ESTATUS" in df.columns:
+                                    def poner_iconos(val):
+                                        if "PENDIENTE" in val: return "🆕 PENDIENTE"
+                                        if "DETENIDO" in val: return "🛑 DETENIDO"
+                                        if "ENVIADO" in val: return "✅ ENVIADO"
+                                        if "CANCELADO" in val: return "❌ CANCELADO"
+                                        return "🆕 PENDIENTE"
+                                    df['ESTATUS'] = df['ESTATUS'].apply(poner_iconos)
+                                
+                                st.session_state.df_pedidos = df[all_cols]
+                                st.session_state.force_reload = False 
+                            except Exception as e:
+                                st.error(f"Error de conexión: {e}")
+                                return pd.DataFrame()
+                        return st.session_state.df_pedidos
+                    
+                    # ── 3. BOTÓN RECARGAR ──
+                    if st.button("CLICK PARA OBTENER DATOS ACTUALIZADOS", use_container_width=True):
+                        if 'df_pedidos' in st.session_state: del st.session_state.df_pedidos
+                        st.session_state.force_reload = True
+                        st.cache_data.clear()
+                        st.rerun()
+                    
+                    st.markdown("---")
+                    
+                    # ── 4. FILTROS Y TABLA ──
+                    df_actual = get_data_nexion_brute()
+                    
+                    if not df_actual.empty:
+                        col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+                        
+                        with col_f1:
+                            f_cliente = st.text_input("Filtrar No Cliente", value="", placeholder="Ej: 1234").upper()
+                        with col_f2:
+                            f_factura = st.text_input("Filtrar Factura", value="", placeholder="Ej: F-99").upper()
+                        with col_f3:
+                            f_prog = st.text_input("Filtrar Programación", value="", placeholder="Ej: 2024-05-15").upper()
+                        with col_f4:
+                            f_estatus = st.selectbox("Filtrar Estatus", ["TODOS"] + OPCIONES_ESTATUS)
+                        
+                        df_filtrado = df_actual.copy()
+                        if f_cliente:
+                            df_filtrado = df_filtrado[df_filtrado["NO CLIENTE"].str.contains(f_cliente, na=False)]
+                        if f_factura:
+                            df_filtrado = df_filtrado[df_filtrado["FACTURA"].str.contains(f_factura, na=False)]
+                        if f_prog:
+                            df_filtrado = df_filtrado[df_filtrado["PROGRAMACION"].str.contains(f_prog, na=False)]
+                        if f_estatus != "TODOS":
+                            df_filtrado = df_filtrado[df_filtrado["ESTATUS"] == f_estatus]
+                        
+                        with st.form("nexion_editor_form_safe"):
+        
+                            # CSS para forzar el hover sólido cyan/esmeralda de la foto
+                            st.markdown("""
+                            <style>
+                            /* ESTADO NORMAL: Gris oscuro con borde sutil */
+                            div[data-testid="stFormSubmitButton"] button {
+                                background-color: #506874 !important; 
+                                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                                transition: all 0.2s ease-in-out !important;
+                                box-shadow: none !important;
+                            }
+                            div[data-testid="stFormSubmitButton"] button p {
+                                color: #ffffff !important;
+                                font-weight: 600 !important;
+                            }
+                            
+                            /* ESTADO HOVER: Fondo relleno sólido exacto como la foto */
+                            div[data-testid="stFormSubmitButton"] button:hover {
+                                background-color: #00a896 !important; /* Tono cyan/esmeralda sólido */
+                                border-color: #00a896 !important;
+                            }
+                            div[data-testid="stFormSubmitButton"] button:hover p {
+                                color: #ffffff !important; /* Letra blanca pura */
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
+                            
+                            edited_df = st.data_editor(
+                                df_filtrado,
+                                use_container_width=True,
+                                hide_index=True,
+                                height=900,
+                                column_config={
+                                    "ESTATUS": st.column_config.SelectboxColumn("ESTATUS", options=OPCIONES_ESTATUS, width="medium", disabled=not puede_editar_efectivo),
+                                    "SURTIDOR": st.column_config.SelectboxColumn("SURTIDOR", options=OPCIONES_SURTIDOR, width="medium", disabled=not puede_editar_efectivo),
+                                    "CAJAS": st.column_config.TextColumn("CAJAS", width="small", disabled=not puede_editar_efectivo),
+                                    "PAQUETERIA": st.column_config.SelectboxColumn("PAQUETERIA", options=OPCIONES_PAQUETERIA, width="medium", disabled=not puede_editar_efectivo),
+                                    "FECHA DE ENVIO": st.column_config.TextColumn("FECHA DE ENVIO", width="small", disabled=not puede_editar_efectivo),
+                                    "HORA PROGRAMADA": st.column_config.TextColumn("HORA PROGRAMADA", width="medium", disabled=not puede_editar_efectivo),
+                                    "HORA REAL": st.column_config.TextColumn("HORA REAL", width="medium", disabled=not puede_editar_efectivo),
+                                    "INCIDENCIA": st.column_config.TextColumn("INCIDENCIA", width="large", disabled=not puede_editar_efectivo),
+                                    "NOMBRE DEL CLIENTE": st.column_config.TextColumn("NOMBRE DEL CLIENTE", width="medium", disabled=True),
+                                    "NO CLIENTE": st.column_config.TextColumn(disabled=True),
+                                    "FACTURA": st.column_config.TextColumn(disabled=True),
+                                    "DESTINO": st.column_config.TextColumn(disabled=True),
+                                    "PROGRAMACION": st.column_config.TextColumn("PROGRAMACION", width="small", disabled=True),
+                                }
+                            )
+                            
+                            btn_label = "ACTUALIZAR EN LA NUBE" if puede_editar_efectivo else "🔒 MODO LECTURA"
+                            submit_button = st.form_submit_button(btn_label, use_container_width=True, disabled=not puede_editar_efectivo)
+                        
+                        # ── BOTÓN DE DESCARGA (SOLO VISIBLE SI TIENES PERMISO DE EDICIÓN) ──
+                        if puede_editar_efectivo:
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            df_descarga_limpio = df_filtrado.copy()
+                            if 'ESTATUS' in df_descarga_limpio.columns:
+                                df_descarga_limpio['ESTATUS'] = df_descarga_limpio['ESTATUS'].apply(quitar_iconos)
+                            
+                            csv_descarga = df_descarga_limpio.to_csv(index=False).encode('utf-8')
+                            st.download_button(
+                                label="📥 DESCARGAR TABLA ACTUAL EN CSV",
+                                data=csv_descarga,
+                                file_name=f"pedidos_nexion_{datetime.now(tz_gdl).strftime('%Y%m%d_%H%M%S')}.csv",
+                                mime="text/csv",
+                                use_container_width=True
+                            )
+                        
+                        # ── 5. LÓGICA DE ACTUALIZACIÓN LIMPIA ──
+                        if puede_editar_efectivo and submit_button:
+                            with st.status("Sincronizando...", expanded=True) as status:
+                                try:
+                                    df_final_a_subir = st.session_state.df_pedidos.copy()
+                                    df_final_a_subir.update(edited_df)
+                                    
+                                    df_limpio_git = df_final_a_subir.copy()
+                                    df_limpio_git['ESTATUS'] = df_limpio_git['ESTATUS'].apply(quitar_iconos)
+                                    
+                                    g = Github(TOKEN)
+                                    repo = g.get_repo(REPO_NAME)
+                                    csv_string = df_limpio_git.to_csv(index=False)
+                                    contents = repo.get_contents(FILE_PATH)
+                                    hora_local = datetime.now(tz_gdl).strftime('%H:%M:%S')
+                                    
+                                    # Guardar base de datos actualizada
+                                    repo.update_file(path=FILE_PATH, message=f"UPDATE // {hora_local}", content=csv_string, sha=contents.sha)
+                                    
+                                    st.session_state.df_pedidos = df_final_a_subir
+                                    status.update(label="¡Guardado Exitosamente!", state="complete", expanded=False)
+                                    st.toast("GitHub Actualizado Exitosamente", icon="✅")
+                                    time.sleep(1)
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Error al actualizar: {e}")
+                
+                
+                
+                # NUEVA PESTAÑA SOLO PARA TI
+                if es_admin:
+                    with tab_admin:
+                        st.markdown(f"""
+                            <div style='display:flex;align-items:center;gap:10px;margin:20px 0;'>
+                                <div style='background:#FF4B4B;width:5px;height:25px;border-radius:2px;box-shadow:0 0 10px #FF4B4B;'></div>
+                                <span style='color:white;font-size:18px;font-weight:500;letter-spacing:2px;'>NEXION SENSITIVE DATA - ADMIN ONLY</span>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # --- 🕵️ MONITOR DE ACTIVIDAD (LOGS) ---
+                        try:
+                            # 1. Cargamos el archivo de logs (Asegúrate de haber guardado el CSV antes)
+                            df_logs = pd.read_csv("log_accesos.csv")
+                            
+                            # 2. Inyectamos el estilo hover para los logs
+                            st.markdown(f"<style>.card-log {{ transition: all 0.3s ease; cursor: pointer; }} .card-log:hover {{ transform: translateX(5px); border-color: #FF4B4B !important; background: rgba(255, 75, 75, 0.05) !important; }}</style>", unsafe_allow_html=True)
+                            
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            
+                            # 3. Mostramos los últimos 10 accesos con estilo pro
+                            # Ponemos los más nuevos arriba (.iloc[::-1])
+                            for index, row in df_logs.iloc[::-1].head(10).iterrows():
+                                st.markdown(f"""
+                                    <div class='card-log' style='background:rgba(30,39,46,0.5); border:1px solid rgba(255,255,255,0.05); border-left:4px solid #FF4B4B; border-radius:8px; padding:10px 20px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;'>
+                                        <div style='flex:1;'>
+                                            <span style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>OPERADOR</span><br>
+                                            <b style='font-size:14px; color:white; letter-spacing:0.5px;'>{row['Usuario'].upper()}</b>
+                                        </div>
+                                        <div style='flex:2; padding-left:20px; border-left:1px solid rgba(255,255,255,0.08);'>
+                                            <span style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>FECHA Y HORA DE ACCESO</span><br>
+                                            <span style='font-size:12px; color:#FF4B4B; font-family:monospace; font-weight:700;'>{row['Fecha/Hora']}</span>
+                                        </div>
+                                        <div style='flex:0.5; text-align:right;'>
+                                            <span style='background:rgba(0,255,170,0.1); color:#00FFAA; padding:3px 8px; border-radius:4px; font-size:8px; font-weight:800;'>ENTRY OK</span>
+                                        </div>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                                
+                        except Exception as e:
+                            st.warning("Esperando el primer registro de acceso para mostrar el historial...")
+
+        
+        elif st.session_state.menu_main == "SEGUIMIENTO":
+            # ── A. CARGA DE DATOS (MATRIZ DESDE GITHUB) ──
+            # ── A. CARGA DE DATOS (LECTURA DIRECTA Y DINÁMICA) ──
+            def cargar_matriz_github():
+                # El parámetro ?v= engaña a GitHub para que no use su propia memoria caché
+                t = int(time.time())
+                url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+                
+                try:
+                    # Leemos directo, sin @st.cache_data para que siempre sea información fresca
+                    return pd.read_csv(url, encoding='utf-8-sig')
+                except:
+                    return None
+            
+            # Cargamos la matriz
+            df_seguimiento = cargar_matriz_github()
+    
+            if df_seguimiento is None:
+                st.error("⚠️ ERROR: No se detectó la base de datos en GitHub.")
+                st.stop()
+    
+            # ── B. RELOJ MAESTRO (GUADALAJARA) ──
+            tz_gdl = pytz.timezone('America/Mexico_City')
+            hoy_gdl = datetime.now(tz_gdl).date()
+    
+            # ── C. NAVEGACIÓN DE SUB-MENÚ TRK ──
+            if st.session_state.menu_sub == "ALERTAS":
+                # 1. FILTROS DE CABECERA
+                with st.container():
+                    st.write("")
+                    f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
+                    
+                    with f_col2:
+                        # Movemos el selector de mes arriba o lo calculamos primero para que el calendario lo use
+                        meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
+                        mes_sel = st.selectbox("MES OPERATIVO", meses, index=hoy_gdl.month - 1)
+                        mes_num = meses.index(mes_sel) + 1
+                    
+                    with f_col1:
+                        # Lógica de fechas sincronizada con mes_sel
+                        inicio_m = date(hoy_gdl.year, mes_num, 1)
+                        
+                        if mes_num == 12:
+                            fin_m = date(hoy_gdl.year, 12, 31)
+                        else:
+                            fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
+                        
+                        # Aseguramos que fin_m sea objeto date puro
+                        fin_m_final = fin_m.date() if hasattr(fin_m, 'date') else fin_m
+                        
+                        rango_fechas = st.date_input(
+                            "RANGO DE ANÁLISIS",
+                            value=(inicio_m, min(hoy_gdl.date() if hasattr(hoy_gdl, 'date') else hoy_gdl, fin_m_final)),
+                            format="DD/MM/YYYY"
+                        )
+                    
+                    with f_col3:
+                        opciones_raw = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
+                        
+                        # --- LÓGICA DE FILTRO PARA ATENCION3G ---
+                        if es_atencion3g:
+                            opciones_f = ["TRES GUERRAS"]
+                            indice_defecto = 0
+                            habilitado = False # Bloqueamos el selector para que no cambie
+                        else:
+                            opciones_f = ["TODOS"] + opciones_raw
+                            indice_defecto = 0
+                            habilitado = True
+                    
+                        filtro_global_fletera = st.selectbox(
+                            "FILTRAR PAQUETERÍA", 
+                            options=opciones_f, 
+                            index=indice_defecto,
+                            disabled=not habilitado # Si es Atencion3G, no puede moverle
+                        )
+                
+                # ── 2. PROCESAMIENTO DE DATOS KPI ──
+                df_kpi = df_seguimiento.copy()
+                df_kpi.columns = [c.upper() for c in df_kpi.columns]
+                
+                for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                    if col in df_kpi.columns:
+                        df_kpi[col] = pd.to_datetime(df_kpi[col], dayfirst=True, errors='coerce')
+                
+                # A. Filtrado por rango de fechas
+                df_kpi = df_kpi.dropna(subset=["FECHA DE ENVÍO"])
+                if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
+                    df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= rango_fechas[0]) & 
+                                    (df_kpi["FECHA DE ENVÍO"].dt.date <= rango_fechas[1])]
+                
+                # B. Filtrado por fletera
+                if filtro_global_fletera != "TODOS":
+                    df_kpi = df_kpi[df_kpi["FLETERA"] == filtro_global_fletera]
+                    
+                # C. Identificación de "En Tránsito" y Cálculo de Atrasos
+                df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO')
+                df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
+                
+                # --- AQUÍ CALCULAMOS LA COLUMNA QUE DABA ERROR ---
+                if not df_sin_entregar.empty:
+                    df_sin_entregar["DIAS_ATRASO"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["PROMESA DE ENTREGA"]).dt.days
+                    df_sin_entregar["DIAS_ATRASO"] = df_sin_entregar["DIAS_ATRASO"].apply(lambda x: x if (pd.notna(x) and x > 0) else 0)
+                    df_sin_entregar["DIAS_TRANS"] = (pd.Timestamp(hoy_gdl) - df_sin_entregar["FECHA DE ENVÍO"]).dt.days
+                else:
+                    df_sin_entregar["DIAS_ATRASO"] = 0
+                    df_sin_entregar["DIAS_TRANS"] = 0
+                
+                # D. Lógica para el PRÓXIMO MES
+                proximo_mes_num = mes_num + 1 if mes_num < 12 else 1
+                anio_proximo = hoy_gdl.year if mes_num < 12 else hoy_gdl.year + 1
+                nombre_prox_mes = meses[proximo_mes_num - 1]
+                
+                # Buscamos en toda la base original los que se entregan el próximo mes
+                df_full = df_seguimiento.copy()
+                df_full.columns = [c.upper() for c in df_full.columns]
+                if "PROMESA DE ENTREGA" in df_full.columns:
+                    fechas_promesa = pd.to_datetime(df_full["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
+                    conteo_proximo = len(df_full[(fechas_promesa.dt.month == proximo_mes_num) & (fechas_promesa.dt.year == anio_proximo)])
+                else:
+                    conteo_proximo = 0
+                
+                # E. Métricas Finales
+                total_p = len(df_kpi)
+                pend_p = len(df_sin_entregar)
+                entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO'])
+                eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
+                
+                # ── 3. RENDERIZADO TARJETAS (4 COLUMNAS) ──
+                
+                # ── 4. SEMÁFORO DE ALERTAS ──
+                st.markdown(f"<div style='margin-top:40px; margin-bottom:15px; text-align:center;'><span style='color:{vars_css['sub']}; font-size:10px; font-weight:800; letter-spacing:4px; opacity:0.6; text-transform:uppercase;'>S E M Á F O R O &nbsp; D E &nbsp; A L E R T A S</span></div>", unsafe_allow_html=True)
+                
+                # Lógica de datos (se mantiene igual amor)
+                a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1])
+                a2_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"].between(2,4)])
+                a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5])
+                
+                c_a1, c_a2, c_a3 = st.columns(3)
+                
+                # Alerta LEVE (Amarillo Neón)
+                c_a1.markdown(f"""
+                    <div class='base-card-alerta' style='border-left-color: #FDE047;'>
+                        <div style='color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; letter-spacing: 1px;'>BAJO RIESGO (1D)</div>
+                        <div style='color: white; font-size: 28px; font-weight: 800; line-height: 1;'>{a1_v} <span style='font-size: 10px; color: #FDE047; opacity: 0.7;'>PEDIDOS</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Alerta MODERADO (Naranja Eléctrico) - ¡¡ESTA ES LA QUE ARREGLAMOS AMOR!!
+                c_a2.markdown(f"""
+                    <div class='base-card-alerta' style='border-left-color: #F97316;'>
+                        <div style='color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; letter-spacing: 1px;'>DEMORA (2-4D)</div>
+                        <div style='color: white; font-size: 28px; font-weight: 800; line-height: 1;'>{a2_v} <span style='font-size: 10px; color: #F97316; opacity: 0.7;'>PEDIDOS</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Alerta CRÍTICO (Rojo Intenso)
+                c_a3.markdown(f"""
+                    <div class='base-card-alerta' style='border-left-color: #FF4B4B;'>
+                        <div style='color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; letter-spacing: 1px;'>CRÍTICO (+5D)</div>
+                        <div style='color: white; font-size: 28px; font-weight: 800; line-height: 1;'>{a5_v} <span style='font-size: 10px; color: #FF4B4B; opacity: 0.7;'>PEDIDOS</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM) ---
+                # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM - VERSIÓN FINAL) ---
+                st.divider()
+                df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty else pd.DataFrame()
+                # AGREGA ESTA LÍNEA AQUÍ:
+                df_viz = pd.DataFrame()
+                
+                if not df_criticos.empty:
+                    st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:#FFFFFF; text-transform:uppercase; text-align:center; margin-bottom:20px;'>PANEL DE EXCEPCIONES CRÍTICAS</p>""", unsafe_allow_html=True)
+                    
+                    # Filtros directos sin expander
+                    c1, c2 = st.columns(2)
+                    with c1: 
+                        lista_fleteras = ["TODOS"] + sorted(df_criticos["FLETERA"].unique())
+                        sel_f = st.selectbox("TRANSPORTISTA:", options=lista_fleteras, key="f_critico_v2")
+                    with c2: 
+                        sel_g = st.selectbox("GRAVEDAD ATRASO:", ["TODOS", "CRÍTICO (+5 DÍAS)", "MODERADO (2-4 DÍAS)", "LEVE (1 DÍA)"], key="g_critico_v2")
+                    
+                    # Lógica de filtrado (Intacta, amor)
+                    df_viz = df_criticos.copy()
+                    if sel_f != "TODOS": df_viz = df_viz[df_viz["FLETERA"] == sel_f]
+                    if sel_g == "CRÍTICO (+5 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"] >= 5]
+                    elif sel_g == "MODERADO (2-4 DÍAS)": df_viz = df_viz[df_viz["DIAS_ATRASO"].between(2, 4)]
+                    elif sel_g == "LEVE (1 DÍA)": df_viz = df_viz[df_viz["DIAS_ATRASO"] == 1]
+                
+                    if not df_viz.empty:
+                        df_viz = df_viz.sort_values("DIAS_ATRASO", ascending=False)
+                        data_excepciones = df_viz.to_dict('records')
+                        
+                        # Alto dinámico
+                        alto_panel = (len(data_excepciones) * 115) + 20
+                
+                        # --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM CON PROMESA DE ENTREGA) ---
+                        html_excepciones = f"""
+                        <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                            <style>
+                                body {{ background: transparent; margin: 0; padding: 0; }}
+                                
+                                /* ───────── SCROLLBAR AGC STYLE ───────── */
+                                ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ 
+                                    background: #3498db; 
+                                    border-radius: 10px; 
+                                    border: 2px solid #384A52; 
+                                }}
+                                ::-webkit-scrollbar-thumb:hover {{ 
+                                    background: #2ecc71; 
+                                    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); 
+                                }}
+                        
+                                .card-excepcion {{
+                                    background: #263238;
+                                    border: 1px solid rgba(255, 75, 75, 0.15);
+                                    border-left: 6px solid #FF4B4B;
+                                    border-radius: 12px;
+                                    margin-bottom: 12px;
+                                    padding: 18px 25px;
+                                    display: flex;
+                                    flex-wrap: wrap; /* MAGIA RESPONSIVE */
+                                    gap: 15px;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    transition: all 0.3s ease;
+                                    width: 100%;
+                                    box-sizing: border-box;
+                                }}
+                                .card-excepcion:hover {{ 
+                                    border-color: #FF4B4B; 
+                                    background: #2d3b42;
+                                    transform: translateX(5px);
+                                }}
+                                .badge-retraso {{
+                                    background: rgba(255, 75, 75, 0.1);
+                                    color: #FF4B4B;
+                                    padding: 10px 18px;
+                                    border-radius: 10px;
+                                    font-weight: 800;
+                                    font-family: monospace;
+                                    font-size: 22px;
+                                    text-align: center;
+                                    min-width: 90px;
+                                    border: 1px solid rgba(255, 75, 75, 0.3);
+                                }}
+                                .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }}
+                                .factura-destacada {{ color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 1px; font-family: monospace; }}
+                                .info-main {{ color: #FFFFFF; font-size: 14px; font-weight: 700; }}
+                                .info-sub {{ color: #FFFFFF; font-size: 11px; font-style: italic; }}
+                                .moderado {{ border-left-color: #FFA500; border-color: rgba(255, 165, 0, 0.2); }}
+                                .badge-moderado {{ color: #FFA500; background: rgba(255, 165, 0, 0.1); border-color: rgba(255, 165, 0, 0.3); }}
+                        
+                                /* AJUSTES PARA MÓVIL */
+                                @media (max-width: 600px) {{
+                                    .card-excepcion {{ padding: 15px; }}
+                                    .section-box {{ border-left: none !important; padding-left: 0 !important; min-width: 100% !important; }}
+                                    .badge-retraso {{ width: 100%; }}
+                                }}
+                            </style>
+                            {"".join([f'''
+                            <div class="card-excepcion {'moderado' if item['DIAS_ATRASO'] < 5 else ''}">
+                                <div class="section-box" style="flex: 1.5; min-width: 200px;">
+                                    <div class="label-mini">No. Factura / Pedido</div>
+                                    <div class="factura-destacada">{item['NÚMERO DE PEDIDO']}</div>
+                                    <div class="info-sub" style="margin-top:5px;">Cliente: {str(item['NOMBRE DEL CLIENTE'])[:35]}</div>
+                                </div>
+                        
+                                <div class="section-box" style="flex: 1.5; min-width: 180px; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                    <div class="label-mini">Transporte / Estatus</div>
+                                    <div class="info-main" style="color:#38bdf8;">{item['FLETERA']}</div>
+                                    <div class="info-sub" style="color: #FFFFFF !important;">Guía: {item['NÚMERO DE GUÍA'] if item['NÚMERO DE GUÍA'] else 'SIN ASIGNAR'}</div>
+                                </div>
+                        
+                                <div class="section-box" style="flex: 1.2; min-width: 150px; text-align: left; padding: 0 15px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                    <div class="label-mini">Días en Ruta</div>
+                                    <div class="info-main" style="margin-bottom: 5px;">{item['DIAS_TRANS']} d.</div>
+                                    <div class="label-mini" style="font-size: 7px; color: #FFA500;">P. Entrega</div>
+                                    <div class="info-sub" style="font-size: 10px; font-style: normal;">{item['PROMESA DE ENTREGA'].strftime('%d/%m/%Y') if hasattr(item['PROMESA DE ENTREGA'], 'strftime') else item['PROMESA DE ENTREGA']}</div>
+                                </div>
+                        
+                                <div style="flex: 0.5; min-width: 100px;">
+                                    <div class="label-mini" style="text-align:center;">Retraso</div>
+                                    <div class="badge-retraso {'badge-moderado' if item['DIAS_ATRASO'] < 5 else ''}">+{item['DIAS_ATRASO']}</div>
+                                </div>
+                            </div>
+                            ''' for item in data_excepciones])}
+                        </div>
+                        """
+                        # Altura fija para forzar el scroll interno y scrolling=True
+                        components.html(html_excepciones, height=700, scrolling=True)
+                    else:
+                        st.markdown(f"""
+                            <div style="background-color: rgba(56, 189, 248, 0.1); border: 1px dashed #38bdf8; border-radius: 10px; padding: 20px; text-align: center;">
+                                <p style="color: #38bdf8; font-size: 18px; margin: 0;"><b>BÚSQUEDA SIN RESULTADOS</b></p>
+                                <p style="color: #94a3b8; font-size: 12px; margin-top: 5px; letter-spacing: 1px;">
+                                    No detectamos pedidos activos bajo los criterios seleccionados. Verifica tus filtros de Transportista o Gravedad.
+                                </p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                        <div style="background: linear-gradient(90deg, rgba(0,255,170,0.1) 0%, rgba(0,0,0,0) 100%); border-left: 5px solid #00FFAA; border-radius: 5px; padding: 25px; margin: 20px 0;">
+                            <h3 style="color: #00FFAA; margin: 0; font-size: 20px; letter-spacing: 2px;">✓ STATUS: OPERACIÓN LIMPIA</h3>
+                            <p style="color: #FFFFFF; font-size: 14px; margin-top: 8px; opacity: 0.8;">
+                                <b>SISTEMA NEXION:</b> No se detectaron anomalías ni entregas fuera de tiempo en el rango analizado. Todo fluye conforme a lo planeado.
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                                
+               
+                # --- 6. BOTÓN DE DESCARGA: EXCEPCIONES Y RETRASOS (SOLO FECHAS) ---
+                st.divider()
+                
+                if 'df_viz' in locals() and not df_viz.empty:
+                    import io
+                
+                    # 1. Preparamos una copia para el reporte sin afectar tu lógica principal
+                    df_reporte = df_viz.copy()
+                    
+                    # Seleccionamos las columnas deseadas
+                    columnas_excel = ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "FLETERA", "NÚMERO DE GUÍA", "DIAS_TRANS", "DIAS_ATRASO", "FECHA DE ENVÍO", "PROMESA DE ENTREGA"]
+                    columnas_existentes = [c for c in columnas_excel if c in df_reporte.columns]
+                    
+                    # 2. LIMPIEZA DE FECHAS: Quitamos la hora dejando solo la fecha corta (DD/MM/YYYY)
+                    for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA"]:
+                        if col in df_reporte.columns:
+                            # Convertimos a string con formato de fecha para que Excel no le vuelva a poner horas
+                            df_reporte[col] = pd.to_datetime(df_reporte[col]).dt.strftime('%d/%m/%Y')
+                
+                    # 3. Preparamos el archivo Excel en memoria
+                    buffer = io.BytesIO()
+                    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                        df_reporte[columnas_existentes].to_excel(writer, index=False, sheet_name='Retrasos_Criticos')
+                        
+                    buffer.seek(0)
+                
+                    st.markdown(f"""<p style='font-size:11px; font-weight:700; letter-spacing:3px; color:#38bdf8; text-transform:uppercase; text-align:center; margin-bottom:10px;'>REPORTE DE EXCEPCIONES DETECTADAS</p>""", unsafe_allow_html=True)
+                    
+                    # 4. El botón de descarga
+                    st.download_button(
+                        label="DESCARGAR DETALLE DE RETRASOS (EXCEL)",
+                        data=buffer,
+                        file_name=f"Reporte_Retrasos_Nexion_{mes_sel}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key="btn_descarga_excel_retrasos"
+                    )
+                    
+                    st.markdown(f"<p style='color:#94a3b8; font-size:10px; text-align:center;'>Se exportarán {len(df_viz)} registros con anomalías en la entrega.</p>", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                        <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; padding: 30px; text-align: center; margin-top: 20px;">
+                            <div style="color: #94a3b8; font-size: 40px; margin-bottom: 15px;"></div>
+                            <h4 style="color: #FFFFFF; font-size: 16px; font-weight: 700; letter-spacing: 2px; margin: 0;">ARCHIVO DE EXPORTACIÓN NO DISPONIBLE</h4>
+                            <p style="color: #64748b; font-size: 12px; margin-top: 10px; line-height: 1.6;">
+                                <b>SISTEMA NEXION:</b> No se han generado excepciones críticas en el filtro actual.<br>
+                                El reporte de descarga se habilitará automáticamente cuando se detecten anomalías.
+                            </p>
+                            <div style="display: inline-block; margin-top: 15px; padding: 4px 12px; background: rgba(0, 255, 170, 0.1); border-radius: 20px;">
+                                <span style="color: #00FFAA; font-size: 10px; font-weight: 800; letter-spacing: 1px;">✓ OPERACIÓN SIN INCIDENCIAS</span>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                   
+            
+            elif st.session_state.menu_sub == "GANTT":
+                TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                REPO_NAME = "RH2026/nexion"
+                FILE_PATH = "tareas.csv"
+                CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+
+                # URL de tu Matriz Global para consultas
+                MATRIZ_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/Matriz_Excel_Dashboard.csv"
+
+                @st.cache_data(ttl=600)
+                def cargar_matriz_global():
+                    try:
+                        r = requests.get(f"{MATRIZ_URL}?t={int(time.time())}")
+                        if r.status_code == 200:
+                            df = pd.read_csv(StringIO(r.text))
+                            # Limpiamos nombres de columnas por si traen espacios
+                            df.columns = [c.strip().upper() for c in df.columns]
+                            return df
+                    except:
+                        return None
+                    return None
+
+                df_global = cargar_matriz_global()
+                
+                # ── FUNCIONES DE FECHA Y CARGA REPARADAS ─────────────────────────────────────────────
+                def obtener_fecha_mexico():
+                    """Retorna la fecha actual de Guadalajara sin errores de atributo."""
+                    try:
+                        tz_gdl = pytz.timezone('America/Mexico_City')
+                        return datetime.now(tz_gdl).date()
+                    except:
+                        import datetime as dt_module
+                        return (dt_module.datetime.now(dt_module.timezone.utc) - dt_module.timedelta(hours=6)).date()
+                
+                def guardar_en_github(df):
+                    """Sincroniza el DataFrame con el repositorio de GitHub."""
+                    import base64
+                    import requests
+                    
+                    if not TOKEN:
+                        st.error("No se encontró el GITHUB_TOKEN en los secrets.")
+                        return False
+                        
+                    csv_content = df.to_csv(index=False)
+                    api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+                    headers = {
+                        "Authorization": f"token {TOKEN}",
+                        "Accept": "application/vnd.github.v3+json"
+                    }
+                    
+                    try:
+                        r = requests.get(api_url, headers=headers)
+                        sha = r.json().get("sha") if r.status_code == 200 else None
+                        
+                        payload = {
+                            "message": f"Actualización de tareas {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                            "content": base64.b64encode(csv_content.encode()).decode(),
+                            "branch": "main"
+                        }
+                        if sha:
+                            payload["sha"] = sha
+                            
+                        response = requests.put(api_url, headers=headers, json=payload)
+                        
+                        if response.status_code in [200, 201]:
+                            st.success("✅ ¡Sincronizado con éxito!")
+                            return True
+                        else:
+                            st.error(f"Error de GitHub: {response.json().get('message')}")
+                            return False
+                    except Exception as e:
+                        st.error(f"Error de conexión: {e}")
+                        return False
+                
+                def cargar_datos_seguro():
+                    columnas = [
+                        "USUARIO","FECHA","FECHA_FIN","IMPORTANCIA","TAREA","ULTIMO ACCION",
+                        "PROGRESO","DEPENDENCIAS","TIPO","GRUPO"
+                    ]
+                    hoy = obtener_fecha_mexico()
+                    try:
+                        import time
+                        import requests
+                        from io import StringIO
+                        
+                        r = requests.get(f"{CSV_URL}?t={int(time.time())}")
+                        if r.status_code == 200:
+                            df = pd.read_csv(StringIO(r.text))
+                            df.columns = [c.strip().upper() for c in df.columns]
+                            
+                            for c in columnas:
+                                if c not in df.columns:
+                                    df[c] = ""
+                            
+                            df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce").dt.date
+                            df["FECHA_FIN"] = pd.to_datetime(df["FECHA_FIN"], errors="coerce").dt.date
+                            
+                            df["FECHA"] = df["FECHA"].apply(lambda x: x if isinstance(x, date) else hoy)
+                            df["FECHA_FIN"] = df["FECHA_FIN"].apply(
+                                lambda x: x if isinstance(x, date) else hoy + timedelta(days=1)
+                            )
+                            
+                            df["PROGRESO"] = pd.to_numeric(df["PROGRESO"], errors="coerce").fillna(0).astype(int)
+                            df["IMPORTANCIA"] = df["IMPORTANCIA"].fillna("Media")
+                            df["TIPO"] = df["TIPO"].fillna("Tarea")
+                            df["GRUPO"] = df["GRUPO"].fillna("General")
+                            df["DEPENDENCIAS"] = df["DEPENDENCIAS"].fillna("")
+                            
+                            return df[columnas]
+                    except Exception as e:
+                        st.error(f"Error al cargar CSV: {e}")
+                        
+                    return pd.DataFrame(columns=columnas)
+                
+                # ── GESTIÓN DE ESTADO ──────────────────────────────────────────────────────
+                if "df_tareas" not in st.session_state:
+                    st.session_state.df_tareas = cargar_datos_seguro()
+                
+                df_master = st.session_state.df_tareas.copy()
+
+
+                # >>> AQUÍ EMPIEZA LO NUEVO AMOR <<<
+                # ── 1. PANEL DE CAPTURA INTELIGENTE (REDiseño SIMÉTRICO & CLEAN) ──
+                
+                # ── 1. PANEL DE CAPTURA INTELIGENTE (ESTRUCTURA ELITE) ──
+                
+                # Inyectamos el CSS para el diseño de buscador y limpieza de inputs
+                st.markdown("""
+                    <style>
+                    /* Quitar flechas del input numérico si se usa */
+                    input[type=number]::-webkit-inner-spin-button, 
+                    input[type=number]::-webkit-outer-spin-button { 
+                        -webkit-appearance: none; margin: 0; 
+                    }
+                    
+                    /* Línea decorativa pro para el buscador */
+                    .search-container-pro {
+                        border-left: 4px solid #38bdf8;
+                        padding-left: 15px;
+                        margin-bottom: 20px;
+                        background: rgba(56, 189, 248, 0.05);
+                        padding-top: 10px;
+                        padding-bottom: 1px;
+                        border-radius: 0 10px 10px 0;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+
+                
+                with st.expander("➕ Registrar o Editar Actividad / Incidencia", expanded=False):
+    
+                    # --- 1. SECCIÓN DE BÚSQUEDA (FILA SUPERIOR) ---
+                    c1, c2, c3 = st.columns([2, 1, 1])
+                    
+                    with c1:
+                        n_pedido = st.text_input("📦 Vincular Pedido / Factura (Opcional)", placeholder="Escribe pedido para buscar en Matriz...").strip().upper()
+                    
+                    # Lógica para el Folio sugerido (Automatico)
+                    # --- Lógica para el Folio sugerido (Persistente) ---
+                    if not st.session_state.df_tareas.empty:
+                        # 1. Extraemos todos los números de los folios existentes [NEX-001], [NEX-002]...
+                        # Usamos una expresión regular para sacar solo los números de la columna TAREA
+                        folios_numeros = st.session_state.df_tareas['TAREA'].str.extract(r'NEX-(\d+)')[0].dropna().astype(int)
+                        
+                        if not folios_numeros.empty:
+                            ultimo_folio = folios_numeros.max() # Buscamos el número más alto registrado
+                            sugerencia_folio = f"NEX-{ultimo_folio + 1:03d}"
+                        else:
+                            sugerencia_folio = "NEX-001"
+                    else:
+                        sugerencia_folio = "NEX-001"
+                    
+                    with c2:
+                        # Ahora el valor por defecto es la sugerencia automática
+                        t_folio_input = st.text_input("Folio ID (Buscar o Nuevo)", value=sugerencia_folio).strip().upper()
+                    
+                    # --- LÓGICA DE DETECCIÓN DE EDICIÓN ---
+                    tarea_existente = None
+                    mask = None # Inicializamos la mascara
+                    if t_folio_input and not st.session_state.df_tareas.empty:
+                        # Buscamos el folio exacto dentro de los corchetes en la columna TAREA
+                        mask = st.session_state.df_tareas['TAREA'].str.contains(f"\\b{t_folio_input}\\b", na=False)
+                        if mask.any():
+                            tarea_existente = st.session_state.df_tareas[mask].iloc[0]
+                            st.info(f"✨ Modo Edición: Cargando datos del Folio {t_folio_input}")
+                
+                    with c3:
+                        prioridades = ["Media", "Urgente", "Alta", "Baja"]
+                        idx_prio = prioridades.index(tarea_existente['IMPORTANCIA']) if tarea_existente is not None else 0
+                        t_prior = st.selectbox("Prioridad", prioridades, index=idx_prio)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                
+                    # --- LÓGICA DE AUTO-RELLENO POR PEDIDO (MATRIZ GLOBAL) ---
+                    info_matriz = {"desc": ""}
+                    if n_pedido and df_global is not None:
+                        res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
+                        if not res.empty:
+                            fila_m = res.iloc[0]
+                            # --- AQUÍ YA AGREGUÉ EL DESTINO AMOR ---
+                            guia = fila_m.get('NÚMERO DE GUÍA','N/A')
+                            cliente = fila_m.get('NOMBRE DEL CLIENTE','N/A')
+                            destino = fila_m.get('DESTINO','N/A')
+                            info_matriz["desc"] = f"DOC: {n_pedido} | GUIA: {guia} | CLIENTE: {cliente} | DESTINO: {destino}"
+                        else:
+                            st.error("❌ Pedido no localizado. Pero puedes escribir la tarea manualmente abajo.")
+                
+                    # --- 2. FORMULARIO PRINCIPAL DE REGISTRO ---
+                    with st.form("form_nexion_pro_edition", clear_on_submit=True):
+                        
+                        f2_c1, f2_c2 = st.columns([1, 1])
+                        with f2_c1:
+                            val_desc = ""
+                            if tarea_existente is not None:
+                                # Si editamos, limpiamos el folio del texto para que no se duplique
+                                val_desc = tarea_existente['TAREA'].split("] ", 1)[-1]
+                            elif info_matriz["desc"]:
+                                val_desc = info_matriz["desc"]
+                                
+                            t_desc = st.text_input("Descripción de la Tarea / Pedido", value=val_desc)
+                            
+                        with f2_c2:
+                            val_inc = tarea_existente['ULTIMO ACCION'] if tarea_existente is not None else ""
+                            t_incidencia = st.text_input("Nota Adicional / Última Acción", value=val_inc)
+                
+                        f3_c1, f3_c2, f3_c3 = st.columns(3)
+                        with f3_c1:
+                            val_grupo = tarea_existente['GRUPO'] if tarea_existente is not None else "ENTREGAS PENDIENTES"
+                            t_grupo = st.text_input("Categoría / Grupo", value=val_grupo)
+                        with f3_c2:
+                            val_ini = tarea_existente['FECHA'] if tarea_existente is not None else obtener_fecha_mexico()
+                            t_ini = st.date_input("Fecha Inicio", value=val_ini)
+                        with f3_c3:
+                            val_fin = tarea_existente['FECHA_FIN'] if tarea_existente is not None else (obtener_fecha_mexico() + timedelta(days=1))
+                            t_fin = st.date_input("Fecha Compromiso", value=val_fin)
+                
+                        st.markdown("<p style='font-size:12px; color:#94a3b8; margin-bottom:-10px;'>PROGRESO</p>", unsafe_allow_html=True)
+                        val_av = int(tarea_existente['PROGRESO']) if tarea_existente is not None else 0
+                        t_avance = st.slider("", 0, 100, val_av, step=5, format="%d%%")
+                
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        texto_boton = "ACTUALIZAR FOLIO" if tarea_existente is not None else "GUARDAR ACTIVIDAD"
+                        enviar = st.form_submit_button(texto_boton, use_container_width=True)
+                        
+                        if enviar:
+                            if t_desc:
+                                # Si es edición, usamos el que puso en el buscador. 
+                                # Si es nuevo, usamos la sugerencia que calculamos arriba.
+                                folio_final = t_folio_input if tarea_existente is not None else sugerencia_folio
+                                
+                                nueva_data = {
+                                    "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO'),
+                                    "FECHA": t_ini, "FECHA_FIN": t_fin, "IMPORTANCIA": t_prior,
+                                    "TAREA": f"[{folio_final}] {t_desc.upper()}",
+                                    "ULTIMO ACCION": t_incidencia.upper() if t_incidencia else "SIN NOVEDAD",
+                                    "PROGRESO": t_avance, "DEPENDENCIAS": "",
+                                    "TIPO": "Tarea", "GRUPO": t_grupo.upper()
+                                }
+                                
+                                if tarea_existente is not None and mask is not None:
+                                    df_temp = st.session_state.df_tareas[~mask]
+                                    df_final = pd.concat([df_temp, pd.DataFrame([nueva_data])], ignore_index=True)
+                                else:
+                                    df_final = pd.concat([st.session_state.df_tareas, pd.DataFrame([nueva_data])], ignore_index=True)
+                                
+                                if guardar_en_github(df_final):
+                                    st.session_state.df_tareas = df_final
+                                    st.success(f"✅ ¡Procesado correctamente!")
+                                    time.sleep(1)
+                                    st.rerun()
+                            else:
+                                st.warning("Amor, escribe al menos una descripción.")
+
+                # ── 3. VISUALIZADOR DE TAREAS ÉLITE (DISEÑO SEGMENTADO) ────────────────────────────────
+                # ── 3. VISUALIZADOR DE TAREAS ÉLITE (REDISEÑO TOTAL SEGMENTADO) ────────────────────────
+                with st.expander(":material/view_list: Monitor de Pendientes NEXION", expanded=True):
+                    prioridad_colores = {
+                        "Urgente": "#ff4b4b",
+                        "Alta": "#f97316",
+                        "Media": "#38bdf8",
+                        "Baja": "#00FFAA"
+                    }
+
+                    for index, row in df_master.iterrows():
+                        if not str(row["TAREA"]).strip(): 
+                            continue
+                            
+                        color_p = prioridad_colores.get(row["IMPORTANCIA"], "#94a3b8")
+                        progreso = int(row["PROGRESO"])
+                        
+                        # Extracción de Folio y Descripción
+                        folio_display = row["TAREA"].split("]")[0].replace("[", "") if "]" in row["TAREA"] else f"NEX-{index+1:03d}"
+                        desc_limpia = row["TAREA"].split("] ")[1] if "] " in row["TAREA"] else row["TAREA"]
+                        sombra = f"{color_p}88"
+
+                        # HTML con la clase 'task-card' para recuperar el fondo oscuro y hover
+                        st.markdown("""
+                        <style>
+                        
+                        /* Responsive para task-card */
+                        @media (max-width: 768px) {
+                            .task-card > div {
+                                flex-direction: column !important;
+                                align-items: flex-start !important;
+                                gap: 12px;
+                            }
+                        
+                            .task-card div[style*="border-right"] {
+                                border-right: none !important;
+                                padding-right: 0 !important;
+                            }
+                        
+                            .task-card div[style*="padding: 0 20px"] {
+                                padding: 0 !important;
+                            }
+                        
+                            .task-card div[style*="padding-left: 20px"] {
+                                padding-left: 0 !important;
+                                text-align: left !important;
+                                width: 100%;
+                            }
+                        
+                            .task-card div[style*="justify-content: space-between"] {
+                                gap: 10px;
+                            }
+                        
+                            .task-card div[style*="text-align: right"] {
+                                text-align: left !important;
+                            }
+                        
+                            .task-card div[style*="width: 80px"] {
+                                width: 100% !important;
+                            }
+                        
+                            .task-card span {
+                                font-size: 11px !important;
+                            }
+                        }
+                        
+                        </style>
+                        """, unsafe_allow_html=True)
+                        
+                        html_card = """
+                        <div class="task-card" style="border-left-color: {color}; padding: 20px; margin-bottom: 20px; background: rgba(30, 39, 46, 0.7); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div style="flex: 1; border-right: 1px solid rgba(255,255,255,0.05); padding-right: 15px;">
+                                    <div style="font-size: 10px; color: {color}; font-weight: 800; letter-spacing: 1px;">FOLIO / PEDIDO</div>
+                                    <div style="font-size: 18px; font-weight: 800; color: white;">{folio}</div>
+                                    <div style="font-size: 9px; color: #FFFFFF;">REF: {grupo}</div>
+                                </div>
+                                <div style="flex: 3; padding: 0 20px; border-right: 1px solid rgba(255,255,255,0.05);">
+                                    <div style="font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 800;">CLIENTE / GUÍA / DESTINO</div>
+                                    <div style="font-size: 13px; font-weight: 700; color: #e2e8f0; line-height: 1.2;">{desc}</div>
+                                    <div style="font-size: 10px; color: #38bdf8; margin-top: 5px; font-weight: 600;">
+                                        👤 {user} | 🗓️ {inicio} ➔ {fin}
+                                    </div>
+                                </div>
+                                <div style="flex: 1.5; padding-left: 20px; text-align: right;">
+                                    <div style="font-size: 9px; color: {color}; font-weight: 800;">ESTATUS ACTUAL</div>
+                                    <div style="font-size: 14px; color: white; font-style: italic; margin-bottom: 8px;">"{accion}"</div>
+                                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; height: 4px; width: 80px;">
+                                            <div style="height: 4px; border-radius: 10px; width: {prog}%; background: {color}; box-shadow: 0 0 8px {shd};"></div>
+                                        </div>
+                                        <span style="font-size: 10px; font-weight: 800; color: white;">{prog}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        """.format(color=color_p, folio=folio_display, grupo=row['GRUPO'], desc=desc_limpia, user=row['USUARIO'], inicio=row['FECHA'], fin=row['FECHA_FIN'], accion=row['ULTIMO ACCION'], prog=progreso, shd=sombra)
+                        
+                        st.markdown(html_card, unsafe_allow_html=True)
+                
+                # ── 3.5 EDITOR TÉCNICO (OCULTO POR DEFECTO PARA EMERGENCIAS) ──────────────────────
+                with st.expander(":material/settings: Editor de datos (Solo Administración)", expanded=False):
+                    st.subheader("Modo edición avanzada")
+                    
+                    df_editor = df_master.copy()
+                    for col in ["USUARIO","IMPORTANCIA","TAREA","ULTIMO ACCION","DEPENDENCIAS","TIPO","GRUPO"]:
+                        df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
+                    
+                    df_editor["PROGRESO_VIEW"] = df_editor["PROGRESO"]
+                    
+                    # AQUÍ ESTÁ EL FIX: Usamos llaves simples { } porque no es un f-string
+                    df_editado = st.data_editor(
+                        df_editor,
+                        hide_index=True,
+                        use_container_width=True,
+                        num_rows="dynamic",
+                        column_config={
+                            "USUARIO": st.column_config.TextColumn("Responsable"),
+                            "FECHA": st.column_config.DateColumn("Inicio"),
+                            "FECHA_FIN": st.column_config.DateColumn("Fin"),
+                            "IMPORTANCIA": st.column_config.SelectboxColumn("Prioridad", options=["Urgente","Alta","Media","Baja"]),
+                            "PROGRESO": st.column_config.NumberColumn("Progreso %", min_value=0, max_value=100, step=5),
+                            "PROGRESO_VIEW": st.column_config.ProgressColumn("Avance", min_value=0, max_value=100),
+                            "TAREA": st.column_config.TextColumn("Tarea"),
+                            "ULTIMO ACCION": st.column_config.TextColumn("Última acción"),
+                            "DEPENDENCIAS": st.column_config.TextColumn("Dependencias"),
+                            "TIPO": st.column_config.SelectboxColumn("Tipo", options=["Tarea","Hito"]),
+                            "GRUPO": st.column_config.TextColumn("Grupo"),
+                        }
+                    )
+                
+                    # 1. Definimos las columnas y preparamos datos
+                    cols_export = ["FECHA", "IMPORTANCIA", "TAREA", "ULTIMO ACCION", "TIPO", "GRUPO"]
+                    df_print = df_editado[cols_export].copy()
+                    
+                    # 2. HTML con fuente reducida y optimización de espacio
+                    html_print = f"""
+                    <style>
+                        @media print {{
+                            @page {{ size: letter; margin: 0.5cm; }}
+                            body {{ margin: 0; padding: 0; }}
+                            #printableArea {{ border: 1px solid black !important; }}
+                        }}
+                        #printableArea {{
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            width: 100%;
+                            border: 2px solid black;
+                            padding: 5px;
+                            box-sizing: border-box;
+                        }}
+                        table {{
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 10px;
+                            table-layout: auto;
+                        }}
+                        th {{
+                            background-color: #000 !important;
+                            color: #fff !important;
+                            font-size: 10px;
+                            border: 1px solid black;
+                            padding: 4px;
+                            text-transform: uppercase;
+                        }}
+                        td {{
+                            border: 1px solid black;
+                            padding: 4px;
+                            font-size: 9px;
+                            word-wrap: break-word;
+                        }}
+                    </style>
+                    
+                    <div id="printableArea">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 5px;">
+                            <div>
+                                <h2 style="margin: 0; font-size: 16px;">Jabones y Productos Especializados</h2>
+                                <small style="font-size: 9px;">Distribución y Logística | 2026</small>
+                            </div>
+                            <div style="text-align: right;">
+                                <h3 style="margin: 0; font-size: 14px; text-decoration: underline;">REPORTE DE TAREAS</h3>
+                                <p style="margin: 0; font-size: 10px;">FECHA: {pd.Timestamp.now().strftime('%Y-%m-%d')}</p>
+                            </div>
+                        </div>
+                        
+                        <table>
+                            <thead>
+                                <tr>
+                                    {"".join([f'<th>{col}</th>' for col in cols_export])}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {"".join([
+                                    f'<tr>{"".join([f"<td>{row[col]}</td>" for col in cols_export])}</tr>'
+                                    for _, row in df_print.iterrows()
+                                ])}
+                            </tbody>
+                        </table>
+                        
+                        <div style="margin-top: 10px; border: 1px solid black; padding: 5px; min-height: 60px;">
+                            <strong style="font-size: 10px;">COMENTARIOS / NOTAS:</strong>
+                            <p style="font-size: 9px; margin: 5px 0;">Generado por: {st.session_state.get('alias', 'Rigoberto')}</p>
+                        </div>
+                    </div>
+                    """
+                    
+                    # --- FILA DE BOTONES ---
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        if st.button(":material/sync: SINCRONIZAR", use_container_width=True):
+                            df_guardar = df_editado.drop(columns=["PROGRESO_VIEW"], errors="ignore")
+                            if guardar_en_github(df_guardar):
+                                st.session_state.df_tareas = df_guardar
+                                st.rerun()
+                    
+                    with col2:
+                        if st.button(":material/print: IMPRIMIR", use_container_width=True):
+                            # Inyectamos el HTML y disparamos la impresión automáticamente
+                            components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
+                    
+                    with col3:
+                        buffer = io.BytesIO()
+                        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                            df_print.to_excel(writer, index=False, sheet_name='Tareas')
+                        
+                        st.download_button(
+                            label=":material/table_view: BAJAR EXCEL",
+                            data=buffer.getvalue(),
+                            file_name="tareas_nexion.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        )
+                
+                # ── 2. VISUALIZADOR GANTT DINÁMICO (ENVUELTO EN EXPANDER) ──
+                with st.expander(":material/stacked_line_chart: Ver Gráfica de Gantt", expanded=False):
+                
+                    # ── 1. FILTROS Y CONTROLES ────────────────────────────────
+                    c1, c2 = st.columns([1, 2])
+                    with c1:
+                        gantt_view = st.radio("Vista", ["Day", "Week", "Month", "Year"], horizontal=True, index=0, key="gantt_v")
+                    
+                    with c2:
+                        grupos_disponibles = sorted(df_master["GRUPO"].astype(str).unique())
+                        grupos_sel = st.multiselect("Filtrar por grupo", grupos_disponibles, default=grupos_disponibles, key="gantt_g")
+                    
+                    df_gantt = df_master[df_master["GRUPO"].isin(grupos_sel)].copy()
+                    
+                    mask_hito = df_gantt["TIPO"].str.lower() == "hito"
+                    df_gantt.loc[mask_hito, "FECHA_FIN"] = df_gantt.loc[mask_hito, "FECHA"]
+                    
+                    tasks_data = []
+                    for i, r in enumerate(df_gantt.itertuples(), start=1):
+                        if not str(r.TAREA).strip(): 
+                            continue
+                    
+                        importancia = str(r.IMPORTANCIA).strip().lower()
+                        task_id = f"T{i}"
+                        
+                        dependencias = str(r.DEPENDENCIAS).strip()
+                        if dependencias:
+                            dependencias_ids = []
+                            for d in dependencias.split(','):
+                                d = d.strip()
+                                if d.isdigit():
+                                    dependencias_ids.append(f"T{int(d)+1}")
+                                else:
+                                    dependencias_ids.append(d)
+                            dependencias = ','.join(dependencias_ids)
+                        
+                        tasks_data.append({
+                            "id": task_id,
+                            "name": f"[{r.GRUPO}] {r.TAREA}",
+                            "start": str(r.FECHA),
+                            "end": str(r.FECHA_FIN),
+                            "progress": int(r.PROGRESO),
+                            "dependencies": dependencias,
+                            "custom_class": f"imp-{importancia}"
+                        })
+                    
+                    tasks_js_str = json.dumps(tasks_data)
+                    
+                    # ── 2. RENDERIZADO GANTT ───────────────────────────────
+                    components.html(
+                        f"""
+                        <html>
+                        <head>
+                            <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css'>
+                            <script src='https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js'></script>
+                            <style>
+                            html, body {{ background:#384A52; margin:0; padding:0; }}
+                            #gantt {{ background:#384A52; }}
+                            .gantt text {{ fill:#E5E7EB !important; font-size:12px; }}
+                            .grid-background {{ fill:#384A52 !important; }}
+                            .grid-header {{ fill:#1E262A !important; }}
+                            .grid-row {{ fill:#384A52 !important; }}
+                            .grid-row:nth-child(even) {{ fill:#3F525B !important; }}
+                            .grid-line {{ stroke: #0F1517 !important; stroke-opacity: 0.1 !important; }}
+                            .arrow {{ stroke: #9ca3af !important; stroke-width: 1.6 !important; opacity: 1 !important; fill: none !important; }}
+                            .bar-wrapper.imp-urgente .bar {{ fill:#DC2626 !important; }}
+                            .bar-wrapper.imp-alta    .bar {{ fill:#F97316 !important; }}
+                            .bar-wrapper.imp-media   .bar {{ fill:#3B82F6 !important; }}
+                            .bar-wrapper.imp-baja    .bar {{ fill:#22C55E !important; }}
+                            .today-highlight {{ fill: #00FF00 !important; opacity: 0.2 !important; }}
+                        
+                            /* --- ESTILO PARA EL SCROLL DARK --- */
+                            ::-webkit-scrollbar {{
+                                width: 10px;
+                                height: 10px;
+                            }}
+                            ::-webkit-scrollbar-track {{
+                                background: #3F525B; /* Fondo del scroll igual al body */
+                            }}
+                            ::-webkit-scrollbar-thumb {{
+                                background: #007076; /* Color de la barrita */
+                                border-radius: 5px;
+                            }}
+                            ::-webkit-scrollbar-thumb:hover {{
+                                background: #00A0A8; /* Color cuando pasas el mouse */
+                            }}
+                        </style>
+                        </head>
+                        <body>
+                            <div id='gantt'></div>
+                            <script>
+                                var tasks = {tasks_js_str};
+                                if(tasks.length){{
+                                    var gantt = new Gantt('#gantt', tasks, {{
+                                        view_mode: '{gantt_view}',
+                                        bar_height: 20,
+                                        padding: 40,
+                                        date_format: 'YYYY-MM-DD'
+                                    }});
+                                    setTimeout(function() {{
+                                        document.querySelectorAll('#gantt svg line').forEach(function(line) {{
+                                            var x1 = parseFloat(line.getAttribute('x1'));
+                                            var x2 = parseFloat(line.getAttribute('x2'));
+                                            var y1 = parseFloat(line.getAttribute('y1'));
+                                            var y2 = parseFloat(line.getAttribute('y2'));
+                                            if(x1 === x2) line.style.display = 'none';
+                                            if(y1 === y2) {{
+                                                line.style.strokeOpacity = '0.1';
+                                                line.style.stroke = '#1e2530';
+                                            }}
+                                        }});
+                                    }}, 200);
+                                }}
+                            </script>
+                        </body>
+                        </html>
+                        """,
+                        height=620,
+                        scrolling=True
+                    )
+                
+                   
+    
+    
+            
+            elif st.session_state.menu_sub == "QUEJAS":
+                # ── CONFIGURACIÓN DEL REPOSITORIO DE INCIDENCIAS ─────────────────────────────────────
+                TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                REPO_NAME = "RH2026/nexion"
+                FILE_PATH = "incidencias.csv"
+                CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+                MATRIZ_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/Matriz_Excel_Dashboard.csv"
+                
+                # Validamos si el usuario actual es administrador (Rigoberto u otro rol admin según tu lógica)
+                usuario_actual = str(st.session_state.get("usuario", st.session_state.get("usuario_activo", ""))).strip()
+                es_administrador = es_admin or (usuario_actual in ["Rigoberto", "Rigoberto Hernández"])
+                
+                # Actualizamos las columnas con los nombres correctos que me pediste amor
+                COLUMNAS_INCIDENCIAS = [
+                    "FOLIO", "USUARIO", "PRIORIDAD", "VINCULO_BUSQUEDA", 
+                    "CLIENTE_DESTINO", "PEDIDO_GUIA", "ID_SEGUIMIENTO", "ID_QUEJA", 
+                    "RESPONSABLE", "DETALLE_INCIDENCIA", "ACCIONES", "ESTATUS"
+                ]
+                
+                @st.cache_data(ttl=600)
+                def cargar_matriz_global():
+                    try:
+                        r = requests.get(f"{MATRIZ_URL}?t={int(time.time())}")
+                        if r.status_code == 200:
+                            df = pd.read_csv(StringIO(r.text))
+                            df.columns = [c.strip().upper() for c in df.columns]
+                            return df
+                    except:
+                        return None
+                    return None
+                
+                df_global = cargar_matriz_global()
+                
+                # ── FUNCIÓN PARA SINCRONIZAR Y CREAR ARCHIVO EN GITHUB ──────────────────────────────
+                def guardar_en_github(df):
+                    """Sincroniza el DataFrame con el repositorio. Crea el archivo si no existe."""
+                    import base64
+                    if not TOKEN:
+                        st.error("No se encontró el GITHUB_TOKEN en los secrets.")
+                        return False
+                        
+                    csv_content = df.to_csv(index=False)
+                    api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+                    headers = {
+                        "Authorization": f"token {TOKEN}",
+                        "Accept": "application/vnd.github.v3+json"
+                    }
+                    
+                    try:
+                        r = requests.get(api_url, headers=headers)
+                        sha = r.json().get("sha") if r.status_code == 200 else None
+                        
+                        payload = {
+                            "message": f"Actualización de incidencias {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                            "content": base64.b64encode(csv_content.encode()).decode(),
+                            "branch": "main"
+                        }
+                        if sha:
+                            payload["sha"] = sha
+                            
+                        response = requests.put(api_url, headers=headers, json=payload)
+                        
+                        if response.status_code in [200, 201]:
+                            st.success("✅ ¡Incidencias sincronizadas con éxito en GitHub!")
+                            return True
+                        else:
+                            st.error(f"Error de GitHub: {response.json().get('message')}")
+                            return False
+                    except Exception as e:
+                        st.error(f"Error de conexión: {e}")
+                        return False
+                
+                # ── CARGA SEGURA CON AUTO-CREACIÓN SI NO EXISTE ─────────────────────────────────────
+                def cargar_datos_seguro():
+                    try:
+                        r = requests.get(f"{CSV_URL}?t={int(time.time())}")
+                        if r.status_code == 200:
+                            df = pd.read_csv(StringIO(r.text))
+                            df.columns = [c.strip().upper() for c in df.columns]
+                            
+                            for c in COLUMNAS_INCIDENCIAS:
+                                if c not in df.columns:
+                                    df[c] = ""
+                            return df[COLUMNAS_INCIDENCIAS]
+                            
+                        elif r.status_code == 404:
+                            df_nuevo = pd.DataFrame(columns=COLUMNAS_INCIDENCIAS)
+                            guardar_en_github(df_nuevo)
+                            return df_nuevo
+                    except Exception as e:
+                        st.error(f"Error al cargar el módulo de incidencias: {e}")
+                        
+                    return pd.DataFrame(columns=COLUMNAS_INCIDENCIAS)
+                
+                if "df_incidencias" not in st.session_state:
+                    st.session_state.df_incidencias = cargar_datos_seguro()
+                
+                # Parche de seguridad para registros viejos en session_state
+                for c in COLUMNAS_INCIDENCIAS:
+                    if c not in st.session_state.df_incidencias.columns:
+                        st.session_state.df_incidencias[c] = ""
+                
+                df_master = st.session_state.df_incidencias.copy()
+                
+                # ── INYECCIÓN DE INTERFAZ CSS LIMPIA ─────────────────────────────────────────────────
+                st.markdown("""
+                    <style>
+                    input[type=number]::-webkit-inner-spin-button, 
+                    input[type=number]::-webkit-outer-spin-button { 
+                        -webkit-appearance: none; margin: 0; 
+                    }
+                    .search-container-pro {
+                        border-left: 4px solid #f43f5e;
+                        padding-left: 15px;
+                        margin-bottom: 20px;
+                        background: rgba(244, 63, 94, 0.05);
+                        padding-top: 10px;
+                        padding-bottom: 1px;
+                        border-radius: 0 10px 10px 0;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # ── 1. PANEL DE CAPTURA INTELIGENTE (EXCLUSIVO PARA ADMIN) ───────────────────────────
+                if es_administrador:
+                    with st.expander("➕ Registrar o Editar Incidencia / Queja", expanded=False):
+                        
+                        c1, c2, c3 = st.columns([2, 1, 1])
+                        
+                        with c1:
+                            n_pedido = st.text_input("📦 Vincular Pedido / Factura (Opcional)", placeholder="Escribe pedido para autollenar...").strip().upper()
+                        
+                        # Lógica de Folios
+                        if not st.session_state.df_incidencias.empty and "FOLIO" in st.session_state.df_incidencias.columns:
+                            folios_numeros = st.session_state.df_incidencias['FOLIO'].str.extract(r'INC-(\d+)')[0].dropna().astype(int)
+                            if not folios_numeros.empty:
+                                ultimo_folio = folios_numeros.max()
+                                sugerencia_folio = f"INC-{ultimo_folio + 1:03d}"
+                            else:
+                                sugerencia_folio = "INC-001"
+                        else:
+                            sugerencia_folio = "INC-001"
+                            
+                        with c2:
+                            t_folio_input = st.text_input("Folio ID (Buscar o Nuevo)", value=sugerencia_folio).strip().upper()
+                            
+                        incidencia_existente = None
+                        mask = None
+                        if t_folio_input and not st.session_state.df_incidencias.empty:
+                            mask = st.session_state.df_incidencias['FOLIO'] == t_folio_input
+                            if mask.any():
+                                incidencia_existente = st.session_state.df_incidencias[mask].iloc[0]
+                                st.info(f"Modo Edición Activado: Cargando datos del Folio {t_folio_input}")
+                                
+                        with c3:
+                            prioridades = ["Media", "Urgente", "Alta", "Baja"]
+                            idx_prio = prioridades.index(incidencia_existente['PRIORIDAD']) if incidencia_existente is not None and incidencia_existente['PRIORIDAD'] in prioridades else 0
+                            t_prior = st.selectbox("Gravedad / Prioridad", prioridades, index=idx_prio)
+                
+                        # Auto-relleno desde la Matriz Global
+                        info_matriz = {"cliente_destino": "", "pedido_guia": ""}
+                        if n_pedido and df_global is not None:
+                            res = df_global[df_global["NÚMERO DE PEDIDO"].astype(str).str.contains(n_pedido, na=False)]
+                            if not res.empty:
+                                fila_m = res.iloc[0]
+                                guia = fila_m.get('NÚMERO DE GUÍA', 'N/A')
+                                cliente = fila_m.get('NOMBRE DEL CLIENTE', 'N/A')
+                                destino = fila_m.get('DESTINO', 'N/A')
+                                info_matriz["cliente_destino"] = f"CLIENTE: {cliente} | DESTINO: {destino}"
+                                info_matriz["pedido_guia"] = f"PEDIDO: {n_pedido} | GUIA: {guia}"
+                            else:
+                                st.warning("⚠️ Pedido no localizado en la Matriz. Puedes llenar o modificar los campos abajo a mano.")
+                
+                        with st.form("form_incidencias", clear_on_submit=False):
+                            f2_c1, f2_c2 = st.columns([1, 1])
+                            
+                            with f2_c1:
+                                val_cd = info_matriz["cliente_destino"] if info_matriz["cliente_destino"] else (incidencia_existente['CLIENTE_DESTINO'] if incidencia_existente is not None else "")
+                                t_cliente_destino = st.text_input("CLIENTE / DESTINO", value=val_cd)
+                                
+                                val_pg = info_matriz["pedido_guia"] if info_matriz["pedido_guia"] else (incidencia_existente['PEDIDO_GUIA'] if incidencia_existente is not None else "")
+                                t_pedido_guia = st.text_input("PEDIDO / GUÍA", value=val_pg)
+                                
+                                val_resp = incidencia_existente['RESPONSABLE'] if incidencia_existente is not None else ""
+                                t_responsable = st.text_input("RESPONSABLE", value=val_resp)
+                                
+                            with f2_c2:
+                                val_id_seg_default = incidencia_existente['ID_SEGUIMIENTO'] if incidencia_existente is not None else t_folio_input
+                                val_id_seg = val_id_seg_default if val_id_seg_default else ""
+                                t_id_seguimiento = st.text_input("ID SEGUIMIENTO (Sugerido por defecto)", value=val_id_seg)
+                                
+                                val_id_queja_default = incidencia_existente['ID_QUEJA'] if incidencia_existente is not None else t_folio_input
+                                val_id_queja = val_id_queja_default if val_id_queja_default else ""
+                                t_id_queja = st.text_input("ID DE QUEJA (Sugerido por defecto)", value=val_id_queja)
+                                
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            
+                            val_det = incidencia_existente['DETALLE_INCIDENCIA'] if incidencia_existente is not None else ""
+                            t_detalle = st.text_area("DETALLE DE INCIDENCIA", value=val_det, key="area_detalle", help="Describe el problema de forma clara.")
+                            
+                            val_acc = incidencia_existente['ACCIONES'] if incidencia_existente is not None else ""
+                            t_acciones = st.text_area("ACCIONES", value=val_acc, key="area_acciones", help="Indica las acciones tomadas para resolver la incidencia.")
+                            
+                            estatus_opciones = ["PENDIENTE", "EN PROCESO", "SOLUCIONADO", "RECHAZADO"]
+                            idx_estatus = estatus_opciones.index(incidencia_existente['ESTATUS']) if incidencia_existente is not None and incidencia_existente['ESTATUS'] in estatus_opciones else 0
+                            t_estatus = st.selectbox("Estatus de la Incidencia", estatus_opciones, index=idx_estatus)
+                
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            texto_boton = ":material/sync: ACTUALIZAR INCIDENCIA" if incidencia_existente is not None else ":material/save: REGISTRAR QUEJA / INCIDENCIA"
+                            enviar = st.form_submit_button(texto_boton, use_container_width=True)
+                            
+                            if enviar:
+                                folio_final = t_folio_input if t_folio_input else sugerencia_folio
+                                
+                                valor_busqueda = n_pedido if n_pedido else (incidencia_existente.get('VINCULO_BUSQUEDA', '') if incidencia_existente is not None else "")
+                                busqueda_final = str(valor_busqueda).upper() if valor_busqueda is not None else ""
+                                
+                                nueva_data = {
+                                    "FOLIO": folio_final,
+                                    "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO HERNÁNDEZ'),
+                                    "PRIORIDAD": t_prior,
+                                    "VINCULO_BUSQUEDA": busqueda_final, 
+                                    "CLIENTE_DESTINO": str(t_cliente_destino).upper(),
+                                    "PEDIDO_GUIA": str(t_pedido_guia).upper(),
+                                    "ID_SEGUIMIENTO": str(t_id_seguimiento).upper(),
+                                    "ID_QUEJA": str(t_id_queja).upper(),
+                                    "RESPONSABLE": str(t_responsable).upper(),
+                                    "DETALLE_INCIDENCIA": t_detalle,
+                                    "ACCIONES": t_acciones,
+                                    "ESTATUS": t_estatus
+                                }
+                                
+                                if incidencia_existente is not None and mask is not None:
+                                    df_temp = st.session_state.df_incidencias[~mask]
+                                    df_final = pd.concat([df_temp, pd.DataFrame([nueva_data])], ignore_index=True)
+                                else:
+                                    df_final = pd.concat([st.session_state.df_incidencias, pd.DataFrame([nueva_data])], ignore_index=True)
+                                    
+                                if guardar_en_github(df_final):
+                                    st.session_state.df_incidencias = df_final
+                                    st.success("✅ ¡Registro procesado correctamente, amor!")
+                                    time.sleep(1)
+                                    st.rerun()
+                
+                # ── 2. MONITOR DE QUEJAS Y PENDIENTES (GRID PROFESIONAL - VISIBLE PARA TODOS LOS AUTORIZADOS) ──
+                st.markdown("""
+                    <style>
+                    .card-hover {
+                        border: 1px solid #3d474d;
+                        border-left: 5px solid;
+                        transition: transform 0.2s, background-color 0.2s, border-color 0.3s !important;
+                    }
+                    .card-hover:hover {
+                        transform: scale(1.01);
+                        background-color: #313a40 !important;
+                        border: 1px solid #38bdf8 !important;
+                        border-left: 5px solid #38bdf8 !important;
+                        cursor: pointer;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                prioridad_colores = {"Urgente": "#ff4b4b", "Alta": "#f97316", "Media": "#38bdf8", "Baja": "#00FFAA"}
+                estatus_colores = {"PENDIENTE": "#fbbf24", "EN PROCESO": "#60a5fa", "SOLUCIONADO": "#22c55e", "RECHAZADO": "#ef4444"}
+                
+                if df_master.empty:
+                    st.info("No hay incidencias registradas.")
+                else:
+                    for _, row in df_master.iterrows():
+                        if not str(row.get("FOLIO", "")).strip(): continue
+                        
+                        color_p = prioridad_colores.get(row.get("PRIORIDAD", "Baja"), "#94a3b8")
+                        f_est = row.get('ESTATUS', 'PENDIENTE')
+                        color_e = estatus_colores.get(f_est, "#64748b")
+                        
+                        st.markdown(f"""<div class="card-hover" style="border-left-color: {color_p}; padding: 12px; margin-bottom: 10px; background: #262e33; border-radius: 5px;"><div style="display: grid; grid-template-columns: 0.8fr 1.5fr 1.2fr 2fr 1fr; gap: 10px; align-items: center;"><div><div style="font-size: 0.65em; color: #888;">FOLIO/EST</div><div style="color: {color_p}; font-weight: bold; font-size: 1em;">{row.get('FOLIO', 'INC-???')}</div><span style="background: {color_e}33; color: {color_e}; padding: 1px 4px; border-radius: 3px; font-weight: bold; font-size: 0.7em;">{f_est}</span></div><div><div style="font-size: 0.65em; color: #888;">CLIENTE/PEDIDO</div><div style="color: #fff; font-size: 0.9em; font-weight: bold;">{row.get('CLIENTE_DESTINO', 'N/A')}</div><div style="font-size: 0.8em; color: #bbb;">📦 {row.get('PEDIDO_GUIA', 'N/A')}</div></div><div><div style="font-size: 0.65em; color: #888;">ID SEGUIMIENTO / QUEJA</div><div style="font-size: 0.85em; color: #eee;"> {row.get('ID_SEGUIMIENTO', 'N/A')}</div><div style="font-size: 0.85em; color: #eee;"> {row.get('ID_QUEJA', 'N/A')}</div></div><div><div style="font-size: 0.65em; color: #888;">DETALLE / ACCIONES</div><div style="font-size: 0.85em; color: #eee;">{row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div><div style="font-size: 0.8em; color: #38bdf8;"><i>{row.get('ACCIONES', '')}</i></div></div><div style="text-align: right;"><div style="font-size: 0.65em; color: #888;">RESPONSABLE/REG</div><div style="color: #fff; font-size: 0.85em;">👤 {row.get('RESPONSABLE', 'N/A')}</div><div style="font-size: 0.7em; color: #38bdf8;">📝 {row.get('USUARIO', 'N/A')}</div></div></div></div>""", unsafe_allow_html=True)  
+                
+                # ── 3. EDITOR DE AVANZADO (EXCLUSIVO PARA ADMIN) ────────────────────────────────────
+                if es_administrador:
+                    with st.expander("⚙️ Editor de datos (Solo Administración)", expanded=False):
+                        st.subheader("Modo edición avanzada")
+                        df_editor = df_master.copy()
+                        
+                        for col in COLUMNAS_INCIDENCIAS:
+                            if col not in df_editor.columns: df_editor[col] = ""
+                            df_editor[col] = df_editor[col].astype(str).replace("nan", "").fillna("")
+                            
+                        df_editado = st.data_editor(df_editor, hide_index=True, use_container_width=True, num_rows="dynamic")
+                        
+                        cabeceras = "".join([f"<th>{c}</th>" for c in COLUMNAS_INCIDENCIAS if c != 'VINCULO_BUSQUEDA'])
+                        cuerpo = ""
+                        for _, fila in df_editado.iterrows():
+                            cuerpo += "<tr>" + "".join([f"<td>{str(fila.get(c, ''))}</td>" for c in COLUMNAS_INCIDENCIAS if c != 'VINCULO_BUSQUEDA']) + "</tr>"
+                
+                        html_print = f"""
+                        <div id="printableArea" style="font-family: sans-serif;">
+                            <h2>JYPESA - Logística NEXION</h2>
+                            <table border="1" style="width:100%; border-collapse: collapse;">
+                                <thead><tr>{cabeceras}</tr></thead>
+                                <tbody>{cuerpo}</tbody>
+                            </table>
+                        </div>
+                        """
+                        
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            if st.button(":material/sync: SINCRONIZAR", use_container_width=True):
+                                if guardar_en_github(df_editado):
+                                    st.session_state.df_incidencias = df_editado
+                                    st.rerun()
+                        with col2:
+                            import streamlit.components.v1 as components
+                            if st.button(":material/print: IMPRIMIR", use_container_width=True):
+                                components.html(f"{html_print}<script>window.print();</script>", height=0, width=0)
+                        with col3:
+                            buffer = io.BytesIO()
+                            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                                df_editado.to_excel(writer, index=False, sheet_name='Incidencias')
+                            st.download_button("BAJAR EXCEL", data=buffer.getvalue(), file_name="incidencias_nexion.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+        # 3. REPORTES
+        elif st.session_state.menu_main == "REPORTES":
+            
+            # Aquí creamos el "espacio" para cada uno
+            if st.session_state.menu_sub == "COSTOS CEDIS":
+                # ---------------- ESTADO ----------------
+                if "reporte_a_imprimir" not in st.session_state:
+                    st.session_state.reporte_a_imprimir = None
+                
+                # ---------------- ESTILOS ----------------
+                # 2. ACTUALIZA TU CSS PARA ELIMINAR EL BORDE AMARILLO (dentro de st.markdown):
+                st.markdown("""
+                <style>
+                .main{ background:#0B1014; }
+                [data-testid="stMetric"]{
+                    background:#1A252F; padding:25px; border-radius:12px;
+                    border-left:5px solid #D4AF37; height:120px;
+                    display:flex; flex-direction:column; justify-content:center;
+                }
+                div[data-testid="stMetricValue"]{ color:#E0E6ED; font-weight:900; font-size:1.1rem; }
+                div[data-testid="stMetricLabel"]{ color:#D4AF37; letter-spacing:1.5px; text-transform:uppercase; font-size:.85rem; font-weight:bold; }
+                
+                /* BORDE AMARILLO ELIMINADO AQUÍ */
+                h1{ color:#FFFFFF; font-family:'Arial Black'; }
+                
+                .analysis-box{ background:#1A252F; padding:25px; border-radius:12px; border:1px solid #243441; color:#A4B9C8; line-height:1.8; font-size:.95rem; }
+                </style>
+                """, unsafe_allow_html=True)
+            
+                # ---------------- FUNCIONES ----------------
+                def limpiar_columnas(txt):
+                    if not isinstance(txt, str): return txt
+                    return ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn').strip().upper()
+            
+                def limpiar_dinero(col):
+                    return pd.to_numeric(col.astype(str).str.replace(r'[$,]', '', regex=True), errors="coerce").fillna(0)
+            
+                # ---------------- CARGA ----------------
+                try:
+                    df_actual = pd.read_csv("Matriz_Excel_Dashboard.csv")
+                    df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
+                    col_concepto = next((c for c in df_actual.columns if "CONCEPTO" in c), None)
+                    col_cajas = next((c for c in df_actual.columns if "CAJAS" in c), None)
+            
+                    if col_concepto and col_cajas:
+                        df_actual[col_concepto] = df_actual[col_concepto].fillna("SIN CONCEPTO").astype(str).str.strip().str.upper()
+                        df_regional = df_actual[df_actual[col_concepto].str.contains("TRASLADO CEDIS PLAYA|CEDIS MONTERREY", regex=True, na=False)].copy()
+                        for col in ["COSTO DE LA GUIA", "FACTURACION", col_cajas]:
+                            if col in df_regional.columns: df_regional[col] = limpiar_dinero(df_regional[col])
+            
+                        
+                        c1, c2 = st.columns(2)
+                        with c1: mes_sel = st.selectbox("FILTRAR POR MES:", ["TODOS"] + sorted(df_regional["MES"].unique().tolist()))
+                        with c2: sede_sel = st.selectbox("FILTRAR POR SEDE:", ["TRASLADO CEDIS PLAYA", "CEDIS MONTERREY", "AMBAS"], index=0)
+            
+                        df_final = df_regional.copy()
+                        if mes_sel != "TODOS": df_final = df_final[df_final["MES"] == mes_sel]
+                        if sede_sel != "AMBAS": df_final = df_final[df_final[col_concepto].str.contains(sede_sel, regex=False)]
+            
+                        total_flete, total_fact, total_cajas = df_final["COSTO DE LA GUIA"].sum(), df_final["FACTURACION"].sum(), df_final[col_cajas].sum()
+                        pct_log = (total_flete / total_fact * 100) if total_fact > 0 else 0
+                        target = 9.0 if sede_sel == "TRASLADO CEDIS PLAYA" else 7.5 if sede_sel == "CEDIS MONTERREY" else 8.25
+                        
+                        # ---------------- TARJETAS ----------------
+                        k1, k2, k3, k4 = st.columns(4)
+                        k1.metric("GASTO FLETE", f"${total_flete:,.0f}")
+                        k2.metric("FACTURACIÓN", f"${total_fact:,.0f}")
+                        k3.metric("CAJAS", f"{total_cajas:,.0f}")
+                        k4.metric("COSTO LOGÍSTICO", f"{pct_log:.2f}%", delta=f"{pct_log-target:.2f}% vs Target", delta_color="inverse")
+                        st.divider()
+                        
+                        # ---------------- BOTÓN E IMPRESIÓN ----------------
+                        if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
+                            ahora_gdl = datetime.utcnow() - timedelta(hours=6)
+                            fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
+                            hora_hoy = ahora_gdl.strftime('%H:%M')
+                            estatus_rep = "DENTRO DE PARÁMETROS" if pct_log <= target else "FUERA DE PARÁMETROS"
+                            # Calculamos el % de cumplimiento relativo al target para la barra
+                            pct_cumplimiento_target = max(0, min(100, (target / pct_log) * 100)) if pct_log > 0 else 0
+            
+                            st.session_state.reporte_a_imprimir = f"""
+                            <div id="printable-report" style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #000; background: #fff; max-width: 900px; margin: auto;">
+                                <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
+                                    <tr>
+                                        <td style="width: 50%;">
+                                            <h1 style="margin: 0; font-size: 14px; font-weight: 900; color: #000; text-transform: uppercase;">Jabones y Productos Especializados</h1>
+                                            <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #666;">Distribución y Logística | 2026</p>
+                                        </td>
+                                        <td style="width: 50%; text-align: right; font-size: 11px; line-height: 1.6;">
+                                            <b>REPORTE ID:</b> LOG-{mes_sel[:3].upper() if mes_sel != "TODOS" else "GEN"}-2026<br>
+                                            <b>FECHA:</b> {fecha_hoy} | <b>HORA:</b> {hora_hoy} (ZMG)<br>
+                                            <span style="border: 2px solid #000; padding: 4px 10px; font-weight: bold; display: inline-block; margin-top: 8px;">{estatus_rep}</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <h2 style="text-align: center; text-transform: uppercase; font-size: 18px; text-decoration: underline;">Análisis Operativo: {sede_sel}</h2>
+                                <div style="margin-bottom: 30px;">
+                                    <p style="font-size: 12px; font-weight: bold;">RENDIMIENTO VS META (TARGET {target:.2f}%):</p>
+                                    <div style="width: 100%; border: 2px solid #000; height: 35px; position: relative; background: #f0f0f0;">
+                                        <div style="width: {pct_cumplimiento_target}%; background: #444; height: 100%;"></div>
+                                        <div style="position: absolute; top: 8px; left: 10px; color: #fff; font-weight: bold;">ACTUAL: {pct_log:.2f}%</div>
+                                        <div style="position: absolute; top: 8px; right: 10px; color: #000; font-weight: bold;">OBJETIVO: {target:.2f}%</div>
+                                    </div>
+                                </div>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;">
+                                    <tr style="background: #000; color: #fff;"><th style="padding: 10px; text-align: left;">MÉTRICA</th><th style="padding: 10px; text-align: center;">VALOR</th></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Gasto Total Flete</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_flete:,.2f}</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Facturación Bruta</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_fact:,.2f}</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Volumen (Cajas)</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{total_cajas:,.0f} Uds.</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px; font-weight:bold;">Costo Logístico sobre Ventas</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">{pct_log:.2f}%</td></tr>
+                                </table>
+                                <div style="margin-top: 40px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
+                                    <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
+                                        <b>Rigoberto Hernández</b><br>Coordinador de Logística Nacional
+                                    </div>
+                                    <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
+                                        <b>Dirección General</b><br>Autorizado
+                                    </div>
+                                </div>
+                            </div>"""
+            
+                        # Lógica de apertura de ventana para impresión
+                        if st.session_state.reporte_a_imprimir:
+                            html_template = f"""<script>
+                            var win = window.open("", "_blank", "height=850,width=900");
+                            win.document.write("<html><head><title>Reporte Operativo</title></head><body>" + `{st.session_state.reporte_a_imprimir}` + "</body></html>");
+                            win.document.close(); win.onload = function(){{ win.focus(); win.print(); }};
+                            </script>"""
+                            components.html(html_template, height=0)
+                            st.session_state.reporte_a_imprimir = None
+                    else:
+                        st.error("Error: Columnas 'CONCEPTO' o 'CAJAS' no encontradas.")
+                except Exception as e:
+                    st.error(f"¡Atención, amor! Detalle en el código: {e}")
+    
+            elif st.session_state.menu_sub == "ANALISIS MENSUAL":
+         
+                # --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX) ---
+                st.markdown("""
+                <style>
+                .main { background-color: #0B1014; }
+                [data-testid="stMetric"] { 
+                    background-color: #1A252F; 
+                    padding: 25px; 
+                    border-radius: 12px; 
+                    border-left: 5px solid #A4B9C8; 
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                    min-height: 100px !important;
+                    max-height: 100px !important;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                }
+                div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; font-size: 1.1rem; }
+                div[data-testid="stMetricLabel"] { color: #A4B9C8; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
+                h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #A4B9C8; padding-bottom: 10px; }
+                h3 { color: #A4B9C8; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
+                .analysis-box {
+                    background-color: #1A252F;
+                    padding: 25px;
+                    border-radius: 12px;
+                    border: 1px solid #243441;
+                    color: #A4B9C8;
+                    line-height: 1.8;
+                    font-size: 0.95rem;
+                }
+                .highlight { color: #FFFFFF; font-weight: bold; }
+                
+                /* Esto cambia específicamente el tamaño del texto del Delta */
+                div[data-testid="stMetricDelta"] {
+                    font-size: 0.7rem !important; 
+                    font-weight: bold;
+                }                
+                </style>
+                """, unsafe_allow_html=True)
+                
+                if 'ver_grafico' not in st.session_state:
+                    st.session_state.ver_grafico = False
+                
+                def limpiar_columnas(txt):
+                    if not isinstance(txt, str): return txt
+                    texto = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')
+                    return texto.strip().upper()
+                
+                def limpiar_dinero(col):
+                    return pd.to_numeric(
+                        col.astype(str)
+                        .str.replace('$', '', regex=False)
+                        .str.replace(',', '', regex=False)
+                        .str.strip(),
+                        errors='coerce'
+                    ).fillna(0)
+                
+                # 2. CARGA Y PROCESAMIENTO A PRUEBA DE ERRORES
+                try:
+                    df_actual = pd.read_csv('Matriz_Excel_Dashboard.csv')
+                    df_2025 = pd.read_csv('Historial2025.csv')
+                
+                    df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
+                    df_2025.columns = [limpiar_columnas(c) for c in df_2025.columns]
+                
+                    columnas_dinero = ['COSTO DE LA GUIA', 'FACTURACION', 'VALUACION', 'COSTOS ADICIONALES', 'CAJAS']
+                    for col in columnas_dinero:
+                        if col in df_actual.columns: 
+                            df_actual[col] = limpiar_dinero(df_actual[col])
+                    
+                    for col in ['COSTO DE LA GUIA', 'CAJAS']:
+                        if col in df_2025.columns: 
+                            df_2025[col] = limpiar_dinero(df_2025[col])
+                
+                    for f_col in ['FECHA DE ENVIO', 'PROMESA DE ENTREGA', 'FECHA DE ENTREGA REAL']:
+                        if f_col in df_actual.columns:
+                            df_actual[f_col] = pd.to_datetime(df_actual[f_col], errors='coerce')
+                
+                    df_actual['MES'] = df_actual['MES'].fillna("SIN MES").astype(str).str.strip().str.upper()
+                    df_2025['MES'] = df_2025['MES'].fillna("SIN MES").astype(str).str.strip().str.upper()
+                
+                    # Blindaje en caso de que la columna no exista
+                    if 'FORMA DE ENVIO' in df_actual.columns:
+                        df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
+                    else:
+                        df_gastos = df_actual.copy()
+                        
+                    df_gastos['COSTOS ADICIONALES'] = limpiar_dinero(df_gastos.get('COSTOS ADICIONALES', 0))
+                    df_gastos['COSTO DE FLETE'] = df_gastos['COSTO DE LA GUIA'] + df_gastos['COSTOS ADICIONALES']
+                    
+                    # 3. INTERFAZ
+                    meses_nombres = {1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"}
+                    mes_actual_txt = meses_nombres.get(datetime.now().month, "ENERO")
+                    opciones_mes = ["TODOS"] + sorted(df_gastos['MES'].unique().tolist())
+                    indice_def = opciones_mes.index(mes_actual_txt) if mes_actual_txt in opciones_mes else 0
+                
+                    c_f1, c_f2 = st.columns(2)
+                    with c_f1: mes_sel = st.selectbox(":material/calendar_month: FILTRAR POR MES:", opciones_mes, index=indice_def)
+                    with c_f2: flet_sel = st.selectbox(":material/local_shipping: FILTRAR POR FLETERA:", ["TODAS"] + sorted(df_gastos['FLETERA'].unique().tolist()) if 'FLETERA' in df_gastos.columns else ["TODAS"])
+                
+                    df_filtered = df_gastos.copy()
+                    if mes_sel != "TODOS": df_filtered = df_filtered[df_filtered['MES'] == mes_sel]
+                    if flet_sel != "TODAS" and 'FLETERA' in df_filtered.columns: df_filtered = df_filtered[df_filtered['FLETERA'] == flet_sel]
+        
+                    # 4. CÁLCULOS PRINCIPALES
+                    mask_evaluable = df_filtered['PROMESA DE ENTREGA'].notna() & df_filtered['FECHA DE ENTREGA REAL'].notna()
+                    df_eval = df_filtered[mask_evaluable]
+                    pct_eficiencia = ( (df_eval['FECHA DE ENTREGA REAL'] <= df_eval['PROMESA DE ENTREGA']).sum() / len(df_eval) * 100 ) if len(df_eval) > 0 else 0
+                
+                    total_flete_2026 = df_filtered['COSTO DE FLETE'].sum() if 'COSTO DE FLETE' in df_filtered.columns else 0
+                    total_fact_2026 = df_filtered['FACTURACION'].sum() if 'FACTURACION' in df_filtered.columns else 0
+                    total_cajas_2026 = df_filtered['CAJAS'].sum() if 'CAJAS' in df_filtered.columns else 0
+                    total_valuacion_2026 = df_filtered['VALUACION'].sum() if 'VALUACION' in df_filtered.columns else 0
+                
+                    meses_activos = df_filtered['MES'].unique()
+                    df_2025_filtrado = df_2025[df_2025['MES'].isin(meses_activos)]
+                    total_flete_2025 = df_2025_filtrado['COSTO DE LA GUIA'].sum() if 'COSTO DE LA GUIA' in df_2025_filtrado.columns else 0
+                    total_cajas_2025 = df_2025_filtrado['CAJAS'].sum() if 'CAJAS' in df_2025_filtrado.columns else 0
+                    
+                    costo_caja_2026 = (total_flete_2026 / total_cajas_2026) if total_cajas_2026 > 0 else 0
+                    costo_caja_2025 = (total_flete_2025 / total_cajas_2025) if total_cajas_2025 > 0 else 0
+                    var_costo_caja = ((costo_caja_2026 - costo_caja_2025) / costo_caja_2025 * 100) if costo_caja_2025 > 0 else 0
+                    var_volumen = ((total_cajas_2026 - total_cajas_2025) / total_cajas_2025 * 100) if total_cajas_2025 > 0 else 0
+                    var_flete_total = ((total_flete_2026 - total_flete_2025) / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
+                    costo_log_real = (total_flete_2026/total_fact_2026*100) if total_fact_2026 > 0 else 0
+                    diferencia_target = costo_log_real - 7.5
+                    num_inc = (df_filtered['VALUACION'] > 0).sum() if 'VALUACION' in df_filtered.columns else 0
+                    pct_inc = (num_inc/len(df_filtered)*100) if len(df_filtered)>0 else 0
+                    inc_vi_monto = (total_flete_2026 + total_valuacion_2026) - total_flete_2025
+                    
+                    total_valuacion_2025 = df_2025_filtrado['VALUACION'].sum() if 'VALUACION' in df_2025_filtrado.columns else 0
+                    num_inc_2025 = (df_2025_filtrado['VALUACION'] > 0).sum() if 'VALUACION' in df_2025_filtrado.columns else 0
+                    pct_inc_2025 = (num_inc_2025 / len(df_2025_filtrado) * 100) if len(df_2025_filtrado) > 0 else 0
+                    
+                    var_val_monto = total_valuacion_2026 - total_valuacion_2025
+                    var_pct_inc = pct_inc - pct_inc_2025
+                    var_inc_vi_pct = (inc_vi_monto / total_flete_2025 * 100) if total_flete_2025 > 0 else 0
+        
+                    # --- CÁLCULO DE LOS 3 CONCEPTOS NUEVOS (SOLO COBRO REGRESO) ---
+                    total_muestras = 0.0
+                    total_consignas = 0.0
+                    total_fnacional = 0.0
+                    
+                    # 1. Buscamos el nombre de la columna dinámicamente por si el CSV le agregó espacios invisibles
+                    col_concepto = next((c for c in df_filtered.columns if 'CONCEPTO' in c), None)
+                    
+                    if col_concepto:
+                        # 2. Llenamos los espacios vacíos y limpiamos el texto para que no haya errores por 'NaN'
+                        conceptos_limpios = df_filtered[col_concepto].fillna('SIN CONCEPTO').astype(str).str.strip().str.upper()
+                        
+                        # 3. Sumamos usando regex para que pesque cualquier variante de la palabra (F NACIONAL, Consignas, etc.)
+                        total_muestras = df_filtered.loc[conceptos_limpios.str.contains('MUESTRA|RECOLECCI', regex=True), 'COSTO DE LA GUIA'].sum()
+                        total_consignas = df_filtered.loc[conceptos_limpios.str.contains('CONSIGNA', regex=True), 'COSTO DE LA GUIA'].sum()
+                        total_fnacional = df_filtered.loc[conceptos_limpios.str.contains('NACIONAL', regex=True), 'COSTO DE LA GUIA'].sum()
+                    else:
+                        # Si esto aparece en pantalla, significa que Pandas no está logrando importar la columna desde tu Excel
+                        st.warning("⚠️ Amor, Nexion no está detectando la columna CONCEPTO en el archivo CSV.")
+        
+                    # --- LÓGICA DE HIERRO INTELIGENTE: COMPARATIVA MES ANTERIOR ---
+                    meses_map_inv = {k: v for v, k in meses_nombres.items()}
+                    
+                    total_fact_actual = total_fact_2026
+                    total_fact_mes_anterior = 0
+                    var_fact_mensual = 0
+                    pct_eficiencia_ant = 0
+                    var_eficiencia_mensual = 0
+                    mes_anterior_nombre = None
+                    
+                    # Solo hacemos cálculos de mes anterior si no seleccionaron "TODOS"
+                    if mes_sel != "TODOS":
+                        num_mes_actual = meses_map_inv.get(mes_sel, 3) 
+                        
+                        # Lógica de transición de año: Si es Enero, el anterior es Diciembre del 2025
+                        if num_mes_actual == 1:
+                            mes_anterior_nombre = "DICIEMBRE"
+                            if 'FORMA DE ENVIO' in df_2025.columns:
+                                df_ant_raw = df_2025[(df_2025['MES'] == mes_anterior_nombre) & (df_2025['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False))]
+                            else:
+                                df_ant_raw = df_2025[df_2025['MES'] == mes_anterior_nombre]
+                                
+                            total_fact_mes_anterior = df_ant_raw['FACTURACION'].sum() if 'FACTURACION' in df_ant_raw.columns else 0
+                        else:
+                            mes_anterior_nombre = meses_nombres.get(num_mes_actual - 1)
+                            if 'FORMA DE ENVIO' in df_actual.columns:
+                                df_ant_raw = df_actual[(df_actual['MES'] == mes_anterior_nombre) & (df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False))]
+                            else:
+                                df_ant_raw = df_actual[df_actual['MES'] == mes_anterior_nombre]
+                                
+                            total_fact_mes_anterior = df_ant_raw['FACTURACION'].sum() if 'FACTURACION' in df_ant_raw.columns else 0
+                        
+                        # Variación Facturación Mensual
+                        if total_fact_mes_anterior > 0:
+                            var_fact_mensual = ((total_fact_actual - total_fact_mes_anterior) / total_fact_mes_anterior) * 100
+                        
+                        # Variación Eficiencia Mensual
+                        if not df_ant_raw.empty:
+                            mask_ant = df_ant_raw['PROMESA DE ENTREGA'].notna() & df_ant_raw['FECHA DE ENTREGA REAL'].notna()
+                            df_eval_ant = df_ant_raw[mask_ant]
+                            if not df_eval_ant.empty:
+                                cumplidos_ant = (df_eval_ant['FECHA DE ENTREGA REAL'] <= df_eval_ant['PROMESA DE ENTREGA']).sum()
+                                pct_eficiencia_ant = (cumplidos_ant / len(df_eval_ant)) * 100
+                                var_eficiencia_mensual = pct_eficiencia - pct_eficiencia_ant
+        
+                    # --- BOTONES DE VISTA ---
+                    c_btn1, c_btn2 = st.columns(2)
+                    with c_btn1:
+                        if st.button("VER MÉTRICAS Y TARJETAS", use_container_width=True):
+                            st.session_state.ver_grafico = False
+                    with c_btn2:
+                        if st.button("VER GRÁFICO COMPARATIVO", use_container_width=True):
+                            st.session_state.ver_grafico = True
+                    
+                    # --- 5. VISTA DE TARJETAS ---
+                    if not st.session_state.ver_grafico:
+                        st.markdown("### RESUMEN DE RENDIMIENTO")
+                        
+                        txt_mes_ant = f"vs {mes_anterior_nombre}" if mes_anterior_nombre else "Promedio"
+                        
+                        k1, k2, k3 = st.columns(3)
+                        with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
+                        with k2: st.metric("FACTURACIÓN", f"${total_fact_actual:,.2f}", delta=f"{var_fact_mensual:+.1f}% {txt_mes_ant}", delta_color="normal")
+                        with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="normal")
+                        
+                        k4, k5, k6 = st.columns(3)
+                        with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
+                        with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
+                        with k6: st.metric("% EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%", delta=f"{var_eficiencia_mensual:+.1f}% {txt_mes_ant}")
+                        
+                        k7, k8, k9 = st.columns(3)
+                        with k7: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}", delta=f"${var_val_monto:,.2f}", delta_color="inverse")
+                        with k8: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%", delta=f"{var_pct_inc:.1f}%", delta_color="inverse")
+                        with k9: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}", delta=f"{var_inc_vi_pct:.1f}%", delta_color="normal")
+        
+                        # --- NUEVAS TARJETAS DE CONCEPTOS ---
+                        st.markdown("### DESGLOSE DE CONCEPTOS (INFORMATIVO)")
+                        k10, k11, k12 = st.columns(3)
+                        with k10: st.metric("MUESTRAS / REC.", f"${total_muestras:,.2f}")
+                        with k11: st.metric("CONSIGNAS", f"${total_consignas:,.2f}")
+                        with k12: st.metric("F NACIONAL", f"${total_fnacional:,.2f}")
+                
+                        # --- 6. ANÁLISIS DINÁMICO PROFUNDO ---
+                        st.markdown("### DIAGNÓSTICO ESTRATÉGICO DE OPERACIÓN")
+                        
+                        if costo_log_real <= 7.5:
+                            status_target = "🟢 DENTRO DEL TARGET"
+                            desc_costo = "La gestión financiera es <span class='highlight'>óptima</span>, manteniendo la rentabilidad bajo los parámetros establecidos."
+                        else:
+                            status_target = "🔴 FUERA DE TARGET"
+                            desc_costo = f"Se detecta una desviación del <span class='highlight'>{diferencia_target:.2f}%</span>. Es prioritario revisar la negociación con fleteras o la consolidación de carga."
+                
+                        if pct_eficiencia >= 95: status_entrega = "Excelencia Logística"
+                        elif pct_eficiencia >= 85: status_entrega = "Operación Estable"
+                        else: status_entrega = "Alerta de Servicio"
+                
+                        alerta_incidencias = f"<br>⚠️ <b style='color:#FF4B4B;'>ALERTA:</b> El nivel de incidencias ({pct_inc:.1f}%) está impactando la valuación en <span class='highlight'>${total_valuacion_2026:,.2f}</span>." if pct_inc > 5 else ""
+                        tendencia_caja = "una <span class='highlight'>mejora</span>" if var_costo_caja <= 0 else "un <span class='highlight'>incremento</span>"
+                
+                        html_analisis = f'''
+                        <div class="analysis-box">
+                            <div style="display: flex; justify-content: space-between;">
+                                <b>ESTADO FINANCIERO:</b> <span>{status_target}</span>
+                            </div>
+                            <hr style="border: 0.5px solid #243441; margin: 10px 0;">
+                            <b>RESUMEN EJECUTIVO:</b><br>
+                            • {desc_costo}<br>
+                            • La logística de entregas se califica como <span class="highlight">{status_entrega}</span> con un cumplimiento del {pct_eficiencia:.1f}%.<br>
+                            • El costo operativo por unidad presenta {tendencia_caja} del {abs(var_costo_caja):.1f}% vs el año anterior.{alerta_incidencias}
+                            <br><br>
+                            <i style="font-size: 0.85rem; color: #A4B9C8;">* Datos calculados dinámicamente basados en el cierre de fletes y promesas de entrega.</i>
+                        </div>'''
+                        
+                        st.markdown(html_analisis, unsafe_allow_html=True)
+                        st.write("")
+                        
+                        # --- REPORTE DE IMPRESIÓN REPOTENCIADO ---
+                        def generar_reporte_grafico():
+                            estatus_rep = "DENTRO DE PARÁMETROS" if costo_log_real <= 7.5 else "FUERA DE PARÁMETROS"
+                            pct_cumplimiento_target = max(0, min(100, (7.5 / costo_log_real) * 100)) if costo_log_real > 0 else 0
+                            c_flete_rep = "red" if var_flete_total > 0 else "green"
+                            c_caja_rep = "red" if var_costo_caja > 0 else "green"
+                            ahora_gdl = datetime.utcnow() - timedelta(hours=6)
+                            fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
+                            hora_hoy = ahora_gdl.strftime('%H:%M')
+                        
+                            return f"""
+                            <div id="printable-report" style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #000; background: #fff; max-width: 900px; margin: auto;">
+                                <table style="width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px;">
+                                    <tr>
+                                        <td style="width: 50%;">
+                                            <h1 style="margin: 0; font-size: 14px; font-weight: 900; color: #000; text-transform: uppercase;">Jabones y Productos Especializados</h1>
+                                            <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #666;">Distribución y Logística | 2026</p>
+                                        </td>
+                                        <td style="width: 50%; text-align: right; font-size: 11px; line-height: 1.6;">
+                                            <b>REPORTE ID:</b> LOG-{mes_sel[:3].upper()}-2026<br>
+                                            <b>FECHA:</b> {fecha_hoy} | <b>HORA:</b> {hora_hoy} (ZMG)<br>
+                                            <span style="border: 2px solid #000; padding: 4px 10px; font-weight: bold; display: inline-block; margin-top: 8px;">
+                                                {estatus_rep}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </table>
+                        
+                                <h2 style="text-align: center; text-transform: uppercase; font-size: 18px; text-decoration: underline;">Análisis Operativo Mensual: {mes_sel}</h2>
+                                
+                                <div style="margin-bottom: 30px;">
+                                    <p style="font-size: 12px; font-weight: bold;">RENDIMIENTO VS META (TARGET 7.5%):</p>
+                                    <div style="width: 100%; border: 2px solid #000; height: 35px; position: relative; background: #f0f0f0;">
+                                        <div style="width: {pct_cumplimiento_target}%; background: #444; height: 100%;"></div>
+                                        <div style="position: absolute; top: 8px; left: 10px; color: #fff; font-weight: bold;">ACTUAL: {costo_log_real:.2f}%</div>
+                                        <div style="position: absolute; top: 8px; right: 10px; color: #000; font-weight: bold;">OBJETIVO: 7.50%</div>
+                                    </div>
+                                </div>
+                        
+                                <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+                                    <div style="flex: 1; border: 1px solid #000; padding: 10px;">
+                                        <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">ESTRUCTURA DE COSTOS</p>
+                                        <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                                            <tr><td>Gasto Flete 2026:</td><td style="text-align: right; color:{c_flete_rep}"><b>${total_flete_2026:,.2f}</b></td></tr>
+                                            <tr><td>Gasto Flete 2025:</td><td style="text-align: right;">${total_flete_2025:,.2f}</td></tr>
+                                            <tr><td>Variación Gasto:</td><td style="text-align: right;"><b>{var_flete_total:+.1f}%</b></td></tr>
+                                        </table>
+                                    </div>
+                                    <div style="flex: 1; border: 1px solid #000; padding: 10px;">
+                                        <p style="margin: 0 0 10px 0; font-size: 10px; font-weight: bold; text-align: center; background: #000; color: #fff;">EFICIENCIA UNITARIA</p>
+                                        <div style="text-align: center; padding-top: 5px;">
+                                            <span style="font-size: 26px; font-weight: bold;">${costo_caja_2026:.2f}</span><br>
+                                            <span style="font-size: 10px;">Costo por Caja Actual</span><br>
+                                            <span style="font-size: 11px; color:{c_caja_rep}; font-weight:bold;">Var: {var_costo_caja:+.1f}% vs 2025</span>
+                                        </div>
+                                    </div>
+                                </div>
+                        
+                                <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;">
+                                    <tr style="background: #000; color: #fff; border: 1px solid #000;">
+                                        <th style="padding: 10px; text-align: left;">MÉTRICA DE OPERACIÓN DETALLADA</th>
+                                        <th style="padding: 10px; text-align: center;">VALOR ACTUAL</th>
+                                    </tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Facturación Bruta Totales</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">${total_fact_2026:,.2f}</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Cajas Enviadas (Volumen)</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{int(total_cajas_2026):,.0f} Uds.</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Variación Volumen vs 2025</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{var_volumen:+.1f}%</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Costo Logístico sobre Ventas</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">{costo_log_real:.2f}%</td></tr>
+                                    <tr style="background: #f9f9f9;"><td style="border: 1px solid #000; padding: 8px;"><b>Eficiencia On-Time (Entregas en Tiempo)</b></td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">{pct_eficiencia:.1f}%</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Valuación de Incidencias</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">${total_valuacion_2026:,.2f}</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Porcentaje de Incidencias sobre Pedidos</td><td style="border: 1px solid #000; padding: 8px; text-align: center;">{pct_inc:.1f}%</td></tr>
+                                    <tr><td style="border: 1px solid #000; padding: 8px;">Impacto Económico Neto (Incremento + VI)</td><td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight:bold;">${inc_vi_monto:,.2f}</td></tr>
+                                </table>
+        
+                                <h3 style="font-size: 11px; font-weight: bold; margin-top: 10px; background: #000; color: #fff; padding: 5px; text-align: center;">DESGLOSE POR CONCEPTO INFORMATIVO</h3>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 30px;">
+                                    <tr>
+                                        <td style="border: 1px solid #000; padding: 6px; background: #f9f9f9;"><b>Muestras / Recolecciones</b></td>
+                                        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${total_muestras:,.2f}</td>
+                                        <td style="border: 1px solid #000; padding: 6px; background: #f9f9f9;"><b>Consignas</b></td>
+                                        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${total_consignas:,.2f}</td>
+                                        <td style="border: 1px solid #000; padding: 6px; background: #f9f9f9;"><b>F Nacional</b></td>
+                                        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${total_fnacional:,.2f}</td>
+                                    </tr>
+                                </table>
+                        
+                                <div style="margin-top: 40px; display: flex; justify-content: space-between; text-align: center; font-size: 11px;">
+                                    <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
+                                        <b>Rigoberto Hernández</b><br>Coordinador de Logística Nacional
+                                    </div>
+                                    <div style="width: 40%; border-top: 2px solid #000; padding-top: 10px;">
+                                        <b>Carlos Fialko</b><br>Director General
+                                    </div>
+                                </div>
+                            </div>
+                            """
+                        
+                        def generar_memoria_tecnica():
+                            gasto_base_2025 = total_flete_2026 - inc_vi_monto
+                            ahora_gdl = datetime.utcnow() - timedelta(hours=6)
+                            fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
+                            hora_hoy = ahora_gdl.strftime('%H:%M')
+                            
+                            # --- LÓGICA DINÁMICA DE INTERPRETACIÓN TÉCNICA ---
+                            txt_volumen = "el alza" if var_volumen >= 0 else "la reducción"
+                            txt_gasto = "el incremento" if var_flete_total >= 0 else "la disminución"
+                            
+                            if var_costo_caja < 0:
+                                txt_tarifa = "una <span style='color: #2e7d32; font-weight: bold;'>reducción (optimización)</span> en la tarifa unitaria por caja"
+                            elif var_costo_caja > 0:
+                                txt_tarifa = "un <span style='color: #d32f2f; font-weight: bold;'>incremento</span> en la tarifa unitaria por caja"
+                            else:
+                                txt_tarifa = "una <b>estabilidad absoluta</b> en la tarifa unitaria por caja"
+        
+                            if total_valuacion_2026 <= 0:
+                                txt_inc = f"Al no existir incidencias acumuladas (${total_valuacion_2026:,.2f}), el impacto financiero es estrictamente operativo."
+                            else:
+                                txt_inc = f"Es importante notar que existen incidencias acumuladas por ${total_valuacion_2026:,.2f} que impactan el balance financiero del periodo."
+                            
+                            return f"""
+                            <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px; color: #333; max-width: 800px; margin: auto; background-color: #fff;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #000; padding-bottom: 5px; margin-bottom: 15px;">
+                                    <div style="text-align: left;">
+                                        <h1 style="margin: 0; font-size: 18px; text-transform: uppercase;">Jabones y Productos Especializados</h1>
+                                        <p style="margin: 2px 0; font-size: 10px; color: #666; font-weight: bold; text-transform: uppercase;">Memoria Técnica de Cálculo y Variaciones</p>
+                                    </div>
+                                    <div style="text-align: right; font-size: 10px; color: #444; line-height: 1.6;">
+                                        <b>REPORTE ID:</b> TEC-{mes_sel[:3].upper()}-2026<br>
+                                        <b>FECHA:</b> {fecha_hoy} | <b>HORA:</b> {hora_hoy} (ZMG)
+                                    </div>
+                                </div>
+                                <p style="font-size: 11px; line-height: 1.4; color: #555; margin-bottom: 15px;">
+                                    Este documento detalla la trazabilidad algorítmica de los KPIs presentados en el periodo <b>{mes_sel} 2026</b>.
+                                </p>
+                                
+                                <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">1. COSTO LOGÍSTICO (KPI DE RENTABILIDAD)</h3>
+                                    <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
+                                        ( ∑ Flete Actual / ∑ Facturación Actual ) x 100
+                                    </div>
+                                    <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> (${total_flete_2026:,.2f} / ${total_fact_2026:,.2f}) x 100 = <b>{costo_log_real:.2f}%</b></p>
+                                </div>
+                                
+                                <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">2. EFICIENCIA DE ENTREGA (OTD)</h3>
+                                    <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
+                                        ( Envíos On-Time / Total Envíos Evaluables ) x 100
+                                    </div>
+                                    <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> Cumplimiento del <b>{pct_eficiencia:.1f}%</b> basado en registros evaluables.</p>
+                                </div>
+                                
+                                <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">3. COSTO POR CAJA (EFICIENCIA UNITARIA)</h3>
+                                    <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
+                                        Gasto de Flete Total / Cantidad de Cajas Enviadas
+                                    </div>
+                                    <p style="font-size: 10px; margin-top: 5px;"><b>Resultado:</b> ${total_flete_2026:,.2f} / {total_cajas_2026:,.0f} cajas = <b>${costo_caja_2026:,.2f} / caja</b></p>
+                                </div>
+                                
+                                <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">4. INCREMENTO LOGÍSTICO + VALUACIÓN INCIDENCIAS (VI)</h3>
+                                    <div style="background: #f0f0f0; padding: 8px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 13px;">
+                                        (Gasto_2026 - Gasto_2025) + Valuación_Incidencias
+                                    </div>
+                                    <p style="font-size: 10px; margin-top: 5px;"><b>Desglose:</b> (${total_flete_2026:,.2f} - ${gasto_base_2025:,.2f}) + ${total_valuacion_2026:,.2f} = <b>${inc_vi_monto:,.2f}</b></p>
+                                </div>
+                                
+                                <div style="margin-top: 10px; padding: 10px; border: 2px solid #2276AA; background: #f0f7ff;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">5. ANÁLISIS DE DELTAS (COMPARATIVA ANUAL)</h3>
+                                    <table style="width: 100%; font-size: 9px; border-collapse: collapse; text-align: left; margin-top: 5px;">
+                                        <tr style="border-bottom: 1px solid #2276AA; background: #e3f2fd;">
+                                            <th style="padding: 4px;">INDICADOR</th>
+                                            <th>PREVIO (2025)</th>
+                                            <th>ACTUAL (2026)</th>
+                                            <th>VARIACIÓN (DELTA)</th>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 4px;"><b>Gasto de Flete</b></td>
+                                            <td>${gasto_base_2025:,.2f}</td>
+                                            <td>${total_flete_2026:,.2f}</td>
+                                            <td style="color: #d32f2f; font-weight: bold;">{var_flete_total:+.1f}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 4px;"><b>Volumen Cajas</b></td>
+                                            <td>{total_cajas_2025:,.0f}</td>
+                                            <td>{total_cajas_2026:,.0f}</td>
+                                            <td style="color: #2e7d32; font-weight: bold;">{var_volumen:+.1f}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 4px;"><b>Costo x Caja</b></td>
+                                            <td>${costo_caja_2025:,.2f}</td>
+                                            <td>${costo_caja_2026:,.2f}</td>
+                                            <td style="color: #d32f2f; font-weight: bold;">{var_costo_caja:+.1f}%</td>
+                                        </tr>
+                                    </table>
+                                </div>
+        
+                                <div style="margin-top: 10px; padding: 10px; border: 1px solid #eee; background: #fdfdfd;">
+                                    <h3 style="margin: 0 0 5px 0; color: #2276AA; font-size: 12px;">6. DESGLOSE DE CONCEPTOS ESPECIALES</h3>
+                                    <p style="font-size: 10px; margin-top: 5px;">
+                                        Muestras/Recolecciones: <b>${total_muestras:,.2f}</b> | Consignas: <b>${total_consignas:,.2f}</b> | F Nacional: <b>${total_fnacional:,.2f}</b><br>
+                                        <i style="color: #777;">* Valores meramente informativos para la modalidad Cobro Regreso. No aplican en la comparativa anual (Deltas).</i>
+                                    </p>
+                                </div>
+                                
+                                <div style="margin-top: 15px; padding: 10px; background: #fffde7; border-left: 5px solid #fbc02d; font-size: 9px; line-height: 1.3;">
+                                    <b>INTERPRETACIÓN TÉCNICA:</b> La relación entre {txt_volumen} de volumen ({var_volumen:+.1f}%) y {txt_gasto} del gasto ({var_flete_total:+.1f}%) confirma {txt_tarifa}. {txt_inc}
+                                </div>
+                                
+                                <div style="margin-top: 30px; display: flex; justify-content: space-around; text-align: center; font-size: 10px;">
+                                    <div style="width: 200px; border-top: 1px solid #000; padding-top: 5px;">
+                                        <b>Rigoberto Hernández</b><br>Coordinación de Logística
+                                    </div>
+                                </div>
+                            </div>
+                            """
+                        
+                        col_print1, col_print2 = st.columns(2)
+                        with col_print1:
+                            if st.button(":material/print: GENERAR REPORTE GRÁFICO", type="primary", use_container_width=True):
+                                st.session_state.reporte_a_imprimir = generar_reporte_grafico()
+                        with col_print2:
+                            if st.button(":material/calculate: IMPRIMIR CÁLCULO APLICADO", use_container_width=True):
+                                st.session_state.reporte_a_imprimir = generar_memoria_tecnica()
+                        
+                        if st.session_state.get('reporte_a_imprimir') is not None:
+                            html_template = f"""
+                                <script>
+                                    var win = window.open('', '_blank', 'height=800,width=800');
+                                    win.document.write('<html><body>' + `{st.session_state.reporte_a_imprimir}` + '</body></html>');
+                                    win.document.close();
+                                    win.onload = function() {{ 
+                                        win.print(); 
+                                    }};
+                                </script>
+                            """
+                            components.html(html_template, height=0)
+                            st.session_state.reporte_a_imprimir = None
+                
+                    # --- 8. VISTA DE GRÁFICO (COMPARATIVO) ---
+                    else:
+                        st.markdown("###  COMPARATIVA ANUAL DE GASTOS (2025 vs 2026)")
+                        
+                        df_g_2026 = df_gastos.groupby('MES')['COSTO DE FLETE'].sum().reset_index()
+                        df_g_2025 = df_2025.groupby('MES')['COSTO DE LA GUIA'].sum().reset_index()
+                
+                        meses_orden = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", 
+                                       "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
+                        df_g_2026['MES'] = pd.Categorical(df_g_2026['MES'], categories=meses_orden, ordered=True)
+                        df_g_2025['MES'] = pd.Categorical(df_g_2025['MES'], categories=meses_orden, ordered=True)
+                
+                        fig = go.Figure()
+                
+                        fig.add_trace(go.Bar(
+                            x=df_g_2025.sort_values('MES')['MES'], 
+                            y=df_g_2025.sort_values('MES')['COSTO DE LA GUIA'], 
+                            name='Gasto 2025', 
+                            marker_color='#36b9cc', 
+                            text=[f'${x:,.0f}' for x in df_g_2025.sort_values('MES')['COSTO DE LA GUIA']],
+                            textposition='outside',
+                            textfont=dict(color='#A4B9C8') 
+                        ))
+                
+                        fig.add_trace(go.Bar(
+                            x=df_g_2026.sort_values('MES')['MES'], 
+                            y=df_g_2026.sort_values('MES')['COSTO DE FLETE'], 
+                            name='Gasto 2026 (Actual)', 
+                            marker_color='#D4AF37', 
+                            text=[f'${x:,.0f}' for x in df_g_2026.sort_values('MES')['COSTO DE FLETE']],
+                            textposition='outside',
+                            textfont=dict(color='#FFFFFF')
+                        ))
+                
+                        fig.update_layout(
+                            template='plotly_dark',
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            barmode='group',
+                            xaxis_title="MESES DE OPERACIÓN",
+                            yaxis_title="MONTO TOTAL ($)",
+                            font=dict(color="#A4B9C8"),
+                            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                            margin=dict(t=80) 
+                        )
+                
+                        st.plotly_chart(fig, use_container_width=True)
+                        st.info("💡 Las etiquetas doradas muestran el gasto acumulado actual de JYPESA para comparación directa.")
+                
+                except Exception as e:
+                    st.error(f"¡Atención, amor! Detalle en el código: {e}")
+                            
+            elif st.session_state.menu_sub == "DETALLE COSTOS":
+                    
+                # ---------------- ESTILOS CSS PERSONALIZADOS (ESTILO DE TUS IMÁGENES) ----------------
+                st.markdown("""
+                <style>
+                /* Estilo para las tarjetas de métricas con borde izquierdo dorado */
+                [data-testid="stMetric"]{
+                    background: #212C36 !important;
+                    padding: 20px !important;
+                    border-radius: 8px !important;
+                    border-left: 5px solid #D4AF37 !important;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                }
+                div[data-testid="stMetricValue"]{ color: #FFFFFF !important; font-weight: 900; font-size: 1.3rem; }
+                div[data-testid="stMetricLabel"]{ color: #D4AF37 !important; letter-spacing: 1px; text-transform: uppercase; font-size: 0.8rem; font-weight: bold; }
+
+                /* Contenedor con altura fija y scroll estilizado webkit */
+                .scroll-container {
+                    max-height: 550px;
+                    overflow-y: auto;
+                    padding-right: 8px;
+                    margin-bottom: 20px;
+                }
+                .scroll-container::-webkit-scrollbar {
+                    width: 8px;
+                }
+                .scroll-container::-webkit-scrollbar-track {
+                    background: #0B1014;
+                    border-radius: 4px;
+                }
+                .scroll-container::-webkit-scrollbar-thumb {
+                    background: #2E4053;
+                    border-radius: 4px;
+                }
+                .scroll-container::-webkit-scrollbar-thumb:hover {
+                    background: #D4AF37;
+                }
+
+                /* Estilo para contenedores tipo fila con fondo más claro y borde lateral azul */
+                .row-card-light {
+                    background: #212C36 !important;
+                    border-radius: 8px;
+                    border-left: 5px solid #2980B9;
+                    padding: 15px 20px;
+                    margin-bottom: 12px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                }
+                .row-item {
+                    flex: 1;
+                    padding: 0 10px;
+                }
+                .row-title { color: #95A5A6; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+                .row-val { color: #FFFFFF; font-size: 0.95rem; font-weight: bold; margin-top: 4px; }
+                </style>
+                """, unsafe_allow_html=True)
+
+                
+
+                # ---------------- FUNCIONES DE APOYO ----------------
+                def limpiar_columnas(txt):
+                    if not isinstance(txt, str): return txt
+                    return ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn').strip().upper()
+
+                def limpiar_dinero(col):
+                    return pd.to_numeric(col.astype(str).str.replace(r'[$,]', '', regex=True), errors="coerce").fillna(0)
+
+                # ---------------- CARGA DE DATOS ----------------
+                try:
+                    df_actual = pd.read_csv("Matriz_Excel_Dashboard.csv")
+                    df_actual.columns = [limpiar_columnas(c) for c in df_actual.columns]
+
+                    col_cliente = "NOMBRE DEL CLIENTE"
+                    col_paqueteria = "FLETERA"
+
+                    if col_cliente in df_actual.columns and col_paqueteria in df_actual.columns:
+                        df_actual[col_cliente] = df_actual[col_cliente].fillna("SIN CLIENTE").astype(str).str.strip().str.upper()
+                        df_actual[col_paqueteria] = df_actual[col_paqueteria].fillna("SIN FLETERA").astype(str).str.strip().str.upper()
+
+                        # ---------------- FILTROS DINÁMICOS EN CASCADA CORREGIDOS ----------------
+                        f1, f2, f3 = st.columns(3)
+                        
+                        # 1. Filtro de Mes
+                        lista_meses = ["TODOS"] + sorted(df_actual["MES"].dropna().unique().tolist()) if "MES" in df_actual.columns else ["TODOS"]
+                        with f3:
+                            mes_sel = st.selectbox("FILTRAR POR MES:", lista_meses)
+
+                        # DataFrame temporal filtrado por Mes
+                        df_temp = df_actual.copy()
+                        if mes_sel != "TODOS" and "MES" in df_temp.columns:
+                            df_temp = df_temp[df_temp["MES"] == mes_sel]
+
+                        # 2. Filtro de Cliente (depende del mes seleccionado)
+                        lista_clientes = ["TODOS"] + sorted(df_temp[col_cliente].unique().tolist())
+                        with f1:
+                            cliente_sel = st.selectbox("FILTRAR POR CLIENTE:", lista_clientes)
+
+                        # Actualizamos df_temp también con el cliente seleccionado
+                        if cliente_sel != "TODOS":
+                            df_temp = df_temp[df_temp[col_cliente] == cliente_sel]
+
+                        # 3. Filtro de Fletera (depende del mes Y del cliente seleccionados)
+                        lista_paqueterias = ["TODAS"] + sorted(df_temp[col_paqueteria].unique().tolist())
+                        with f2:
+                            paqueteria_sel = st.selectbox("FILTRAR POR FLETERA:", lista_paqueterias)
+
+                        # ---------------- APLICACIÓN FINAL DE FILTROS PARA EL DATAFRAME ----------------
+                        df_filtrado = df_actual.copy()
+                        if mes_sel != "TODOS" and "MES" in df_filtrado.columns:
+                            df_filtrado = df_filtrado[df_filtrado["MES"] == mes_sel]
+                        if cliente_sel != "TODOS":
+                            df_filtrado = df_filtrado[df_filtrado[col_cliente] == cliente_sel]
+                        if paqueteria_sel != "TODAS":
+                            df_filtrado = df_filtrado[df_filtrado[col_paqueteria] == paqueteria_sel]
+
+                        # ---------------- TABS DE RENDIMIENTO ----------------
+                        tab_cli, tab_paq, tab_lead, tab_caja, tab_top20 = st.tabs([
+                            "Facturación por Cliente", 
+                            "Facturación por Fletera", 
+                            "Lead Time", 
+                            "Costo por Caja", 
+                            "Top 20 Clientes"
+                        ])
+                        
+                        # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
+                        # ---------------- TAB 1: FACTURACIÓN POR CLIENTE ----------------
+                        with tab_cli:
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            st.subheader(f"Análisis de Facturación: {cliente_sel}")
+                            
+                            df_filtrado["FACTURACION_NUM"] = limpiar_dinero(df_filtrado["FACTURACION"])
+                            total_facturacion = df_filtrado["FACTURACION_NUM"].sum()
+    
+                            mk1, mk2 = st.columns(2)
+                            with mk1:
+                                st.metric("MONTO TOTAL FACTURADO", f"${total_facturacion:,.2f}")
+                            with mk2:
+                                st.metric("REGISTROS ENCONTRADOS", f"{len(df_filtrado):,}")
+    
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            st.markdown("<p style='color: #D4AF37; font-weight: bold; text-transform: uppercase; font-size: 0.85rem;'>DESGLOSE DE DESTINOS Y ENVIOS</p>", unsafe_allow_html=True)
+    
+                            # Preparamos los registros limpios en Python puro para evitar errores de renderizado
+                            lista_tarjetas_html = []
+                            for index, row in df_filtrado.iterrows():
+                                folio = str(row.get("NUMERO DE PEDIDO") or row.get("FACTURA") or "S/N")
+                                num_guia = str(row.get("NUMERO DE GUIA") or "S/G")
+                                destino = str(row.get("DESTINO", "N/D"))
+                                
+                                # Mostramos la fecha limpia o un texto por defecto si no aplica
+                                fecha = str(row.get("FECHA DE ENVIO") or row.get("FECHA DE ENVÍO") or "S/F")
+                                
+                                # Limpieza segura de cajas en Python
+                                val_caja_raw = str(row.get("CAJAS") or row.get("CANTIDAD DE CAJAS") or "0")
+                                cajas_limpias = int(pd.to_numeric(val_caja_raw.replace("$", "").replace(",", ""), errors='coerce') or 0)
+                                
+                                # Limpieza segura de montos
+                                val_fact_raw = str(row.get("FACTURACION", "0"))
+                                fact_val = float(pd.to_numeric(val_fact_raw.replace("$", "").replace(",", ""), errors='coerce') or 0)
+                                
+                                val_flete_raw = str(row.get("COSTO DE LA GUIA", "0"))
+                                flete_val = float(pd.to_numeric(val_flete_raw.replace("$", "").replace(",", ""), errors='coerce') or 0)
+    
+                                # HTML limpio y responsivo en una sola línea por tarjeta
+                                card_html = f"""
+                                <div class="card-row">
+                                    <div>
+                                        <div class="label">PEDIDO / GUÍA</div>
+                                        <div class="v-main">{folio}</div>
+                                        <div style="font-size:10px; color:#FFFFFF; font-weight:500; margin-top:2px;">Guía: {num_guia}</div>
+                                    </div>
+                                    <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                        <div class="label">DESTINO</div>
+                                        <div class="v-txt">{destino}</div>
+                                        <div style="font-size:10px; color:#95A5A6;">{fecha}</div>
+                                    </div>
+                                    <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                        <div class="label">CAJAS</div>
+                                        <div class="v-txt">{cajas_limpias:,} Uds.</div>
+                                    </div>
+                                    <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                        <div class="label">FACTURACIÓN</div>
+                                        <div class="v-txt">${fact_val:,.2f}</div>
+                                    </div>
+                                    <div style="text-align: right; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                        <div class="label">COSTO DE LA GUIA</div>
+                                        <div style="color:#F39C12; font-size:14px; font-weight:900; margin-top:2px;">${flete_val:,.2f}</div>
+                                    </div>
+                                </div>
+                                """
+                                lista_tarjetas_html.append(card_html)
+    
+                            html_content = f"""
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <script src="https://cdn.tailwindcss.com"></script>
+                                <style>
+                                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                                    body {{ background: transparent; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }}
+                                    .scroller {{ height: 500px; overflow-y: auto; padding-right: 10px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }}
+                                    ::-webkit-scrollbar {{ width: 6px; }}
+                                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                                    .scroller:hover::-webkit-scrollbar-thumb, .scroller::-webkit-scrollbar-thumb:active {{ background: #2ecc71; }}
+                                    .card-row {{ background: #212C36; border-radius: 10px; margin-bottom: 10px; padding: 15px 20px; display: grid; grid-template-columns: 1.2fr 1.5fr 1fr 1.2fr 1.2fr; gap: 15px; align-items: center; border-left: 5px solid #2980B9; box-shadow: 0 4px 6px rgba(0,0,0,0.3); width: 100%; box-sizing: border-box; }}
+                                    .label {{ font-size: 8px; color: #95A5A6; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }}
+                                    .v-main {{ font-size: 13px; font-weight: 800; color: #5DADE2; }}
+                                    .v-txt {{ font-size: 12px; font-weight: 600; color: #ffffff; margin-top: 2px; }}
+                                    @media (max-width: 768px) {{
+                                        .card-row {{ grid-template-columns: 1fr; gap: 10px; }}
+                                    }}
+                                </style>
+                            </head>
+                            <body>
+                                <div class="scroller">
+                                    {"".join(lista_tarjetas_html)}
+                                </div>
+                            </body>
+                            </html>
+                            """
+                            components.html(html_content, height=540, scrolling=False)
+    
+                        # ---------------- TAB 2: FACTURACIÓN POR FLETERA ----------------
+                        with tab_paq:
+                            st.subheader("Distribución de Facturación por Fletera")
+                            st.markdown("<div class='analysis-box'>Desglose financiero por línea de transporte.</div>", unsafe_allow_html=True)
+    
+                        # ---------------- TAB 3: LEAD TIME ----------------
+                        with tab_lead:
+                            st.subheader("Tiempos de Entrega (Lead Time)")
+                            st.markdown("<div class='analysis-box'>Evaluación de fechas de envío vs entrega real.</div>", unsafe_allow_html=True)
+    
+                        # ---------------- TAB 4: COSTO POR CAJA ----------------
+                        with tab_caja:
+                            st.subheader("Costo Logístico por Caja")
+                            st.markdown("<div class='analysis-box'>Cálculo de eficiencia unitaria.</div>", unsafe_allow_html=True)
+    
+                        # ---------------- TAB 5: TOP 20 CLIENTES EN FACTURACIÓN ----------------
+                        with tab_top20:
+                            st.subheader("Top 20 Clientes en Facturación")
+                            st.markdown("<div class='analysis-box'>Principales socios comerciales de la matriz.</div>", unsafe_allow_html=True)
+    
+                    else:
+                        st.error("No se encontraron las columnas exactas 'NOMBRE DEL CLIENTE' o 'FLETERA' en el DataFrame.")
+    
+                except Exception as e:
+                    st.error(f"¡Atención! Detalle al cargar la matriz para el panel: {e}")
+
+            
+            
+            elif st.session_state.menu_sub == "ENVIOS ESPECIALES":
+                # [Aquí va tu código o función para el reporte OTD]
+                # --- VARIABLES DE GITHUB ---
+                GITHUB_USER = "RH2026"
+                GITHUB_REPO = "nexion"
+                GITHUB_PATH = "CEE.csv"
+                GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"] 
+                
+                # --- FUNCIONES GITHUB ---
+                def obtener_datos_github():
+                    try:
+                        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+                        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                        r = requests.get(url, headers=headers)
+                        if r.status_code == 200:
+                            content = r.json()
+                            df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+                            return df, content['sha']
+                    except:
+                        pass
+                    return pd.DataFrame(), None
+                
+                def subir_a_github(df, sha, msg):
+                    url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+                    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                    csv_string = df.to_csv(index=False)
+                    payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
+                    return requests.put(url, json=payload, headers=headers).status_code == 200
+                
+                
+                # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN (COSTOS ESPECIALES) ---
+                def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, cajas, unidad, comentarios, paq_nombre, tipo_pago):
+                    filas_prod = f"""
+                    <tr>
+                        <td style='padding: 8px; border: 1px solid black;'>ENVIO DE MERCANCÍA ESPECIAL</td>
+                        <td style='text-align:center; border: 1px solid black;'>-</td>
+                        <td style='text-align:center; border: 1px solid black;'>{str(unidad).upper()}</td>
+                        <td style='text-align:center; border: 1px solid black;'>{cajas}</td>
+                    </tr>"""
+                
+                    html = f"""
+                    <style>
+                        @media print {{
+                            @page {{ size: letter; margin: 1cm; }}
+                            body {{ margin: 0; padding: 0; }}
+                        }}
+                    </style>
+                    
+                    <div id="printable-area" style="font-family:Arial; width:100%; box-sizing:border-box; background: white; color: black; display: flex; flex-direction: column; min-height: 95vh;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                            <div style="text-align: left;">
+                                <h1 style="margin: 0; font-size: 16px; font-weight: 900; letter-spacing: -0.5px; color: #000;">Jabones y Productos Especializados</h1>
+                                <p style="margin: 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #444;">Distribución y Logística | 2026</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <h2 style="margin: 0; font-size: 15px; text-decoration: underline; font-weight: 900;">ORDEN DE EMBARQUE</h2>
+                                <p style="margin: 2px 0 0 0; font-size: 12px;"><b>{paq_nombre} - {tipo_pago}</b></p>
+                            </div>
+                        </div>
+                        
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:10px; font-size: 11px;">
+                            <tr>
+                                <td style="border:1px solid black; padding:4px;"><b>FOLIO:</b> {folio}</td>
+                                <td style="border:1px solid black; padding:4px;"><b>ENVÍO:</b> {str(paq).upper()}</td>
+                                <td style="border:1px solid black; padding:4px;"><b>ENTREGA:</b> {str(entrega).upper()}</td>
+                                <td style="border:1px solid black; padding:4px;"><b>FECHA:</b> {fecha}</td>
+                            </tr>
+                        </table>
+                    
+                        <div style="display:flex; gap:5px; margin-bottom:10px;">
+                            <div style="flex:1; border:1px solid black;">
+                                <div style="background:black; color:white; text-align:center; font-weight:bold; font-size:11px; padding:2px;">REMITENTE</div>
+                                <div style="padding:5px; font-size:10px; line-height:1.2;">
+                                    <b>JABONES Y PRODUCTOS ESPECIALIZADOS</b><br>
+                                    C. Cernícalo 155, La Aurora C.P.: 44460<br>
+                                    ATN: {str(atn_rem).upper()}<br>
+                                    TEL: {tel_rem}<br>
+                                    SOLICITÓ: {str(solicitante).upper()}
+                                </div>
+                            </div>
+                            <div style="flex:1; border:1px solid black;">
+                                <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:11px; padding:2px;">DESTINATARIO</div>
+                                <div style="padding:5px; font-size:10px; line-height:1.2;">
+                                    <b>{str(hotel).upper()}</b><br>
+                                    {str(calle).upper()}<br>
+                                    Col: {str(col).upper()} C.P.: {cp}<br>
+                                    {str(ciudad).upper()}, {str(estado).upper()}<br>
+                                    ATN: {str(contacto).upper()}
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <div style="flex-grow: 1;">
+                            <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:11px;">
+                                <tr style="background:#444; color:white;">
+                                    <th style="padding: 6px; border: 1px solid black;">DESCRIPCIÓN</th>
+                                    <th style="border: 1px solid black; width: 80px;">CÓDIGO</th>
+                                    <th style="border: 1px solid black; width: 60px;">U.M.</th>
+                                    <th style="border: 1px solid black; width: 60px;">CANT.</th>
+                                </tr>
+                                {filas_prod}
+                            </table>
+                            
+                            <div style="border:1px solid black; padding:8px; margin-top:10px; font-size:11px; min-height: 60px;">
+                                <b>COMENTARIOS:</b><br>{str(comentarios).upper()}
+                            </div>
+                        </div>
+                    
+                        <div style="margin-top: 30px; padding-bottom: 20px;">
+                            <div style="text-align:center; font-size:11px; font-weight:bold; margin-bottom:25px; border-bottom: 1px solid black; padding-bottom: 5px;">
+                                RECIBO DE CONFORMIDAD DEL CLIENTE
+                            </div>
+                            <div style="display:flex; justify-content:space-between; text-align:center; font-size:10px;">
+                                <div style="width:30%;">__________________________<br><b>FECHA RECIBO</b></div>
+                                <div style="width:35%;">__________________________<br><b>NOMBRE Y FIRMA</b></div>
+                                <div style="width:30%;">__________________________<br><b>SELLO DE RECIBIDO</b></div>
+                            </div>
+                        </div>
+                    </div>
+                    """
+                    return html
+                
+                # --- CARGA DE DATOS ---
+                df_actual, sha_actual = obtener_datos_github()
+                nuevo_folio = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1) if not df_actual.empty else 1
+                
+                # --- INTERFAZ ---
+                with st.container():
+                    cp1, cp2 = st.columns(2)
+                    f_paq_nombre = cp1.selectbox(":material/local_shipping: NOMBRE DE PAQUETERÍA", ["TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"])
+                    f_tipo_pago = cp2.selectbox(":material/payments: MODALIDAD DE PAGO", ["CREDITO", "COBRO DESTINO"])
+                    st.write("") 
+                    c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
+                    f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=str(nuevo_folio), disabled=True)
+                    f_paq_sel = c2.selectbox(":material/local_shipping: FORMA DE ENVÍO", ["Credito", "Envio por cobrar", "Entrega Personal"])
+                    f_ent_sel = c3.selectbox(":material/home_pin: TIPO DE ENTREGA", ["Domicilio", "Ocurre Oficina"])
+                    f_fecha_sel = c4.date_input(":material/calendar_today: FECHA", date.today())
+                
+                st.divider()
+                
+                col_rem, col_dest = st.columns(2)
+                with col_rem:
+                    st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">REMITENTE</div>', unsafe_allow_html=True)
+                    st.write("")
+                    st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
+                    c_rem1, c_rem2 = st.columns([2, 1])
+                    f_atn_rem = c_rem1.text_input(":material/person: Atención", "RIGOBERTO HERNANDEZ")
+                    f_tel_rem = c_rem2.text_input(":material/call: Teléfono", "3319753122")
+                    f_soli = st.text_input(":material/badge: Solicitante / Agente", placeholder="NOMBRE DE QUIEN SOLICITA").upper()
+                
+                with col_dest:
+                    st.markdown('<div style="background:#2276AA;color:white;text-align:center;font-weight:bold;padding:10px;border-radius:4px;letter-spacing:1px;">DESTINATARIO</div>', unsafe_allow_html=True)
+                    st.write("")
+                    f_h = st.text_input(":material/hotel: Hotel / Proveedor").upper()
+                    f_ca = st.text_input(":material/location_on: Calle y Número").upper()
+                    cd1, cd2 = st.columns(2)
+                    f_co = cd1.text_input(":material/map: Colonia").upper()
+                    f_cp = cd2.text_input(":material/mailbox: C.P.")
+                    cd3, cd4 = st.columns(2)
+                    f_ci = cd3.text_input(":material/location_city: Ciudad").upper()
+                    f_es = cd4.text_input(":material/public: Estado").upper()
+                    f_con = st.text_input(":material/contact_phone: Contacto Receptor", placeholder="QUIEN RECIBE").upper()
+                
+                st.divider()
+                st.subheader(":material/inventory_2: Detalles del Envío")
+                cd_1, cd_2 = st.columns(2)
+                f_cajas = cd_1.number_input("CANTIDAD", min_value=1, step=1)
+                f_unidad = cd_2.selectbox("UNIDAD DE MEDIDA", ["CAJA", "PALLET", "BULTO", "SACO", "BIDON", "ATADO", "OTRO"])
+                
+                f_costo_guia = st.number_input("COSTO DE GUÍA ($)", min_value=0.0, step=10.0)
+                f_coment = st.text_area("💬 COMENTARIOS", height=70).upper()
+                
+                col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
+                if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
+                    if not f_h: st.error("Falta el hotel")
+                    else:
+                        direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
+                        reg = {
+                            "FOLIO": nuevo_folio, "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
+                            "NOMBRE DEL HOTEL": f_h.upper(), "DESTINO": direccion_completa,
+                            "CONTACTO": f_con.upper(), "SOLICITO": f_soli.upper() if f_soli else "JYPESA", 
+                            "PAQUETERIA": f_paq_sel.upper(), "PAQUETERIA_NOMBRE": f_paq_nombre, 
+                            "NUMERO_GUIA": "", "COSTO_GUIA": f_costo_guia, "CAJAS": f_cajas, "UNIDAD": f_unidad
+                        }
+                        df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
+                        if subir_a_github(df_f, sha_actual, f"Folio CEE {nuevo_folio}"):
+                            st.success(f"¡Guardado!"); time.sleep(1); st.rerun()
+                
+                if col_b2.button(":material/print: IMPRIMIR ESTE FOLIO", use_container_width=True):
+                    h_print = generar_html_impresion(nuevo_folio, f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, f_soli if f_soli else "JYPESA", f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, f_cajas, f_unidad, f_coment, f_paq_nombre, f_tipo_pago)
+                    components.html(f"<html><body>{h_print}<script>window.print();</script></body></html>", height=0)
+                
+                if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
+                    st.rerun()
+                
+                # --- PANEL DE ADMIN ---
+                st.divider()
+                st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN")
+                t1, t2 = st.tabs(["Gestionar Folios", "Historial y Reportes"])
+                
+                with t1:
+                    if not df_actual.empty:
+                        df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
+                        opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
+                        fol_sel_texto = st.selectbox("Seleccionar Folio para Editar:", opciones_folios, index=None)
+                        fol_edit = ""; datos_fol = None
+                        if fol_sel_texto:
+                            fol_edit = int(fol_sel_texto.split(" - ")[0]); datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
+                
+                        c_adm1, c_adm2 = st.columns(2)
+                        with c_adm1:
+                            st.markdown(f'<div style="background:#5c7aff;color:white;padding:10px;border-radius:5px;">Actualizar Folio {fol_edit}</div>', unsafe_allow_html=True)
+                            st.write("")
+                            n_gui = st.text_input("Número de Guía", value=str(datos_fol["NUMERO_GUIA"]) if datos_fol is not None else "").upper()
+                            c_gui = st.number_input("Costo Guía", value=float(datos_fol["COSTO_GUIA"]) if datos_fol is not None else 0.0)
+                            if st.button(":material/update: ACTUALIZAR", use_container_width=True):
+                                if datos_fol is not None:
+                                    idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
+                                    df_actual.at[idx, "NUMERO_GUIA"] = n_gui; df_actual.at[idx, "COSTO_GUIA"] = c_gui
+                                    if subir_a_github(df_actual, sha_actual, f"Edit {fol_edit}"):
+                                        st.success("¡Listo!"); time.sleep(1); st.rerun()
+                
+                        with c_adm2:
+                            st.markdown('<div style="background:#f6c23e;color:black;padding:10px;border-radius:5px;">Re-impresión</div>', unsafe_allow_html=True)
+                            st.write("")
+                            if st.button(":material/print: RE-IMPRIMIR", use_container_width=True):
+                                if datos_fol is not None:
+                                    u_med = datos_fol["UNIDAD"] if "UNIDAD" in datos_fol else "CAJAS"
+                                    h_re = generar_html_impresion(fol_edit, datos_fol["PAQUETERIA"], "Domicilio", datos_fol["FECHA"], "RIGOBERTO HERNANDEZ", "3319753122", datos_fol["SOLICITO"], datos_fol["NOMBRE DEL HOTEL"], "-", "-", "-", datos_fol["DESTINO"], "", datos_fol["CONTACTO"], datos_fol["CAJAS"], u_med, "RE-IMPRESIÓN", datos_fol["PAQUETERIA_NOMBRE"], "S/P")
+                                    components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
+                
+                with t2:
+                    if not df_actual.empty:
+                        st.dataframe(df_actual, use_container_width=True)
+                        t_flete = df_actual["COSTO_GUIA"].sum()
+                        filas_html = ""
+                        for _, r in df_actual.iterrows():
+                            u_r = r['UNIDAD'] if 'UNIDAD' in r else 'CAJAS'
+                            filas_html += f"<tr><td style='border:1px solid black;padding:8px;'>{r['FOLIO']}</td><td style='border:1px solid black;padding:8px;'><b>{str(r['SOLICITO']).upper()}</b><br><small>{r['FECHA']}</small></td><td style='border:1px solid black;padding:8px;'>{str(r['NOMBRE DEL HOTEL']).upper()}<br><small>{str(r['DESTINO']).upper()}</small></td><td style='border:1px solid black;padding:8px;'>ENVIO ESPECIAL: {int(r['CAJAS'])} {u_r}</td><td style='border:1px solid black;padding:8px;text-align:right;'>${r['COSTO_GUIA']:,.2f}</td></tr>"
+                
+                        form_pt_html = f"""
+                        <html><head><style>body{{font-family:sans-serif;}} table{{width:100%;border-collapse:collapse;margin-top:15px;font-size:11px;}} th{{background:#eee;border:1px solid black;padding:8px;}}</style></head>
+                        <body>
+                            <div style="display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:10px;">
+                                <div><h2>JYPESA</h2><p style="margin:0;font-size:10px;">REPORTE DE COSTOS ESPECIALES</p></div>
+                                <div style="text-align:right;">GENERADO: {date.today()}</div>
+                            </div>
+                            <table><thead><tr><th>FOLIO</th><th>SOLICITANTE</th><th>DESTINO</th><th>DETALLE</th><th>FLETE</th></tr></thead>
+                            <tbody>{filas_html}</tbody></table>
+                            <div style="text-align:right;margin-top:20px;border-top:1px solid black;">
+                                <h3>TOTAL INVERSIÓN FLETES: ${t_flete:,.2f}</h3>
+                            </div>
+                        </body></html>"""
+                
+                        c1, c2, c3 = st.columns(3)
+                        with c1:
+                            if st.button(":material/print: IMPRIMIR REPORTE GENERAL", type="primary", use_container_width=True):
+                                components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
+                        with c2:
+                            output = BytesIO()
+                            with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df_actual.to_excel(writer, index=False)
+                            st.download_button(":material/download: DESCARGAR EXCEL", data=output.getvalue(), file_name=f"Matriz_CEE_{date.today()}.xlsx", use_container_width=True)
+                        with c3:
+                            if st.button(":material/update: REFRESCAR DATOS", use_container_width=True): st.rerun()  
+                
+                                
+                                
+
+            elif st.session_state.menu_sub == "ENVIO DE MUESTRAS":
+                        # --- 1. LLAVES DE ESTADO ---
+                        if "reset_key" not in st.session_state:
+                            st.session_state.reset_key = 0
+                        if "folio_guardado" not in st.session_state:
+                            st.session_state.folio_guardado = False
+            
+                        
+                        
+                        # --- VARIABLES DE GITHUB ---
+                        GITHUB_USER = "RH2026"
+                        GITHUB_REPO = "nexion"
+                        GITHUB_PATH = "muestras.csv"
+                        GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"] 
+                        
+                        # Diccionario de precios SINCRONIZADO
+                        precios = {
+                            "Envio Muestras Especiales": 0.0,
+                            "Kit Accesorios Ecologicos": 47.85,
+                            "kit Accesorios Lavarino": 47.85,
+                            "kit Dispensador Almond 250": 218.33,
+                            "kit Dispensador Biogena 250": 216.00,
+                            "kit Dispensador Cava 250": 230.58,
+                            "kit Dispensador Persea 250": 275.00,
+                            "kit Dispensador Botánicos 250": 274.17,
+                            "kit Dispensador Dove 250": 125.00,
+                            "kit Dispensador Rainforest 250": 216.00,
+                            "Kit Elements": 29.34,
+                            "Kit Almond": 33.83,
+                            "Kit Biogena": 48.95,
+                            "Kit Cava": 34.59,
+                            "Kit Persa": 58.02,
+                            "Kit Lavarino": 36.30,
+                            "Kit Botánicos": 29.34,
+                            "Kit Rainforest": 30.34,
+                            "JHJY-0050 Llave magnetica para soporte JH": 180.00,
+                            "JHJY-0033 Rack JH  Color Blanco de 2 pzas": 65.00,
+                            "JHJY-0034 Rack JH  Color Blanco de 1 pzas": 50.00,
+                            "JHJY-0045 Soporte de acero inoxidable Jypesa INOX Cap lock individual": 679.00,
+                            "JHJY-0046 Soporte de acero inoxidable Jypesa INOX Cap lock doble": 679.00,
+                            "JHJY-0047 Soporte de acero inoxidable Jypesa INOX Cap lock triple": 679.00,
+                            "JHJY-0037 Llave para rack de acero Jypesa": 25.50,
+                            "JHJY-0026 Rack JH Individual color Negro": 40.28,
+                            "JHJY-0027 Rack JH Doble color Negro": 40.28,
+                            "JHJY-0065 KIT Bracket+Key+3M Super Glue/Screw black ANTI-THEFT Emperor Semi circular 12 Piezas/Caja": 418.2,
+                            "JHJY-0064 KIT Bracket+Key+3M Super Glue/Screw black ANTI-THEFT Easy snap 12 Piezas/Caja": 418.2,
+                            "4029-A90 NOCEAN Cepillo Dental eco amigable nOcean caja con 144 piezas": 4.1,
+                            "4029-A91 NOCEAN Peine de bambu eco amigable nOcean caja con 200 piezas": 8.74,
+                            "4029-A92 NOCEAN Kit de afeitar eco amigable nOcean caja con 200 piezas": 16.60,
+                            "4029-A93 NOCEAN Kit de vanidad eco amigable nOcean caja con 500 piezas": 3.8,
+                            "4029-A95 NOCEAN Kit de costura eco amigable nOcean caja con 500 piezas": 2.4,
+                            "4029-A96 NOCEAN Limpia calzado eco amigable nOcean caja con 500 piezas": 4.4,
+                            "4029-A97 NOCEAN Toallita desmaquillante comprimida eco amigable nOcean caja con 300 piezas": 5.2,
+                            "4029-A98 NOCEAN Esponja de celulosa comprimida eco amigable nOcean caja con 500 piezas": 3.95,
+                            "4052-L17 CAVA Shampoo Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
+                            "4052-L18 CAVA Acondicionador Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
+                            "4052-L19 CAVA Gel de baño Cava Nocean 40 ml. Caja con 150 piezas": 5.99,
+                            "4052-L20 CAVA Crema Humectante Cava Nocean 40 ml. Caja con 150 piezas": 6.44,
+                            "4018-A23 Limpia calzado Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 3.23,
+                            "4018-A24 Gorra de baño Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 2.26,
+                            "4018-A25 KIT dental Lavarino Cosso. Cajilla Nva. Imagen Caja con 144 piezas": 11.60,
+                            "4018-A26 KIT de vanidad Lavarino Cosso. Cajilla Nva. Imagen Caja con 150 piezas": 2.95,
+                            "4018-A27 KIT de afeitar Lavarino Cosso. Cajilla Nva. Imagen Caja con 116 piezas": 7.230,
+                            "4018-A28 KIT de costura Lavarino Cosso. Cajilla Nva. Imagen Caja con 225 piezas": 1.90,
+                            "4018-A29 Peine Lavarino Cosso. Manga Nva. Imagen 400 Piezas": 2.44,
+                            "68829526 Rack Dove Dove Mlac Bracket Metalized Bottle 1 Pieza": 193.90
+            
+                            
+                
+                        }
+                        
+                        # --- FUNCION PARA ETIQUETA DE EMBARQUE---
+                        def limpiar_parentesis(texto):
+                            return re.sub(r'\(.*?\)', '', str(texto)).strip()
+                        
+                        def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado, max_lineas=3):
+                            texto = str(texto).upper()
+                            lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
+                            
+                            tamano_actual = tamano_max
+                            while len(lineas) > max_lineas and tamano_actual > 8:
+                                tamano_actual -= 0.5
+                                lineas = simpleSplit(texto, fuente, tamano_actual, ancho_max)
+                            
+                            c.setFont(fuente, tamano_actual)
+                            y_actual = y_inicio
+                            for line in lineas[:max_lineas]: 
+                                c.drawCentredString(x_centro, y_actual, line)
+                                y_actual -= interlineado
+                            return y_actual 
+                        
+                        def generar_etiquetas_limpias(reg_datos, total_etqs, factura_val, transporte_val):
+                            output = io.BytesIO()
+                            c = canvas.Canvas(output, pagesize=letter)
+                            width_carta, height_carta = letter
+                            
+                            # Medidas exactas de la etiqueta
+                            w_rec, h_rec = 10.5 * cm, 7.5 * cm
+                            x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
+                            
+                            nombre_crudo = reg_datos.get('NOMBRE DEL HOTEL', 'SIN NOMBRE')
+                            nombre_final = limpiar_parentesis(nombre_crudo)
+                            direccion_final = reg_datos.get('DESTINO', 'DIRECCIÓN NO DISPONIBLE')
+                            transporte_final = str(transporte_val if transporte_val else 'TRES GUERRAS')
+                        
+                            for i in range(total_etqs):
+                                # Dibujar contorno de etiqueta
+                                c.setDash(1, 2)
+                                c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                                c.rect(x_offset, y_offset, w_rec, h_rec)
+                                c.setDash([])
+                                c.setStrokeColorRGB(0, 0, 0)
+                        
+                                # CABECERA JYPESA
+                                c.setFont("Helvetica-Bold", 7)
+                                c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
+                                c.setFont("Helvetica", 6)
+                                info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
+                                dibujar_texto_bloque_pro(c, info_contacto, x_offset + (w_rec/2), y_offset + h_rec - 0.7*cm, 10*cm, "Helvetica", 6, 0.25*cm, max_lineas=1)
+                                
+                                c.setLineWidth(0.3)
+                                c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                                c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
+                                c.setStrokeColorRGB(0, 0, 0)
+                        
+                                # NOMBRE CLIENTE (GIGANTE)
+                                y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
+                        
+                                # DIRECCIÓN
+                                y_inicio_direccion = y_termino_nombre - 0.7*cm
+                                if y_inicio_direccion > y_offset + 4.3*cm: y_inicio_direccion = y_offset + 4.3*cm
+                                if y_inicio_direccion < y_offset + 2.9*cm: y_inicio_direccion = y_offset + 2.9*cm
+                                dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 14.5, 0.5*cm, max_lineas=3)
+                        
+                                # PIE DE ETIQUETA
+                                c.setLineWidth(0.6)
+                                y_linea_pie = y_offset + 1.4*cm
+                                c.line(x_offset + 0.2*cm, y_linea_pie, x_offset + w_rec - 0.2*cm, y_linea_pie)
+                                
+                                c.setFont("Helvetica-Bold", 8.5)
+                                c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.4*cm, "FACTURA")
+                                c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 0.4*cm, "CAJAS / BULTO")
+                                c.drawString(x_offset + 7.5*cm, y_linea_pie - 0.4*cm, "TRANSPORTE")
+                        
+                                c.setFont("Helvetica-Bold", 13)
+                                c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, str(factura_val))
+                        
+                                # Numeración limpia (ej. 1 / 3, 2 / 3...) sin rastro de Moreno
+                                c.setFont("Helvetica-Bold", 13)
+                                c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {total_etqs}")
+                        
+                                c.setFont("Helvetica-Bold", 10)
+                                c.drawString(x_offset + 7.5*cm, y_linea_pie - 1.0*cm, transporte_final[:18])
+                                c.showPage()
+                        
+                            c.save()
+                            return output.getvalue()
+                        
+                
+                        # --- FUNCIONES GITHUB ---
+                        def obtener_datos_github():
+                            try:
+                                url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+                                headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                                r = requests.get(url, headers=headers)
+                                if r.status_code == 200:
+                                    content = r.json()
+                                    df = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+                                    return df, content['sha']
+                            except:
+                                pass
+                            return pd.DataFrame(), None
+                        
+                        def subir_a_github(df, sha, msg):
+                            url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+                            headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                            csv_string = df.to_csv(index=False)
+                            payload = {"message": msg, "content": base64.b64encode(csv_string.encode()).decode(), "sha": sha}
+                            return requests.put(url, json=payload, headers=headers).status_code == 200                      
+                
+                        # --- FUNCIÓN PARA GENERAR EL HTML DE IMPRESIÓN ---
+                        def generar_html_impresion(folio, paq, entrega, fecha, atn_rem, tel_rem, solicitante, hotel, calle, col, cp, ciudad, estado, contacto, productos, comentarios, paq_nombre, tipo_pago, total_cajas=1):
+                            filas_prod = ""
+                            for p in productos:
+                                filas_prod += f"""
+                                <tr>
+                                    <td style='padding: 8px; border: 1px solid black;'>{str(p['desc']).upper()}</td>
+                                    <td style='text-align:center; border: 1px solid black;'>-</td>
+                                    <td style='text-align:center; border: 1px solid black;'>PZAS</td>
+                                    <td style='text-align:center; border: 1px solid black;'>{p['cant']}</td>
+                                </tr>"""
+                            
+                            html = f"""
+                            <style>
+                                @media print {{
+                                    @page {{ size: letter; margin: 1cm; }}
+                                    body {{ margin: 0; padding: 0; }}
+                                }}
+                            </style>
+                            
+                            <div id="printable-area" style="font-family:Arial; width:100%; box-sizing:border-box; background: white; color: black; display: flex; flex-direction: column; min-height: 95vh;">
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                                    <div style="text-align: left;">
+                                        <h1 style="margin: 0; font-size: 18px; font-weight: 900; color: #000;">Jabones y Productos Especializados</h1>
+                                        <p style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #444;">Distribución y Logística | 2026</p>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <h2 style="margin: 0; font-size: 16px; text-decoration: underline; font-weight: 900;">ORDEN DE EMBARQUE</h2>
+                                        <p style="margin: 5px 0 0 0; font-size: 13px;"><b>{paq_nombre} - {tipo_pago}</b></p>
+                                    </div>
+                                </div>
+                                
+                                <table style="width:100%; border-collapse:collapse; margin-bottom:15px; font-size: 12px;">
+                                    <tr>
+                                        <td style="border:1px solid black; padding:6px;"><b>FOLIO:</b> {folio}</td>
+                                        <td style="border:1px solid black; padding:6px;"><b>ENVÍO:</b> {str(paq).upper()}</td>
+                                        <td style="border:1px solid black; padding:6px;"><b>ENTREGA:</b> {str(entrega).upper()}</td>
+                                        <td style="border:1px solid black; padding:6px;"><b>TOTAL CAJAS:</b> <span style="font-size: 13px; font-weight: 900; color: #000;">{total_cajas} </span></td>
+                                        <td style="border:1px solid black; padding:6px;"><b>FECHA:</b> {fecha}</td>
+                                    </tr>
+                                </table>
+                            
+                                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                                    <div style="flex:1; border:1px solid black;">
+                                        <div style="background:withe; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">REMITENTE</div>
+                                        <div style="padding:8px; font-size:11px; line-height:1.4;">
+                                            <b>JABONES Y PRODUCTOS ESPECIALIZADOS</b><br>
+                                            C. Cernícalo 155, La Aurora C.P.: 44460<br>
+                                            ATN: {str(atn_rem).upper()}<br>
+                                            TEL: {tel_rem}<br>
+                                            SOLICITÓ: {str(solicitante).upper()}
+                                        </div>
+                                    </div>
+                                    <div style="flex:1; border:1px solid black;">
+                                        <div style="background:#ffffff; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
+                                        <div style="padding:8px; font-size:11px; line-height:1.4;">
+                                            <b>{str(hotel).upper()}</b><br>
+                                            {f"{str(calle).upper()}<br>" if calle and calle != "-" else ""}
+                                            {f"Col: {str(col).upper()} " if col and col != "-" else ""}
+                                            {f"C.P.: {cp}" if cp and cp != "-" else ""}
+                                            {"<br>" if (col and col != "-") or (cp and cp != "-") else ""}
+                                            {str(ciudad).upper()}{f", {str(estado).upper()}" if estado and estado != "-" else ""}<br>
+                                            ATN: {str(contacto).upper()}
+                                        </div>
+                                    </div>
+                                </div>
+                            
+                                <div style="flex-grow: 1;">
+                                    <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:12px;">
+                                        <tr style="background:#ffffff; color:black;">
+                                            <th style="padding: 8px; border: 1px solid black;">DESCRIPCIÓN DEL PRODUCTO</th>
+                                            <th style="border: 1px solid black; width: 100px;">CÓDIGO</th>
+                                            <th style="border: 1px solid black; width: 80px;">U.M.</th>
+                                            <th style="border: 1px solid black; width: 80px;">CANT.</th>
+                                        </tr>
+                                        {filas_prod}
+                                    </table>
+                                    
+                                    <div style="border:1px solid black; padding:10px; margin-top:15px; font-size:12px; min-height: 80px;">
+                                        <b>COMENTARIOS:</b><br>{str(comentarios).upper()}
+                                    </div>
+                                </div>
+                            
+                                <div style="margin-top: 40px; padding-bottom: 20px;">
+                                    <div style="text-align:center; font-size:12px; font-weight:bold; margin-bottom:40px; border-bottom: 2px solid black; padding-bottom: 8px;">
+                                        RECIBO DE CONFORMIDAD DEL CLIENTE
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; text-align:center; font-size:11px;">
+                                        <div style="width:30%;">__________________________<br><b>FECHA RECIBO</b></div>
+                                        <div style="width:35%;">__________________________<br><b>NOMBRE Y FIRMA</b></div>
+                                        <div style="width:30%;">__________________________<br><b>SELLO DE RECIBIDO</b></div>
+                                    </div>
+                                </div>
+                            </div>
+                            """
+                            return html
+                        
+                        # --- CARGA DE DATOS ---
+                        df_actual, sha_actual = obtener_datos_github()
+                        
+                        if not df_actual.empty:
+                            # 1. Primero arreglamos las columnas si faltan
+                            for col in ["PAQUETERIA_NOMBRE", "NUMERO_GUIA", "COSTO_GUIA", "CANTIDAD_TOTAL", "COSTO_TOTAL", "ESTATUS"]:
+                                if col not in df_actual.columns: 
+                                    if col == "ESTATUS":
+                                        df_actual[col] = "NO SURTIDO"
+                                    else:
+                                        df_actual[col] = 0.0
+                            
+                            # 2. LUEGO calculamos el número (Alineado aquí adentro)
+                            nuevo_num = int(pd.to_numeric(df_actual["FOLIO"]).max() + 1)
+                        else:
+                            # 3. Si el archivo está vacío, empezamos en 1
+                            nuevo_num = 1
+                        
+                        # --- INTERFAZ ---
+                        
+                        
+                        # --- CAPTURA NUEVA ---
+                        st.write("")
+                        with st.container():
+                            # Definimos valores por defecto (ya no se muestran a Ventas)
+                            f_paq_nombre = ""
+                            f_tipo_pago = ""
+                            
+                            # Ahora empezamos directamente con los datos que sí llena Ventas
+                            c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1])
+                            
+                            f_folio = c1.text_input(":material/confirmation_number: FOLIO", value=f"JYP-{nuevo_num}", disabled=True)
+                            f_paq_sel = c2.selectbox(
+                                ":material/local_shipping: FORMA DE ENVÍO", 
+                                ["Envio Pagado", "Envio por cobrar", "Entrega Personal"]
+                            )
+                            f_ent_sel = c3.selectbox(
+                                ":material/home_pin: TIPO DE ENTREGA", 
+                                ["Domicilio", "Ocurre Oficina"]
+                            )
+                            f_fecha_sel = c4.date_input(":material/calendar_today: FECHA", date.today())
+                        
+                        st.divider()
+                        
+                        col_rem, col_dest = st.columns(2)
+                        with col_rem:
+                            st.markdown(
+                                '<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">REMITENTE</div>', 
+                                unsafe_allow_html=True
+                            )
+                            st.write("")
+                            st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
+                            
+                            c_rem1, c_rem2 = st.columns([2, 1])
+                            f_atn_rem = c_rem1.text_input(":material/person: Atención", "RIGOBERTO HERNANDEZ")
+                            f_tel_rem = c_rem2.text_input(":material/call: Teléfono", "3319753122")
+                            f_soli = st.text_input(
+                                ":material/badge: Solicitante / Agente", 
+                                placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS",
+                                key=f"soli_{st.session_state.reset_key}" # <--- Agregamos esta línea
+                            ).upper()
+                        
+                        with col_dest:
+                            st.markdown(
+                                '<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO / HOTEL</div>', 
+                                unsafe_allow_html=True
+                            )
+                            st.write("")
+                            # Agregamos la key dinámica a cada uno:
+                            f_h = st.text_input(":material/hotel: Hotel / Nombre", key=f"h_{st.session_state.reset_key}").upper()
+                            f_ca = st.text_input(":material/location_on: Calle y Número", key=f"ca_{st.session_state.reset_key}").upper()
+                            
+                            cd1, cd2 = st.columns(2)
+                            f_co = cd1.text_input(":material/map: Colonia", key=f"co_{st.session_state.reset_key}").upper()
+                            f_cp = cd2.text_input(":material/mailbox: C.P.", key=f"cp_{st.session_state.reset_key}")
+                            
+                            cd3, cd4 = st.columns(2)
+                            f_ci = cd3.text_input(":material/location_city: Ciudad", key=f"ci_{st.session_state.reset_key}").upper()
+                            f_es = cd4.text_input(":material/public: Estado", key=f"es_{st.session_state.reset_key}").upper()
+                            
+                            f_con = st.text_input(
+                                ":material/contact_phone: Contacto Receptor", 
+                                placeholder="NOMBRE Y TELÉFONO DE QUIEN RECIBE",
+                                key=f"con_{st.session_state.reset_key}" # <--- La clave del éxito
+                            ).upper()
+                        
+                        st.divider()
+                        
+                        # --- PRODUCTOS ---                
+                        # 1. CSS PARA QUE EL MULTISELECT CREZCA Y SE VEA PRO
+                        st.markdown("""
+                            <style>
+                            .stMultiSelect div[data-baseweb="select"] {
+                                height: auto !important;
+                                min-height: 45px !important;
+                            }
+                            .stMultiSelect div[data-baseweb="valueContainer"] {
+                                flex-wrap: wrap !important;
+                                display: flex !important;
+                                gap: 5px !important;
+                                padding: 5px 0 !important;
+                            }
+                            .stMultiSelect div[data-baseweb="tag"] {
+                                background-color: #384A52 !important;
+                                border-radius: 5px;
+                                color: white !important;
+                            }
+                            div[data-testid="stNumberInput"] {
+                                width: 100% !important;
+                            }
+                            </style>
+                        """, unsafe_allow_html=True)
+                        
+                        st.subheader(":material/shopping_cart: SELECCION DE PRODUCTOS")
+                        
+                        if "seleccionados_muestras" not in st.session_state:
+                            st.session_state.seleccionados_muestras = []
+                        
+                        def eliminar_producto(prod_a_borrar):
+                            st.session_state.seleccionados_muestras = [p for p in st.session_state.seleccionados_muestras if p != prod_a_borrar]
+                            st.session_state.multi_prods_main = st.session_state.seleccionados_muestras
+                        
+                        seleccionados = st.multiselect(
+                            ":material/search: Busca y selecciona productos:", 
+                            list(precios.keys()),
+                            key=f"prod_select_{st.session_state.reset_key}", # <--- Esto es lo que hace la magia
+                            default=st.session_state.get('seleccionados_muestras', []),
+                            placeholder="SELECCIONAR PRODUCTOS"
+                        )
+                        
+                        st.session_state.seleccionados_muestras = seleccionados
+                        
+                        prods_actuales = []
+                        total_cantidad = 0
+                        total_costo_prods = 0
+                        
+                        if seleccionados:
+                            st.info(f"Has seleccionado {len(seleccionados)} productos. Indica las cantidades abajo:")
+                            
+                            # --- CÁLCULO DINÁMICO DE LA ALTURA ---
+                            # Calculamos cuántas filas hay (3 productos por fila)
+                            num_filas = (len(seleccionados) + 2) // 3  
+                            # Altura base por fila (aprox 90px) + un pequeño margen
+                            # Ponemos un máximo de 500px para que no se coma toda la pantalla si son muchísimos
+                            altura_dinamica = min(max(num_filas * 95, 120), 500) 
+                            
+                            with st.container(height=altura_dinamica, border=True):
+                                col_bloque_1, col_bloque_2, col_bloque_3 = st.columns(3)
+                                
+                                for i, p in enumerate(seleccionados):
+                                    if i % 3 == 0:
+                                        target_col = col_bloque_1
+                                    elif i % 3 == 1:
+                                        target_col = col_bloque_2
+                                    else:
+                                        target_col = col_bloque_3
+                                    
+                                    with target_col:
+                                        c1, c2, c3 = st.columns([1.5, 1.8, 0.5])
+                                        
+                                        with c1:
+                                            st.markdown(f"<div style='padding-top:10px; font-size:10px; line-height:1.1;'><b>{p.upper()}</b></div>", unsafe_allow_html=True)
+                                        
+                                        with c2:
+                                            q = st.number_input("Cant", min_value=0, step=1, key=f"q_{p}", label_visibility="collapsed")
+                                        
+                                        with c3:
+                                            st.button(":material/delete:", key=f"btn_del_{p}", type="tertiary", on_click=eliminar_producto, args=(p,))
+                        
+                                        if q > 0:
+                                            prods_actuales.append({"desc": p, "cant": q})
+                                            total_cantidad += q
+                                            total_costo_prods += (q * (precios.get(p, 0)))
+                                        
+                                        st.markdown("<hr style='margin: 5px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+                        
+                        st.markdown("---")
+                        f_coment = st.text_area(
+                            "💬 COMENTARIOS ADICIONALES", 
+                            height=100, 
+                            placeholder="SI EL PRODUCTO NO ESTA EN LA LISTA SELECCIONABLE, INGRESALOS AQUI O CUALQUIER COMENTARIO ADICIONAL"
+                        ).upper()
+                        
+                        st.write("")
+                        st.write("")
+                        
+                        # --- BOTONES PRINCIPALES ---
+                        col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5]) 
+            
+                        # --- BOTÓN GUARDAR ---
+                        if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
+                            if not f_h: 
+                                st.error("Falta el hotel")
+                            elif not f_soli:
+                                st.error("Falta el nombre de quien solicita (Solicitante / Agente)")
+                            elif not f_con: # <--- AQUÍ ESTÁ EL BLOQUEO NUEVO, AMOR
+                                st.error("Falta el nombre y teléfono de quien recibe")
+                            elif not prods_actuales: 
+                                st.error("Selecciona al menos un producto")
+                            else:
+                                direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
+                                
+                                reg = {
+                                    "FOLIO": nuevo_num, 
+                                    "ESTATUS": "NO SURTIDO", # <--- LÍNEA NUEVA AGREGADA AQUÍ
+                                    "FECHA": f_fecha_sel.strftime("%Y-%m-%d"), 
+                                    "NOMBRE DEL HOTEL": f_h.upper(), 
+                                    "DESTINO": direccion_completa,
+                                    "CONTACTO": f_con.upper(), 
+                                    "SOLICITO": f_soli.upper(),
+                                    "PAQUETERIA": f_paq_sel.upper(),
+                                    "PAQUETERIA_NOMBRE": f_paq_nombre,
+                                    "NUMERO_GUIA": "", 
+                                    "COSTO_GUIA": 0.0,
+                                    "CANTIDAD_TOTAL": total_cantidad,
+                                    "COSTO_TOTAL": round(total_costo_prods, 2),
+                                    "COMENTARIOS": f_coment
+                                }
+                                
+                                for p in precios.keys():
+                                    reg[p] = 0
+                                for item in prods_actuales:
+                                    reg[item["desc"]] = item["cant"]
+                                
+                                df_f = pd.concat([df_actual, pd.DataFrame([reg])], ignore_index=True)
+                                
+                                if subir_a_github(df_f, sha_actual, f"Folio JYP-{nuevo_num}"):
+                                    # MEMORIA: Guardamos el folio que acabamos de usar antes de que cambie
+                                    st.session_state.folio_actual = nuevo_num
+                                    st.session_state.folio_guardado = True 
+                                    
+                                    st.success(f"¡Guardado correctamente! Folio: JYP-{nuevo_num}")
+                                    time.sleep(1)
+                                    st.rerun()
+            
+                        # --- MENSAJE DE ADVERTENCIA ---
+                        if not st.session_state.folio_guardado:
+                            st.markdown("""
+                                <div style="background-color: rgba(255, 165, 0, 0.1); border-left: 5px solid #FFA500; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
+                                    <span style="color: white; font-size: 14px;">
+                                        <b style="color: #FFA500;">BLOQUEO DE SEGURIDAD:</b> 
+                                        Debes guardar el registro antes de poder imprimir.
+                                    </span>
+                                </div>
+                            """, unsafe_allow_html=True)
+            
+                        # --- BOTÓN GUARDAR PDF (REPARADO CON MEMORIA) ---
+                        if col_b2.button(":material/picture_as_pdf: GUARDAR PDF", use_container_width=True, disabled=not st.session_state.folio_guardado):
+                            
+                            # LOGICA DE ORO: Si ya guardamos, usamos el folio en memoria. 
+                            # Si por algo no está (rerun), usamos nuevo_num - 1.
+                            folio_final = st.session_state.get("folio_actual", nuevo_num - 1)
+                            folio_simple = f"JYP-{folio_final}" 
+                            
+                            h_print = generar_html_impresion(
+                                folio_simple, 
+                                f_paq_sel, f_ent_sel, f_fecha_sel, f_atn_rem, f_tel_rem, 
+                                f_soli, f_h, f_ca, f_co, f_cp, f_ci, f_es, f_con, 
+                                prods_actuales, f_coment, f_paq_nombre, f_tipo_pago
+                            )
+                            
+                            js_code = f"""
+                                <html>
+                                    <head><title>{folio_simple}_{f_h}</title></head>
+                                    <body>
+                                        {h_print}
+                                        <script>setTimeout(function(){{ window.print(); }}, 500);</script>
+                                    </body>
+                                </html>
+                            """
+                            components.html(js_code, height=0)
+            
+                        # --- BOTÓN BORRAR ---
+                        if col_b3.button(":material/delete_sweep: BORRAR", use_container_width=True):
+                            st.session_state.folio_guardado = False
+                            # Limpiamos el folio de la memoria para el siguiente registro
+                            if "folio_actual" in st.session_state:
+                                del st.session_state.folio_actual
+                            st.session_state.seleccionados_muestras = []
+                            st.session_state.reset_key += 1
+                            st.rerun()
+                        # --- BÚSQUEDA RÁPIDA ---                
+                        # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO) ---
+                        # --- BÚSQUEDA RÁPIDA DE GUÍAS (DISEÑO MAXIMIZADO CON PRODUCTOS) ---
+                        st.write("")
+                        st.write("")
+                        st.write("")                                
+                        
+                        with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS", expanded=True):
+                            if not df_actual.empty:
+                                busqueda = st.text_input("Escribe el nombre del Hotel, Solicitante o Folio para filtrar:").upper()
+                                
+                                # Aseguramos la existencia de las columnas necesarias
+                                df_vista = df_actual.copy()
+                                df_vista = df_vista.fillna('') 
+                                
+                                if busqueda:
+                                    df_vista = df_vista[df_vista.astype(str).apply(lambda x: x.str.contains(busqueda, case=False)).any(axis=1)]
+                                
+                                df_render = df_vista.sort_values(by="FOLIO", ascending=False)
+                                data_busqueda = df_render.to_dict('records')
+                                
+                                # Calculamos altura dinámica (un poco más alto para que quepan bien los productos)
+                                alto_busqueda = min(len(data_busqueda) * 130 + 20, 550) 
+                                
+                                # Generamos las tarjetas con el desglose de productos incluidos
+                                tarjetas_busqueda_html = ""
+                                for item in data_busqueda:
+                                    detalle_p_busqueda = ""
+                                    for p_key in precios.keys():
+                                        # Aseguramos que la cantidad sea numérica y evitamos errores con vacíos
+                                        cant_p = pd.to_numeric(item.get(p_key, 0), errors='coerce')
+                                        if pd.notna(cant_p) and cant_p > 0:
+                                            detalle_p_busqueda += f"• {int(cant_p)} PZAS {str(p_key).upper()}<br>"
+                                    
+                                    estatus_val = str(item.get('ESTATUS', 'NO SURTIDO')).upper()
+                                    if estatus_val == 'DESPACHADO':
+                                        badge_status = "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px;'>✓ DESPACHADO</div>"
+                                    else:
+                                        badge_status = "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>"
+                                    
+                                    paq_text = item.get('PAQUETERÍA', '') or item.get('PAQUETERIA_NOMBRE', '')
+                                    guia_text = item.get('NÚMERO DE GUÍA', '') or item.get('NUMERO_GUIA', '')
+                                    
+                                    tarjetas_busqueda_html += f"""
+                                    <div class="card-busqueda" style="padding: 15px; margin-bottom: 10px; background: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="flex: 1.1;">
+                                            <div class="label-mini">Folio / Fecha</div>
+                                            <div class="val-folio">#{str(item['FOLIO'])}</div>
+                                            <div style="color: rgba(255,255,255,0.5); font-size: 10px; margin-bottom: 5px;">{str(item['FECHA'])[:10]}</div>
+                                            {badge_status}
+                                        </div>
+                                        <div style="flex: 2.0; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                            <div class="label-mini">Hotel / Destino</div>
+                                            <div class="val-hotel">{str(item.get('NOMBRE DEL HOTEL', ''))[:30]}</div>
+                                            <div class="val-soli">SOLICITÓ: {str(item.get('SOLICITO', ''))[:30]}</div>
+                                        </div>
+                                        <div style="flex: 2.5; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                            <div class="label-mini">Productos Solicitados</div>
+                                            <div style="color: #FFFFFF; font-size: 9px; line-height: 1.4; opacity: 0.9;">{detalle_p_busqueda if detalle_p_busqueda else '<i>Sin detalle</i>'}</div>
+                                        </div>
+                                        <div style="flex: 1.6; text-align: right; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 10px;">
+                                            <div class="val-guia {'pendiente' if not paq_text else ''}">
+                                                { paq_text if paq_text else 'PAQUETERÍA PENDIENTE' }
+                                            </div>
+                                            <div class="val-sub-guia {'pendiente' if not guia_text else ''}">
+                                                { guia_text if guia_text else 'GUÍA PENDIENTE' }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    """
+                
+                                html_busqueda = f"""
+                                <div style="font-family: 'Inter', sans-serif; padding-right: 10px; height: {alto_busqueda}px; overflow-y: auto;">
+                                    <style>
+                                        body {{ background: transparent; margin: 0; padding: 0; }}
+                                        ::-webkit-scrollbar {{ width: 8px; }}
+                                        ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                        ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; min-height: 50px; }}
+                                        ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                                        
+                                        .card-busqueda {{
+                                            transition: all 0.3s ease;
+                                        }}
+                                        .card-busqueda:hover {{ border-color: #38bdf8; background: #2d3b42; transform: translateX(5px); }}
+                                        .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
+                                        .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
+                                        .val-hotel {{ color: #FFFFFF; font-size: 13px; font-weight: 700; margin-top: 2px; }}
+                                        .val-soli {{ color: #FFD700; font-size: 10px; font-weight: 600; margin-top: 2px; opacity: 0.8; }}
+                                        .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 14px; font-weight: 800; line-height: 1.2; }}
+                                        .val-sub-guia {{ color: #FFFFFF; font-family: monospace; font-size: 12px; font-weight: 700; margin-top: 4px; }}
+                                        .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 10px; font-weight: 400; }}
+                                    </style>
+                                    {tarjetas_busqueda_html}
+                                </div>
+                                """
+                                import streamlit.components.v1 as components
+                                components.html(html_busqueda, height=alto_busqueda, scrolling=False)
+                            else:
+                                st.info("No hay registros todavía.")
+
+                                
+                        # --- PANEL DE ADMIN ---
+                        # --- PANEL DE ADMINISTRACIÓN (CORRECCIÓN DE NAMEERROR) ---
+                        st.divider()
+                        st.write("")
+                        
+                        # 1. Definimos la lista de quiénes mandan aquí
+                        lista_admins = ["Rigoberto", "JMoreno"]
+                        
+                        # 2. DEFINIMOS LA VARIABLE (Esto es lo que te faltaba, amor)
+                        # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
+                        # Usamos .get() para que si no hay nadie, no truene y ponga 'Invitado'
+                        usuario_logeado = st.session_state.get('usuario_activo', 'Invitado')
+                        
+                        if usuario_logeado in lista_admins:
+                            st.markdown("### 🛠 PANEL DE ADMINISTRACIÓN, PARA USO EXCLUSIVO DE LOGÍSTICA")
+                            t1, t2, t3 = st.tabs(["Gestionar Folios Existentes", "Historial y Reportes", "Edicion"])
+                            
+                            with t1:
+                                # 1. Pon esto justo DEBAJO de donde creas los tabs (t1, t2)
+                                contenedor_aviso = st.empty()
+                                if not df_actual.empty:
+                                    # --- CSS CORREGIDO: BOTONES OSCUROS CON HOVER CIAN ---
+                                    st.markdown("""
+                                    <style>
+                                    /* Botón en estado normal (oscuro) */
+                                    div[data-testid="stButton"] button {
+                                        background-color: #263238 !important; 
+                                        color: #FFFFFF !important;
+                                        border: 1px solid #44555A !important;
+                                        transition: all 0.3s ease-in-out !important;
+                                    }
+                                    /* Botón en hover (cian neón) */
+                                    div[data-testid="stButton"] button:hover {
+                                        background-color: #00A3A3 !important;
+                                        color: #FFFFFF !important;
+                                        border-color: #00A3A3 !important;
+                                        box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
+                                    }
+                                    </style>
+                                    """, unsafe_allow_html=True)
+                                    
+                                    df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
+                                    opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
+                                    
+                                    # 1. El selector siempre arriba
+                                    fol_sel_texto = st.selectbox(
+                                        "Seleccionar Folio para procesar (Logística):", 
+                                        opciones_folios, 
+                                        index=None, 
+                                        placeholder="Busca el folio que envió Ventas..."
+                                    )
+                                    
+                                    # Inicializamos variables vacías por si no hay selección
+                                    datos_fol = None
+                                    fol_edit = None
+                        
+                                    if fol_sel_texto:
+                                        fol_edit = int(fol_sel_texto.split(" - ")[0])
+                                        datos_fol = df_actual[df_actual["FOLIO"] == fol_edit].iloc[0]
+        
+                                        # ---> AQUI ENTRA LA MAGIA VISUAL (RENDER DEL FOLIO SELECCIONADO) --->
+                                        detalle_p_admin = ""
+                                        for p in precios.keys():
+                                            cant_admin = datos_fol.get(p, 0)
+                                            if cant_admin > 0:
+                                                detalle_p_admin += f"• {int(cant_admin)} PZAS {str(p).upper()}<br>"
+                                        
+                                        estatus_admin = str(datos_fol.get('ESTATUS', 'NO SURTIDO')).upper()
+                                        if estatus_admin == "DESPACHADO":
+                                            badge_admin = "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:1px; margin-top:8px;'>✓ DESPACHADO</div>"
+                                            borde_color = "#00FFAA"
+                                        else:
+                                            badge_admin = "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:1px; margin-top:8px; box-shadow: 0 0 10px rgba(255,68,68,0.3);'>⚠️ NO SURTIDO</div>"
+                                            borde_color = "#FF4444"
+        
+                                        st.markdown(f"""
+                                        <div style="background: #263238; border: 1px solid rgba(255,255,255,0.05); border-left: 6px solid {borde_color}; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; margin-top: 15px; margin-bottom: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                                            <div style="flex: 1.2;">
+                                                <div style="font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; margin-bottom:4px;">FOLIO A PROCESAR</div>
+                                                <div style="color: {borde_color}; font-family: monospace; font-size: 22px; font-weight: 900; line-height:1;">#{datos_fol['FOLIO']}</div>
+                                                <div style="color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 4px;">{datos_fol['FECHA']}</div>
+                                                {badge_admin}
+                                            </div>
+                                            <div style="flex: 2.5; padding: 0 20px; border-left: 1px solid rgba(255,255,255,0.08);">
+                                                <div style="font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; margin-bottom:4px;">DESTINO / HOTEL</div>
+                                                <div style="color: #FFFFFF; font-size: 14px; font-weight: 800; margin-bottom: 2px;">{str(datos_fol.get('NOMBRE DEL HOTEL','')).upper()}</div>
+                                                <div style="color: #38bdf8; font-size: 11px; font-weight: 700; margin-bottom: 4px;">Atn: {str(datos_fol.get('CONTACTO','')).upper()}</div>
+                                                <div style="color: rgba(255,255,255,0.5); font-size: 10px; line-height:1.4;">{str(datos_fol.get('DESTINO','')).upper()}</div>
+                                            </div>
+                                            <div style="flex: 2.5; padding: 0 20px; border-left: 1px solid rgba(255,255,255,0.08);">
+                                                <div style="font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; margin-bottom:6px;">PRODUCTOS SOLICITADOS</div>
+                                                <div style="color: #FFFFFF; font-size: 10px; line-height: 1.6; opacity: 0.9;">{detalle_p_admin if detalle_p_admin else '<i>Sin detalle de productos</i>'}</div>
+                                            </div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                        # <--- FIN DE LA MAGIA VISUAL --->
+    
+                                    # --- SECCIONES SIEMPRE VISIBLES ---
+                                    # --- SECCIONES SIEMPRE VISIBLES ---
+                                    st.divider() # Una línea para separar
+                                    c_adm1, c_adm2 = st.columns(2)
+                                    
+                                    with c_adm1:
+                                        st.subheader("1. ASIGNAR DATOS DE ENVIO")
+                                        n_paq_nombre = st.selectbox("Nombre de Paquetería", 
+                                            ["AEREO", "NO APLICA","TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
+                                            index=None, placeholder="Selecciona paquetería...")
+                                        
+                                        n_tipo_pago = st.selectbox("Modalidad de Pago", 
+                                            ["NO APLICA","CREDITO", "COBRO DESTINO"],
+                                            index=None, placeholder="¿Cómo se paga?")
+                                        
+                                        n_gui = st.text_input("Número de Guía").upper()
+                                        n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
+                                        
+                                        # Campo para definir la cantidad final de cajas/bultos totales del envío
+                                        val_def_cajas = int(datos_fol.get('CANTIDAD_TOTAL', 1)) if datos_fol is not None else 1
+                                        n_total_cajas = st.number_input("Cantidad Final de Cajas / Bultos", min_value=1, max_value=100, value=max(val_def_cajas, 1), step=1)
+                                        
+                                        # El botón solo se activa si hay un folio seleccionado
+                                        btn_guardar = st.button(":material/update: GUARDAR Y ACTUALIZAR FOLIO", 
+                                                                use_container_width=True, 
+                                                                disabled=not fol_sel_texto)
+                                        
+                                        if btn_guardar and datos_fol is not None:
+                                            # 1. Actualizamos datos
+                                            idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
+                                            df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq_nombre
+                                            df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
+                                            df_actual.at[idx, "NUMERO_GUIA"] = n_gui
+                                            df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
+                                            df_actual.at[idx, "CANTIDAD_TOTAL"] = n_total_cajas # Guardamos las cajas totales aquí
+                                            df_actual.at[idx, "ESTATUS"] = "DESPACHADO" 
+                                            
+                                            # 2. Subimos a GitHub
+                                            if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
+                                                st.success(f"FOLIO JYP-{fol_edit} GUARDADO")
+                                                import time
+                                                time.sleep(1.5)
+                                                st.rerun()
+                                    
+                                    with c_adm2:
+                                        st.subheader("2. IMPRESION FINAL")
+                                        st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
+                                        
+                                        # El botón de imprimir también se deshabilita si no hay selección
+                                        btn_imprimir = st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", 
+                                                                use_container_width=True, 
+                                                                disabled=not fol_sel_texto)
+                                        
+                                        if btn_imprimir and datos_fol is not None:
+                                            prods_re = []
+                                            for p in precios.keys():
+                                                if p in datos_fol and datos_fol[p] > 0: 
+                                                    prods_re.append({"desc": p, "cant": int(datos_fol[p])})
+                                            
+                                            paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
+                                            pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
+                                    
+                                            # Pasamos n_total_cajas a la función de impresión HTML
+                                            h_re = generar_html_impresion(
+                                                f"JYP-{int(datos_fol['FOLIO'])}", 
+                                                datos_fol.get("PAQUETERIA", "ENVIO"), 
+                                                datos_fol.get("TIPO_ENTREGA", "DOMICILIO"), 
+                                                datos_fol["FECHA"], 
+                                                "RIGOBERTO HERNANDEZ", 
+                                                "3319753122", 
+                                                datos_fol["SOLICITO"], 
+                                                datos_fol["NOMBRE DEL HOTEL"], 
+                                                "", "", "", 
+                                                datos_fol["DESTINO"], 
+                                                "", 
+                                                datos_fol["CONTACTO"], 
+                                                prods_re, 
+                                                datos_fol.get("COMENTARIOS", "RE-IMPRESIÓN DE LOGÍSTICA"), 
+                                                paq_a_imprimir, 
+                                                pago_a_imprimir,
+                                                total_cajas=n_total_cajas  # <--- Enviando el parámetro de cajas a la impresión
+                                            )
+                                            components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
+                                        
+                                        st.write("")
+                                        
+                                        # --- SELECTOR Y BOTÓN DE ETIQUETAS PDF ---
+                                        if fol_sel_texto and datos_fol is not None:
+                                            cant_etiquetas_sel = n_total_cajas 
+                                            
+                                            transporte_etq = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", datos_fol.get("PAQUETERIA", "TRES GUERRAS"))
+                                            
+                                            pdf_etq_bytes = generar_etiquetas_limpias(
+                                                reg_datos=datos_fol,
+                                                total_etqs=int(cant_etiquetas_sel),
+                                                factura_val=f"JYP-{int(datos_fol['FOLIO'])}",
+                                                transporte_val=transporte_etq
+                                            )
+                                            
+                                            st.markdown("""
+                                                <style>
+                                                div.stDownloadButton > button {
+                                                    background-color: #263238 !important;
+                                                    color: #FFFFFF !important;
+                                                    border: 1px solid #44555A !important;
+                                                    width: 100% !important;
+                                                    border-radius: 4px !important;
+                                                    font-weight: 400 !important;
+                                                    transition: all 0.3s ease-in-out !important;
+                                                }
+                                                div.stDownloadButton > button:hover {
+                                                    background-color: #00A3A3 !important;
+                                                    border-color: #00A3A3 !important;
+                                                    color: #FFFFFF !important;
+                                                    box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
+                                                }
+                                                </style>
+                                            """, unsafe_allow_html=True)
+                                    
+                                            st.download_button(
+                                                label=":material/save: DESCARGAR ETIQUETA PDF",
+                                                data=pdf_etq_bytes,
+                                                file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
+                                                mime="application/pdf",
+                                                use_container_width=True
+                                            )
+                                                                                    
+                            
+                            with t2:
+                                # --- REPORTE DE SALIDAS Y MUESTRAS (DISEÑO PREMIUM) ---
+                                # --- BLOQUE DE FILTRADO POR MES (DETECTOR DE FORMATO MIXTO) ---
+                                if not df_actual.empty:
+                                    st.write("")
+                                    
+                                    # 1. Limpieza inicial
+                                    df_actual['FECHA'] = df_actual['FECHA'].astype(str).str.strip()
+                                
+                                    # 2. INTENTO 1: Formato Año-Mes-Día (Lo nuevo: 2026-03-20)
+                                    df_actual['FECHA_DT'] = pd.to_datetime(df_actual['FECHA'], format='%Y-%m-%d', errors='coerce')
+                                
+                                    # 3. INTENTO 2: Si falló, buscar formato Día/Mes/Año (Lo viejo: 18/03/2026)
+                                    # El .fillna() solo llena las que el paso anterior no pudo convertir
+                                    df_actual['FECHA_DT'] = df_actual['FECHA_DT'].fillna(
+                                        pd.to_datetime(df_actual['FECHA'], dayfirst=True, errors='coerce')
+                                    )
+                                
+                                    # 4. Generar el filtro de mes
+                                    df_actual['MES_FILTRO'] = df_actual['FECHA_DT'].dt.strftime('%m - %Y').fillna("SIN FECHA")
+                                
+                                    # --- EL RESTO DE TU LÓGICA DE SELECTOR ---
+                                    meses_lista = sorted([m for m in df_actual['MES_FILTRO'].unique() if m != "SIN FECHA"], reverse=True)
+                                    if "SIN FECHA" in df_actual['MES_FILTRO'].values:
+                                        meses_lista.append("SIN FECHA")
+                                
+                                    col_f1, col_f2 = st.columns([1.5, 2.5])
+                                    mes_sel = col_f1.selectbox(
+                                        ":material/calendar_month: FILTRAR PERIODO", 
+                                        ["MOSTRAR TODO"] + meses_lista
+                                    )
+                                
+                                    if mes_sel != "MOSTRAR TODO":
+                                        df_render = df_actual[df_actual['MES_FILTRO'] == mes_sel].copy()
+                                    else:
+                                        df_render = df_actual.copy()
+                                    
+                                    
+                                
+                                    # 1. Cálculos de lógica (Sobre el DF filtrado amor)
+                                    t_prod = df_render["COSTO_TOTAL"].sum()
+                                    t_flete = df_render["COSTO_GUIA"].sum()
+                                    filas_html = ""
+                                    tarjetas_html = ""
+                                    
+                                    # Limpieza y orden descendente
+                                    df_render = df_render.fillna(0)
+                                    df_render = df_render.sort_values(by="FOLIO", ascending=False)
+                                    
+                                    # --- GENERACIÓN DE CONTENIDO (TU DISEÑO IDENTICO) ---
+                                    for _, r in df_render.iterrows():
+                                        detalle_p = ""
+                                        for p in precios.keys():
+                                            cant = r.get(p, 0)
+                                            if cant > 0: 
+                                                detalle_p += f"• {int(cant)} PZAS {str(p).upper()}<br>"
+                                        
+                                        # --- NUEVO: LÓGICA DE ETIQUETA VISUAL ---
+                                        estatus_bd = str(r.get('ESTATUS', 'NO SURTIDO')).upper()
+                                        if estatus_bd == "DESPACHADO":
+                                            badge_html = "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 8px; border-radius:12px; font-size:9px; font-weight:800; letter-spacing:1px; margin-top:5px;'>✓ DESPACHADO</div>"
+                                        else:
+                                            badge_html = "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 8px; border-radius:12px; font-size:9px; font-weight:800; letter-spacing:1px; margin-top:5px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>"
+                                        # ----------------------------------------
+                                        
+                                        # Tu HTML de FILAS para el reporte de impresión
+                                        filas_html += f"""
+                                        <tr style="page-break-inside: avoid;">
+                                            <td style='border:1px solid black; padding:6px; text-align:center; font-size:10px; width:7%;'>{r['FOLIO']}</td>
+                                            <td style='border:1px solid black; padding:6px; font-size:10px; width:15%;'>
+                                                <b style='color:black;'>{str(r['SOLICITO']).upper()}</b><br>
+                                                <small style='font-size:8px; color:#444;'>{r['FECHA']}</small>
+                                            </td>
+                                            <td style='border:1px solid black; padding:6px; font-size:10px; width:25%;'>
+                                                <b>{str(r['NOMBRE DEL HOTEL']).upper()}</b><br>
+                                                <small style='font-size:8px; color:#333;'>{str(r['DESTINO']).upper()}</small>
+                                            </td>
+                                            <td style='border:1px solid black; padding:6px; font-size:9px; line-height:1.3; width:33%;'>
+                                                {detalle_p}
+                                            </td>
+                                            <td style='border:1px solid black; padding:6px; text-align:right; font-size:10px; width:10%; white-space:nowrap;'>
+                                                <b>${r['COSTO_TOTAL']:,.2f}</b>
+                                            </td>
+                                            <td style='border:1px solid black; padding:6px; text-align:right; font-size:10px; width:10%; white-space:nowrap;'>
+                                                ${r['COSTO_GUIA']:,.2f}
+                                            </td>
+                                        </tr>"""
+            
+                                        # Tu HTML de TARJETAS visuales
+                                        tarjetas_html += f"""
+                                        <div class="card-reporte" style="padding: 20px 30px; margin-bottom: 15px;">
+                                            <div class="col-folio" style="flex: 1;">
+                                                <div class="label-mini">FOLIO</div>
+                                                <div class="val-folio" style="margin-bottom: 5px;">#{r['FOLIO']}</div>
+                                                <div class="val-sub">{r['FECHA']}</div>
+                                                {badge_html} <!-- <--- SE INYECTA LA ETIQUETA AQUÍ -->
+                                            </div>
+                                            <div class="col-info" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
+                                                <div class="label-mini">SOLICITANTE / DESTINO</div>
+                                                <div class="val-main" style="margin-bottom: 4px;">{str(r['SOLICITO']).upper()}</div>
+                                                <div class="val-sub">{str(r['NOMBRE DEL HOTEL']).upper()}</div>
+                                                <div class="val-sub" style="opacity: 0.7;">{str(r['DESTINO']).upper()}</div>
+                                            </div>
+                                            <div class="col-detalle" style="flex: 2.5; padding: 0 25px; border-left: 1px solid rgba(255,255,255,0.08);">
+                                                <div class="label-mini">DESGLOSE PRODUCTOS</div>
+                                                <div class="val-list" style="line-height: 1.6;">{detalle_p if detalle_p else 'SIN DETALLE'}</div>
+                                            </div>
+                                            <div class="col-costos" style="flex: 1.5; text-align: right; padding-left: 25px; border-left: 1px solid rgba(255,255,255,0.08);">
+                                                <div class="label-mini">INVERSIÓN</div>
+                                                <div class="val-costo" style="font-size: 14px; margin-bottom: 5px;">Prod: ${r['COSTO_TOTAL']:,.2f}</div>
+                                                <div class="val-flete" style="font-size: 14px;">Flete: ${r['COSTO_GUIA']:,.2f}</div>
+                                            </div>
+                                        </div>"""
+            
+                                    # --- VISOR (TU CSS IDENTICO) ---
+                                    st.markdown(f"""
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                            <p style='color:#00FFAA; font-weight:800; letter-spacing:2px; font-size:14px; margin:0;'>VISTA: {mes_sel}</p>
+                                            <p style='color:#FFFFFF; font-size:12px; opacity:0.6;'>Mostrando {len(df_render)} registros</p>
+                                        </div>
+                                    """, unsafe_allow_html=True)
+            
+                                    html_final = f"""
+                                    <div style="font-family: 'Inter', sans-serif;">
+                                        <style>
+                                            body {{ background: transparent; margin: 0; padding: 0; }}
+                                            .container-reporte {{ height: 500px; overflow-y: auto; padding-right: 10px; }}
+                                            .card-reporte {{ background: #263238; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; min-width: 800px; justify-content: space-between; align-items: center; transition: 0.3s; }}
+                                            .card-reporte:hover {{ border-color: #38bdf8; background: #2d3b42; }}
+                                            .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }}
+                                            .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
+                                            .val-main {{ color: #FFFFFF; font-size: 12px; font-weight: 700; }}
+                                            .val-sub {{ color: rgba(255,255,255,0.5); font-size: 10px; }}
+                                            .val-list {{ color: #FFFFFF; font-size: 9px; line-height: 1.4; opacity: 0.8; }}
+                                            .val-costo {{ color: #38bdf8; font-size: 13px; font-weight: 700; font-family: monospace; }}
+                                            .val-flete {{ color: #a855f7; font-size: 13px; font-weight: 700; font-family: monospace; }}
+                                            ::-webkit-scrollbar {{ width: 8px; }}
+                                            ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                            ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                                        </style>
+                                        <div class="container-reporte">{tarjetas_html}</div>
+                                    </div>"""
+                                    components.html(html_final, height=520, scrolling=False)
+            
+                                    # Banner de Totales (RECALCULADO)
+                                    st.markdown(f"""
+                                        <div style="background:#263238; border-top: 4px solid #00FFAA; border-radius: 0 0 12px 12px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                                            <div style="color:rgba(255,255,255,0.6); font-size:12px;">PRODUCTOS: <span style="color:white; font-weight:bold;">${t_prod:,.2f}</span></div>
+                                            <div style="color:rgba(255,255,255,0.6); font-size:12px;">FLETES: <span style="color:white; font-weight:bold;">${t_flete:,.2f}</span></div>
+                                            <div style="color:#00FFAA; font-size:16px; font-weight:800; letter-spacing:1px;">TOTAL FILTRADO: ${(t_prod+t_flete):,.2f}</div>
+                                        </div>
+                                    """, unsafe_allow_html=True)
+            
+                                    # --- BOTONES DE ACCIÓN ---
+                                    c1, c2, c3 = st.columns(3)
+                                    with c1:
+                                        # Versión corregida en una sola línea con los textos exactos de tus fotos
+                                        form_pt_html = f"<html><head><style>@media print{{@page{{size:letter landscape;margin:1cm;}} body{{margin:0;padding:0;width:100% !important;font-family:sans-serif;}} .no-print{{display:none;}}}} table{{width:100% !important;border-collapse:collapse;margin-top:15px;table-layout:fixed;}} th{{background:#eee !important;border:1px solid black;padding:8px;font-size:11px;-webkit-print-color-adjust:exact;}} td{{border:1px solid black;padding:6px;font-size:10px;vertical-align:top;word-wrap:break-word;}}</style></head><body><div style='display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid black;padding-bottom:10px;'><div><h1 style='margin:0;font-size:18px;font-weight:900;'>Jabones y Productos Especializados</h1><p style='margin:0;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;'>distribucion y Logistica 2026</p></div><div style='text-align:right;'><h2 style='margin:0;font-size:16px;text-decoration:underline;'>Reporte de Envio de Muestras</h2><p style='margin:5px 0 0 0;font-size:12px;'><b>GENERADO: {date.today().strftime('%d/%m/%Y')}</b></p></div></div><table><thead><tr><th style='width:7%;'>FOLIO</th><th style='width:15%;'>SOLICITANTE</th><th style='width:25%;'>DESTINO / HOTEL</th><th style='width:33%;'>DETALLE DE PRODUCTOS</th><th style='width:10%;'>COSTO PROD.</th><th style='width:10%;'>FLETE</th></tr></thead><tbody>{filas_html}</tbody></table><div style='text-align:right;margin-top:20px;border-top:2px solid black;padding-top:10px;font-family:monospace;'><p style='margin:2px 0;'>TOTAL PRODUCTOS: <b>${t_prod:,.2f}</b></p><p style='margin:2px 0;'>TOTAL FLETES: <b>${t_flete:,.2f}</b></p><h3 style='margin:8px 0;font-size:20px;'>INVERSIÓN TOTAL: ${(t_prod+t_flete):,.2f}</h3></div></body></html>"
+                                        if st.button(":material/print: IMPRIMIR REPORTE", type="primary", use_container_width=True):
+                                            components.html(f"{form_pt_html}<script>window.print();</script>", height=0)
+                                    with c2:
+                                        output = BytesIO()
+                                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                                            # Descargamos solo lo filtrado
+                                            df_render.drop(columns=['FECHA_DT', 'MES_FILTRO']).to_excel(writer, index=False)
+                                        st.download_button(f":material/download: EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True)
+                                    with c3:
+                                        if st.button(":material/update: ACTUALIZAR", use_container_width=True): st.rerun()
+            
+                                else:
+                                    st.info("No hay registros todavía.")
+
+                            with t3:
+                                st.markdown("### EDICIÓN TOTAL DE MATRIZ DE MUESTRAS")
+                                st.info("Modifica cualquier registro de la base de datos de manera directa. Los cambios se sincronizarán y actualizarán en GitHub al guardar.")
+                            
+                                st.markdown("""
+                                    <style>
+                                        div[data-testid="stForm"] button,
+                                        div[data-testid="stForm"] button:focus,
+                                        div[data-testid="stForm"] button:active {
+                                            background-color: #263238 !important;
+                                            color: #FFFFFF !important;
+                                            border: 1px solid #44555A !important;
+                                            width: 100% !important;
+                                            border-radius: 4px !important;
+                                            font-weight: 400 !important;
+                                            box-shadow: none !important;
+                                            outline: none !important;
+                                        }
+                                        div[data-testid="stForm"] button:hover {
+                                            background-color: #00A3A3 !important;
+                                            border-color: #00A3A3 !important;
+                                            color: #FFFFFF !important;
+                                            box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
+                                        }
+                                    </style>
+                                """, unsafe_allow_html=True)
+                            
+                                if df_actual.empty:
+                                    st.warning("No hay registros en la matriz de muestras para editar.")
+                                else:
+                                    # Selector para buscar el folio a editar
+                                    df_sorted_edit = df_actual.sort_values(by="FOLIO", ascending=False)
+                                    opciones_edit = [f"Folio #{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']} ({r['FECHA']})" for _, r in df_sorted_edit.iterrows()]
+                                    
+                                    folio_a_editar = st.selectbox(
+                                        "Selecciona el Folio que deseas modificar o eliminar:",
+                                        opciones_edit,
+                                        index=None,
+                                        placeholder="Escribe el folio o nombre del hotel...",
+                                        key="select_folio_edicion_total"
+                                    )
+                            
+                                    if folio_a_editar:
+                                        # Extraer el número de folio seleccionado
+                                        num_folio_sel = int(folio_a_editar.split(" - ")[0].replace("Folio #", ""))
+                                        idx_fila = df_actual.index[df_actual['FOLIO'] == num_folio_sel].tolist()[0]
+                                        registro_sel = df_actual.loc[idx_fila]
+                            
+                                        st.markdown("---")
+                                        st.subheader(f"Editando: JYP-{num_folio_sel}")
+                            
+                                        # Formulario de edición dividido en columnas
+                                        with st.form(key=f"form_edicion_{num_folio_sel}"):
+                                            col_e1, col_e2, col_e3 = st.columns(3)
+                                            
+                                            with col_e1:
+                                                nuevo_hotel = st.text_input("Nombre del Hotel", value=str(registro_sel.get("NOMBRE DEL HOTEL", ""))).upper()
+                                                nuevo_solicito = st.text_input("Solicitante", value=str(registro_sel.get("SOLICITO", ""))).upper()
+                                                nuevo_estatus = st.selectbox(
+                                                    "Estatus", 
+                                                    ["NO SURTIDO", "DESPACHADO"], 
+                                                    index=0 if str(registro_sel.get("ESTATUS", "NO SURTIDO")) == "NO SURTIDO" else 1
+                                                )
+                            
+                                            with col_e2:
+                                                nuevo_destino = st.text_area("Destino / Dirección", value=str(registro_sel.get("DESTINO", ""))).upper()
+                                                nuevo_contacto = st.text_input("Contacto Receptor", value=str(registro_sel.get("CONTACTO", ""))).upper()
+                            
+                                            with col_e3:
+                                                nueva_paqueteria = st.text_input("Paquetería", value=str(registro_sel.get("PAQUETERIA_NOMBRE", registro_sel.get("PAQUETERIA", "")))).upper()
+                                                nueva_guia = st.text_input("Número de Guía", value=str(registro_sel.get("NUMERO_GUIA", ""))).upper()
+                                                nuevo_costo_guia = st.number_input("Costo Guía / Flete ($)", min_value=0.0, value=float(registro_sel.get("COSTO_GUIA", 0.0)))
+                            
+                                            st.markdown("##### 📦 Modificar Cantidades de Productos")
+                                            st.write("Ajusta las piezas de los productos incluidos en este folio:")
+                            
+                                            # Diccionario temporal para capturar las nuevas cantidades de los productos
+                                            nuevas_cantidades = {}
+                                            cols_prods = st.columns(3)
+                                            
+                                            keys_precios = list(precios.keys())
+                                            for i, prod in enumerate(keys_precios):
+                                                # Protección robusta contra valores nulos, vacíos o NaN
+                                                val_bruto = registro_sel.get(prod, 0)
+                                                try:
+                                                    cant_actual = int(val_bruto) if pd.notna(val_bruto) and str(val_bruto).strip() != "" else 0
+                                                except (ValueError, TypeError):
+                                                    cant_actual = 0
+                                
+                                                col_target = cols_prods[i % 3]
+                                                with col_target:
+                                                    nuevas_cantidades[prod] = st.number_input(
+                                                        f"{prod[:28]}", 
+                                                        min_value=0, 
+                                                        step=1, 
+                                                        value=cant_actual, 
+                                                        key=f"edit_{num_folio_sel}_{prod}"
+                                                    )
+                            
+                                            nuevo_comentario = st.text_area("Comentarios Adicionales", value=str(registro_sel.get("COMENTARIOS", ""))).upper()
+                            
+                                            st.markdown("---")
+                                            
+                                            # Botones de acción dentro del formulario
+                                            col_btn_1, col_btn_2 = st.columns([2, 1])
+                                            
+                                            guardar_cambios = col_btn_1.form_submit_button("GUARDAR CAMBIOS EN ESTE FOLIO", use_container_width=True)
+                                            eliminar_registro = col_btn_2.form_submit_button("ELIMINAR ESTE FOLIO", use_container_width=True)
+                            
+                                            if guardar_cambios:
+                                                # Recalcular totales
+                                                total_cants = sum(nuevas_cantidades.values())
+                                                total_cost_p = sum(qty * precios.get(p_key, 0) for p_key, qty in nuevas_cantidades.items())
+                            
+                                                # Actualizar DataFrame principal
+                                                df_actual.at[idx_fila, "NOMBRE DEL HOTEL"] = nuevo_hotel
+                                                df_actual.at[idx_fila, "SOLICITO"] = nuevo_solicito
+                                                df_actual.at[idx_fila, "ESTATUS"] = nuevo_estatus
+                                                df_actual.at[idx_fila, "DESTINO"] = nuevo_destino
+                                                df_actual.at[idx_fila, "CONTACTO"] = nuevo_contacto
+                                                df_actual.at[idx_fila, "PAQUETERIA_NOMBRE"] = nueva_paqueteria
+                                                df_actual.at[idx_fila, "NUMERO_GUIA"] = nueva_guia
+                                                df_actual.at[idx_fila, "COSTO_GUIA"] = nuevo_costo_guia
+                                                df_actual.at[idx_fila, "CANTIDAD_TOTAL"] = total_cants
+                                                df_actual.at[idx_fila, "COSTO_TOTAL"] = round(total_cost_p, 2)
+                                                df_actual.at[idx_fila, "COMENTARIOS"] = nuevo_comentario
+                            
+                                                # Actualizar columnas de productos
+                                                for p_key, qty in nuevas_cantidades.items():
+                                                    df_actual.at[idx_fila, p_key] = qty
+                            
+                                                # Subir cambios a GitHub
+                                                if subir_a_github(df_actual, sha_actual, f"Edicion total Folio JYP-{num_folio_sel}"):
+                                                    st.success(f"¡Folio JYP-{num_folio_sel} actualizado y sincronizado correctamente!")
+                                                    time.sleep(1)
+                                                    st.rerun()
+                                                else:
+                                                    st.error("Error al sincronizar con GitHub. Verifica tus credenciales.")
+                            
+                                            if eliminar_registro:
+                                                # Eliminar la fila del DataFrame
+                                                df_actual = df_actual.drop(idx_fila).reset_index(drop=True)
+                                                
+                                                if subir_a_github(df_actual, sha_actual, f"Eliminacion Folio JYP-{num_folio_sel}"):
+                                                    st.success(f"¡El folio JYP-{num_folio_sel} ha sido eliminado permanentemente!")
+                                                    time.sleep(1)
+                                                    st.rerun()
+                                                else:
+                                                    st.error("Error al eliminar el registro en GitHub.")
+
+                                
+                
+                        else:
+                            # --- DISEÑO PRO: FRANJA ULTRA DELGADA EN UNA SOLA LÍNEA ---
+                            html_restringido = f"""<div style="background-color:{vars_css['card']}; border:1px solid {vars_css['border']}; border-left:8px solid #F7C300; padding:18px 40px; border-radius:10px; margin:15px 0; box-shadow:0 6px 20px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:25px;"><span style="font-size:28px;">🔐</span><div style="text-align:left;"><span style="color:#F7C300; font-weight:900; font-size:14px; letter-spacing:3px; text-transform:uppercase; display:block; margin-bottom:4px;">ÁREA RESTRINGIDA</span><span style="color:{vars_css['text']}; font-size:14px; font-weight:500; opacity:0.9;">El perfil de operador <b>{usuario_logeado}</b> no cuenta con privilegios de nivel <b>Logística</b>.</span></div></div><div style="padding:6px 16px; border:1px solid rgba(247,195,0,0.5); background:rgba(247,195,0,0.1); border-radius:6px; font-size:11px; color:#F7C300; font-weight:900; letter-spacing:1px;">ID ACCESO: {st.session_state.get('usuario_activo', 'ERR')}</div></div>"""
+                            st.markdown(html_restringido, unsafe_allow_html=True)
+        
+    
+        # ── 4. MÓDULO DE FORMATOS (BLOQUE MAESTRO CONSOLIDADO) ────────────────────
+        elif st.session_state.menu_main == "FORMATOS":
+            import streamlit.components.v1 as components
+            import os
+    
+            # --- SUBSECCIÓN A: SALIDA DE PT ---
+            if st.session_state.menu_sub == "SALIDA DE PT":
+                
+                # ── A. GENERACIÓN DE FOLIO CON HORA DE GUADALAJARA ──
+                if 'folio_nexion' not in st.session_state:
+                    tz_gdl = pytz.timezone('America/Mexico_City') 
+                    now_gdl = datetime.now(tz_gdl)
+                    st.session_state.folio_nexion = f"F-{now_gdl.strftime('%Y%m%d-%H%M')}"
+                
+                # ── B. CARGA DE INVENTARIO ──────────────────────
+                @st.cache_data
+                def load_inventory():
+                    ruta = os.path.join(os.getcwd(), "inventario.csv")
+                    if not os.path.exists(ruta): 
+                        ruta = os.path.join(os.getcwd(), "..", "inventario.csv")
+                    try:
+                        df = pd.read_csv(ruta, sep=None, engine='python', encoding='utf-8-sig')
+                        df.columns = [str(c).strip().upper() for c in df.columns]
+                        return df
+                    except: 
+                        return pd.DataFrame(columns=['CODIGO', 'DESCRIPCION'])
+                
+                df_inv = load_inventory()
+                
+                # ── C. INICIALIZACIÓN DE FILAS (CANTIDAD siempre como número) ──
+                if 'rows' not in st.session_state:
+                    st.session_state.rows = pd.DataFrame([
+                        {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0} 
+                    ] * 10)
+                
+                # Aseguramos que CANTIDAD sea numérica para que el editor no se trabe
+                st.session_state.rows["CANTIDAD"] = pd.to_numeric(st.session_state.rows["CANTIDAD"], errors='coerce').fillna(0).astype(int)
+                
+                # ── D. CUERPO DE ENTRADA (ESTRUCTURA CON ICONOS) ────────────────
+                with st.container(border=True):
+                    h1, h2, h3 = st.columns(3)
+                    f_val = h1.date_input(":material/calendar_month: FECHA", value=datetime.now(), key="f_in_pt")
+                    t_val = h2.selectbox(":material/schedule: TURNO", ["MATUTINO", "VESPERTINO", "NOCTURNO", "MIXTO"], key="t_in_pt")
+                    fol_val = h3.text_input(":material/fingerprint: FOLIO", value=st.session_state.folio_nexion, key="fol_in_pt")
+                
+                # ── E. BÚSQUEDA AUXILIAR ──────────────────────────
+                with st.expander(":material/search: Buscar Codigo", expanded=False):
+                    busqueda = st.text_input("Escribe el nombre del producto o código:").strip().upper()
+                    if busqueda:
+                        resultados = df_inv[
+                            df_inv['CODIGO'].astype(str).str.contains(busqueda, na=False) | 
+                            df_inv['DESCRIPCION'].astype(str).str.upper().str.contains(busqueda, na=False)
+                        ]
+                        if not resultados.empty:
+                            st.dataframe(resultados, use_container_width=True, hide_index=True)
+                        else:
+                            st.warning("No se encontraron coincidencias en el inventario.")
+
+                # ── F. MOTOR DE BÚSQUEDA INTERNO (LOOKUP CORREGIDO) ──────────────────────────
+                def lookup_pt():
+                    # Obtenemos los cambios del estado del editor
+                    edits = st.session_state["editor_pt"].get("edited_rows", {})
+                    added = st.session_state["editor_pt"].get("added_rows", [])
+                    
+                    # 1. Filas nuevas
+                    for row in added:
+                        new_row = {"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}
+                        new_row.update(row)
+                        st.session_state.rows = pd.concat([st.session_state.rows, pd.DataFrame([new_row])], ignore_index=True)
+                    
+                    # 2. Ediciones (La clave: Actualizar solo lo necesario para no interrumpir el tipeo)
+                    for idx_str, info in edits.items():
+                        idx = int(idx_str)
+                        for col, val in info.items():
+                            st.session_state.rows.at[idx, col] = val
+                            
+                            # Solo buscamos descripción si lo que cambió fue el CÓDIGO
+                            if col == "CODIGO" and val:
+                                val_codigo = str(val).strip().upper()
+                                if not df_inv.empty:
+                                    match = df_inv[df_inv['CODIGO'].astype(str).str.strip().str.upper() == val_codigo]
+                                    if not match.empty:
+                                        st.session_state.rows.at[idx, "DESCRIPCION"] = match.iloc[0]['DESCRIPCION']
+                                        st.session_state.rows.at[idx, "CODIGO"] = val_codigo
+                                    else:
+                                        st.session_state.rows.at[idx, "DESCRIPCION"] = "⚠️ NO ENCONTRADO"
+
+                # ── G. EDITOR DE DATOS DINÁMICO ────────────────────────────────────
+                st.markdown("<p style='font-size:12px; font-weight:normal; color:#FFFFFF; letter-spacing:2px; margin-bottom:10px;'>EDICIÓN SOLICITUD DE MATERIALES</p>", unsafe_allow_html=True)
+                
+                df_final_pt = st.data_editor(
+                    st.session_state.rows, 
+                    num_rows="dynamic", 
+                    use_container_width=True, 
+                    key="editor_pt", 
+                    on_change=lookup_pt,
+                    column_config={
+                        "CODIGO": st.column_config.TextColumn("CÓDIGO", help="Escribe el código", validate=r"^[a-zA-Z0-9_-]+$"),
+                        "DESCRIPCION": st.column_config.TextColumn("DESCRIPCIÓN DEL PRODUCTO", width="large", disabled=True),
+                        "CANTIDAD": st.column_config.NumberColumn("CANT.", min_value=0, step=1, format="%d", width="small", required=True),
+                        "DISPONIBILIDAD": st.column_config.CheckboxColumn("✅ LISTO", default=False)
+                    }
+                )
+
+                # ── H. ESTILOS Y SECCIÓN FINAL ────────────────────────────────────
+                st.markdown("""
+                    <style>
+                    [data-testid="stDataEditor"] div[role="columnheader"] { background-color: #263238 !important; color: #00FFAA !important; font-weight: bold !important; }
+                    div[data-testid="stTextArea"] textarea { background-color: #465B66 !important; color: white !important; border-radius: 15px !important; border: 1px solid rgba(0,255,170,0.3) !important; }
+                    </style>
+                """, unsafe_allow_html=True)
+
+                coment_val = st.text_area("NOTAS DE LOGÍSTICA", placeholder="¿Instrucciones?", key="coment_in_pt")
+
+               # --- HTML PARA IMPRESIÓN PT ---
+                # Importante: Usamos df_final_pt que es el resultado directo del editor
+                filas_print = df_final_pt[df_final_pt["CODIGO"] != ""]
+                
+                tabla_html = "".join([
+                    f"<tr><td style='border:1px solid black;padding:6px; font-size:10px;'>{r['CODIGO']}</td>"
+                    f"<td style='border:1px solid black;padding:6px; font-size:10px;'>{r['DESCRIPCION']}</td>"
+                    f"<td style='border:1px solid black;padding:6px;text-align:center; font-size:10px;'>{r['CANTIDAD']}</td></tr>" 
+                    for _, r in filas_print.iterrows()
+                ])
+                
+                form_pt_html = f"""
+                <html>
+                <head>
+                    <style>
+                        @page {{ 
+                            size: letter; 
+                            margin: 1cm; 
+                        }}
+                        @media print {{
+                            body {{ margin: 0; padding: 0; }}
+                            .print-container {{ min-height: 95vh; display: flex; flex-direction: column; }}
+                        }}
+                        body {{ 
+                            font-family: sans-serif; 
+                            color: black; 
+                            background: white; 
+                            margin: 0;
+                        }}
+                        .print-container {{
+                            display: flex;
+                            flex-direction: column;
+                            min-height: 95vh;
+                            width: 100%;
+                        }}
+                        .main-content {{
+                            flex-grow: 1;
+                        }}
+                        table {{ 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-top: 10px; 
+                        }}
+                        th {{ 
+                            background: #eee; 
+                            border: 1px solid black; 
+                            padding: 6px; 
+                            text-align: left; 
+                            font-size: 11px;
+                        }}
+                        .comments-section {{
+                            margin-top: 15px;
+                            font-size: 10px;
+                            border: 1px solid black;
+                            padding: 8px;
+                            min-height: 30px;
+                        }}
+                        .signature-section {{
+                            margin-top: 30px;
+                            display: flex;
+                            justify-content: space-between;
+                            text-align: center;
+                            font-size: 9px;
+                            padding-bottom: 10px;
+                        }}
+                        .sig-box {{
+                            width: 30%;
+                            border-top: 1px solid black;
+                            padding-top: 5px;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class="print-container">
+                        <div class="main-content">
+                            <div style="display:flex; justify-content:space-between; border-bottom:2px solid black; padding-bottom:5px; margin-bottom:15px;">
+                                <div>
+                                    <h2 style="margin:0; font-size: 16px; letter-spacing:1px;">Jabones y Productos Especializados</h2>
+                                    <p style="margin:0; font-size:9px; letter-spacing:1px;">Distribución y Logística | 2026</p>
+                                </div>
+                                <div style="text-align:right; font-size:11px;">
+                                    <b>FOLIO:</b> {fol_val}<br>
+                                    <b>FECHA:</b> {f_val}
+                                </div>
+                            </div>
+                
+                            <h3 style="text-align:center; font-size: 14px; letter-spacing:1px; margin: 10px 0;">ENTREGA DE MATERIALES PT</h3>
+                            <p style="font-size:11px;"><b>TURNO:</b> {t_val}</p>
+                            
+                            <table>
+                                <thead>
+                                    <tr><th>CÓDIGO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>
+                                </thead>
+                                <tbody>
+                                    {tabla_html}
+                                </tbody>
+                            </table>
+                
+                            <div class="comments-section">
+                                <b>COMENTARIOS:</b> {coment_val}
+                            </div>
+                        </div>
+                
+                        <div class="signature-section">
+                            <div class="sig-box">
+                                <b>ENTREGÓ</b><br>
+                                Analista de Inventario
+                            </div>
+                            <div class="sig-box">
+                                <b>AUTORIZACIÓN</b><br>
+                                Carlos Fialko / Dir. Operaciones
+                            </div>
+                            <div class="sig-box">
+                                <b>RECIBIÓ</b><br>
+                                Rigoberto Hernandez / Cord. Logística
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                c1, c2 = st.columns(2)
+                with c1:
+                    if st.button(":material/picture_as_pdf: IMPRIMIR SALIDA PT", type="primary", use_container_width=True):
+                        components.html(f"<html><body>{form_pt_html}<script>window.print();</script></body></html>", height=0)
+                with c2:
+                    if st.button(":material/refresh: BORRAR", use_container_width=True):
+                        if 'folio_nexion' in st.session_state: del st.session_state.folio_nexion
+                        st.session_state.rows = pd.DataFrame([{"CODIGO": "", "DESCRIPCION": "", "CANTIDAD": 0}] * 10)
+                        st.rerun()
+    
+            # --- SUBSECCIÓN B: CONTRARRECIBOS (CONSOLIDADO) ---
+            elif st.session_state.menu_sub == "CHECK LIST AGC":
+                
+                jypesa_azul = "#003A70" 
+                jypesa_amarillo = "#FFC72C"
+                
+                with st.container():
+                    st.markdown('<div class="analysis-box">', unsafe_allow_html=True)
+                    
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        orden_carga = st.text_input("ORDEN DE CARGA / GUÍA", placeholder="Ej. OC-98765")
+                    with c2:
+                        inspector = st.text_input("INSPECTOR / AUDITOR", value="Carlos Vazquez")
+                    with c3:
+                        transporte = st.text_input("TRANSPORTE", placeholder="Ej. Tres Guerras - MTY")
+                        
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                st.write("") 
+                
+                def generar_checklist_html():
+                    ahora = datetime.now()
+                    ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+                    fecha_texto = f"{ahora.day} de {ms[ahora.month - 1]} del {ahora.year}"
+                    
+                    # Convertir el logo a Base64 para que aparezca perfectamente en el HTML
+                    logo_base64 = ""
+                    try:
+                        with open("jypesa.png", "rb") as img_file:
+                            logo_base64 = base64.b64encode(img_file.read()).decode("utf-8")
+                    except:
+                        pass
+                    
+                    img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="width: 100px; height: auto;">' if logo_base64 else ''
+                    
+                    # Generar las 30 filas dinámicamente
+                    filas_html = ""
+                    for i in range(1, 31):
+                        filas_html += f"""
+                        <tr>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center; font-weight: bold; background-color: #f9f9f9;">{i}</td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+                        </tr>
+                        """
+                    
+                    return f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            @media print {{
+                                @page {{ margin: 0; size: letter portrait; }}
+                                body {{ margin: 1cm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+                            }}
+                        </style>
+                    </head>
+                    <body style="margin: 0; padding: 0; background: white;">
+                        <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 20px; color: #1a1a1a; max-width: 800px; margin: auto; line-height: 1.3;">
+                            
+                            <!-- Encabezado con Logo y Datos -->
+                            <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    {img_tag}
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span style="font-size: 1.1em; font-weight: 800; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
+                                        <span style="font-size: 0.8em; font-weight: 600; color: #666;">Distribución y Logística | Control de Calidad</span>
+                                    </div>
+                                </div>
+                                <span style="font-size: 0.85em; color: #444; font-weight: 700;">{fecha_texto}</span>
+                            </div>
+                
+                            <!-- Título y Datos de Guía -->
+                            <div style="margin-bottom: 8px; background-color: #fefdf5; padding: 8px 12px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo}; display: flex; justify-content: space-between; align-items: center;">
+                                <h2 style="font-size: 0.65em; text-transform: uppercase; color: #000; margin:0; font-weight: 800;">
+                                    CHECKLIST DE INSPECCIÓN DE TARIMAS CONFORME ESPECIFICACIÓN DE AGC
+                                </h2>
+                                <div style="font-size: 0.8em; color: #333; text-align: right;">
+                                    <strong>Orden/Guía:</strong> {orden_carga if orden_carga else '___'}<br>
+                                    <strong>Transporte:</strong> {transporte if transporte else '___'}
+                                </div>
+                            </div>
+            
+                            <!-- Instrucción Justo Después del Checklist -->
+                            <div style="background: #fff3cd; border: 1px solid #ffeeba; padding: 6px 10px; margin-bottom: 12px; text-align: center; font-size: 0.8em; font-weight: bold; color: #856404; border-radius: 4px;">
+                                Marque con una “✅” para indicar que cumple la especificación y marque con una “❌” para indicar que no cumple.
+                            </div>
+                
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.75em; margin-bottom: 15px;">
+                                <thead>
+                                    <tr style="background-color: {jypesa_azul}; color: white; text-align: center;">
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 6%;">Tarima</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 15%;">Emplayo</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 15%;">Esquineros</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">Tacón sin Logos</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">Estiba Alineada</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">Estado de Cajas</th>
+                                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">QR Correcto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filas_html}
+                                </tbody>
+                            </table>
+                
+                            <div style="margin-top: 20px; display: flex; justify-content: space-around; text-align: center; font-size: 0.85em; color: #333;">
+                                <div>
+                                    <div style="border-bottom: 1px solid #000; width: 200px; height: 40px; margin: auto;"></div>
+                                    <p style="margin: 5px 0 0 0; font-weight: bold;">{inspector if inspector else 'Firma del Inspector'}</p>
+                                    <p style="margin: 0; color: #666; font-size: 0.9em;">Auditor de Carga</p>
+                                </div>
+                                <div>
+                                    <div style="border-bottom: 1px solid #000; width: 200px; height: 40px; margin: auto;"></div>
+                                    <p style="margin: 5px 0 0 0; font-weight: bold;">Vo. Bo. Almacén / Logística</p>
+                                    <p style="margin: 0; color: #666; font-size: 0.9em;">JYPESA</p>
+                                </div>
+                            </div>
+                
+                        </div>
+                    </body>
+                    </html>
+                    """
+                
+                if st.button(":material/print: IMPRIMIR CHECKLIST", type="primary", use_container_width=True):
+                    checklist_html = generar_checklist_html()
+                    components.html(f"{checklist_html}<script>window.print();</script>", height=0)
+                                    
+            
+            
+            # --- SUBSECCIÓN C: PROFORMA ---
+            elif st.session_state.menu_sub == "PREGUIA PAQMEX": # <-- Alineado con 'elif ... == "CONTRARRECIBOS"'
+                # --- CONFIGURACIÓN DE PRODUCTOS ---
+                # --- CONFIGURACIÓN OPTIMIZADA Y VELOZ PARA GITHUB ---
+                @st.cache_data(ttl=10)
+                def cargar_csv_github():
+                    """
+                    Descarga el CSV directamente usando la API de Contenidos de GitHub con autenticación,
+                    garantizando que la información esté fresca al instante (TTL de 10 segundos) 
+                    y evitando los retrasos de la caché raw.
+                    """
+                    try:
+                        repo = "RH2026/nexion"
+                        filename = "facturacion_moreno.csv"
+                        branch = "main"
+                        
+                        token = st.secrets["GITHUB_TOKEN"]
+                        headers = {
+                            "Authorization": f"Bearer {token}",
+                            "Accept": "application/vnd.github+json",
+                            "X-GitHub-Api-Version": "2022-11-28"
+                        }
+                        url = f"https://api.github.com/repos/{repo}/contents/{filename}?ref={branch}"
+                        
+                        response = requests.get(url, headers=headers)
+                        
+                        if response.status_code == 200:
+                            file_info = response.json()
+                            content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
+                            df = pd.read_csv(BytesIO(content_decoded.encode("utf-8")), encoding="utf-8-sig")
+                            df.columns = df.columns.astype(str).str.strip()
+                            return df
+                        else:
+                            # Fallback rápido a la URL raw si la API llegara a fallar por cuota
+                            url_raw = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}?t={int(time.time())}"
+                            resp_raw = requests.get(url_raw, headers={"Authorization": f"token {token}"})
+                            if resp_raw.status_code == 200:
+                                df = pd.read_csv(BytesIO(resp_raw.content), encoding="utf-8-sig")
+                                df.columns = df.columns.astype(str).str.strip()
+                                return df
+                            
+                            st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
+                            return pd.DataFrame()
+                            
+                    except Exception as e:
+                        st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
+                        return pd.DataFrame()
+                
+                
+                # Función optimizada para descargar el logo 'paqmex.jpg' desde GitHub
+                @st.cache_data(ttl=300)
+                def obtener_logo_github():
+                    try:
+                        repo = "RH2026/nexion"
+                        filename = "paqmex.jpg"
+                        branch = "main"
+                        
+                        token = st.secrets["GITHUB_TOKEN"]
+                        headers = {
+                            "Authorization": f"Bearer {token}",
+                            "Accept": "application/vnd.github+json"
+                        }
+                        url = f"https://api.github.com/repos/{repo}/contents/{filename}?ref={branch}"
+                        
+                        response = requests.get(url, headers=headers)
+                        if response.status_code == 200:
+                            file_info = response.json()
+                            content_bytes = base64.b64decode(file_info["content"])
+                            return BytesIO(content_bytes)
+                        return None
+                    except Exception:
+                        return None
+                
+                
+                df_facturacion = cargar_csv_github()
+                
+                if not df_facturacion.empty:
+                    df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
+                    facturas_disponibles = df_facturacion["Factura"].unique()
+                
+                    # --- SECCIÓN SUPERIOR DE CONFIGURACIÓN Y SELECCIÓN EN 3 COLUMNAS ---
+                    c_col1, c_col2, c_col3 = st.columns(3)
+                
+                    with c_col1:
+                        modo_busqueda = st.selectbox(
+                            "🔍 Método de Selección", 
+                            ["Seleccionar de la lista", "Escribir folio manual"]
+                        )
+                
+                    with c_col2:
+                        if modo_busqueda == "Seleccionar de la lista":
+                            num_factura = st.selectbox(
+                                "📦 Selecciona Factura / Folio", facturas_disponibles
+                            )
+                            if not df_facturacion.empty and num_factura in facturas_disponibles:
+                                registro = df_facturacion[
+                                    df_facturacion["Factura"] == str(num_factura)
+                                ].iloc[0]
+                            else:
+                                registro = pd.Series()
+                        else:
+                            num_factura = st.text_input("✍️ Ingresa Folio Manual")
+                            if (
+                                num_factura
+                                and not df_facturacion.empty
+                                and str(num_factura) in df_facturacion["Factura"].values
+                            ):
+                                registro = df_facturacion[
+                                    df_facturacion["Factura"] == str(num_factura)
+                                ].iloc[0]
+                            else:
+                                registro = pd.Series()
+                
+                    with c_col3:
+                        tipo_pago = st.selectbox(
+                            "💳 Tipo de Pago", 
+                            ["CRÉDITO", "POR COBRAR", "PAGADO"]
+                        )
+                
+                    # Extracción inteligente de valores con respaldo vacío si es manual
+                    def_extran = (
+                        str(registro.get("Nombre_Extran", ""))
+                        if not registro.empty
+                        and pd.notna(registro.get("Nombre_Extran", ""))
+                        else ""
+                    )
+                    def_rfc = (
+                        str(registro.get("RFC", ""))
+                        if not registro.empty and pd.notna(registro.get("RFC", ""))
+                        else ""
+                    )
+                    def_dom = (
+                        str(registro.get("Domicilio", ""))
+                        if not registro.empty and pd.notna(registro.get("Domicilio", ""))
+                        else ""
+                    )
+                    def_col = (
+                        str(registro.get("Colonia", ""))
+                        if not registro.empty and pd.notna(registro.get("Colonia", ""))
+                        else ""
+                    )
+                    def_cui = (
+                        str(registro.get("Cuidad", ""))
+                        if not registro.empty and pd.notna(registro.get("Cuidad", ""))
+                        else ""
+                    )
+                    def_cp = (
+                        str(registro.get("CP", ""))
+                        if not registro.empty and pd.notna(registro.get("CP", ""))
+                        else ""
+                    )
+                    def_est = (
+                        str(registro.get("Estado", ""))
+                        if not registro.empty and pd.notna(registro.get("Estado", ""))
+                        else ""
+                    )
+                    def_cli = (
+                        str(registro.get("Nombre_Cliente", ""))
+                        if not registro.empty and pd.notna(registro.get("Nombre_Cliente", ""))
+                        else ""
+                    )
+                    def_fiscal = (
+                        str(registro.get("FISCAL", ""))
+                        if not registro.empty and pd.notna(registro.get("FISCAL", ""))
+                        else ""
+                    )
+                
+                    # Buscar teléfono probando variaciones
+                    tel_val = ""
+                    if not registro.empty:
+                        for col_posible in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
+                            if col_posible in registro and pd.notna(registro[col_posible]):
+                                tel_val = str(registro[col_posible]).strip()
+                                break
+                    if not tel_val or tel_val.lower() == "nan":
+                        tel_val = ""
+                
+                    st.markdown("---")
+                                    
+                    # --- ESTILOS DE TÍTULOS TIPO BARRA ---
+                    def titulo_seccion(texto, color_fondo="#4169E1"):
+                        st.markdown(
+                            f"""
+                            <div style="
+                                background-color: {color_fondo}; 
+                                padding: 10px; 
+                                border-radius: 5px; 
+                                text-align: center; 
+                                color: white; 
+                                font-weight: bold; 
+                                font-size: 16px;
+                                margin-bottom: 15px;">
+                                {texto}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                
+                    # --- SECCIÓN VISUAL PARA COMPROBAR Y EDITAR DATOS ---
+                    col1, col2 = st.columns(2)
+                
+                    with col1:
+                        titulo_seccion("REMITENTE", color_fondo="#4e73df")
+                        rem_cliente = st.text_input(
+                            "Cliente Remitente",
+                            value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV",
+                        )
+                        rem_rfc = st.text_input("RFC Remitente", value="JPE830408B35")
+                        rem_calle = st.text_input("Calle Remitente", value="Privada del Gallo No. 1525")
+                      
+                        r_col1, r_col2 = st.columns(2)
+                        with r_col1:
+                            rem_colonia = st.text_input("Colonia Remitente", value="Col La Aurora")
+                        with r_col2:
+                            rem_cp = st.text_input("CP Remitente", value="44430")
+                          
+                        r_col3, r_col4 = st.columns(2)
+                        with r_col3:
+                            rem_mun = st.text_input("Municipio Remitente", value="Guadalajara")
+                        with r_col4:
+                            rem_estado = st.text_input("Estado Remitente", value="Jalisco")
+                          
+                        r_col5, r_col6 = st.columns(2)
+                        with r_col5:
+                            rem_contacto = st.text_input("Contacto Remitente", value="Rigoberto Hernandez")
+                        with r_col6:
+                            rem_tel = st.text_input("Teléfono Remitente", value="33 19 75 31 22")
+                
+                    with col2:
+                        titulo_seccion("DESTINATARIO / ENTREGA", color_fondo="#4B6B94")
+                        dest_cliente = st.text_input(
+                            "Cliente Destino (Comercial)", value=def_extran
+                        )
+                        dest_rfc = st.text_input("RFC Destino", value=def_rfc)
+                        dest_calle = st.text_input("Calle Destino", value=def_dom)
+                      
+                        d_col1, d_col2 = st.columns(2)
+                        with d_col1:
+                            dest_colonia = st.text_input("Colonia Destino", value=def_col)
+                        with d_col2:
+                            dest_cp = st.text_input("CP Destino", value=def_cp)
+                      
+                        d_col3, d_col4 = st.columns(2)
+                        with d_col3:
+                            dest_cui = st.text_input("Ciudad Destino", value=def_cui)
+                        with d_col4:
+                            dest_estado = st.text_input("Estado Destino", value=def_est)
+                          
+                        dest_tel = st.text_input("Teléfono Destino", value=tel_val)
+                
+                    # Diccionarios base para remitente y destinatario
+                    remitente = {
+                        "cliente": rem_cliente,
+                        "rfc": rem_rfc,
+                        "calle": rem_calle,
+                        "colonia": rem_colonia,
+                        "municipio": rem_mun,
+                        "estado": rem_estado,
+                        "contacto": rem_contacto,
+                        "telefono": rem_tel,
+                    }
+                
+                    destinatario = {
+                        "cliente": dest_cliente,
+                        "rfc": dest_rfc,
+                        "calle": dest_calle,
+                        "colonia": dest_colonia,
+                        "municipio": f"{dest_cui} - CP: {dest_cp}",
+                        "estado": dest_estado,
+                        "telefono": dest_tel if dest_tel else "No registrado",
+                    }
+                
+                    # Dirección completa concatenada de Jypesa para Crédito o Pagado
+                    direccion_jypesa_completa = f"{rem_calle}, {rem_colonia}, {rem_mun}, {rem_estado} - CP: {rem_cp}"
+                
+                    # Encabezado de Facturación Dinámico según Tipo de Pago
+                    titulo_seccion("FACTURACIÓN", color_fondo="#4B6B94")
+                    
+                    val_cli_fac = remitente["cliente"] if tipo_pago in ["CRÉDITO", "PAGADO"] else def_cli
+                    val_rfc_fac = remitente["rfc"] if tipo_pago in ["CRÉDITO", "PAGADO"] else def_rfc
+                    val_calle_fac = direccion_jypesa_completa if tipo_pago in ["CRÉDITO", "PAGADO"] else def_fiscal
+                
+                    fac_cliente = st.text_input("Cliente de Facturación", value=val_cli_fac)
+                    fac_rfc = st.text_input("RFC Facturación", value=val_rfc_fac)
+                    fac_calle = st.text_area(
+                        "Domicilio Fiscal / Datos Fiscales (FISCAL)",
+                        value=str(val_calle_fac).replace("_x000D_", " ").replace("\r", " ").replace("\n", " "),
+                    )
+                
+                    # Definición de marcas y diccionario final de facturación para el PDF
+                    if tipo_pago == "CRÉDITO":
+                        facturacion = {
+                            "cliente": fac_cliente,
+                            "rfc": fac_rfc,
+                            "calle": fac_calle,
+                            "colonia": "",
+                            "municipio": "",
+                            "estado": "",
+                            "email": "rhernandez@jypesa.com",
+                        }
+                        credito_mark = "X"
+                        por_cobrar_mark = ""
+                        pagado_mark = ""
+                    elif tipo_pago == "POR COBRAR":
+                        facturacion = {
+                            "cliente": fac_cliente,
+                            "rfc": fac_rfc,
+                            "calle": fac_calle,
+                            "colonia": "",
+                            "municipio": "",
+                            "estado": "",
+                            "email": "",
+                        }
+                        credito_mark = ""
+                        por_cobrar_mark = "X"
+                        pagado_mark = ""
+                    else:  # PAGADO
+                        facturacion = {
+                            "cliente": fac_cliente,
+                            "rfc": fac_rfc,
+                            "calle": fac_calle,
+                            "colonia": "",
+                            "municipio": "",
+                            "estado": "",
+                            "email": "rhernandez@jypesa.com",
+                        }
+                        credito_mark = ""
+                        por_cobrar_mark = ""
+                        pagado_mark = "X"
+                
+                
+                    # --- FUNCIÓN DE GENERACIÓN PDF (ReportLab) ---
+                    def generar_pdf_reportlab():
+                        buffer = BytesIO()
+                        doc = SimpleDocTemplate(
+                            buffer,
+                            pagesize=letter,
+                            rightMargin=28,
+                            leftMargin=28,
+                            topMargin=28,
+                            bottomMargin=28,
+                        )
+                        story = []
+                        styles = getSampleStyleSheet()
+                
+                        # Definimos la fecha actual aquí adentro para evitar el NameError
+                        fecha_actual = datetime.now().strftime("%d/%m/%Y")
+                
+                        title_style = ParagraphStyle(
+                            "TitleStyle",
+                            parent=styles["Normal"],
+                            fontName="Helvetica-Bold",
+                            fontSize=16,
+                            leading=18,
+                        )
+                        subtitle_style = ParagraphStyle(
+                            "SubTitleStyle",
+                            parent=styles["Normal"],
+                            fontName="Helvetica-Bold",
+                            fontSize=12,
+                            leading=14,
+                            alignment=1,
+                        )
+                        th_style = ParagraphStyle(
+                            "THStyle",
+                            parent=styles["Normal"],
+                            fontName="Helvetica-Bold",
+                            fontSize=8.5,
+                            leading=10,
+                            textColor=colors.white,
+                            alignment=1,
+                        )
+                        cell_bold = ParagraphStyle(
+                            "CellBold",
+                            parent=styles["Normal"],
+                            fontName="Helvetica-Bold",
+                            fontSize=7.5,
+                            leading=9,
+                        )
+                        cell_normal = ParagraphStyle(
+                            "CellNormal",
+                            parent=styles["Normal"],
+                            fontName="Helvetica",
+                            fontSize=7.5,
+                            leading=9,
+                        )
+                
+                        logo_io = obtener_logo_github()
+                        if logo_io:
+                            logo_element = Image(logo_io, width=130, height=45)
+                        else:
+                            logo_element = Paragraph(
+                                "<b>PaqMex</b><br/><font size=6>SOLUCIONES EN LOGÍSTICA</font>",
+                                ParagraphStyle(
+                                    "FallbackLogo",
+                                    parent=styles["Normal"],
+                                    fontName="Helvetica-BoldOblique",
+                                    fontSize=16,
+                                    textColor=colors.HexColor("#003366"),
+                                    alignment=2,
+                                ),
+                            )
+                
+                        header_data = [
+                            [Paragraph("PAQMEX S.A. DE C.V.", title_style), logo_element]
+                        ]
+                        t_header = Table(header_data, colWidths=[280, 274])
+                        t_header.setStyle(
+                            TableStyle([
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                            ])
+                        )
+                        story.append(t_header)
+                        story.append(Spacer(1, 10))
+                        story.append(Paragraph("ORDEN DE EMBARQUE", subtitle_style))
+                        story.append(Spacer(1, 8))
+                
+                        meta_data = [
+                            [
+                                "",
+                                Paragraph(
+                                    "<b>FECHA:</b>", ParagraphStyle("R", alignment=2, fontSize=9)
+                                ),
+                                Paragraph(
+                                    f"<b>{fecha_actual}</b>",
+                                    ParagraphStyle("C", alignment=1, fontSize=9),
+                                ),
+                            ],
+                            [
+                                "",
+                                Paragraph(
+                                    "<b>FACTURA:</b>", ParagraphStyle("R", alignment=2, fontSize=9)
+                                ),
+                                Paragraph(
+                                    f"<b>{num_factura}</b>",
+                                    ParagraphStyle("C", alignment=1, fontSize=9),
+                                ),
+                            ],
+                        ]
+                        t_meta = Table(meta_data, colWidths=[350, 100, 104])
+                        t_meta.setStyle(
+                            TableStyle([
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                ("LINEBELOW", (2, 0), (2, 0), 1, colors.black),
+                                ("LINEBELOW", (2, 1), (2, 1), 1, colors.black),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                            ])
+                        )
+                        story.append(t_meta)
+                        story.append(Spacer(1, 6))
+                
+                        rem_data = [
+                            [Paragraph("REMITENTE", th_style), ""],
+                            [
+                                Paragraph("CLIENTE:", cell_bold),
+                                Paragraph(remitente["cliente"], cell_bold),
+                            ],
+                            [Paragraph("RFC:", cell_bold), Paragraph(remitente["rfc"], cell_normal)],
+                            [
+                                Paragraph("CALLE:", cell_bold),
+                                Paragraph(remitente["calle"], cell_normal),
+                            ],
+                            [
+                                Paragraph("COLONIA:", cell_bold),
+                                Paragraph(remitente["colonia"], cell_normal),
+                            ],
+                            [
+                                Paragraph("MUNICIPIO:", cell_bold),
+                                Paragraph(
+                                    f"{remitente['municipio']} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>ESTADO:</b> {remitente['estado']}",
+                                    cell_normal,
+                                ),
+                            ],
+                            [
+                                Paragraph("CONTACTO:<br/>TELEFONO:", cell_bold),
+                                Paragraph(
+                                    f"{remitente['contacto']}<br/>{remitente['telefono']}",
+                                    cell_normal,
+                                ),
+                            ],
+                        ]
+                        t_rem = Table(rem_data, colWidths=[70, 202])
+                        t_rem.setStyle(
+                            TableStyle([
+                                ("SPAN", (0, 0), (1, 0)),
+                                ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
+                                ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                            ])
+                        )
+                
+                        dest_data = [
+                            [Paragraph("DESTINATARIO", th_style), ""],
+                            [
+                                Paragraph("CLIENTE:", cell_bold),
+                                Paragraph(destinatario["cliente"], cell_bold),
+                            ],
+                            [
+                                Paragraph("RFC:", cell_bold),
+                                Paragraph(destinatario["rfc"], cell_normal),
+                            ],
+                            [
+                                Paragraph("CALLE:", cell_bold),
+                                Paragraph(destinatario["calle"], cell_normal),
+                            ],
+                            [
+                                Paragraph("COLONIA:", cell_bold),
+                                Paragraph(destinatario["colonia"], cell_normal),
+                            ],
+                            [
+                                Paragraph("MUNICIPIO:", cell_bold),
+                                Paragraph(
+                                    f"{destinatario['municipio']} &nbsp;&nbsp; {destinatario['estado']}",
+                                    cell_normal,
+                                ),
+                            ],
+                            [
+                                Paragraph("TELEFONO:", cell_bold),
+                                Paragraph(destinatario["telefono"], cell_normal),
+                            ],
+                        ]
+                        t_dest = Table(dest_data, colWidths=[70, 202])
+                        t_dest.setStyle(
+                            TableStyle([
+                                ("SPAN", (0, 0), (1, 0)),
+                                ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
+                                ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                            ])
+                        )
+                
+                        t_top_blocks = Table([[t_rem, t_dest]], colWidths=[274, 274])
+                        t_top_blocks.setStyle(
+                            TableStyle([
+                                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                            ])
+                        )
+                        story.append(t_top_blocks)
+                        story.append(Spacer(1, 6))
+                
+                        fac_data = [
+                            [Paragraph("FACTURACION", th_style), ""],
+                            [
+                                Paragraph("CLIENTE:", cell_bold),
+                                Paragraph(facturacion["cliente"], cell_bold),
+                            ],
+                            [
+                                Paragraph("DATOS / RFC:", cell_bold),
+                                Paragraph(
+                                    f"{facturacion.get('calle', '')}<br/><b>RFC: {facturacion['rfc']}</b>",
+                                    cell_normal,
+                                ),
+                            ],
+                            [
+                                Paragraph("EMAIL:", cell_bold),
+                                Paragraph(
+                                    facturacion.get("email", "sbomailer@jypesa.com"), cell_normal
+                                ),
+                            ],
+                        ]
+                        t_fac = Table(fac_data, colWidths=[70, 202])
+                        t_fac.setStyle(
+                            TableStyle([
+                                ("SPAN", (0, 0), (1, 0)),
+                                ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#6c8ebf")),
+                                ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                            ])
+                        )
+                
+                        serv_data = [
+                            [Paragraph("SERVICIOS", th_style), "", "", ""],
+                            [
+                                Paragraph("PAGADO:", cell_bold),
+                                pagado_mark,
+                                Paragraph("SEGURO:", cell_bold),
+                                "SI: X   NO:",
+                            ],
+                            [
+                                Paragraph("POR COBRAR:", cell_bold),
+                                por_cobrar_mark,
+                                Paragraph("VALOR DECLARADO:", cell_bold),
+                                "",
+                            ],
+                            [Paragraph("CREDITO:", cell_bold), credito_mark, "", ""],
+                            [
+                                Paragraph("OCURRE:", cell_bold),
+                                "",
+                                Paragraph("CITA :", cell_bold),
+                                "SI [ &nbsp; ] NO",
+                            ],
+                            [
+                                Paragraph("A DOMICILIO:", cell_bold),
+                                "X",
+                                Paragraph("CONTACTO:<br/>TELEFONO:", cell_bold),
+                                "",
+                            ],
+                            [Paragraph("MANIOBRAS:", cell_bold), "", "", ""],
+                        ]
+                        t_serv = Table(serv_data, colWidths=[70, 45, 85, 72])
+                        t_serv.setStyle(
+                            TableStyle([
+                                ("SPAN", (0, 0), (3, 0)),
+                                ("BACKGROUND", (0, 0), (3, 0), colors.HexColor("#6c8ebf")),
+                                ("SPAN", (2, 2), (3, 2)),
+                                ("SPAN", (2, 3), (3, 3)),
+                                ("SPAN", (2, 4), (3, 4)),
+                                ("SPAN", (0, 6), (3, 6)),
+                                ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                ("ALIGN", (1, 1), (1, 3), "CENTER"),
+                                ("ALIGN", (1, 5), (1, 5), "CENTER"),
+                                ("TOPPADDING", (0, 0), (-1, -1), 3.2),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 3.2),
+                            ])
+                        )
+                
+                        t_mid_blocks = Table([[t_fac, t_serv]], colWidths=[274, 274])
+                        t_mid_blocks.setStyle(
+                            TableStyle([
+                                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                            ])
+                        )
+                        story.append(t_mid_blocks)
+                        story.append(Spacer(1, 6))
+                
+                        cont_data = [[Paragraph("CONTENIDO", th_style), "", "", "", "", "", ""]]
+                        cont_headers = [
+                            "#",
+                            "CANTIDAD",
+                            "EMPAQUE",
+                            "CONTENIDO",
+                            "DIMENSIONES (ALTO/LARGO/ANCHO)",
+                            "KG REAL",
+                            "KG VOLUMEN",
+                        ]
+                        cont_data.append([Paragraph(h, th_style) for h in cont_headers])
+                        for i in range(1, 5):
+                            cont_data.append([str(i), "", "", "", "", "", ""])
+                
+                        t_cont = Table(cont_data, colWidths=[25, 60, 80, 164, 155, 50, 64])
+                        t_cont.setStyle(
+                            TableStyle([
+                                ("SPAN", (0, 0), (6, 0)),
+                                ("BACKGROUND", (0, 0), (6, 0), colors.HexColor("#6c8ebf")),
+                                ("BACKGROUND", (0, 1), (6, 1), colors.HexColor("#6c8ebf")),
+                                ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                            ])
+                        )
+                        story.append(t_cont)
+                        story.append(Spacer(1, 6))
+                
+                        cp_data = [[Paragraph("CARTA PORTE", th_style), "", ""]]
+                        cp_headers = [
+                            "#",
+                            "CODIGO PRODUCTO CARTA PORTE SAT",
+                            "CODIGO UNIDAD PESO CARTA PORTE SAT",
+                        ]
+                        cp_data.append([Paragraph(h, th_style) for h in cp_headers])
+                        for i in range(1, 5):
+                            cp_data.append([str(i), "", ""])
+                
+                        t_cp = Table(cp_data, colWidths=[25, 261, 262])
+                        t_cp.setStyle(
+                            TableStyle([
+                                ("SPAN", (0, 0), (2, 0)),
+                                ("BACKGROUND", (0, 0), (2, 0), colors.HexColor("#6c8ebf")),
+                                ("BACKGROUND", (0, 1), (2, 1), colors.HexColor("#6c8ebf")),
+                                ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                            ])
+                        )
+                        story.append(t_cp)
+                        story.append(Spacer(1, 30))
+                
+                        sig_style = ParagraphStyle(
+                            "Sig",
+                            parent=styles["Normal"],
+                            fontName="Helvetica-Bold",
+                            fontSize=7.5,
+                            leading=9,
+                            alignment=1,
+                        )
+                        sig_data = [
+                            [
+                                Paragraph(
+                                    "________________________________________<br/>FIRMA Y NOMBRE DEL CLIENTE :",
+                                    sig_style,
+                                ),
+                                Paragraph(
+                                    "________________________________________<br/>FIRMA Y NOMBRE DE QUIEN RECIBE :",
+                                    sig_style,
+                                ),
+                                Paragraph(
+                                    "________________________________________<br/>NUMERO DE UNIDAD",
+                                    sig_style,
+                                ),
+                            ]
+                        ]
+                        t_sig = Table(sig_data, colWidths=[183, 183, 182])
+                        t_sig.setStyle(
+                            TableStyle([
+                                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                            ])
+                        )
+                        story.append(t_sig)
+                
+                        doc.build(story)
+                        buffer.seek(0)
+                        return buffer
+                
+                    st.markdown("---")                    
+                    # CSS personalizado para hacer los botones de todo el ancho (full-width)
+                    st.markdown(
+                        """
+                        <style>
+                        div.stButton > button, div.stDownloadButton > button {
+                            width: 100%;
+                            border-radius: 6px;
+                            font-weight: bold;
+                            padding: 0.6rem 1rem;
+                        }
+                        </style>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                
+                    if st.button(":material/print: Generar PDF con datos de Orden de Embarque", use_container_width=True):
+                        pdf_buffer = generar_pdf_reportlab()
+                        st.success(
+                            f"¡Orden de embarque para la factura {num_factura} generada con éxito!"
+                        )
+                        st.download_button(
+                            label=":material/download: Descargar PDF de Orden de Embarque",
+                            data=pdf_buffer,
+                            file_name=f"Orden_Embarque_{num_factura}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True,
+                        )
+                else:
+                    st.warning("No se encontraron datos en el CSV de GitHub.")
+            
+            # --- SRECOLECCIONES TRES GUERRAS ------
+            elif st.session_state.menu_sub == "RECOLECCION 3G":
+                st.markdown("""
+                <style>
+                    /* 2. Estilo corporativo para los botones personalizados */
+                    div.stButton > button,
+                    div.stButton > button:link,
+                    div.stButton > button:visited {
+                        background-color: #2B343B !important; 
+                        color: #FFFFFF !important;            
+                        border: 1px solid #2B343B !important; 
+                        border-radius: 5px !important;
+                        transition: all 0.3s ease !important;
+                        width: 100% !important;
+                        box-shadow: none !important;
+                    }
+                    
+                    div.stButton > button:hover,
+                    div.stButton > button:focus {
+                        background-color: #00A3A3 !important; 
+                        color: #FFFFFF !important;            
+                        border-color: #00A3A3 !important;
+                        box-shadow: none !important;
+                    }
+                    
+                    div.stButton > button:active {
+                        background-color: #00A3A3 !important;
+                        border-color: #00A3A3 !important;
+                        color: #FFFFFF !important;
+                    }
+                </style>
+            """, unsafe_allow_html=True)
+                
+                # --- FUNCIONES DE GITHUB PARA EL CONTROL DE ESTATUS Y EDICIÓN ---
+                GITHUB_REPO = "RH2026/nexion"
+                GITHUB_FILE = "recolecciones_estatus.csv"
+                BRANCH = "main"
+            
+                def cargar_estatus_github():
+                    try:
+                        url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{BRANCH}/{GITHUB_FILE}"
+                        token = st.secrets["GITHUB_TOKEN"]
+                        headers = {"Authorization": f"token {token}"}
+                        response = requests.get(url, headers=headers)
+                        if response.status_code == 200:
+                            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                            df.columns = df.columns.astype(str).str.strip()
+                            return df
+                        else:
+                            return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones"])
+                    except Exception:
+                        return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones"])
+            
+                def guardar_estatus_github(df_nuevo, mensaje="Actualizar estatus de recolecciones"):
+                    try:
+                        token = st.secrets["GITHUB_TOKEN"]
+                        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
+                        headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+                        
+                        response_get = requests.get(url, headers=headers)
+                        sha = response_get.json().get("sha") if response_get.status_code == 200 else None
+            
+                        csv_buffer = df_nuevo.to_csv(index=False, encoding="utf-8-sig")
+                        content_encoded = base64.b64encode(csv_buffer.encode("utf-8")).decode("utf-8")
+            
+                        payload = {
+                            "message": mensaje,
+                            "content": content_encoded,
+                            "branch": BRANCH
+                        }
+                        if sha:
+                            payload["sha"] = sha
+            
+                        response_put = requests.put(url, headers=headers, json=payload)
+                        if response_put.status_code in [200, 201]:
+                            return True
+                        else:
+                            st.error(f"Error al guardar en GitHub: {response_put.status_code} - {response_put.text}")
+                            return False
+                    except Exception as e:
+                        st.error(f"No se pudo guardar en GitHub: {e}")
+                        return False
+            
+                # --- DEFINICIÓN DE TABS ---
+                tab1, tab2, tab3 = st.tabs(["Formato Solicitud", "Render de Estatus", "Edición y Actualización"])
+            
+                # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
+                # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
+                with tab1:
+                    @st.cache_data(ttl=60)
+                    def cargar_csv_github():
+                        try:
+                            repo = "RH2026/nexion"
+                            filename = "facturacion_moreno.csv"
+                            branch = "main"
+                            url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                            token = st.secrets["GITHUB_TOKEN"]
+                            headers = {"Authorization": f"token {token}"}
+                            
+                            response = requests.get(url, headers=headers)
+                            if response.status_code == 200:
+                                df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                                df.columns = df.columns.astype(str).str.strip()
+                                return df
+                            else:
+                                st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
+                                return pd.DataFrame()
+                        except Exception as e:
+                            st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
+                            return pd.DataFrame()
+            
+                    @st.cache_data(ttl=300)
+                    def obtener_logo_tresguerras():
+                        try:
+                            repo = "RH2026/nexion"
+                            filename = "logo_3G.png"
+                            branch = "main"
+                            url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                            token = st.secrets["GITHUB_TOKEN"]
+                            headers = {"Authorization": f"token {token}"}
+                            response = requests.get(url, headers=headers)
+                            if response.status_code == 200:
+                                return BytesIO(response.content)
+                            return None
+                        except Exception:
+                            return None
+            
+                    df_facturacion = cargar_csv_github()
+            
+                    if not df_facturacion.empty:
+                        df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
+                        facturas_disponibles = df_facturacion["Factura"].unique()
+                                    
+                        # --- 4 CONTROLES PRINCIPALES EN UNA SOLA FILA ---
+                        top_col1, top_col2, top_col3, top_col4 = st.columns(4)
+                        
+                        with top_col1:
+                            fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now(), key="tg_fecha_rec")
+                        fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
+            
+                        with top_col2:
+                            modo_busqueda = st.selectbox("🔍 Método de Selección", ["Seleccionar de la lista", "Escribir folio manual"], key="tg_modo_busq")
+            
+                        with top_col3:
+                            if modo_busqueda == "Seleccionar de la lista":
+                                num_factura = st.selectbox("Folio / Factura", facturas_disponibles, key="tg_sel_fact")
+                                registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura in facturas_disponibles else pd.Series()
+                            else:
+                                num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
+                                registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura and str(num_factura) in df_facturacion["Factura"].values else pd.Series()
+            
+                        with top_col4:
+                            tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
+            
+                        def_extran = str(registro.get("Nombre_Extran", "")) if not registro.empty and pd.notna(registro.get("Nombre_Extran", "")) else ""
+                        def_rfc = str(registro.get("RFC", "")) if not registro.empty and pd.notna(registro.get("RFC", "")) else ""
+                        def_dom = str(registro.get("Domicilio", "")) if not registro.empty and pd.notna(registro.get("Domicilio", "")) else ""
+                        def_col = str(registro.get("Colonia", "")) if not registro.empty and pd.notna(registro.get("Colonia", "")) else ""
+                        def_cui = str(registro.get("Cuidad", "")) if not registro.empty and pd.notna(registro.get("Cuidad", "")) else ""
+                        def_cp = str(registro.get("CP", "")) if not registro.empty and pd.notna(registro.get("CP", "")) else ""
+                        def_est = str(registro.get("Estado", "")) if not registro.empty and pd.notna(registro.get("Estado", "")) else ""
+            
+                        tel_val = ""
+                        if not registro.empty:
+                            for col_p in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
+                                if col_p in registro and pd.notna(registro[col_p]):
+                                    tel_val = str(registro[col_p]).strip()
+                                    break
+            
+                        st.markdown("---")
+            
+                        def titulo_seccion(texto, color_fondo="#b71c1c"):
+                            st.markdown(f"""
+                                <div style="background-color: {color_fondo}; padding: 8px; border-radius: 4px; text-align: center; color: white; font-weight: bold; font-size: 15px; margin-bottom: 10px;">
+                                    {texto}
+                                </div>
+                            """, unsafe_allow_html=True)
+            
+                        col1, col2 = st.columns(2)
+            
+                        with col1:
+                            titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#e65100")
+                            # Usamos una KEY basada en el folio actual para forzar a Streamlit a actualizar los valores al cambiar de factura
+                            rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran, key=f"rem_cli_{num_factura}")
+                            rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom, key=f"rem_call_{num_factura}")
+                            rc1, rc2 = st.columns(2)
+                            with rc1:
+                                rem_colonia = st.text_input("Colonia (Remitente)", value=def_col, key=f"rem_col_{num_factura}")
+                            with rc2:
+                                rem_cp = st.text_input("CP (Remitente)", value=def_cp, key=f"rem_cp_{num_factura}")
+                            rc3, rc4 = st.columns(2)
+                            with rc3:
+                                rem_cui = st.text_input("Ciudad / Municipio", value=def_cui, key=f"rem_cui_{num_factura}")
+                            with rc4:
+                                rem_estado = st.text_input("Estado", value=def_est, key=f"rem_est_{num_factura}")
+                            rc5, rc6 = st.columns(2)
+                            with rc5:
+                                rem_contacto = st.text_input("Persona que entrega", value="", key=f"rem_cont_{num_factura}")
+                            with rc6:
+                                rem_tel = st.text_input("Teléfono Remitente", value=tel_val, key=f"rem_tel_{num_factura}")
+            
+                        with col2:
+                            titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#4B6B94")
+                            dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados", key=f"dest_cli_{num_factura}")
+                            dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155", key=f"dest_call_{num_factura}")
+                            dc1, dc2 = st.columns(2)
+                            with dc1:
+                                dest_colonia = st.text_input("Colonia Destino", value="La Aurora", key=f"dest_col_{num_factura}")
+                            with dc2:
+                                dest_cp = st.text_input("CP Destino", value="44460", key=f"dest_cp_{num_factura}")
+                            dc3, dc4 = st.columns(2)
+                            with dc3:
+                                dest_cui = st.text_input("Ciudad Destino", value="Guadalajara", key=f"dest_cui_{num_factura}")
+                            with dc4:
+                                dest_estado = st.text_input("Estado Destino", value="Jalisco", key=f"dest_est_{num_factura}")
+                            dc5, dc6 = st.columns(2)
+                            with dc5:
+                                dest_contacto = st.text_input("Persona que recibe", value="Jazmin Castillo", key=f"dest_cont_{num_factura}")
+                            with dc6:
+                                dest_tel = st.text_input("Teléfono Destino", value="33 3540 2939 Ext.123", key=f"dest_tel_{num_factura}")
+            
+                        titulo_seccion("FACTURAR A (DATOS FISCALES JYPESA)", color_fondo="#37474f")
+                        fac_cliente = st.text_input("Facturar a Nombre de", value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV", key=f"fac_cli_{num_factura}")
+                        fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México", key=f"fac_dom_{num_factura}")
+                        fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35", key=f"fac_rfc_{num_factura}")
+            
+                        # --- SECCIÓN DINÁMICA DE EMBARQUE ---
+                        st.markdown("---")
+                        titulo_seccion("📦 DETALLE DE EMBARQUE Y LÍNEAS DE CARGA", color_fondo="#e65100")
+            
+                        if "lineas_embarque" not in st.session_state:
+                            st.session_state.lineas_embarque = [
+                                {"cantidad": 1, "tipo": "TARIMA", "descripcion": "AMENIDADES", "largo": 1.20, "ancho": 1.20, "alto": 2.00, "peso": 800.0}
+                            ]
+            
+                        for idx, linea in enumerate(st.session_state.lineas_embarque):
+                            st.markdown(f"**Renglón {idx + 1}**")
+                            lc1, lc2, lc3, lc4, lc5, lc6, lc7 = st.columns([1, 2, 2, 1, 1, 1, 1])
+                            with lc1:
+                                linea["cantidad"] = st.number_input("Cant.", min_value=1, value=linea["cantidad"], key=f"cant_{idx}")
+                            with lc2:
+                                linea["tipo"] = st.selectbox("Tipo Bulto", ["TARIMA", "CAJA", "ATADO", "TAMBO", "SACO", "OTRO"], index=["TARIMA", "CAJA", "ATADO", "TAMBO", "SACO", "OTRO"].index(linea["tipo"]) if linea["tipo"] in ["TARIMA", "CAJA", "ATADO", "TAMBO", "SACO", "OTRO"] else 0, key=f"tipo_{idx}")
+                            with lc3:
+                                linea["descripcion"] = st.text_input("Descripción", value=linea["descripcion"], key=f"desc_{idx}")
+                            with lc4:
+                                linea["largo"] = st.number_input("Largo (m)", value=float(linea["largo"]), key=f"larg_{idx}")
+                            with lc5:
+                                linea["ancho"] = st.number_input("Ancho (m)", value=float(linea.get("ancho", 1.20)), key=f"anch_{idx}")
+                            with lc6:
+                                linea["alto"] = st.number_input("Alto (m)", value=float(linea["alto"]), key=f"alt_{idx}")
+                            with lc7:
+                                linea["peso"] = st.number_input("Peso (KG)", value=float(linea["peso"]), key=f"pes_{idx}")
+            
+                        col_btn1, col_btn2 = st.columns(2)
+                        with col_btn1:
+                            if st.button("➕ Agregar otra línea de carga", key="btn_add_line"):
+                                st.session_state.lineas_embarque.append({"cantidad": 1, "tipo": "CAJA", "descripcion": "MERCANCIA", "largo": 0.50, "ancho": 0.50, "alto": 0.50, "peso": 50.0})
+                                st.rerun()
+                        with col_btn2:
+                            if len(st.session_state.lineas_embarque) > 1 and st.button("🗑️ Eliminar última línea", key="btn_del_line"):
+                                st.session_state.lineas_embarque.pop()
+                                st.rerun()
+            
+                        total_peso_calc = sum(l["peso"] * l["cantidad"] for l in st.session_state.lineas_embarque)
+                        st.info(f"⚖️ **Peso Total Calculado:** {total_peso_calc:,.2f} KG")
+            
+                        # --- FUNCIÓN PDF REPORTLAB (ESTILO OFICIAL TRESGUERRAS) ---
+                        def generar_pdf_tresguerras_oficial():
+                            buffer = BytesIO()
+                            doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=15, leftMargin=15, topMargin=15, bottomMargin=15)
+                            story = []
+                            
+                            fecha_actual = datetime.now().strftime("%d/%m/%Y")
+                            
+                            th_style = ParagraphStyle("TH", fontName="Helvetica-Bold", fontSize=6.5, leading=8, textColor=colors.white, alignment=1)
+                            cell_bold = ParagraphStyle("CB", fontName="Helvetica-Bold", fontSize=6, leading=7.5)
+                            cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
+                            cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
+            
+                            # 1. ENCABEZADO SUPERIOR
+                            logo_io = obtener_logo_tresguerras()
+                            logo_elem = Image(logo_io, width=85, height=22) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_center)
+                            
+                            header_table = Table([
+                                [
+                                    logo_elem, 
+                                    Paragraph("<b>AUTOTRANSPORTES DE CARGA TRESGUERRAS<br/>SOLICITUD DE SERVICIO</b>", ParagraphStyle("HT", alignment=1, fontSize=8.5, fontName="Helvetica-Bold")), 
+                                    Paragraph(f"<b>FECHA SOLICITUD:</b> {fecha_actual}<br/><b>FOLIO:</b> {num_factura}", ParagraphStyle("H2", fontSize=6, alignment=1))
+                                ],
+                                ["", Paragraph("PAQUETERIA", ParagraphStyle("PAQ", alignment=1, fontSize=5.5, fontName="Helvetica-Bold")), ""]
+                            ], colWidths=[105, 382, 115])
+                            header_table.setStyle(TableStyle([
+                                ("SPAN", (0,0), (0,1)),
+                                ("SPAN", (2,0), (2,1)),
+                                ("GRID", (0,0), (-1,-1), 1, colors.black),
+                                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                ("ALIGN", (0,0), (0,0), "CENTER"),
+                                ("BACKGROUND", (1,0), (1,0), colors.HexColor("#e0e0e0")),
+                                ("BACKGROUND", (2,0), (2,0), colors.HexColor("#fff59d")),
+                                ("BACKGROUND", (1,1), (1,1), colors.HexColor("#f5f5f5")),
+                            ]))
+                            story.append(header_table)
+                            story.append(Spacer(1, 2))
+            
+                            # 2. FECHAS RECOLECCIÓN / RECEPCIÓN
+                            fechas_table = Table([
+                                [Paragraph("<b>FECHA DE RECOLECCION:</b>", cell_bold), Paragraph(fecha_rec_str, cell_center), Paragraph("<b>FECHA SOLICITUD</b>", cell_bold), Paragraph(fecha_actual, cell_center)],
+                                [Paragraph("<b>FECHA DE RECEPCION:</b>", cell_bold), "", Paragraph("<b>FOLIO</b>", cell_bold), ""]
+                            ], colWidths=[110, 150, 105, 237])
+                            fechas_table.setStyle(TableStyle([
+                                ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                ("BACKGROUND", (1,0), (1,0), colors.HexColor("#fff59d")),
+                                ("BACKGROUND", (3,0), (3,0), colors.HexColor("#fff59d")),
+                                ("BACKGROUND", (1,1), (1,1), colors.HexColor("#fff59d")),
+                                ("BACKGROUND", (3,1), (3,1), colors.HexColor("#fff59d")),
+                                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                                ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                            ]))
+                            story.append(fechas_table)
+                            story.append(Spacer(1, 2))
+            
+                            # 3. REMITENTE Y DESTINATARIO
+                            rem_data = [
+                                [Paragraph("REMITENTE - RECOLECCION", th_style), ""],
+                                [Paragraph("CLIENTE:", cell_bold), Paragraph(rem_cliente, cell_bold)],
+                                [Paragraph("CALLE Y NUMERO:", cell_bold), Paragraph(rem_calle, cell_normal)],
+                                [Paragraph("COLONIA / CP:", cell_bold), Paragraph(f"{rem_colonia} - C.P. {rem_cp}", cell_normal)],
+                                [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{rem_cui}, {rem_estado}", cell_normal)],
+                                [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{rem_contacto} - {rem_tel}", cell_normal)],
+                            ]
+                            t_rem = Table(rem_data, colWidths=[90, 211])
+                            t_rem.setStyle(TableStyle([
+                                ("SPAN", (0,0), (1,0)),
+                                ("BACKGROUND", (0,0), (1,0), colors.HexColor("#e65100")),
+                                ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                                ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                            ]))
+            
+                            dest_data = [
+                                [Paragraph("DESTINATARIO - ENTREGA", th_style), ""],
+                                [Paragraph("CLIENTE:", cell_bold), Paragraph(dest_cliente, cell_bold)],
+                                [Paragraph("CALLE Y NUMERO:", cell_bold), Paragraph(dest_calle, cell_normal)],
+                                [Paragraph("COLONIA / CP:", cell_bold), Paragraph(f"{dest_colonia} - C.P. {dest_cp}", cell_normal)],
+                                [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{dest_cui}, {dest_estado}", cell_normal)],
+                                [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{dest_contacto} - {dest_tel}", cell_normal)],
+                            ]
+                            t_dest = Table(dest_data, colWidths=[90, 211])
+                            t_dest.setStyle(TableStyle([
+                                ("SPAN", (0,0), (1,0)),
+                                ("BACKGROUND", (0,0), (1,0), colors.black),
+                                ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                                ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                            ]))
+            
+                            t_top = Table([[t_rem, t_dest]], colWidths=[301, 301])
+                            story.append(t_top)
+                            story.append(Spacer(1, 2))
+            
+                            # 4. SECCIÓN FACTURAR A
+                            fac_data = [
+                                [Paragraph("<b>FACTURAR A:</b>", th_style), "", ""],
+                                [Paragraph(fac_cliente, cell_center), "", ""],
+                                [Paragraph("<b>DOMICILIO:</b>", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center), ""],
+                                [Paragraph(f"Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México<br/>Tel.. 0152 (33) 35402939<br/>E-mail: rhernandez@jypesa.com", ParagraphStyle("FD", alignment=1, fontSize=6, fontName="Helvetica", leading=7.5)), "", ""],
+                                [Paragraph("<b>RFC:</b>", cell_bold), Paragraph(f"RFC {fac_rfc}", cell_center), ""]
+                            ]
+                            t_fac = Table(fac_data, colWidths=[75, 427, 100])
+                            t_fac.setStyle(TableStyle([
+                                ("SPAN", (0,0), (2,0)),
+                                ("SPAN", (0,1), (2,1)),
+                                ("SPAN", (1,2), (2,2)),
+                                ("SPAN", (0,3), (2,3)),
+                                ("SPAN", (1,4), (2,4)),
+                                ("BACKGROUND", (0,0), (2,0), colors.HexColor("#b71c1c")),
+                                ("BACKGROUND", (0,1), (2,1), colors.HexColor("#fff59d")),
+                                ("BACKGROUND", (0,2), (0,2), colors.HexColor("#b71c1c")),
+                                ("TEXTCOLOR", (0,2), (0,2), colors.white),
+                                ("BACKGROUND", (1,2), (2,2), colors.HexColor("#ffffff")),
+                                ("BACKGROUND", (0,3), (2,3), colors.HexColor("#fff59d")),
+                                ("BACKGROUND", (0,4), (0,4), colors.HexColor("#b71c1c")),
+                                ("TEXTCOLOR", (0,4), (0,4), colors.white),
+                                ("BACKGROUND", (1,4), (2,4), colors.HexColor("#fff59d")),
+                                ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                                ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                            ]))
+                            story.append(t_fac)
+                            story.append(Spacer(1, 2))
+            
+                            # 5. TABLA DE EMBARQUE / CONTENIDO DINÁMICA
+                            emb_headers = ["Cantidad", "TIPO DE BULTOS", "DESCRIPCION", "DIAMETRO", "ALTO", "CUBICAJE (m3)", "PESO (KG)"]
+                            emb_data = [
+                                [Paragraph("<b>INFORMACION DE EMBARQUE</b>", th_style), "", "", Paragraph("<b>DIMENSIONES (mts)</b>", th_style), "", Paragraph("<b>VOLUMEN</b>", th_style), Paragraph("<b>PESO POR BULTO</b>", th_style)],
+                                [Paragraph(h, th_style) for h in emb_headers]
+                            ]
+            
+                            for l in st.session_state.lineas_embarque:
+                                ancho_val = l.get('ancho', 1.20)
+                                dim_str = f"{l['largo']} x {ancho_val} x {l['alto']}"
+                                emb_data.append([
+                                    str(l["cantidad"]), 
+                                    str(l["tipo"]), 
+                                    str(l["descripcion"]), 
+                                    str(dim_str), 
+                                    "", 
+                                    "0", 
+                                    str(l["peso"])
+                                ])
+            
+                            filas_actuales = len(st.session_state.lineas_embarque)
+                            for _ in range(max(0, 6 - filas_actuales)):
+                                emb_data.append(["", "", "", "", "", "0", ""])
+                                
+                            emb_data.append(["", "", "", "", "", "0", f"{total_peso_calc:,.1f}"])
+            
+                            t_emb = Table(emb_data, colWidths=[45, 65, 182, 95, 65, 80, 70])
+                            t_emb.setStyle(TableStyle([
+                                ("SPAN", (0,0), (2,0)),
+                                ("SPAN", (3,0), (4,0)),
+                                ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#b71c1c")),
+                                ("BACKGROUND", (0,1), (-1,1), colors.HexColor("#b71c1c")),
+                                ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                ("ALIGN", (0,0), (-1,-1), "CENTER"),
+                                ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                                ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                            ]))
+                            story.append(t_emb)
+                            story.append(Spacer(1, 2))
+            
+                            # 6. BLOQUE MEDIO
+                            th_red = ParagraphStyle("THR", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
+                            th_green = ParagraphStyle("THG", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
+            
+                            mid_table_data = [
+                                [
+                                    Paragraph("<b>MERCANCIA ASEGURADA</b>", th_red), 
+                                    Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", th_red), 
+                                    Paragraph("<b>DESCRIPCION DEL ACUSE:</b>", th_red)
+                                ],
+                                [
+                                    Table([
+                                        [Paragraph("SI", cell_center), "", Paragraph("VALOR DECLARADO", cell_bold)],
+                                        [Paragraph("NO", cell_center), Paragraph("X", cell_center), Paragraph("POR CUENTA Y RIESGO", cell_bold)]
+                                    ], colWidths=[30, 30, 85], style=[
+                                        ("BACKGROUND", (2,0), (2,-1), colors.HexColor("#fff59d")),
+                                        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                        ("TOPPADDING", (0,0), (-1,-1), 1),
+                                        ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                    ]),
+                                    Table([
+                                        [Paragraph("SI", cell_center), Paragraph("X", cell_center), Paragraph("N<br/>O", cell_center)],
+                                        ["", "", ""]
+                                    ], colWidths=[30, 30, 25], style=[
+                                        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                        ("TOPPADDING", (0,0), (-1,-1), 1),
+                                        ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                    ]),
+                                    ""
+                                ],
+                                [
+                                    Paragraph("<b>TIPO DE PAGO MARCAR CON UNA X</b>", th_green), 
+                                    Paragraph("<b>MARCAR CON UNA X (EAD / OCURRE)</b>", th_green), 
+                                    Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", th_red)
+                                ],
+                                [
+                                    Table([
+                                        [Paragraph("pagado (origen)", cell_center), Paragraph("por cobrar (destino)", cell_center), Paragraph("Credito", cell_center)],
+                                        ["", "", Paragraph("X", cell_center)]
+                                    ], colWidths=[48, 52, 45], style=[
+                                        ("BACKGROUND", (2,1), (2,1), colors.HexColor("#fff59d")),
+                                        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                        ("TOPPADDING", (0,0), (-1,-1), 1),
+                                        ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                    ]),
+                                    Table([
+                                        [Paragraph("Recolección", cell_center), Paragraph("Recepción", cell_center), Paragraph("Entrega Domicilio", cell_center)],
+                                        [Paragraph("X", cell_center), "", Paragraph("X", cell_center)]
+                                    ], colWidths=[48, 45, 62], style=[
+                                        ("BACKGROUND", (0,1), (0,1), colors.HexColor("#fff59d")),
+                                        ("BACKGROUND", (2,1), (2,1), colors.HexColor("#fff59d")),
+                                        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                        ("TOPPADDING", (0,0), (-1,-1), 1),
+                                        ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                    ]),
+                                    Table([
+                                        [Paragraph("factura", cell_center), Paragraph("orden de compra", cell_center), Paragraph("pedimento", cell_center), Paragraph("otro", cell_center)]
+                                    ], colWidths=[70, 70, 70, 62], style=[
+                                        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                        ("TOPPADDING", (0,0), (-1,-1), 4),
+                                        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                                    ])
+                                ]
+                            ]
+            
+                            t_mid = Table(mid_table_data, colWidths=[145, 155, 302])
+                            t_mid.setStyle(TableStyle([
+                                ("SPAN", (2,1), (2,1)),
+                                ("BACKGROUND", (0,0), (0,0), colors.HexColor("#b71c1c")),
+                                ("BACKGROUND", (1,0), (1,0), colors.HexColor("#b71c1c")),
+                                ("BACKGROUND", (2,0), (2,0), colors.HexColor("#b71c1c")),
+                                ("BACKGROUND", (2,1), (2,1), colors.HexColor("#fff59d")),
+                                ("BACKGROUND", (0,2), (0,2), colors.HexColor("#2e7d32")),
+                                ("BACKGROUND", (1,2), (1,2), colors.HexColor("#2e7d32")),
+                                ("BACKGROUND", (2,2), (2,2), colors.HexColor("#b71c1c")),
+                                ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                ("VALIGN", (0,0), (-1,-1), "TOP"),
+                                ("TOPPADDING", (0,0), (-1,-1), 1),
+                                ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                            ]))
+                            story.append(t_mid)
+                            story.append(Spacer(1, 2))
+            
+                            # 7. BLOQUE FINAL
+                            t_final_block = Table([
+                                [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_style), Paragraph("<b>OBSERVACIONES</b>", th_style)],
+                                [
+                                    Table([
+                                        [Paragraph("<b>NOMBRE:</b>", cell_bold), Paragraph("RIGOBERTO HERNANDEZ", cell_center)],
+                                        [Paragraph("<b>EMPRESA:</b>", cell_bold), Paragraph("JYPESA", cell_center)],
+                                        [Paragraph("<b>E-MAIL:</b>", cell_bold), Paragraph("rhernandez@jypesa.com", cell_center)],
+                                        [Paragraph("<b>TELEFONO:</b>", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center)]
+                                    ], colWidths=[70, 230], style=[
+                                        ("BACKGROUND", (1,0), (1,-1), colors.HexColor("#fff59d")),
+                                        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                        ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                                        ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                                    ]),
+                                    Paragraph("<b>LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCIÓN,</b> SI NO QUIEREN ENTREGAR LLAMAR AL TELÉFONO<br/>Cel. 33 19 75 31 22 Rigoberto Hernandez", cell_normal)
+                                ]
+                            ], colWidths=[300, 302])
+                            t_final_block.setStyle(TableStyle([
+                                ("BACKGROUND", (0,0), (0,0), colors.HexColor("#b71c1c")),
+                                ("BACKGROUND", (1,0), (1,0), colors.HexColor("#b71c1c")),
+                                ("BACKGROUND", (1,1), (1,1), colors.HexColor("#fff59d")),
+                                ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                ("VALIGN", (0,0), (-1,-1), "TOP"),
+                                ("TOPPADDING", (0,0), (-1,-1), 2),
+                                ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+                            ]))
+                            story.append(t_final_block)
+            
+                            doc.build(story)
+                            buffer.seek(0)
+                            return buffer
+            
+                        st.markdown("---")
+                        col_gen1, col_gen2 = st.columns(2)
+                        with col_gen1:
+                            if st.button("Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True, key="btn_gen_pdf_tg"):
+                                pdf_buf = generar_pdf_tresguerras_oficial()
+                                st.success("¡Formato de Tresguerras generado correctamente con los 4 controles en línea!")
+                                st.download_button(
+                                    label="📥 Descargar PDF Tresguerras Oficial",
+                                    data=pdf_buf,
+                                    file_name=f"Tresguerras_Oficial_{num_factura}.pdf",
+                                    mime="application/pdf",
+                                    use_container_width=True,
+                                    key="dl_pdf_tg_btn"
+                                )
+                        with col_gen2:
+                            if st.button("Registrar Folio en Estatus GitHub", use_container_width=True, key="btn_guardar_gh_tab1"):
+                                df_estatus_actual = cargar_estatus_github()
+                                nuevo_registro = pd.DataFrame([{
+                                    "Folio": str(num_factura),
+                                    "Fecha_Recoleccion": fecha_rec_str,
+                                    "Cliente": str(dest_cliente),
+                                    "Proveedor": str(rem_cliente),
+                                    "Peso_Total": float(total_peso_calc),
+                                    "Estatus": "PENDIENTE DE RECOLECCION",
+                                    "Observaciones": "Creado desde solicitud Tresguerras"
+                                }])
+                                if not df_estatus_actual.empty and str(num_factura) in df_estatus_actual["Folio"].values:
+                                    df_estatus_actual.loc[df_estatus_actual["Folio"] == str(num_factura), ["Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total"]] = [fecha_rec_str, str(dest_cliente), str(rem_cliente), float(total_peso_calc)]
+                                    df_final = df_estatus_actual
+                                else:
+                                    df_final = pd.concat([df_estatus_actual, nuevo_registro], ignore_index=True)
+                                
+                                if guardar_estatus_github(df_final, f"Registro de folio {num_factura}"):
+                                    st.success(f"¡Folio {num_factura} guardado/actualizado exitosamente en GitHub!")
+                    else:
+                        st.warning("No se encontraron datos en el CSV de GitHub.")
+            
+                # --- TAB 2: RENDER DE ESTATUS ---
+                # --- TAB 2: RENDER DE ESTATUS (NIVEL WAR ROOM) ---
+                with tab2:
+                    st.markdown(f"<div style='margin-bottom:20px; text-align:center;'><span style='color:#38bdf8; font-size:12px; font-weight:800; letter-spacing:4px; text-transform:uppercase;'>TABLERO GENERAL DE RENDER Y ESTATUS</span></div>", unsafe_allow_html=True)
+                    
+                    df_estatus = cargar_estatus_github()
+            
+                    if not df_estatus.empty:
+                        # Normalizar columnas a mayúsculas para evitar errores de Matriz
+                        df_estatus.columns = [str(c).upper().strip() for c in df_estatus.columns]
+            
+                        # 1. FILTROS DE CABECERA PARA EL TABLERO
+                        with st.container():
+                            f_col1, f_col2 = st.columns([2, 2], vertical_alignment="bottom")
+                            
+                            with f_col1:
+                                # Filtro por Estatus
+                                opciones_estatus = ["TODOS"] + sorted(df_estatus["ESTATUS"].dropna().unique().tolist()) if "ESTATUS" in df_estatus.columns else ["TODOS"]
+                                filtro_estatus_tab2 = st.selectbox("FILTRAR POR ESTATUS", options=opciones_estatus, key="sel_estatus_tab2")
+                            
+                            with f_col2:
+                                # Filtro por Proveedor / Fletera
+                                col_prov_key = "PROVEEDOR" if "PROVEEDOR" in df_estatus.columns else ("FLETERA" if "FLETERA" in df_estatus.columns else None)
+                                if col_prov_key:
+                                    opciones_prov = ["TODOS"] + sorted(df_estatus[col_prov_key].dropna().unique().tolist())
+                                    filtro_prov_tab2 = st.selectbox("FILTRAR POR PROVEEDOR", options=opciones_prov, key="sel_prov_tab2")
+                                else:
+                                    filtro_prov_tab2 = "TODOS"
+            
+                        # 2. PROCESAMIENTO Y APLICACIÓN DE FILTROS
+                        df_render = df_estatus.copy()
+                        
+                        if filtro_estatus_tab2 != "TODOS":
+                            df_render = df_render[df_render["ESTATUS"] == filtro_estatus_tab2]
+                            
+                        if filtro_prov_tab2 != "TODOS" and col_prov_key:
+                            df_render = df_render[df_render[col_prov_key] == filtro_prov_tab2]
+            
+                        # 3. TARJETAS DE MÉTRICAS SUPERIORES (KPIs)
+                        total_envios = len(df_estatus)
+                        filtrados_n = len(df_render)
+                        
+                        # Conteo dinámico si existen las columnas clave
+                        pendientes_n = len(df_estatus[df_estatus["ESTATUS"].str.upper().str.contains("PENDIENTE|PROCESO", na=False)]) if "ESTATUS" in df_estatus.columns else 0
+                        entregados_n = len(df_estatus[df_estatus["ESTATUS"].str.upper().str.contains("ENTREGADO", na=False)]) if "ESTATUS" in df_estatus.columns else 0
+                        peso_total_val = df_estatus["PESO_TOTAL"].sum() if "PESO_TOTAL" in df_estatus.columns else 0.0
+            
+                        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+            
+                        kpi1.markdown(f"""
+                            <div class='base-card-alerta' style='border-left-color: #38bdf8;'>
+                                <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>TOTAL REGISTROS</div>
+                                <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{total_envios} <span style='font-size: 10px; color: #38bdf8; opacity: 0.7;'>FOLIOS</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            
+                        kpi2.markdown(f"""
+                            <div class='base-card-alerta' style='border-left-color: #FDE047;'>
+                                <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>PENDIENTES</div>
+                                <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{pendientes_n} <span style='font-size: 10px; color: #FDE047; opacity: 0.7;'>ACTIVOS</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            
+                        kpi3.markdown(f"""
+                            <div class='base-card-alerta' style='border-left-color: #00FFAA;'>
+                                <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>ENTREGADOS</div>
+                                <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{entregados_n} <span style='font-size: 10px; color: #00FFAA; opacity: 0.7;'>COMPLETOS</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            
+                        kpi4.markdown(f"""
+                            <div class='base-card-alerta' style='border-left-color: #F97316;'>
+                                <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>PESO ACUMULADO</div>
+                                <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{peso_total_val:,.1f} <span style='font-size: 10px; color: #F97316; opacity: 0.7;'>KG</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            
+                        st.divider()
+            
+                        # 4. PANEL DE VISUALIZACIÓN ESTILO WAR ROOM PARA EL RENDER
+                        st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:#FFFFFF; text-transform:uppercase; text-align:center; margin-bottom:20px;'>DETALLE OPERATIVO DE GITHUB</p>", unsafe_allow_html=True)
+            
+                        if not df_render.empty:
+                            data_render = df_render.to_dict('records')
+                            
+                            # HTML con tarjetas custom estilo War Room idénticas al bloque de alertas
+                            html_render_cards = f"""
+                            <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                                <style>
+                                    body {{ background: transparent; margin: 0; padding: 0; }}
+                                    
+                                    /* ───────── SCROLLBAR AGC STYLE ───────── */
+                                    ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                    ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                                    ::-webkit-scrollbar-thumb {{ 
+                                        background: #3498db; 
+                                        border-radius: 10px; 
+                                        border: 2px solid #384A52; 
+                                    }}
+                                    ::-webkit-scrollbar-thumb:hover {{ 
+                                        background: #2ecc71; 
+                                        box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); 
+                                    }}
+            
+                                    .card-excepcion {{
+                                        background: #263238;
+                                        border: 1px solid rgba(56, 189, 248, 0.15);
+                                        border-left: 6px solid #38bdf8;
+                                        border-radius: 12px;
+                                        margin-bottom: 12px;
+                                        padding: 18px 25px;
+                                        display: flex;
+                                        flex-wrap: wrap;
+                                        gap: 15px;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                        transition: all 0.3s ease;
+                                        width: 100%;
+                                        box-sizing: border-box;
+                                    }}
+                                    .card-excepcion:hover {{ 
+                                        border-color: #38bdf8; 
+                                        background: #2d3b42;
+                                        transform: translateX(5px);
+                                    }}
+                                    .badge-estatus {{
+                                        background: rgba(56, 189, 248, 0.1);
+                                        color: #38bdf8;
+                                        padding: 8px 14px;
+                                        border-radius: 8px;
+                                        font-weight: 800;
+                                        font-family: monospace;
+                                        font-size: 13px;
+                                        text-align: center;
+                                        border: 1px solid rgba(56, 189, 248, 0.3);
+                                    }}
+                                    .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }}
+                                    .factura-destacada {{ color: #FFFFFF; font-size: 18px; font-weight: 800; letter-spacing: 1px; font-family: monospace; }}
+                                    .info-main {{ color: #FFFFFF; font-size: 13px; font-weight: 700; }}
+                                    .info-sub {{ color: #94a3b8; font-size: 11px; }}
+                                </style>
+                                {"".join([f'''
+                                <div class="card-excepcion">
+                                    <div style="flex: 1.5; min-width: 180px;">
+                                        <div class="label-mini">Folio / Factura</div>
+                                        <div class="factura-destacada">{item.get('FOLIO', 'N/A')}</div>
+                                        <div class="info-sub" style="margin-top:4px;">Fecha: {item.get('FECHA_RECOLECCION', 'N/A')}</div>
+                                    </div>
+            
+                                    <div style="flex: 2; min-width: 220px; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                        <div class="label-mini">Cliente / Destino</div>
+                                        <div class="info-main">{str(item.get('CLIENTE', 'N/A'))[:40]}</div>
+                                        <div class="info-sub" style="color: #FFFFFF !important;">Proveedor: {str(item.get('PROVEEDOR', 'N/A'))[:35]}</div>
+                                    </div>
+            
+                                    <div style="flex: 1; min-width: 120px; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
+                                        <div class="label-mini">Peso Total</div>
+                                        <div class="info-main" style="color: #00FFAA;">{float(item.get('PESO_TOTAL', 0.0)):,.2f} KG</div>
+                                        <div class="info-sub">Observación registrada</div>
+                                    </div>
+            
+                                    <div style="flex: 1.2; min-width: 160px; text-align: right;">
+                                        <div class="label-mini" style="text-align:center;">Estatus Actual</div>
+                                        <div class="badge-estatus">{item.get('ESTATUS', 'PENDIENTE')}</div>
+                                    </div>
+                                </div>
+                                ''' for item in data_render])}
+                            </div>
+                            """
+                            
+                            # Renderizamos con componentes de altura controlada y scroll pro
+                            components.html(html_render_cards, height=600, scrolling=True)
+                        else:
+                            st.markdown(f"""
+                                <div style="background: rgba(56, 189, 248, 0.05); border: 1px dashed #38bdf8; border-radius: 10px; padding: 25px; text-align: center; margin-top: 20px;">
+                                    <p style="color: #38bdf8; font-size: 16px; margin: 0;"><b>SIN REGISTROS BAJO ESTE FILTRO</b></p>
+                                    <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">No se encontraron elementos que coincidan con los criterios seleccionados en el render.</p>
+                                </div>
+                            """, unsafe_allow_html=True)
+                    else:
+                        st.info("Aún no hay registros de estatus guardados en GitHub para renderizar en este apartado.")
+            
+                # --- TAB 3: EDICIÓN Y ACTUALIZACIÓN ---
+                with tab3:
+                    st.markdown("### ✏️ Gestión, Cambios y Actualización de Estatus")
+                    df_estatus_edit = cargar_estatus_github()
+            
+                    if not df_estatus_edit.empty:
+                        folios_list = df_estatus_edit["Folio"].astype(str).unique().tolist()
+                        folio_a_editar = st.selectbox("Selecciona el Folio a Modificar / Actualizar", folios_list, key="edit_folio_sel")
+            
+                        if folio_a_editar:
+                            fila_actual = df_estatus_edit[df_estatus_edit["Folio"].astype(str) == str(folio_a_editar)].iloc[0]
+                            
+                            with st.form("form_edicion_estatus"):
+                                st.markdown(f"**Editando Folio:** `{folio_a_editar}`")
+                                
+                                nuevo_estatus = st.selectbox(
+                                    "Estatus de la Recolección", 
+                                    ["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"],
+                                    index=["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"].index(fila_actual["Estatus"]) if fila_actual["Estatus"] in ["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"] else 0
+                                )
+                                nueva_obs = st.text_area("Observaciones / Notas de Entrega", value=str(fila_actual.get("Observaciones", "")))
+                                nuevo_cliente = st.text_input("Cliente Destino", value=str(fila_actual.get("Cliente", "")))
+                                nuevo_proveedor = st.text_input("Proveedor Remitente", value=str(fila_actual.get("Proveedor", "")))
+                                nuevo_peso = st.number_input("Peso Total (KG)", value=float(fila_actual.get("Peso_Total", 0.0)))
+            
+                                btn_guardar_cambios = st.form_submit_button("💾 Guardar Cambios en GitHub")
+            
+                                if btn_guardar_cambios:
+                                    idx_match = df_estatus_edit[df_estatus_edit["Folio"].astype(str) == str(folio_a_editar)].index
+                                    df_estatus_edit.loc[idx_match, "Estatus"] = nuevo_estatus
+                                    df_estatus_edit.loc[idx_match, "Observaciones"] = nueva_obs
+                                    df_estatus_edit.loc[idx_match, "Cliente"] = nuevo_cliente
+                                    df_estatus_edit.loc[idx_match, "Proveedor"] = nuevo_proveedor
+                                    df_estatus_edit.loc[idx_match, "Peso_Total"] = nuevo_peso
+            
+                                    if guardar_estatus_github(df_estatus_edit, f"Actualización de estatus para folio {folio_a_editar}"):
+                                        st.success(f"¡Cambios guardados correctamente en GitHub para el folio {folio_a_editar}!")
+                                        st.rerun()
+                    else:
+                        st.warning("No hay registros disponibles para editar en GitHub.")
+            
+            elif st.session_state.menu_sub == "RECOLECCION ONE":
+               # --- CONFIGURACIÓN DE RECOLECCIONES ONE PAQUETERÍA (ACTUALIZADO Y BLINDADO CON COMENTARIOS) ---
+                @st.cache_data(ttl=60)
+                def cargar_csv_github():
+                    try:
+                        repo = "RH2026/nexion"
+                        filename = "facturacion_moreno.csv"
+                        branch = "main"
+                        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                        token = st.secrets["GITHUB_TOKEN"]
+                        headers = {"Authorization": f"token {token}"}
+                        
+                        response = requests.get(url, headers=headers)
+                        if response.status_code == 200:
+                            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                            df.columns = df.columns.astype(str).str.strip()
+                            return df
+                        else:
+                            st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
+                            return pd.DataFrame()
+                    except Exception as e:
+                        st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
+                        return pd.DataFrame()
+                
+                @st.cache_data(ttl=300)
+                def obtener_logo_one():
+                    try:
+                        repo = "RH2026/nexion"
+                        filename = "one.png"
+                        branch = "main"
+                        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                        token = st.secrets["GITHUB_TOKEN"]
+                        headers = {"Authorization": f"token {token}"}
+                        response = requests.get(url, headers=headers)
+                        if response.status_code == 200:
+                            return BytesIO(response.content)
+                        return None
+                    except Exception:
+                        return None
+                
+                df_facturacion = cargar_csv_github()
+                
+                if not df_facturacion.empty:
+                    df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
+                    facturas_disponibles = df_facturacion["Factura"].unique()
+                            
+                    # --- 4 CONTROLES PRINCIPALES EN UNA SOLA FILA ---
+                    top_col1, top_col2, top_col3, top_col4 = st.columns(4)
+                    
+                    with top_col1:
+                        fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now(), key="one_fecha_rec")
+                    fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
+                
+                    with top_col2:
+                        modo_busqueda = st.selectbox("🔍 Método de Selección", ["Seleccionar de la lista", "Escribir folio manual"], key="one_modo_busqueda")
+                
+                    with top_col3:
+                        if modo_busqueda == "Seleccionar de la lista":
+                            num_factura = st.selectbox("Folio / Factura", facturas_disponibles, key="one_sel_factura")
+                            registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura in facturas_disponibles else pd.Series()
+                        else:
+                            num_factura = st.text_input("✍️ Ingresa Folio Manual", key="one_txt_folio_manual")
+                            registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura and str(num_factura) in df_facturacion["Factura"].values else pd.Series()
+                
+                    with top_col4:
+                        tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="one_condicion_pago")
+                
+                    def_extran = str(registro.get("Nombre_Extran", "")) if not registro.empty and pd.notna(registro.get("Nombre_Extran", "")) else ""
+                    def_dom = str(registro.get("Domicilio", "")) if not registro.empty and pd.notna(registro.get("Domicilio", "")) else ""
+                    def_col = str(registro.get("Colonia", "")) if not registro.empty and pd.notna(registro.get("Colonia", "")) else ""
+                    def_cui = str(registro.get("Cuidad", "")) if not registro.empty and pd.notna(registro.get("Cuidad", "")) else ""
+                    def_cp = str(registro.get("CP", "")) if not registro.empty and pd.notna(registro.get("CP", "")) else ""
+                    def_est = str(registro.get("Estado", "")) if not registro.empty and pd.notna(registro.get("Estado", "")) else ""
+                    
+                    tel_val = ""
+                    if not registro.empty:
+                        for col_p in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
+                            if col_p in registro and pd.notna(registro[col_p]):
+                                tel_val = str(registro[col_p]).strip()
+                                break
+                
+                    st.markdown("---")
+                
+                    def titulo_seccion(texto, color_fondo="#1565c0"):
+                        st.markdown(f"""
+                            <div style="background-color: {color_fondo}; padding: 8px; border-radius: 4px; text-align: center; color: white; font-weight: bold; font-size: 15px; margin-bottom: 10px;">
+                                {texto}
+                            </div>
+                        """, unsafe_allow_html=True)
+                
+                    col1, col2 = st.columns(2)
+                
+                    with col1:
+                        titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#c62828") # Rojo institucional
+                        rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran, key="one_rem_cliente")
+                        rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom, key="one_rem_calle")
+                        rc1, rc2 = st.columns(2)
+                        with rc1:
+                            rem_colonia = st.text_input("Colonia (Remitente)", value=def_col, key="one_rem_colonia")
+                        with rc2:
+                            rem_cp = st.text_input("CP (Remitente)", value=def_cp, key="one_rem_cp")
+                        rc3, rc4 = st.columns(2)
+                        with rc3:
+                            rem_cui = st.text_input("Ciudad / Municipio", value=def_cui, key="one_rem_cui")
+                        with rc4:
+                            rem_estado = st.text_input("Estado", value=def_est, key="one_rem_estado")
+                        rc5, rc6 = st.columns(2)
+                        with rc5:
+                            rem_contacto = st.text_input("Persona que entrega", value="", key="one_rem_contacto")
+                        with rc6:
+                            rem_tel = st.text_input("Teléfono Remitente", value=tel_val, key="one_rem_tel")
+                
+                    with col2:
+                        titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#1565c0") # Azul institucional
+                        dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados", key="one_dest_cliente")
+                        dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155", key="one_dest_calle")
+                        dc1, dc2 = st.columns(2)
+                        with dc1:
+                            dest_colonia = st.text_input("Colonia Destino", value="La Aurora", key="one_dest_colonia")
+                        with dc2:
+                            dest_cp = st.text_input("CP Destino", value="44460", key="one_dest_cp")
+                        dc3, dc4 = st.columns(2)
+                        with dc3:
+                            dest_cui = st.text_input("Ciudad Destino", value="Guadalajara", key="one_dest_cui")
+                        with dc4:
+                            dest_estado = st.text_input("Estado Destino", value="Jalisco", key="one_dest_estado")
+                        dc5, dc6 = st.columns(2)
+                        with dc5:
+                            dest_contacto = st.text_input("Persona que recibe", value="Jazmin Castillo", key="one_dest_contacto")
+                        with dc6:
+                            dest_tel = st.text_input("Teléfono Destino", value="33 3540 2939 Ext.123", key="one_dest_tel")
+                
+                    titulo_seccion("FACTURAR A (DATOS FISCALES JYPESA)", color_fondo="#37474f")
+                    fac_cliente = st.text_input("Facturar a Nombre de", value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV", key="one_fac_cliente")
+                    fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México", key="one_fac_domicilio")
+                    fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35", key="one_fac_rfc")
+                
+                    # --- NUEVA ÁREA DE COMENTARIOS ---
+                    st.markdown("---")
+                    titulo_seccion("💬 OBSERVACIONES / COMENTARIOS ADICIONALES", color_fondo="#37474f")
+                    comentarios_usuario = st.text_area(
+                        "Instrucciones o notas especiales para la recolección",
+                        value="LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCIÓN, SI NO QUIEREN ENTREGAR LLAMAR AL TELÉFONO Cel. 33 19 75 31 22 Rigoberto Hernandez",
+                        key="one_comentarios"
+                    )
+                
+                    # --- SECCIÓN DINÁMICA DE EMBARQUE ---
+                    st.markdown("---")
+                    titulo_seccion("📦 DETALLE DE EMBARQUE Y LÍNEAS DE CARGA", color_fondo="#c62828")
+                    
+                    if "lineas_embarque_one" not in st.session_state:
+                        st.session_state.lineas_embarque_one = [
+                            {"id": 0, "cantidad": 1, "tipo": "TARIMA", "descripcion": "AMENIDADES", "largo": 1.20, "ancho": 1.20, "alto": 2.00, "peso": 800.0}
+                        ]
+                    if "one_next_id" not in st.session_state:
+                        st.session_state.one_next_id = 1
+                
+                    for idx, linea in enumerate(st.session_state.lineas_embarque_one):
+                        row_id = linea["id"]
+                        st.markdown(f"**Renglón {idx + 1}**")
+                        lc1, lc2, lc3, lc4, lc5, lc6, lc7 = st.columns([1, 2, 2, 1, 1, 1, 1])
+                        with lc1:
+                            linea["cantidad"] = st.number_input("Cant.", min_value=1, value=linea["cantidad"], key=f"one_cant_{row_id}")
+                        with lc2:
+                            tipos_validos = ["TARIMA", "CAJA", "ATADO", "TAMBO", "SACO", "OTRO"]
+                            idx_tipo = tipos_validos.index(linea["tipo"]) if linea["tipo"] in tipos_validos else 0
+                            linea["tipo"] = st.selectbox("Tipo Bulto", tipos_validos, index=idx_tipo, key=f"one_tipo_{row_id}")
+                        with lc3:
+                            linea["descripcion"] = st.text_input("Descripción", value=linea["descripcion"], key=f"one_desc_{row_id}")
+                        with lc4:
+                            linea["largo"] = st.number_input("Largo (m)", value=float(linea["largo"]), key=f"one_larg_{row_id}")
+                        with lc5:
+                            linea["ancho"] = st.number_input("Ancho (m)", value=float(linea.get("ancho", 1.20)), key=f"one_anch_{row_id}")
+                        with lc6:
+                            linea["alto"] = st.number_input("Alto (m)", value=float(linea["alto"]), key=f"one_alt_{row_id}")
+                        with lc7:
+                            linea["peso"] = st.number_input("Peso (KG)", value=float(linea["peso"]), key=f"one_pes_{row_id}")
+                
+                    col_btn1, col_btn2 = st.columns(2)
+                    with col_btn1:
+                        if st.button("➕ Agregar otra línea de carga", key="one_btn_agregar"):
+                            st.session_state.lineas_embarque_one.append({
+                                "id": st.session_state.one_next_id,
+                                "cantidad": 1, "tipo": "CAJA", "descripcion": "MERCANCIA", "largo": 0.50, "ancho": 0.50, "alto": 0.50, "peso": 50.0
+                            })
+                            st.session_state.one_next_id += 1
+                            st.rerun()
+                    with col_btn2:
+                        if len(st.session_state.lineas_embarque_one) > 1 and st.button("🗑️ Eliminar última línea", key="one_btn_eliminar"):
+                            st.session_state.lineas_embarque_one.pop()
+                            st.rerun()
+                
+                    total_peso_calc = sum(l["peso"] * l["cantidad"] for l in st.session_state.lineas_embarque_one)
+                    st.info(f"⚖️ **Peso Total Calculado:** {total_peso_calc:,.2f} KG")
+                
+                    # --- FUNCIÓN PDF REPORTLAB (ESTILO ONE PAQUETERÍA CORREGIDO) ---
+                    def generar_pdf_one_paqueteria():
+                        buffer = BytesIO()
+                        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=15, leftMargin=15, topMargin=15, bottomMargin=15)
+                        story = []
+                        
+                        fecha_actual = datetime.now().strftime("%d/%m/%Y")
+                        
+                        th_style = ParagraphStyle("TH", fontName="Helvetica-Bold", fontSize=6.5, leading=8, textColor=colors.white, alignment=1)
+                        cell_bold = ParagraphStyle("CB", fontName="Helvetica-Bold", fontSize=6, leading=7.5)
+                        cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
+                        cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
+                
+                        # 1. ENCABEZADO SUPERIOR (Ajustado exactamente a 582 pts de ancho total)
+                        logo_io = obtener_logo_one()
+                        logo_elem = Image(logo_io, width=85, height=22) if logo_io else Paragraph("<b>ONE Paquetería</b>", cell_center)
+                        
+                        sub_table_reco = Table([
+                            [Paragraph("<b>RECOLECCION</b>", ParagraphStyle("RH", alignment=1, fontSize=5.5, fontName="Helvetica-Bold")), Paragraph("<b>EMBARQUE EN MOSTRADOR</b>", ParagraphStyle("EM", alignment=1, fontSize=5, fontName="Helvetica-Bold"))],
+                            [Paragraph("<b>🔴</b>", ParagraphStyle("DOT", alignment=1, fontSize=7, fontName="Helvetica-Bold", textColor=colors.red)), ""]
+                        ], colWidths=[101, 101], style=[
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#f0f0f0")),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#f0f0f0")),
+                            ("BACKGROUND", (0,1), (0,1), colors.HexColor("#ffffff")),
+                            ("TOPPADDING", (0,0), (-1,-1), 1),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                        ])
+                
+                        header_table = Table([
+                            [
+                                logo_elem, 
+                                Paragraph("<b>MANIFIESTO DE EMBARQUE</b>", ParagraphStyle("HT", alignment=1, fontSize=10.5, fontName="Helvetica-Bold", textColor=colors.HexColor("#0d47a1"))), 
+                                sub_table_reco
+                            ]
+                        ], colWidths=[130, 250, 202])
+                        
+                        header_table.setStyle(TableStyle([
+                            ("GRID", (0,0), (-1,-1), 1, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("ALIGN", (0,0), (0,0), "CENTER"),
+                            ("BACKGROUND", (0,0), (0,0), colors.white),
+                            ("BACKGROUND", (1,0), (1,0), colors.white),
+                            ("TOPPADDING", (0,0), (-1,-1), 2),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+                        ]))
+                        story.append(header_table)
+                        story.append(Spacer(1, 2))
+                
+                        # 2. FECHAS RECOLECCIÓN / FOLIO
+                        fechas_table = Table([
+                            [Paragraph("<b>FECHA DE RECOLECCION:</b>", cell_bold), Paragraph(fecha_rec_str, cell_center), Paragraph("<b>FECHA SOLICITUD</b>", cell_bold), Paragraph(fecha_actual, cell_center)],
+                            [Paragraph("<b>FOLIO / FACTURA:</b>", cell_bold), Paragraph(str(num_factura), cell_center), Paragraph("<b>ESTATUS PAGO</b>", cell_bold), Paragraph(tipo_pago_tg, cell_center)]
+                        ], colWidths=[110, 150, 105, 217])
+                        fechas_table.setStyle(TableStyle([
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#e3f2fd")),
+                            ("BACKGROUND", (2,0), (2,0), colors.HexColor("#e3f2fd")),
+                            ("BACKGROUND", (0,1), (0,1), colors.HexColor("#ffebee")),
+                            ("BACKGROUND", (2,1), (2,1), colors.HexColor("#ffebee")),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                        story.append(fechas_table)
+                        story.append(Spacer(1, 2))
+                
+                        # 3. REMITENTE Y DESTINATARIO
+                        rem_data = [
+                            [Paragraph("REMITENTE - RECOLECCION", th_style), ""],
+                            [Paragraph("CLIENTE:", cell_bold), Paragraph(rem_cliente, cell_bold)],
+                            [Paragraph("CALLE Y NUMERO:", cell_bold), Paragraph(rem_calle, cell_normal)],
+                            [Paragraph("COLONIA / CP:", cell_bold), Paragraph(f"{rem_colonia} - C.P. {rem_cp}", cell_normal)],
+                            [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{rem_cui}, {rem_estado}", cell_normal)],
+                            [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{rem_contacto} - {rem_tel}", cell_normal)],
+                        ]
+                        t_rem = Table(rem_data, colWidths=[85, 206])
+                        t_rem.setStyle(TableStyle([
+                            ("SPAN", (0,0), (1,0)),
+                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#c62828")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                
+                        dest_data = [
+                            [Paragraph("DESTINATARIO - ENTREGA", th_style), ""],
+                            [Paragraph("CLIENTE:", cell_bold), Paragraph(dest_cliente, cell_bold)],
+                            [Paragraph("CALLE Y NUMERO:", cell_bold), Paragraph(dest_calle, cell_normal)],
+                            [Paragraph("COLONIA / CP:", cell_bold), Paragraph(f"{dest_colonia} - C.P. {dest_cp}", cell_normal)],
+                            [Paragraph("CIUDAD / ESTADO:", cell_bold), Paragraph(f"{dest_cui}, {dest_estado}", cell_normal)],
+                            [Paragraph("CONTACTO / TEL:", cell_bold), Paragraph(f"{dest_contacto} - {dest_tel}", cell_normal)],
+                        ]
+                        t_dest = Table(dest_data, colWidths=[85, 206])
+                        t_dest.setStyle(TableStyle([
+                            ("SPAN", (0,0), (1,0)),
+                            ("BACKGROUND", (0,0), (1,0), colors.HexColor("#1565c0")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                
+                        t_top = Table([[t_rem, t_dest]], colWidths=[291, 291])
+                        story.append(t_top)
+                        story.append(Spacer(1, 2))
+                
+                        # 4. SECCIÓN FACTURAR A
+                        fac_data = [
+                            [Paragraph("<b>FACTURAR A:</b>", th_style), "", ""],
+                            [Paragraph(fac_cliente, cell_center), "", ""],
+                            [Paragraph("<b>DOMICILIO:</b>", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center), ""],
+                            [Paragraph(f"Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México<br/>Tel.. 0152 (33) 35402939<br/>E-mail: rhernandez@jypesa.com", ParagraphStyle("FD", alignment=1, fontSize=6, fontName="Helvetica", leading=7.5)), "", ""],
+                            [Paragraph("<b>RFC:</b>", cell_bold), Paragraph(f"RFC {fac_rfc}", cell_center), ""]
+                        ]
+                        t_fac = Table(fac_data, colWidths=[75, 407, 100])
+                        t_fac.setStyle(TableStyle([
+                            ("SPAN", (0,0), (2,0)),
+                            ("SPAN", (0,1), (2,1)),
+                            ("SPAN", (1,2), (2,2)),
+                            ("SPAN", (0,3), (2,3)),
+                            ("SPAN", (1,4), (2,4)),
+                            ("BACKGROUND", (0,0), (2,0), colors.HexColor("#1565c0")),
+                            ("BACKGROUND", (0,1), (2,1), colors.HexColor("#e3f2fd")),
+                            ("BACKGROUND", (0,2), (0,2), colors.HexColor("#1565c0")),
+                            ("TEXTCOLOR", (0,2), (0,2), colors.white),
+                            ("BACKGROUND", (1,2), (2,2), colors.HexColor("#ffffff")),
+                            ("BACKGROUND", (0,3), (2,3), colors.HexColor("#e3f2fd")),
+                            ("BACKGROUND", (0,4), (0,4), colors.HexColor("#1565c0")),
+                            ("TEXTCOLOR", (0,4), (0,4), colors.white),
+                            ("BACKGROUND", (1,4), (2,4), colors.HexColor("#e3f2fd")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                        story.append(t_fac)
+                        story.append(Spacer(1, 2))
+                
+                        # 5. TABLA DE EMBARQUE / CONTENIDO DINÁMICA
+                        emb_headers = ["Cantidad", "TIPO DE BULTOS", "DESCRIPCION", "DIAMETRO", "ALTO", "CUBICAJE (m3)", "PESO (KG)"]
+                        emb_data = [
+                            [Paragraph("<b>INFORMACION DE EMBARQUE</b>", th_style), "", "", Paragraph("<b>DIMENSIONES (mts)</b>", th_style), "", Paragraph("<b>VOLUMEN</b>", th_style), Paragraph("<b>PESO POR BULTO</b>", th_style)],
+                            [Paragraph(h, th_style) for h in emb_headers]
+                        ]
+                        
+                        for l in st.session_state.lineas_embarque_one:
+                            ancho_val = l.get('ancho', 1.20)
+                            dim_str = f"{l['largo']} x {ancho_val} x {l['alto']}"
+                            emb_data.append([
+                                str(l["cantidad"]), 
+                                str(l["tipo"]), 
+                                str(l["descripcion"]), 
+                                str(dim_str), 
+                                "", 
+                                "0", 
+                                str(l["peso"])
+                            ])
+                        
+                        filas_actuales = len(st.session_state.lineas_embarque_one)
+                        for _ in range(max(0, 6 - filas_actuales)):
+                            emb_data.append(["", "", "", "", "", "0", ""])
+                            
+                        emb_data.append(["", "", "", "", "", "0", f"{total_peso_calc:,.1f}"])
+                        
+                        t_emb = Table(emb_data, colWidths=[45, 60, 177, 90, 65, 75, 70])
+                        t_emb.setStyle(TableStyle([
+                            ("SPAN", (0,0), (2,0)),
+                            ("SPAN", (3,0), (4,0)),
+                            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#1565c0")),
+                            ("BACKGROUND", (0,1), (-1,1), colors.HexColor("#1565c0")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                            ("ALIGN", (0,0), (-1,-1), "CENTER"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                        ]))
+                        story.append(t_emb)
+                        story.append(Spacer(1, 2))
+                
+                        # 6. BLOQUE MEDIO
+                        th_red = ParagraphStyle("THR", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
+                        th_blue = ParagraphStyle("THB", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
+                
+                        mid_table_data = [
+                            [
+                                Paragraph("<b>MERCANCIA ASEGURADA</b>", th_red), 
+                                Paragraph("<b>REQUIERE ACUSE DE RECIBO</b>", th_red), 
+                                Paragraph("<b>DESCRIPCION DEL ACUSE:</b>", th_red)
+                            ],
+                            [
+                                Table([
+                                    [Paragraph("SI", cell_center), "", Paragraph("VALOR DECLARADO", cell_bold)],
+                                    [Paragraph("NO", cell_center), Paragraph("X", cell_center), Paragraph("POR CUENTA Y RIESGO", cell_bold)]
+                                ], colWidths=[28, 28, 84], style=[
+                                    ("BACKGROUND", (2,0), (2,-1), colors.HexColor("#e3f2fd")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
+                                Table([
+                                    [Paragraph("SI", cell_center), Paragraph("X", cell_center), Paragraph("N<br/>O", cell_center)],
+                                    ["", "", ""]
+                                ], colWidths=[28, 28, 24], style=[
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
+                                ""
+                            ],
+                            [
+                                Paragraph("<b>TIPO DE PAGO MARCAR CON UNA X</b>", th_blue), 
+                                Paragraph("<b>MARCAR CON UNA X (EAD / OCURRE)</b>", th_blue), 
+                                Paragraph("<b>DOCUMENTOS QUE ANEXA</b>", th_red)
+                            ],
+                            [
+                                Table([
+                                    [Paragraph("pagado (origen)", cell_center), Paragraph("por cobrar (destino)", cell_center), Paragraph("Credito", cell_center)],
+                                    ["", "", Paragraph("X", cell_center)]
+                                ], colWidths=[45, 50, 45], style=[
+                                    ("BACKGROUND", (2,1), (2,1), colors.HexColor("#ffebee")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
+                                Table([
+                                    [Paragraph("Recolección", cell_center), Paragraph("Recepción", cell_center), Paragraph("Entrega Domicilio", cell_center)],
+                                    [Paragraph("X", cell_center), "", Paragraph("X", cell_center)]
+                                ], colWidths=[45, 45, 60], style=[
+                                    ("BACKGROUND", (0,1), (0,1), colors.HexColor("#e3f2fd")),
+                                    ("BACKGROUND", (2,1), (2,1), colors.HexColor("#e3f2fd")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                                ]),
+                                Table([
+                                    [Paragraph("factura", cell_center), Paragraph("orden de compra", cell_center), Paragraph("pedimento", cell_center), Paragraph("otro", cell_center)]
+                                ], colWidths=[68, 68, 68, 68], style=[
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 4),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                                ])
+                            ]
+                        ]
+                
+                        t_mid = Table(mid_table_data, colWidths=[140, 150, 292])
+                        t_mid.setStyle(TableStyle([
+                            ("SPAN", (2,1), (2,1)),
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#c62828")),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#c62828")),
+                            ("BACKGROUND", (2,0), (2,0), colors.HexColor("#c62828")),
+                            ("BACKGROUND", (2,1), (2,1), colors.HexColor("#e3f2fd")),
+                            ("BACKGROUND", (0,2), (0,2), colors.HexColor("#1565c0")),
+                            ("BACKGROUND", (1,2), (1,2), colors.HexColor("#1565c0")),
+                            ("BACKGROUND", (2,2), (2,2), colors.HexColor("#c62828")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "TOP"),
+                            ("TOPPADDING", (0,0), (-1,-1), 1),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+                        ]))
+                        story.append(t_mid)
+                        story.append(Spacer(1, 2))
+                
+                        # 7. BLOQUE FINAL (Con los comentarios dinámicos del usuario)
+                        t_final_block = Table([
+                            [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_blue), Paragraph("<b>OBSERVACIONES / COMENTARIOS</b>", th_red)],
+                            [
+                                Table([
+                                    [Paragraph("<b>NOMBRE:</b>", cell_bold), Paragraph("RIGOBERTO HERNANDEZ", cell_center)],
+                                    [Paragraph("<b>EMPRESA:</b>", cell_bold), Paragraph("JYPESA", cell_center)],
+                                    [Paragraph("<b>E-MAIL:</b>", cell_bold), Paragraph("rhernandez@jypesa.com", cell_center)],
+                                    [Paragraph("<b>TELEFONO:</b>", cell_bold), Paragraph("Cel. 33 19 75 31 22", cell_center)]
+                                ], colWidths=[65, 225], style=[
+                                    ("BACKGROUND", (1,0), (1,-1), colors.HexColor("#e3f2fd")),
+                                    ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                    ("TOPPADDING", (0,0), (-1,-1), 1.5),
+                                    ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
+                                ]),
+                                Paragraph(f"<b>{comentarios_usuario}</b>", cell_normal)
+                            ]
+                        ], colWidths=[290, 292])
+                        t_final_block.setStyle(TableStyle([
+                            ("BACKGROUND", (0,0), (0,0), colors.HexColor("#1565c0")),
+                            ("BACKGROUND", (1,0), (1,0), colors.HexColor("#c62828")),
+                            ("BACKGROUND", (1,1), (1,1), colors.HexColor("#ffebee")),
+                            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+                            ("VALIGN", (0,0), (-1,-1), "TOP"),
+                            ("TOPPADDING", (0,0), (-1,-1), 2),
+                            ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+                        ]))
+                        story.append(t_final_block)
+                
+                        doc.build(story)
+                        buffer.seek(0)
+                        return buffer
+                
+                    st.markdown("---")
+                    if st.button("🚀 Generar Manifiesto de Embarque (ONE Paquetería)", use_container_width=True, key="one_btn_generar_pdf"):
+                        pdf_buf = generar_pdf_one_paqueteria()
+                        st.success("¡Manifiesto de ONE Paquetería generado con éxito con tus observaciones!")
+                        st.download_button(
+                            label="📥 Descargar Manifiesto ONE Paquetería",
+                            data=pdf_buf,
+                            file_name=f"ONE_Manifiesto_{num_factura}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True,
+                            key="one_btn_descargar_pdf"
+                        )
+                else:
+                    st.warning("No se encontraron datos en el CSV de GitHub.")
+
+            
+            # --- SUBSECCIÓN D: CARTA RECLAMO ------
+            elif st.session_state.menu_sub == "CARTA RECLAMO":
+                def generar_carta_pro_html(datos_rem, datos_carta):
+                    jypesa_azul = "#005691"
+                    jypesa_amarillo = "#F7C300"
+
+                    return f"""
+                    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 40px; color: #1a1a1a; max-width: 700px; margin: auto; background: white; line-height: 1.4; border: 1px solid #eee;">
+                        <div style="height: 60px;"></div> 
+                        <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: baseline;">
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="font-size: 1.15em; font-weight: 800; letter-spacing: 1px; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
+                                <span style="font-size: 0.9em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | 2026</span>
+                            </div>
+                            <span style="font-size: 0.9em; color: #444; font-weight: 700;">{datos_carta['fecha_texto']}</span>
+                        </div>
+                        <div style="margin-bottom: 35px;">
+                            <p style="margin: 0; font-size: 0.8em; color: #666; text-transform: uppercase;">Atención a:</p>
+                            <p style="margin: 0; font-weight: bold; font-size: 1.15em; color: #000;">{datos_carta['paqueteria']}</p>
+                            <p style="margin: 0; font-weight: bold; color: #444;">Departamento de Reclamos / Operaciones</p>
+                        </div>
+                        <div style="margin-bottom: 30px; background-color: #fefdf5; padding: 15px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo};">
+                            <h2 style="font-size: 1.1em; text-transform: uppercase; color: #000; margin:0; font-weight: 800; letter-spacing: 0.5px;">
+                                ASUNTO: {datos_carta['asunto']}
+                            </h2>
+                        </div>
+                        <div style="text-align: justify; font-size: 1.05em; color: #222; white-space: pre-wrap; min-height: 300px; padding: 0 10px;">{datos_carta['cuerpo_texto']}</div>
+                        <div style="margin-top: 55px; margin-bottom: 40px; border-top: 2px solid #eee; padding-top: 20px;">
+                            <p style="margin-bottom: 35px; color: #333;">Atentamente,</p>
+                            <p style="margin: 0; font-weight: 800; font-size: 1.2em; color: {jypesa_azul};">{datos_rem['atencion']}</p>
+                            <p style="margin: 0; font-size: 0.95em; font-weight: 700; color: #333;">Coordinador de Distribución y Logística</p>
+                            <p style="margin: 0; font-size: 0.85em; color: #555;">JYPESA | S.A. de C.V.</p>
+                            <div style="margin-top: 15px; font-size: 0.9em; color: #444; background-color: #f9f9f9; padding: 10px; border-radius: 4px; display: inline-block; border: 1px solid #eee;">
+                                <span style="color: {jypesa_azul}; font-weight: bold;">📱 33 19 75 31 22</span> <span style="margin: 0 10px; color: #ccc;">|</span> 
+                                <span>📞 {datos_rem['tel']}</span> <span style="margin: 0 10px; color: #ccc;">|</span> 
+                                <span style="color: {jypesa_azul}; text-decoration: none;">✉ {datos_rem['email']}</span>
+                            </div>
+                        </div>
+                    </div>
+                    """
+                
+                # Fila 1: Datos principales
+                st.write("")
+                cr1, cr2, cr3, cr4 = st.columns([1.5, 1.2, 1, 1])
+                with cr1:
+                    paq_rec = st.selectbox(":material/local_shipping: FLETERA", ["ONE PAQUETERIA", "FEDEX", "ESTAFETA", "DHL", "TINY PACK", "PAQUETEXPRESS", "TRES GUERRAS"], key="sel_paq_rec")
+                with cr2:
+                    inc_rec = st.selectbox(":material/report_problem: INCIDENCIA", ["Faltante", "Extravío", "Siniestro / Daño Total", "Daño Parcial"], key="sel_inc_rec")
+                with cr3:
+                    fec_rec = st.date_input(":material/calendar_today: FECHA CARTA", date.today(), key="fec_rec")
+                with cr4:
+                    guia_rec = st.text_input(":material/tag: GUÍA", "JALGDL ", key="guia_rec")
+                
+                # Fila 2: Detalles (Agregado campo Factura)
+                cr5, cr6, cr7, cr8 = st.columns([0.8, 1.2, 1, 1])
+                with cr5:
+                    caj_rec = st.number_input("CANT. CAJAS", min_value=1, value=1, key="caj_rec")
+                with cr6:
+                    cod_rec = st.text_input("CÓDIGOS", placeholder="Ej: 4052-L20", key="cod_rec")
+                with cr7:
+                    fac_rec = st.text_input("FACTURA", placeholder="Ej: F-12345", key="fac_rec")
+                with cr8:
+                    mon_rec = st.text_input("MONTO", placeholder="Ej: 30,441.87", key="mon_rec")
+                
+                st.divider()
+                
+                dict_asuntos_rec = {"Faltante": "Reclamo por Faltante de Mercancía", "Extravío": "Reporte de Extravío de Envío", "Siniestro / Daño Total": "Notificación de Siniestro (Daño Total)", "Daño Parcial": "Reclamo por Daño Parcial"}
+                
+                # Lógica dinámica mejorada con Factura
+                if inc_rec == "Siniestro / Daño Total":
+                    det_rec = (f"Por medio de la presente se notifica y formaliza el reclamo por siniestro correspondiente a la guía {guia_rec} con {caj_rec} cajas (Código: {cod_rec}), mismas que se reportan como pérdida total.\n\n"
+                               f"Se anexan evidencias y la factura {fac_rec} para la validación y corroboración del valor de la mercancía.\n\n"
+                               f"El importe de la mercancía a reclamar asciende a ${mon_rec} + IVA.")
+                elif inc_rec == "Faltante":
+                    det_rec = (f"Por medio de la presente se notifica el faltante de {caj_rec} cajas con el código {cod_rec} en la entrega correspondiente a la guía {guia_rec} y factura {fac_rec}.\n\n"
+                               f"Solicitamos su apoyo para la localización de las mismas o, en su defecto, proceder con la indemnización por la cantidad de ${mon_rec} + IVA.")
+                elif inc_rec == "Extravío":
+                    det_rec = (f"Se reporta formalmente el extravío del envío amparado bajo la guía {guia_rec} y factura {fac_rec}, el cual contiene {caj_rec} cajas (Código {cod_rec}).\n\n"
+                               f"Derivado de lo anterior, solicitamos el reembolso del valor declarado de ${mon_rec} + IVA.")
+                else:
+                    det_rec = (f"Se notifica que el envío amparado con la guía {guia_rec} y factura {fac_rec} llegó con daños parciales en {caj_rec} cajas (Código {cod_rec}).\n\n"
+                               f"Se adjunta evidencia fotográfica de los daños y el costo de reposición asciende a ${mon_rec} + IVA.")
+                
+                txt_def_rec = f"{det_rec}\n\nAgradeceré su apoyo para dar seguimiento al proceso correspondiente y confirmar la recepción del presente reclamo.\n\nQuedo atento a sus comentarios.\n\nSaludos cordiales."
+                
+                st.write("### :material/edit: Edición de la Carta")
+                cuerpo_final_rec = st.text_area("CUERPO DE LA CARTA", value=txt_def_rec, height=300, key=f"txt_area_rec_{caj_rec}_{mon_rec}_{cod_rec}_{inc_rec}_{guia_rec}_{fac_rec}")
+                
+                if st.button(":material/print: IMPRIMIR RECLAMO", use_container_width=True, type="primary"):
+                    rem_rec = {"atencion": "Rigoberto Hernandez", "tel": "(52) 33 3540 2939 Ext. 157", "email": "rhernandez@jypesa.com"}
+                    ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+                    fec_txt_rec = f"{fec_rec.day} de {ms[fec_rec.month - 1]} del {fec_rec.year}"
+                    info_rec = {"paqueteria": paq_rec, "asunto": dict_asuntos_rec[inc_rec], "fecha_texto": fec_txt_rec, "cuerpo_texto": cuerpo_final_rec}
+                    html_final_rec = generar_carta_pro_html(rem_rec, info_rec)
+                    components.html(f"<html><body>{html_final_rec}<script>window.print();</script></body></html>", height=0)
+             
+            elif st.session_state.menu_sub == "COTIZACIONES":
+                # Asumiendo que ya tienes estas variables en tu código principal, 
+                jypesa_azul = "#003A70" 
+                jypesa_amarillo = "#FFC72C"
+                
+                with st.container():
+                    st.markdown('<div class="analysis-box">', unsafe_allow_html=True)
+                    
+                    st.markdown("<h4 style='color: #FFFFFF; font-size: 12px; font-family: \"Segoe UI\", sans-serif; font-weight: 400; letter-spacing: 1px; margin-bottom: 0px;'>DATOS GENERALES</h4>", unsafe_allow_html=True)
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        cliente = st.text_input("CLIENTE / EMPRESA", placeholder="Ej. Comercializadora ABC")
+                    with c2:
+                        origen = st.text_input("ORIGEN", placeholder="Ej. Guadalajara, Jal.")
+                    with c3:
+                        destino = st.text_input("DESTINO", placeholder="Ej. Monterrey, N.L.")
+                    
+                    st.write("") # Un pequeño espacio visual
+                    
+                    st.markdown("<h4 style='color: #FFFFFF; font-size: 12px; font-family: \"Segoe UI\", sans-serif; font-weight: 400; letter-spacing: 1px; margin-bottom: 0px;'>DETALLES DEL SERVICIO</h4>", unsafe_allow_html=True)
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        transporte = st.text_input("FLETERA / TRANSPORTE")
+                        unidad = st.selectbox("TIPO DE UNIDAD", ["CAMIONETA 3.5", "RABÓN", "TORTON", "TRAILER 48'", "TRAILER 53'", "CONSOLIDADO"])
+                    with col2:
+                        cant_pallets = st.number_input("CANTIDAD DE PALLETS", min_value=0, step=1)
+                        cant_cajas = st.number_input("CANTIDAD DE CAJAS", min_value=0, step=1)
+                    with col3:
+                        costo = st.number_input("COSTO DE LA COTIZACIÓN ($)", min_value=0.0, format="%.2f")
+                        tiempo_transito = st.text_input("TIEMPO DE TRÁNSITO", placeholder="Ej. 2 a 3 días hábiles")
+                    
+                    observaciones = st.text_area("OBSERVACIONES (Opcional)", placeholder="Condiciones especiales, maniobras, seguro, etc.")
+                        
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                st.write("") 
+                
+                # --- LÓGICA DE IMPRESIÓN COMPACTA Y SIN ENCABEZADOS ---
+                def generar_cotizacion_html():
+                    ahora = datetime.now()
+                    ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+                    fecha_texto = f"{ahora.day} de {ms[ahora.month - 1]} del {ahora.year}"
+                    
+                    cliente_txt = cliente if cliente else "A QUIEN CORRESPONDA"
+                    
+                    obs_html = f"""
+                    <div style="margin-top: 15px; padding: 12px; background-color: #f9f9f9; border-left: 4px solid {jypesa_amarillo}; border-radius: 4px;">
+                        <p style="margin: 0; font-size: 0.85em; font-weight: bold; color: #333;">OBSERVACIONES / CONDICIONES:</p>
+                        <p style="margin: 4px 0 0 0; font-size: 0.85em; color: #444; white-space: pre-wrap;">{observaciones}</p>
+                    </div>
+                    """ if observaciones else ""
+                
+                    return f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            @media print {{
+                                /* Esto quita la URL, fecha y números de página por defecto del navegador */
+                                @page {{ margin: 0; size: letter; }}
+                                /* Margen seguro para que el contenido no quede pegado a la orilla del papel */
+                                body {{ margin: 1.5cm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+                            }}
+                        </style>
+                    </head>
+                    <body style="margin: 0; padding: 0; background: white;">
+                        <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 15px 30px; color: #1a1a1a; max-width: 700px; margin: auto; line-height: 1.35; border: 1px solid #eee;">
+                            
+                            <div style="border-bottom: 3px solid {jypesa_azul}; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: baseline;">
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 1.1em; font-weight: 800; letter-spacing: 1px; color: #000000; text-transform: uppercase;">Jabones y Productos Especializados</span>
+                                    <span style="font-size: 0.85em; font-weight: 600; color: #666; letter-spacing: 0.5px;">Distribución y Logística | 2026</span>
+                                </div>
+                                <span style="font-size: 0.85em; color: #444; font-weight: 700;">{fecha_texto}</span>
+                            </div>
+                
+                            <div style="margin-bottom: 20px;">
+                                <p style="margin: 0; font-size: 0.75em; color: #666; text-transform: uppercase;">Cotización preparada para:</p>
+                                <p style="margin: 0; font-weight: bold; font-size: 1.1em; color: #000; text-transform: uppercase;">{cliente_txt}</p>
+                            </div>
+                
+                            <div style="margin-bottom: 15px; background-color: #fefdf5; padding: 10px 15px; border-radius: 4px; border-left: 5px solid {jypesa_amarillo};">
+                                <h2 style="font-size: 1em; text-transform: uppercase; color: #000; margin:0; font-weight: 800; letter-spacing: 0.5px;">
+                                    PROPUESTA DE SERVICIO LOGÍSTICO
+                                </h2>
+                            </div>
+                
+                            <div style="margin-bottom: 20px; font-size: 0.95em; color: #222;">
+                                <p style="margin-bottom: 15px;">Por medio de la presente, ponemos a su consideración la siguiente propuesta económica para el servicio de transporte, de acuerdo con los requerimientos solicitados:</p>
+                                
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em;">
+                                    <tr style="background-color: {jypesa_azul}; color: white;">
+                                        <th style="padding: 8px; text-align: left; border: 1px solid {jypesa_azul};" colspan="2">DETALLES DEL SERVICIO</th>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd; width: 35%; font-weight: 700; color: #444; background-color: #fafafa;">Ruta:</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;"><b>{origen if origen else 'N/A'}</b> ➔ <b>{destino if destino else 'N/A'}</b></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: 700; color: #444; background-color: #fafafa;">Transporte / Unidad:</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">{transporte} - {unidad}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: 700; color: #444; background-color: #fafafa;">Volumen de Carga:</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">{cant_pallets} Pallets / {cant_cajas} Cajas</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: 700; color: #444; background-color: #fafafa;">Tiempo estimado:</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">{tiempo_transito if tiempo_transito else 'Sujeto a disponibilidad y ruta'}</td>
+                                    </tr>
+                                </table>
+                
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                                    <tr style="background-color: #f4f4f4;">
+                                        <td style="padding: 12px; font-weight: bold; font-size: 1.05em; color: #000; border: 1px solid #ddd; text-align: right; width: 65%;">INVERSIÓN TOTAL (Antes de IVA):</td>
+                                        <td style="padding: 12px; text-align: right; font-weight: 800; font-size: 1.15em; color: {jypesa_azul}; border: 1px solid #ddd;">${costo:,.2f}</td>
+                                    </tr>
+                                </table>
+                
+                                {obs_html}
+                            </div>
+                
+                            <div style="margin-top: 25px; margin-bottom: 10px; border-top: 2px solid #eee; padding-top: 15px;">
+                                <p style="margin-bottom: 20px; font-size: 0.9em; color: #333;">Quedo a sus órdenes para cualquier duda o comentario sobre esta propuesta.</p>
+                                <p style="margin: 0; font-weight: 800; font-size: 1.1em; color: {jypesa_azul};">Rigoberto Hernández</p>
+                                <p style="margin: 0; font-size: 0.9em; font-weight: 700; color: #333;">Coordinador de Distribución y Logística</p>
+                                <p style="margin: 0; font-size: 0.8em; color: #555;">JYPESA | S.A. de C.V.</p>
+                                
+                                <div style="margin-top: 10px; font-size: 0.85em; color: #444; background-color: #f9f9f9; padding: 8px; border-radius: 4px; display: inline-block; border: 1px solid #eee;">
+                                    <span style="color: {jypesa_azul}; font-weight: bold;">📱 33 19 75 31 22</span> <span style="margin: 0 8px; color: #ccc;">|</span> 
+                                    <span>📞 (52) 33 3540 2939 Ext. 157</span> <span style="margin: 0 8px; color: #ccc;">|</span> 
+                                    <span style="color: {jypesa_azul}; text-decoration: none;">✉ rhernandez@jypesa.com</span>
+                                </div>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                
+                if st.button(":material/print: IMPRIMIR COTIZACIÓN TÉCNICA", type="primary", use_container_width=True):
+                    cot_html = generar_cotizacion_html()
+                    components.html(f"{cot_html}<script>window.print();</script>", height=0)
+
+                
+        # 5. HUB LOG
+        elif st.session_state.menu_main == "CENTRO DE DATOS":
+            if st.session_state.menu_sub == "ASIGNAR FLETERA":               
+                # --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
+                # --- 1. CARGA DE MATRIZ DESDE GITHUB (VERSION FORZADA) ---
+                @st.cache_data(ttl=60) # Actualiza la caché cada minuto
+                def obtener_matriz_github():
+                    # Añadimos un timestamp para forzar a GitHub a no servir una versión cacheada
+                    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/matriz_historial.csv?nocache={int(time.time())}"
+                    try:
+                        m = pd.read_csv(url)
+                        m.columns = [str(c).upper().strip() for c in m.columns]
+                        return m
+                    except Exception as e:
+                        st.error(f"Error fatal al conectar con GitHub: {e}")
+                        return pd.DataFrame()
+                
+                # --- NUEVA FUNCIÓN: GUARDADO AUTOMÁTICO DE FACTURACIÓN ---
+                def guardar_facturacion_moreno(df):
+                    try:
+                        token = st.secrets["GITHUB_TOKEN"]
+                        repo = "RH2026/nexion"
+                        filename = "facturacion_moreno.csv"
+                        url = f"https://api.github.com/repos/{repo}/contents/{filename}"
+                        
+                        # Convertir a CSV para el repositorio
+                        csv_content = df.to_csv(index=False).encode("utf-8-sig")
+                        content_base64 = base64.b64encode(csv_content).decode("utf-8")
+                        
+                        headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+                        
+                        # Obtener SHA si el archivo ya existe para sobreescribirlo
+                        res = requests.get(url, headers=headers)
+                        sha = res.json().get("sha") if res.status_code == 200 else None
+                        
+                        payload = {
+                            "message": f"Auto-update Facturación: {time.strftime('%Y-%m-%d %H:%M')}",
+                            "content": content_base64,
+                            "branch": "main"
+                        }
+                        if sha: payload["sha"] = sha
+                        
+                        requests.put(url, headers=headers, json=payload)
+                        return True
+                    except Exception:
+                        return False
+                
+                def limpiar_texto(texto):
+                    if pd.isna(texto): return ""
+                    texto = "".join(c for c in unicodedata.normalize('NFD', str(texto)) if unicodedata.category(c) != 'Mn').upper()
+                    texto = re.sub(r'[^A-Z0-9\s]', ' ', texto) 
+                    return " ".join(texto.split())
+                
+                # --- 2. FUNCIONES MAESTRAS PDF ---
+                def generar_sellos_fisicos(lista_textos, x, y):
+                    output = PdfWriter()
+                    for texto in lista_textos:
+                        packet = io.BytesIO()
+                        can = canvas.Canvas(packet, pagesize=letter)
+                        can.setFont("Helvetica-Bold", 11)
+                        can.drawString(x, y, f"{str(texto).upper()}")
+                        can.save()
+                        packet.seek(0)
+                        output.add_page(PdfReader(packet).pages[0])
+                    out_io = io.BytesIO()
+                    output.write(out_io)
+                    return out_io.getvalue()
+                
+                def marcar_pdf_digital(pdf_file, texto_sello, x, y):
+                    packet = io.BytesIO()
+                    can = canvas.Canvas(packet, pagesize=letter)
+                    can.setFont("Helvetica-Bold", 11)
+                    can.drawString(x, y, f"{str(texto_sello).upper()}")
+                    can.save()
+                    packet.seek(0)
+                    new_pdf = PdfReader(packet)
+                    existing_pdf = PdfReader(pdf_file)
+                    output = PdfWriter()
+                    page = existing_pdf.pages[0]
+                    page.merge_page(new_pdf.pages[0])
+                    output.add_page(page)
+                    for i in range(1, len(existing_pdf.pages)):
+                        output.add_page(existing_pdf.pages[i])
+                    out_io = io.BytesIO()
+                    output.write(out_io)
+                    return out_io.getvalue()
+                
+                # --- BLOQUE 1: PREPARACIÓN S&T ---
+                # --- BLOQUE 1: PREPARACIÓN S&T (MODIFICACIÓN) ---
+                # --- BLOQUE 1: PREPARACIÓN S&T ---
+                st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>S&T PREPARATION MODULE</p>", unsafe_allow_html=True)
+                uploaded_file = st.file_uploader("Subir archivo ERP", type=["xlsx", "csv"], label_visibility="collapsed")
+                
+                if uploaded_file is not None:
+                    try:
+                        # Carga inicial de datos
+                        df = pd.read_csv(uploaded_file, sep=None, engine='python') if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+                        
+                        # --- LÓGICA DE GUARDADO AUTOMÁTICO ---
+                        if f"uploaded_{uploaded_file.name}" not in st.session_state:
+                            if guardar_facturacion_moreno(df):
+                                st.toast("Archivo 'facturacion_moreno' guardado en GitHub", icon="🚀")
+                                st.session_state[f"uploaded_{uploaded_file.name}"] = True
+                            else:
+                                st.error("Error al guardar en GitHub. Revisa el Token en Secrets.")
+                                
+                        df.columns = [str(c).strip().replace('\n', '') for c in df.columns]
+                        col_folio = next((c for c in df.columns if 'factura' in c.lower() or 'docnum' in c.lower() or 'folio' in c.lower()), df.columns[0])
+                        df[col_folio] = pd.to_numeric(df[col_folio], errors='coerce')
+                        
+                        col_left, col_right = st.columns([1, 2], gap="large")
+                        
+                        with col_left:
+                            st.markdown(f"<p class='op-query-text'>FILTROS</p>", unsafe_allow_html=True)
+                            
+                            # NUEVO: Input para folios manuales
+                            folios_manuales = st.text_input("Folios específicos (separados por coma):", placeholder="Ej: 1001, 1002, 1005")
+                            
+                            serie = df[col_folio].dropna()
+                            inicio = st.number_input("Desde:", value=int(serie.min()) if not serie.empty else 0)
+                            final = st.number_input("Hasta:", value=int(serie.max()) if not serie.empty else 0)
+                            
+                            # Lógica híbrida
+                            if folios_manuales:
+                                lista_manual = [int(x.strip()) for x in folios_manuales.split(",") if x.strip().isdigit()]
+                                df_rango = df[df[col_folio].isin(lista_manual)].copy()
+                            else:
+                                df_rango = df[(df[col_folio] >= inicio) & (df[col_folio] <= final)].copy()
+                            
+                        with col_right:
+                            st.markdown(f"<p class='op-query-text'>SELECCIÓN</p>", unsafe_allow_html=True)
+                            if not df_rango.empty:
+                                info = df_rango.drop_duplicates(subset=[col_folio])[[col_folio]]
+                                info.insert(0, "Incluir", True)
+                                edited_df = st.data_editor(info, hide_index=True, use_container_width=True, key="ed_v4")
+                            else: 
+                                st.warning("Rango vacío")
+                                edited_df = pd.DataFrame()
+                                
+                        if not df_rango.empty and not edited_df.empty:
+                            folios_ok = edited_df[edited_df["Incluir"] == True][col_folio].tolist()
+                            
+                            # --- SECCIÓN DE BOTONES DE RENDER ---
+                            st.markdown("---")
+                            if st.button(":material/play_circle: RENDERIZAR TABLA", use_container_width=True):
+                                st.session_state.df_final_st = df_rango[df_rango[col_folio].isin(folios_ok)]
+                                
+                            if "df_final_st" in st.session_state:
+                                df_st = st.session_state.df_final_st
+                                st.dataframe(df_st, use_container_width=True)
+                                
+                                st.write("") # Respiro visual
+                                
+                                # Botón 1: Descargar (Arriba)
+                                towrite = io.BytesIO()
+                                df_st.to_excel(towrite, index=False, engine='openpyxl')
+                                st.download_button(
+                                    label=":material/download: DESCARGAR S&T", 
+                                    type="primary", 
+                                    data=towrite.getvalue(), 
+                                    file_name="ST_DATA.xlsx", 
+                                    use_container_width=True
+                                )
+                                
+                                # Botón 2: Smart Routing (Abajo)
+                                if st.button(":material/join_inner: SMART ROUTING (MOTOR DE ASIGNACIÓN)", type="primary", use_container_width=True):
+                                    try:
+                                        df_log = df_st.drop_duplicates(subset=[col_folio]).copy()
+                                        matriz_db = obtener_matriz_github()
+                                        
+                                        col_dir_erp = next((c for c in df_log.columns if 'DIRECCION' in c.upper()), None)
+                                        col_dest_matriz = 'DESTINO' if 'DESTINO' in matriz_db.columns else matriz_db.columns[0]
+                                        col_flet_matriz = 'TRANSPORTE' if 'TRANSPORTE' in matriz_db.columns else 'FLETERA'
+                                        col_tarifa_matriz = 'PRECIO POR CAJA' if 'PRECIO POR CAJA' in matriz_db.columns else 'COSTO'
+                                        
+                                        def motor_v4(row):
+                                            if not col_dir_erp: return "ERROR: COL DIRECCION", 0.0
+                                            dir_limpia = limpiar_texto(row[col_dir_erp])
+                                            if any(loc in dir_limpia for loc in ["GDL", "GUADALAJARA", "ZAPOPAN", "TLAQUEPAQUE", "TONALA", "TLAJOMULCO"]):
+                                                return "LOCAL", 0.0
+                                            for _, fila in matriz_db.iterrows():
+                                                dest_key = limpiar_texto(fila[col_dest_matriz])
+                                                if dest_key and (dest_key in dir_limpia):
+                                                    flet = fila.get(col_flet_matriz, "ASIGNADO")
+                                                    costo_val = pd.to_numeric(fila.get(col_tarifa_matriz, 0.0), errors='coerce')
+                                                    return flet, costo_val
+                                            return "REVISIÓN MANUAL", 0.0
+                                            
+                                        res = df_log.apply(motor_v4, axis=1)
+                                        df_log['RECOMENDACION'] = [r[0] for r in res]
+                                        df_log['COSTO'] = [r[1] for r in res]
+                                        
+                                        df_log = df_log.rename(columns={col_folio: "Factura"})
+                                        cols_deseadas = ["Factura", "RECOMENDACION", "Transporte", "DIRECCION", "COSTO", "Nombre_Cliente", "Nombre_Extran", "Quantity", "DESTINO"]
+                                        cols_finales = [c for c in cols_deseadas if c in df_log.columns]
+                                        
+                                        st.session_state.df_analisis = df_log[cols_finales]
+                                        st.success("¡Motor sincronizado con datos recientes!")
+                                        st.rerun()
+                                        
+                                    except Exception as e: 
+                                        st.error(f"Error en el motor de asignación: {e}")
+                
+                    except Exception as e:
+                        st.error(f"Error procesando el archivo ERP: {e}")
+                
+                # ==================================================================================
+                # --- BLOQUE 2: SMART ROUTING & ANALISIS ---
+                # Totalmente independiente y alineado a la raíz de la app
+                # ==================================================================================
+                # --- BLOQUE 2: SMART ROUTING & ANALISIS ---
+                if "df_analisis" in st.session_state:
+                    st.markdown("---")
+                    st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'>LOGISTICS INTELLIGENCE HUB</p>", unsafe_allow_html=True)
+                    
+                    p = st.session_state.df_analisis.copy()
+                
+                    # --- LIMPIEZA FORZADA PARA EL EDITOR ---
+                    # 1. Asegurar que los nombres de columnas sean strings y únicos
+                    p.columns = [str(c) for c in p.columns]
+                    
+                    # 2. Si hay columnas duplicadas, las renombramos para que no haya conflicto
+                    if p.columns.duplicated().any():
+                        cols = []
+                        for i, col in enumerate(p.columns):
+                            if col in cols:
+                                cols.append(f"{col}_{i}")
+                            else:
+                                cols.append(col)
+                        p.columns = cols
+                
+                    # 3. Eliminar columnas que no tengan nombre o sean nulas
+                    p = p.loc[:, ~p.columns.isna()]
+                    
+                    modo_edicion = st.toggle("HABILITAR EDICIÓN MANUAL")
+                    
+                    # Ahora el editor debería funcionar sin errores
+                    p_editado = st.data_editor(
+                        p, use_container_width=True, hide_index=True,
+                        column_config={
+                            "RECOMENDACION": st.column_config.TextColumn("FLETERA", disabled=not modo_edicion),
+                            "COSTO": st.column_config.NumberColumn("TARIFA", format="$%.2f", disabled=not modo_edicion),
+                        },
+                        key="editor_final_github"
+                    )
+                    
+                    # Botón 1: Fijar Cambios (Arriba)
+                    if st.button(":material/save_as: FIJAR CAMBIOS", use_container_width=True, type="primary"):
+                        st.session_state.df_analisis = p_editado
+                        st.toast("Cambios guardados", icon="✅")
+                        
+                    st.write("") # Respiro visual
+                    
+                    # Botón 2: Descargar Análisis (Abajo)
+                    output_xlsx = io.BytesIO()
+                    p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
+                    st.download_button(
+                        label=":material/download: DESCARGAR ANÁLISIS", 
+                        data=output_xlsx.getvalue(), 
+                        file_name="Analisis_Final.xlsx", 
+                        use_container_width=True,
+                        type="primary" 
+                    )
+                    
+                    with st.expander("SISTEMA DE SELLADO", expanded=False):
+                        cx, cy = st.columns(2)
+                        ax = cx.slider("X", 0, 612, 399)
+                        ay = cy.slider("Y", 0, 792, 760)
+                        
+                        st.markdown("###### :material/print: Opciones de Impresión Física")
+                        s1, s2 = st.columns(2)
+                        
+                        with s1:
+                            sellos_normal = p_editado['RECOMENDACION'].tolist()
+                            st.download_button(
+                                label=":material/print: GENERAR SELLOS NORMAL", 
+                                data=generar_sellos_fisicos(sellos_normal, ax, ay), 
+                                file_name="Sellos_Normales.pdf", 
+                                use_container_width=True,
+                                type="primary" 
+                            )
+                            
+                        with s2:
+                            sellos_invertidos = p_editado['RECOMENDACION'].tolist()[::-1]
+                            st.download_button(
+                                label=":material/swap_vert: GENERAR SELLOS MODO INVERSO", 
+                                data=generar_sellos_fisicos(sellos_invertidos, ax, ay), 
+                                file_name="Sellos_Inversos.pdf", 
+                                use_container_width=True,
+                                type="primary"
+                            )
+                                
+                        st.markdown("---")
+                        st.markdown("###### :material/devices: Opciones de Sellado Digital")
+                        pdfs = st.file_uploader(":material/picture_as_pdf: Subir Facturas (PDF)", type="pdf", accept_multiple_files=True)
+                        
+                        if pdfs:
+                            if st.button("EJECUTAR SELLADO DIGITAL", use_container_width=True):
+                                mapa = pd.Series(p_editado.RECOMENDACION.values, index=p_editado["Factura"].astype(str)).to_dict()
+                                z_io = io.BytesIO()
+                                with zipfile.ZipFile(z_io, "a") as zf:
+                                    for pdf in pdfs:
+                                        f_id = next((k for k in mapa.keys() if k in pdf.name.upper()), None)
+                                        if f_id: 
+                                            zf.writestr(f"SELLADO_{pdf.name}", marcar_pdf_digital(pdf, mapa[f_id], ax, ay))
+                                
+                                st.download_button(
+                                    label=":material/folder_zip: DESCARGAR ZIP", 
+                                    data=z_io.getvalue(), 
+                                    file_name="Sellado.zip", 
+                                    use_container_width=True,
+                                    type="primary"
+                                )
+
+    
+            elif st.session_state.menu_sub == "CARGAR DATOS":
+                # ── VALIDACIÓN DE ACCESO EXCLUSIVO (CONECTADO A TU LOGIN) ──
+                # Usamos 'usuario_activo' porque es la que definiste en tu login_screen()
+                current_user = st.session_state.get("usuario_activo", "UNKNOWN")
+                AUTHORIZED_USERS = ["JMoreno", "Rigoberto"]
+        
+                if current_user not in AUTHORIZED_USERS:
+                    st.markdown(f'<div style="background: linear-gradient(90deg, #1A1F2A 0%, #11141B 100%); border-radius: 8px; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 20px; border-left: 6px solid #EF4444; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: sans-serif;"><div style="display: flex; align-items: center; gap: 18px;"><div style="font-size: 24px;">🔐</div><div style="display: flex; flex-direction: column;"><span style="color: #EF4444; font-weight: 800; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin: 0;">ÁREA RESTRINGIDA</span><span style="color: #F8FAFC; font-size: 14px; margin-top: 2px;">El perfil de operador <strong style="color: #EF4444;">{current_user}</strong> no cuenta con privilegios de nivel Logística.</span></div></div><div style="border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 4px; padding: 4px 12px; color: #EF4444; font-family: monospace; font-size: 12px; font-weight: 700; background: rgba(239, 68, 68, 0.05); letter-spacing: 1px;">ID ACCESO: {current_user}</div></div>', unsafe_allow_html=True)
+                    st.stop()
+                
+                # 1. Definir la zona horaria de Guadalajara
+                tz_gdl = pytz.timezone('America/Mexico_City')
+                
+                # ── ESTADO INICIAL ──
+                st.toast("Nexion Core: Active | Nodes: Online", icon="🌐")
+                
+                # ── ESTILO VISUAL PRO + ALERTA NEÓN (CSS) ──
+                st.markdown("""
+                    <style>
+                    .main { background-color: #0E1117; }
+                    .main-header-pro {
+                        background: linear-gradient(90deg, rgba(96, 165, 250, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+                        border-left: 4px solid #60A5FA;
+                        padding: 20px;
+                        border-radius: 8px;
+                        margin-bottom: 25px;
+                    }
+                    .status-card-pro {
+                        background: rgba(30, 41, 59, 0.5); 
+                        border: 1px solid rgba(255, 255, 255, 0.05);
+                        border-radius: 12px;
+                        padding: 20px;
+                        text-align: center;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    }
+                    .status-label {
+                        font-size: 10px;
+                        color: #94A3B8;
+                        letter-spacing: 2px;
+                        font-weight: 700;
+                        margin-bottom: 8px;
+                        text-transform: uppercase;
+                    }
+                    .status-value {
+                        font-size: 16px;
+                        font-weight: 800;
+                        color: #F8FAFC;
+                    }
+                    /* Animación para el borde de alerta */
+                    @keyframes pulse-red {
+                        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+                        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+                        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+                    }
+                    .protocol-violation-card {
+                        background: rgba(239, 68, 68, 0.1);
+                        border: 1px solid #EF4444;
+                        border-radius: 10px;
+                        padding: 15px;
+                        margin-bottom: 15px;
+                        animation: pulse-red 2s infinite;
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                    }
+                    .violation-text {
+                        color: #FCA5A5;
+                        font-family: 'Courier New', Courier, monospace;
+                        font-size: 14px;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # ── CONFIGURACIÓN DE SEGURIDAD ──
+                TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                REPO_NAME = "RH2026/nexion"
+                DASHBOARD_NAME = "Matriz_Excel_Dashboard.csv"
+                CONSIGNAS_FILE = "consignas.csv"  # <--- Agregamos esta variable
+                PEDIDOS_FILE = "pedidos.csv"  # <--- Agregamos esta variable
+                MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx"]
+                
+                # Actualizamos la lista completa para incluirlo
+                TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME, CONSIGNAS_FILE, PEDIDOS_FILE] + MATRICES_EXCEL
+        
+                # ── HEADER VISUAL ──
+                st.markdown(f'<div class="main-header-pro"><h2 style="margin:0; color:#F8FAFC;">Central Data Hub</h2><p style="margin:0; color:#94A3B8; font-size:14px;">Nexion Logistic Node // Multiple Uplink</p></div>', unsafe_allow_html=True)
+                
+                # ── DASHBOARD DE ESTADO RÁPIDO (RESTAURADO) ──
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.markdown(f'''<div class="status-card-pro">
+                        <div class="status-label">Repository Node</div>
+                        <div class="status-value" style="color:#60A5FA;">{REPO_NAME.split("/")[1].upper()}</div>
+                    </div>''', unsafe_allow_html=True)
+                with c2:
+                    st.markdown(f'''<div class="status-card-pro">
+                        <div class="status-label">Active Protocol</div>
+                        <div class="status-value">BATCH // SYNC</div>
+                    </div>''', unsafe_allow_html=True)
+                with c3:
+                    color_token = "#10B981" if TOKEN else "#EF4444"
+                    st.markdown(f'''<div class="status-card-pro">
+                        <div class="status-label">Token Auth</div>
+                        <div class="status-value" style="color:{color_token};">{"ENCRYPTED" if TOKEN else "MISSING"}</div>
+                    </div>''', unsafe_allow_html=True)
+        
+                st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
+                
+                # ── ÁREA DE CARGA MULTIPLE ──
+                # ── ÁREA DE CARGA MULTIPLE ──
+                with st.container(border=True):
+                    st.markdown("### :material/security: SECURE MULTI-UPLINK")
+                    st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}`, `{PEDIDOS_FILE}` and `T1, T2, T3` (XLSX)")
+                    
+                    uploaded_files = st.file_uploader("", type=["csv", "xlsx"], accept_multiple_files=True, key="multi_uploader")
+                
+                    if uploaded_files:
+                        archivos_validos = []
+                        errores = False
+                
+                        for uploaded_file in uploaded_files:
+                            if uploaded_file.name not in TODOS_LOS_PERMITIDOS:
+                                st.markdown(f"""
+                                    <div class="protocol-violation-card">
+                                        <div style="font-size: 30px;">⚠️</div>
+                                        <div class="violation-text">
+                                            <strong style="color: #EF4444;">CRITICAL: PROTOCOL VIOLATION</strong><br>
+                                            Unauthorized asset: <span style="color: white;">`{uploaded_file.name}`</span><br>
+                                            <small>SYSTEM_ACTION: Uplink Blocked.</small>
+                                        </div>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                                errores = True
+                            else:
+                                archivos_validos.append(uploaded_file)
+                
+                        if archivos_validos and not errores:
+                            with st.expander(":material/list: Batch Preview", expanded=True):
+                                for f in archivos_validos:
+                                    st.write(f"✔ Prepared for Uplink: `{f.name}`")
+                            
+                            hora_actual_gdl = datetime.now(tz_gdl).strftime('%d/%m/%Y %H:%M')
+                            commit_msg = st.text_input("Global Sync Message", value=f"BATCH_UPDATE // {hora_actual_gdl}")
+                
+                            if st.button("EXECUTE GLOBAL SINCRONIZATION", type="primary", use_container_width=True):
+                                with st.status("Initializing Batch Uplink...", expanded=True) as status:
+                                    try:
+                                        from github import Github
+                                        g = Github(TOKEN)
+                                        repo = g.get_repo(REPO_NAME)
+                                        
+                                        for f in archivos_validos:
+                                            status.write(f"Syncing `{f.name}`...")
+                                            content = f.getvalue()
+                                            try:
+                                                target = repo.get_contents(f.name)
+                                                repo.update_file(target.path, commit_msg, content, target.sha)
+                                            except:
+                                                repo.create_file(f.name, commit_msg, content)
+                                        
+                                        status.update(label="All Assets Synced Successfully", state="complete", expanded=False)
+                                        st.toast("Nexion Repositories Updated", icon="🛡️")
+                                        st.cache_data.clear()
+                                        time.sleep(1)
+                                        st.rerun()
+                                    except Exception as e:
+                                        status.update(label=f"Uplink Failed: {str(e)}", state="error")
+        
+                # ── LÓGICA DE HISTORIAL DE ACTIVIDAD (Audit Logs) ──
+                st.markdown("<br>", unsafe_allow_html=True)
+                with st.expander(":material/terminal: System Audit Logs", expanded=False):
+                    if TOKEN:
+                        try:
+                            from github import Github
+                            g = Github(TOKEN)
+                            repo = g.get_repo(REPO_NAME)
+                            commits = repo.get_commits()
+                            
+                            for i, commit in enumerate(commits):
+                                if i >= 5: break 
+                                fecha_utc = commit.commit.author.date.replace(tzinfo=pytz.utc)
+                                fecha_local = fecha_utc.astimezone(tz_gdl)
+                                
+                                col_h1, col_h2 = st.columns([1, 3])
+                                with col_h1:
+                                    st.markdown(f"**{fecha_local.strftime('%H:%M')}**")
+                                    st.caption(fecha_local.strftime('%d/%m/%Y'))
+                                with col_h2:
+                                    st.markdown(f":material/history: {commit.commit.message}")
+                                    st.code(f"USER: {commit.commit.author.name} | SHA: {commit.sha[:7]}", language="bash")
+                                st.divider()
+                        except Exception as e:
+                            st.error(f"Error al conectar con los logs: {e}")
+                            
+            
+            if st.session_state.menu_sub == "ETIQUETAS":  
+                # --- ESTILOS CSS GLOBALES PARA BOTONES Y HOVERS ---
+                st.markdown("""
+                    <style>
+                    /* Estilo general para los botones principales de Streamlit (st.button) */
+                    div.stButton > button {
+                        background-color: #2e3b4e !important;
+                        color: #ffffff !important;
+                        border: 1px solid #4a90e2 !important;
+                        border-radius: 6px !important;
+                        font-weight: 600 !important;
+                        transition: all 0.3s ease !important;
+                    }
+                    
+                    /* Efecto Hover para los botones principales */
+                    div.stButton > button:hover {
+                        background-color: #3b4d66 !important;
+                        border-color: #5ca1e6 !important;
+                        color: #ffffff !important;
+                        box-shadow: 0 4px 12-px rgba(74, 144, 226, 0.3) !important;
+                    }
+                
+                    /* Estilo para los botones de descarga (st.download_button) */
+                    div.stDownloadButton > button {
+                        background-color: #0083B0 !important;
+                        color: #ffffff !important;
+                        border: 1px solid #00B4DB !important;
+                        border-radius: 6px !important;
+                        font-weight: 600 !important;
+                        transition: all 0.3s ease !important;
+                    }
+                
+                    /* Efecto Hover para los botones de descarga */
+                    div.stDownloadButton > button:hover {
+                        background-color: #009acc !important;
+                        border-color: #ffffff !important;
+                        color: #ffffff !important;
+                        box-shadow: 0 4px 12px rgba(0, 180, 219, 0.4) !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # --- 1. FUNCIONES DE CONEXIÓN Y PROCESAMIENTO ---
+                @st.cache_data(ttl=60)
+                def cargar_csv_github():
+                    try:
+                        repo = "RH2026/nexion"
+                        filename = "facturacion_moreno.csv"
+                        branch = "main"
+                        
+                        url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                        token = st.secrets["GITHUB_TOKEN"]
+                        headers = {"Authorization": f"token {token}"}
+                        
+                        response = requests.get(url, headers=headers)
+                        
+                        if response.status_code == 200:
+                            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                            df.columns = df.columns.astype(str).str.strip()
+                            return df
+                        else:
+                            st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
+                            return pd.DataFrame()
+                    except Exception as e:
+                        st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
+                        return pd.DataFrame()
+                
+                def limpiar_parentesis(texto):
+                    return re.sub(r'\(.*?\)', '', str(texto)).strip()
+                
+                def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado, max_lineas=3):
+                    texto = str(texto).upper()
+                    lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
+                    
+                    tamano_actual = tamano_max
+                    while len(lineas) > max_lineas and tamano_actual > 7:
+                        tamano_actual -= 0.5
+                        lineas = simpleSplit(texto, fuente, tamano_actual, ancho_max)
+                    
+                    c.setFont(fuente, tamano_actual)
+                    y_actual = y_inicio
+                    for line in lineas[:max_lineas]: 
+                        c.drawCentredString(x_centro, y_actual, line)
+                        y_actual -= interlineado
+                    return y_actual 
+                
+                def generar_etiquetas_nexion(df_datos):
+                    output = io.BytesIO()
+                    
+                    # Dimensiones exactas de la etiqueta: 10.5 cm x 7.5 cm
+                    w_rec, h_rec = 10.5 * cm, 7.5 * cm
+                    c = canvas.Canvas(output, pagesize=(w_rec, h_rec))
+                    
+                    # Margen lateral amplio
+                    margen_h = 0.8 * cm
+                    w_util = w_rec - (2 * margen_h)
+                    x_centro = w_rec / 2
+                
+                    if df_datos.empty:
+                        c.save()
+                        return output.getvalue()
+                
+                    for index, row in df_datos.iterrows():
+                        try:
+                            cantidad_real = int(row['Quantity'])
+                            iteraciones = cantidad_real
+                        except: 
+                            continue 
+                
+                        nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', row.get('NOMBRE_CLIENTE', 'SIN NOMBRE'))))
+                        nombre_final = limpiar_parentesis(nombre_crudo)
+                        direccion_final = row.get('DIRECCION', row.get('Domicilio', row.get('DOMICILIO', 'DIRECCIÓN NO DISPONIBLE')))
+                        transporte_final = str(row.get('RECOMENDACION', row.get('Transporte', 'TRES GUERRAS')))
+                        factura_val = str(row.get('Factura', row.get('FOLIO', 'S/F')))
+                
+                        for i in range(iteraciones):
+                            # Dibujar contorno de etiqueta
+                            c.setDash(1, 2)
+                            c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                            c.rect(0, 0, w_rec, h_rec)
+                            c.setDash([])
+                            c.setStrokeColorRGB(0, 0, 0)
+                
+                            # CABECERA JYPESA
+                            c.setFont("Helvetica-Bold", 7)
+                            c.drawCentredString(x_centro, h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
+                            c.setFont("Helvetica", 5.5)
+                            info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
+                            dibujar_texto_bloque_pro(c, info_contacto, x_centro, h_rec - 0.7*cm, w_util, "Helvetica", 5.5, 0.25*cm, max_lineas=1)
+                            
+                            c.setLineWidth(0.3)
+                            c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                            c.line(margen_h, h_rec - 0.95*cm, w_rec - margen_h, h_rec - 0.95*cm)
+                            c.setStrokeColorRGB(0, 0, 0)
+                
+                            # NOMBRE CLIENTE
+                            y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_centro, h_rec - 1.8*cm, w_util, "Helvetica-Bold", 22, 0.65*cm, max_lineas=3)
+                            
+                            # DIRECCIÓN
+                            y_inicio_direccion = y_termino_nombre - 0.5*cm
+                            if y_inicio_direccion > 4.3*cm: y_inicio_direccion = 4.3*cm
+                            if y_inicio_direccion < 2.9*cm: y_inicio_direccion = 2.9*cm
+                            dibujar_texto_bloque_pro(c, direccion_final, x_centro, y_inicio_direccion, w_util, "Helvetica-Bold", 12.0, 0.45*cm, max_lineas=3)
+                
+                            # PIE DE ETIQUETA
+                            c.setLineWidth(0.6)
+                            y_linea_pie = 1.4*cm
+                            c.line(margen_h, y_linea_pie, w_rec - margen_h, y_linea_pie)
+                            
+                            x_col1 = margen_h + 0.1*cm         
+                            x_col2 = 5.25 * cm                 
+                            x_col3 = w_rec - margen_h - 2.8*cm 
+                
+                            c.setFont("Helvetica-Bold", 8)
+                            c.drawString(x_col1, y_linea_pie - 0.4*cm, "FACTURA")
+                            c.drawCentredString(x_col2, y_linea_pie - 0.4*cm, "CAJAS")
+                            c.drawString(x_col3, y_linea_pie - 0.4*cm, "TRANSPORTE")
+                            
+                            c.setFont("Helvetica-Bold", 11)
+                            c.drawString(x_col1, y_linea_pie - 1.0*cm, factura_val)
+                            
+                            c.drawCentredString(x_col2, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
+                            
+                            c.setFont("Helvetica-Bold", 9.5)
+                            c.drawString(x_col3, y_linea_pie - 1.0*cm, transporte_final[:16])
+                            
+                            c.showPage()
+                
+                    c.save()
+                    return output.getvalue()
+                
+                # --- ESTILOS CSS GLOBALES (FONDO OSCURO Y HOVER VERDE TURQUESA) ---
+                # --- ESTILOS CSS CORPORATIVOS (NEXION) ---
+                st.markdown("""
+                    <style>
+                    /* Estilo corporativo para los botones */
+                    div.stButton > button, div.stDownloadButton > button {
+                        background-color: #2B343B !important; 
+                        color: #FFFFFF !important;            
+                        border: 1px solid #2B343B !important; 
+                        border-radius: 5px !important;
+                        transition: all 0.3s ease !important;
+                        width: 100% !important;
+                        font-weight: 600 !important;
+                    }
+                    
+                    div.stButton > button:hover, div.stDownloadButton > button:hover {
+                        background-color: #00A3A3 !important; 
+                        color: #FFFFFF !important;            
+                        border-color: #00A3A3 !important;
+                    }
+                    
+                    div.stButton > button:active, div.stDownloadButton > button:active {
+                        background-color: #00A3A3 !important;
+                        border-color: #00A3A3 !important;
+                        color: #FFFFFF !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # Creación de las tres pestañas
+                tab1, tab2, tab3 = st.tabs([
+                    "CARGAR POR EXCEL (Lote)", 
+                    "BASE DE DATOS GITHUB", 
+                    "CAPTURA MANUAL"
+                ])
+                
+                with tab1:
+                    st.subheader("Cargar Archivo Excel de Pedidos")
+                    archivo = st.file_uploader("Sube tu archivo .xlsx", type=["xlsx"], key="creador_etiquetas_excel")
+                    
+                    if archivo:
+                        try:
+                            df_excel = pd.read_excel(archivo, sheet_name=0)
+                            st.subheader("Vista previa de datos")
+                            st.dataframe(df_excel[['Quantity', 'DIRECCION', 'Factura']].head(5), use_container_width=True)
+                
+                            if st.button("Generar Etiquetas desde Excel", use_container_width=True, key="btn_gen_excel"):
+                                with st.spinner("Generando documento..."):
+                                    pdf_data = generar_etiquetas_nexion(df_excel)
+                                    if pdf_data:
+                                        st.success("¡Documento generado con éxito!")
+                                        st.download_button(
+                                            label="Descargar PDF de Etiquetas",
+                                            data=pdf_data,
+                                            file_name="etiquetas_nexion_excel.pdf",
+                                            mime="application/pdf",
+                                            use_container_width=True,
+                                            key="dl_excel"
+                                        )
+                        except Exception as e:
+                            st.error(f"Error al leer los pedidos: {e}")
+                
+                with tab2:
+                    st.subheader("Base de Datos - facturacion.csv")
+                    df_facturacion = cargar_csv_github()
+                    
+                    if not df_facturacion.empty:
+                        df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
+                        facturas_disponibles = df_facturacion["Factura"].unique()
+                
+                        c_col1, c_col2 = st.columns(2)
+                        with c_col1:
+                            modo_busqueda = st.selectbox(
+                                "🔍 Método de Selección", 
+                                ["Seleccionar de la lista", "Escribir folio manual"],
+                                key="modo_busq_etq_github"
+                            )
+                
+                        num_factura_seleccionada = None
+                        with c_col2:
+                            if modo_busqueda == "Seleccionar de la lista":
+                                num_factura_seleccionada = st.selectbox("📦 Selecciona Factura / Folio", facturas_disponibles, key="sel_factura_etq_github")
+                            else:
+                                num_factura_seleccionada = st.text_input("✍️ Ingresa Folio Manual", key="txt_folio_manual_etq_github")
+                
+                        if num_factura_seleccionada:
+                            df_encontrado = df_facturacion[df_facturacion["Factura"] == str(num_factura_seleccionada).strip()]
+                            
+                            if not df_encontrado.empty:
+                                row_data = df_encontrado.iloc[0].copy()
+                                
+                                st.markdown("---")
+                                st.info(f"📋 **Cliente encontrado:** {row_data.get('Nombre_Extran', row_data.get('Nombre_Cliente', 'SIN NOMBRE'))}")
+                                
+                                col_c, col_t = st.columns(2)
+                                with col_c:
+                                    cajas_manual = st.number_input("📦 Cantidad de Cajas / Bultos", min_value=1, value=1, step=1, key="num_cajas_manual_db")
+                                with col_t:
+                                    transporte_manual = st.text_input("🚛 Transporte / Paquetería", value=str(row_data.get('RECOMENDACION', row_data.get('Transporte', 'TRES GUERRAS'))), key="txt_transporte_manual_db")
+                                
+                                row_data['Quantity'] = cajas_manual
+                                row_data['RECOMENDACION'] = transporte_manual
+                                
+                                df_procesar_individual = pd.DataFrame([row_data])
+                
+                                if st.button("Generar Etiqueta Individual", use_container_width=True, key="btn_gen_moreno"):
+                                    with st.spinner("Generando etiqueta..."):
+                                        pdf_data_moreno = generar_etiquetas_nexion(df_procesar_individual)
+                                        if pdf_data_moreno:
+                                            st.success("¡Etiqueta generada con éxito!")
+                                            st.download_button(
+                                                label="Descargar PDF de Etiqueta",
+                                                data=pdf_data_moreno,
+                                                file_name=f"etiqueta_factura_{num_factura_seleccionada}.pdf",
+                                                mime="application/pdf",
+                                                use_container_width=True,
+                                                key="dl_moreno"
+                                            )
+                            else:
+                                st.warning("El folio ingresado no se encontró en la base de datos de GitHub.")
+                    else:
+                        st.warning("No se pudieron cargar los datos de GitHub. Verifica tu token o conexión.")
+                
+                with tab3:
+                    st.markdown("""
+                        <div style="background-color: #263243; padding: 10px 15px; border-radius: 5px; color: #ffffff; font-size: 14px; margin-bottom: 20px;">
+                            Ingresa los datos del envío manualmente (sin necesidad de archivos).
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                    col_m1, col_m2 = st.columns(2)
+                    with col_m1:
+                        manual_factura = st.text_input("NÚMERO DE FACTURA / FOLIO", value="235050", key="man_factura")
+                        manual_nombre = st.text_input("NOMBRE DEL CLIENTE / HOTEL", value="HOTEL EJEMPLO", key="man_nombre")
+                        manual_cajas = st.number_input("CANTIDAD DE CAJAS / BULTOS", min_value=1, value=1, step=1, key="man_cajas")
+                
+                    with col_m2:
+                        manual_direccion = st.text_area("DIRECCIÓN COMPLETA DE DESTINO", value="Av. Principal #123, Col. Centro, C.P. 44100, Guadalajara, Jal.", height=107, key="man_direccion")
+                        manual_transporte = st.text_input("TRANSPORTE / PAQUETERÍA", value="TRES GUERRAS", key="man_transporte")
+                
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.button("Generar Etiqueta Manual", use_container_width=True, key="btn_gen_manual_libre"):
+                        if not manual_factura or not manual_nombre or not manual_direccion:
+                            st.error("Por favor completa los campos obligatorios (Factura, Nombre y Dirección).")
+                        else:
+                            dict_manual = {
+                                'Factura': str(manual_factura),
+                                'Nombre_Cliente': str(manual_nombre),
+                                'DIRECCION': str(manual_direccion),
+                                'Quantity': int(manual_cajas),
+                                'RECOMENDACION': str(manual_transporte)
+                            }
+                            df_manual_pro = pd.DataFrame([dict_manual])
+                
+                            with st.spinner("Generando etiqueta manual..."):
+                                pdf_data_manual = generar_etiquetas_nexion(df_manual_pro)
+                                if pdf_data_manual:
+                                    st.success("¡Etiqueta manual generada con éxito!")
+                                    st.download_button(
+                                        label="Descargar PDF de Etiqueta Manual",
+                                        data=pdf_data_manual,
+                                        file_name=f"etiqueta_manual_{manual_factura}.pdf",
+                                        mime="application/pdf",
+                                        use_container_width=True,
+                                        key="dl_manual_libre"
+                                    )
+            
+            elif st.session_state.menu_sub == "HERRAMIENTAS":                
+                # --- 1. CONFIGURACIÓN DE PODER ---
+                # --- 1. FUNCIONES DE PROCESAMIENTO ---
+                def limpiar_parentesis(texto):
+                    return re.sub(r'\(.*?\)', '', str(texto)).strip()
+            
+                def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, tamano_max, interlineado, max_lineas=3):
+                    texto = str(texto).upper()
+                    lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
+                    
+                    tamano_actual = tamano_max
+                    while len(lineas) > max_lineas and tamano_actual > 8:
+                        tamano_actual -= 0.5
+                        lineas = simpleSplit(texto, fuente, tamano_actual, ancho_max)
+                    
+                    c.setFont(fuente, tamano_actual)
+                    y_actual = y_inicio
+                    for line in lineas[:max_lineas]: 
+                        c.drawCentredString(x_centro, y_actual, line)
+                        y_actual -= interlineado
+                    return y_actual 
+            
+                def generar_etiquetas_nexion(df):
+                    output = io.BytesIO()
+                    c = canvas.Canvas(output, pagesize=letter)
+                    width_carta, height_carta = letter
+                    
+                    # AJUSTE DE MÁRGENES DEL DOCUMENTO
+                    w_rec, h_rec = 10.5 * cm, 7.5 * cm
+                    x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
+                
+                    for index, row in df.iterrows():
+                        try:
+                            cantidad_real = int(row['Quantity'])
+                            iteraciones = cantidad_real + 1 
+                        except: 
+                            continue 
+            
+                        nombre_crudo = row.get('Nombre_Extran', row.get('Nombre_Ext', row.get('Nombre_Cliente', 'SIN NOMBRE')))
+                        nombre_final = limpiar_parentesis(nombre_crudo)
+                        direccion_final = row.get('DIRECCION', 'DIRECCIÓN NO DISPONIBLE')
+                        transporte_final = str(row.get('RECOMENDACION', row.get('Transporte', 'TRES GUERRAS')))
+            
+                        for i in range(iteraciones):
+                            es_archivo = (i == cantidad_real)
+                            
+                            # Dibujar contorno de etiqueta
+                            c.setDash(1, 2)
+                            c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                            c.rect(x_offset, y_offset, w_rec, h_rec)
+                            c.setDash([])
+                            c.setStrokeColorRGB(0, 0, 0)
+            
+                            # CABECERA JYPESA
+                            c.setFont("Helvetica-Bold", 7)
+                            c.drawCentredString(x_offset + (w_rec/2), y_offset + h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
+                            c.setFont("Helvetica", 6)
+                            info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
+                            dibujar_texto_bloque_pro(c, info_contacto, x_offset + (w_rec/2), y_offset + h_rec - 0.7*cm, 10*cm, "Helvetica", 6, 0.25*cm, max_lineas=1)
+                            
+                            c.setLineWidth(0.3)
+                            c.setStrokeColorRGB(0.7, 0.7, 0.7)
+                            c.line(x_offset + 0.5*cm, y_offset + h_rec - 1.0*cm, x_offset + w_rec - 0.5*cm, y_offset + h_rec - 1.0*cm)
+                            c.setStrokeColorRGB(0, 0, 0)
+            
+                            # NOMBRE CLIENTE (GIGANTE)
+                            y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_offset + (w_rec/2), y_offset + h_rec - 2.0*cm, 10*cm, "Helvetica-Bold", 26, 0.75*cm, max_lineas=3)
+                            
+                            # DIRECCIÓN (14.5pt)
+                            y_inicio_direccion = y_termino_nombre - 0.7*cm
+                            if y_inicio_direccion > y_offset + 4.3*cm: y_inicio_direccion = y_offset + 4.3*cm
+                            if y_inicio_direccion < y_offset + 2.9*cm: y_inicio_direccion = y_offset + 2.9*cm
+                            dibujar_texto_bloque_pro(c, direccion_final, x_offset + (w_rec/2), y_inicio_direccion, 10.0 * cm, "Helvetica-Bold", 14.5, 0.5*cm, max_lineas=3)
+            
+                            # PIE DE ETIQUETA
+                            c.setLineWidth(0.6)
+                            y_linea_pie = y_offset + 1.4*cm
+                            c.line(x_offset + 0.2*cm, y_linea_pie, x_offset + w_rec - 0.2*cm, y_linea_pie)
+                            
+                            c.setFont("Helvetica-Bold", 8.5)
+                            c.drawString(x_offset + 0.5*cm, y_linea_pie - 0.4*cm, "FACTURA")
+                            c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 0.4*cm, "CAJAS / BULTO")
+                            c.drawString(x_offset + 7.5*cm, y_linea_pie - 0.4*cm, "TRANSPORTE")
+                            
+                            c.setFont("Helvetica-Bold", 13)
+                            c.drawString(x_offset + 0.5*cm, y_linea_pie - 1.0*cm, str(row.get('Factura', '')))
+                            
+                            if es_archivo:
+                                c.setFont("Helvetica-Bold", 11)
+                                # Aquí unimos "MORENO" con el total de cajas
+                                texto_moreno = f"MORENO / {cantidad_real}"
+                                c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, texto_moreno)
+                            else:
+                                c.setFont("Helvetica-Bold", 13)
+                                c.drawCentredString(x_offset + 5.2*cm, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
+                            
+                            c.setFont("Helvetica-Bold", 10)
+                            c.drawString(x_offset + 7.5*cm, y_linea_pie - 1.0*cm, transporte_final[:18])
+                            c.showPage()
+                    
+                    c.save()
+                    return output.getvalue()
+            
+                # --- 2. INTERFAZ DE USUARIO ---
+                # Estilo y Tarjeta para Cargar Pedidos
+                st.markdown("""
+                    <div style="
+                        background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
+                        padding: 15px 25px;
+                        border-radius: 8px;
+                        border-left: 6px solid #4a90e2;
+                        margin-top: 20px;
+                        margin-bottom: 10px;
+                    ">
+                        <div style="color: #ffffff; font-size: 20px; font-weight: 300; margin-bottom: 2px;">
+                            Creador de Etiquetas de Embarque
+                        </div>
+                        <div style="color: #808495; font-size: 14px; font-weight: 400;">
+                            Cargar Excel de Pedidos para procesamiento
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # Cargador de archivos sin el label externo (porque ya está en la tarjeta)
+                archivo = st.file_uploader("", type=["xlsx"], label_visibility="collapsed", key="creador_etiquetas")
+                
+                if archivo:
+                    try:
+                        df = pd.read_excel(archivo, sheet_name=0)
+                        # Aquí continúa tu lógica de procesamiento, corazón
+                    except Exception as e:
+                        st.error(f"Error al leer los pedidos: {e}")
+                    
+                    # Mostrar tabla para que no se vea vacío
+                    st.subheader("Vista previa de datos")
+                    st.dataframe(df[['Quantity', 'DIRECCION', 'Factura']].head(5), use_container_width=True)
+            
+                    if st.button("Generar Etiquetas", use_container_width=True):
+                        with st.spinner("Generando documento..."):
+                            pdf_data = generar_etiquetas_nexion(df)
+                            
+                            if pdf_data:
+                                st.success("¡Documento generado con éxito!")
+                                
+                                # Botón de descarga llamativo
+                                st.download_button(
+                                    label="Descargar PDF para Imprimir",
+                                    data=pdf_data,
+                                    file_name="etiquetas_nexion.pdf",
+                                    mime="application/pdf",
+                                    use_container_width=True
+                                )
+            
+                                # Un pequeño mensaje de ayuda extra
+                                st.info("El archivo se guardará en tu carpeta de descargas.")# Previsualización incrustada
+                               
+                                
+                #HERRAMIENTA PARA TRASLADOS ------------------------------------------------------
+                # Puedes ajustar el valor de 40px a lo que mejor se vea en tu app
+                # 1. Definimos el estilo y la tarjeta (Título y Subtítulo juntos)
+                st.markdown("""
+                    <style>
+                    .nexion-container {
+                        background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
+                        padding: 15px 25px;
+                        border-radius: 8px;
+                        border-left: 6px solid #4a90e2;
+                        margin-bottom: 20px;
+                    }
+                    .nexion-title {
+                        color: #ffffff;
+                        font-size: 20px; /* El tamaño que elegiste */
+                        font-weight: 300; /* El grosor que querías */
+                        margin-bottom: 2px;
+                    }
+                    .nexion-subtitle {
+                        color: #808495;
+                        font-size: 14px;
+                        font-weight: 400;
+                    }
+                    </style>
+                    
+                    <div class="nexion-container">
+                        <div class="nexion-title">Procesador de Consignas</div>
+                        <div class="nexion-subtitle">Sube el Excel de la matriz de consignas</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # 2. El cargador de archivos (le quitamos el texto para que no se duplique)
+                uploaded_file = st.file_uploader("", type=["xlsx"], label_visibility="collapsed", key="cargador_consignas")
+                
+                # 3. Tu lógica de procesamiento
+                if uploaded_file is not None:
+                    try:
+                        data = pd.read_excel(uploaded_file, header=None)
+                        st.success("¡Archivo cargado con éxito!")
+                        # Aquí sigue tu magia con los datos...
+                                           
+                        row_index = 0
+                        for i, row in data.iterrows():
+                            if "DESCRIPCION" in row.astype(str).values:
+                                row_index = i
+                                break
+                        
+                        df = pd.read_excel(uploaded_file, header=row_index)
+                        df.columns = df.columns.astype(str).str.strip().str.replace('\n', ' ')
+                
+                        # Identificamos las columnas clave
+                        col_desc = [c for c in df.columns if 'DESCRIP' in c.upper()][0]
+                        col_cod = [c for c in df.columns if 'COD' in c.upper()][0]
+                
+                        # Identificamos las columnas de ciudades
+                        ciudades = [c for c in df.columns if c not in [col_desc, col_cod] and "Unnamed" not in c]
+                        
+                        # Transformamos la tabla incluyendo el código en id_vars
+                        df_unpivoted = df.melt(
+                            id_vars=[col_cod, col_desc], # <--- Aquí incluimos el código para que no se pierda
+                            value_vars=ciudades,
+                            var_name='nombre del envio',
+                            value_name='cantidad'
+                        )
+                
+                        df_unpivoted['cantidad'] = pd.to_numeric(df_unpivoted['cantidad'], errors='coerce')
+                        df_final = df_unpivoted[df_unpivoted['cantidad'] > 0].dropna(subset=['cantidad']).copy()
+                
+                        # Reordenamos las columnas para que el código aparezca
+                        df_final = df_final[['nombre del envio', col_cod, col_desc, 'cantidad']]
+                        df_final.columns = ['nombre del envio', 'codigo', 'descripcion producto', 'cantidad']
+                
+                        st.success(f"¡Completado! Se procesarón {len(df_final)} líneas.")
+                        st.dataframe(df_final, use_container_width=True)
+                
+                        csv = df_final.to_csv(index=False).encode('utf-8-sig')
+                        st.download_button(
+                            label="Descargar CSV",
+                            data=csv,
+                            file_name='consignas.csv',
+                            mime='text/csv',
+                            use_container_width=True,
+                        )
+                
+                    except Exception as e:
+                        st.error(f"Hubo un detalle: {e}")
+                
+                
+                #PROCESADOR DE PACKING LIST TECNICO---------------------------
+                # --- FUNCIÓN GENERADORA DEL HTML (TÉCNICO + CONTROL DE SALTOS) ---
+                def generar_packing_list_html(df):
+                    # AJUSTE MANUAL A ZONA GDL (UTC-6)
+                    ahora_gdl = datetime.utcnow() - timedelta(hours=6)
+                    fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
+                    hora_hoy = ahora_gdl.strftime('%H:%M')
+                    
+                    # Extraemos info de encabezado
+                    cliente = df['CLIENTE'].iloc[0] if 'CLIENTE' in df.columns else "N/A"
+                    direccion = df['DIRECCION'].iloc[0] if 'DIRECCION' in df.columns else "N/A"
+                    remitente = df['REMITENTE'].iloc[0] if 'REMITENTE' in df.columns else "JABONES Y PRODUCTOS ESPECIALIZADOS"
+                    
+                    # Cálculos rápidos
+                    total_piezas = df['Cantidad'].sum()
+                    total_pallets = df['Palet'].nunique()
+                    
+                    # --- INICIO DEL HTML ---
+                    html_content = f"""
+                    <style>
+                        @media print {{
+                            .no-break {{ page-break-inside: avoid !important; break-inside: avoid !important; }}
+                            .page-break {{ page-break-before: always; }}
+                            table {{ width: 100%; border-collapse: collapse; table-layout: fixed; }}
+                            td {{ word-wrap: break-word; overflow-wrap: break-word; }}
+                        }}
+                    </style>
+                    
+                    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #333; width: 95%; max-width: 900px; margin: auto; background-color: #fff;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2276AA; padding-bottom: 10px; margin-bottom: 20px;">
+                            <div style="text-align: left;">
+                                <h1 style="margin: 0; font-size: 20px; color: #2276AA; text-transform: uppercase;">Jabones y Productos Especializados</h1>
+                                <p style="margin: 2px 0; font-size: 12px; color: #666; font-weight: bold;">NEXION LOGISTICS | PACKING LIST OPERATIVO</p>
+                            </div>
+                            <div style="text-align: right; font-size: 10px; color: #444; line-height: 1.6;">
+                                <b>ID EMBARQUE:</b> PKL-{ahora_gdl.strftime('%m%d')}-2026<br>
+                                <b>FECHA EMISIÓN:</b> {fecha_hoy} | {hora_hoy} (ZMG)<br>
+                                <b>ESTADO:</b> CARGA CONSOLIDADA
+                            </div>
+                        </div>
+                
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 11px; gap: 20px;">
+                            <div style="flex: 1; border: 1px solid #eee; padding: 10px; background: #fafafa;">
+                                <b style="color: #2276AA; text-transform: uppercase; font-size: 9px;">Remitente:</b><br>
+                                <span style="font-weight: bold;">{remitente}</span>
+                            </div>
+                            <div style="flex: 1; border: 2px solid #2276AA; padding: 10px; background: #fff;">
+                                <b style="color: #2276AA; text-transform: uppercase; font-size: 9px;">Consignado a (Cliente):</b><br>
+                                <span style="font-size: 16px; font-weight: bold; color: #000; display: block; margin: 2px 0;">{cliente}</span>
+                                <span style="color: #555; font-size: 10px;">{direccion}</span>
+                            </div>
+                        </div>
+                
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <div style="flex: 1; background: #f0f7ff; padding: 10px; border: 1px solid #2276AA; text-align: center;">
+                                <span style="display: block; font-size: 9px; color: #2276AA; font-weight: bold;">TOTAL PALLETS</span>
+                                <span style="font-size: 18px; font-weight: bold;">{total_pallets} UNIT</span>
+                            </div>
+                            <div style="flex: 1; background: #f0f7ff; padding: 10px; border: 1px solid #2276AA; text-align: center;">
+                                <span style="display: block; font-size: 9px; color: #2276AA; font-weight: bold;">TOTAL UNIDADES</span>
+                                <span style="font-size: 18px; font-weight: bold;">{total_piezas:,.0f} PCS</span>
+                            </div>
+                        </div>
+                    """
+                
+                    # --- LÓGICA POR PALLET ---
+                    df_sorted = df.sort_values(by='Palet')
+                    
+                    for pallet_id, group in df_sorted.groupby('Palet'):
+                        html_content += f"""
+                        <div class="no-break" style="margin-top: 20px; border: 2px solid #000; margin-bottom: 10px;">
+                            <div style="background: #eee; color: #000; padding: 8px 10px; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; border-bottom: 2px solid #000;">
+                                <span>DETALLE TÉCNICO: PALLET {pallet_id}</span>
+                                <span style="font-family: 'Courier New';">CONTENIDO: {len(group)} SKUs</span>
+                            </div>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                                <thead>
+                                    <tr style="background: #fff; border-bottom: 1px solid #000;">
+                                        <th style="padding: 8px; text-align: left; width: 20%; border-right: 1px solid #eee;">SKU / ARTÍCULO</th>
+                                        <th style="padding: 8px; text-align: left; width: 65%; border-right: 1px solid #eee;">DESCRIPCIÓN TÉCNICA</th>
+                                        <th style="padding: 8px; text-align: center; width: 15%;">CANTIDAD</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        """
+                        
+                        for _, row in group.iterrows():
+                            html_content += f"""
+                                    <tr style="border-bottom: 1px solid #eee; page-break-inside: avoid;">
+                                        <td style="padding: 8px; font-family: 'Courier New'; font-size: 11px;"><b>{row['Número de artículo']}</b></td>
+                                        <td style="padding: 8px; text-transform: uppercase; font-size: 9px; line-height: 1.2;">{row['Descripción del artículo']}</td>
+                                        <td style="padding: 8px; text-align: center; font-size: 12px; font-weight: bold; border-left: 1px solid #eee;">{row['Cantidad']:,.0f}</td>
+                                    </tr>
+                            """
+                            
+                        html_content += """
+                                </tbody>
+                            </table>
+                        </div>
+                        """
+                
+                    # --- CIERRE (NOTA TÉCNICA EXTENDIDA) ---
+                    html_content += f"""
+                        <div class="no-break" style="margin-top: 30px; border-top: 2px solid #2276AA; padding-top: 15px;">
+                            <div style="background-color: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 4px;">
+                                <p style="margin: 0; font-size: 10px; color: #444; line-height: 1.6; text-align: justify;">
+                                    <b style="color: #d32f2f; font-size: 11px;">NOTAS TÉCNICAS DE RECEPCIÓN Y CONTROL:</b><br>
+                                    <b>Verificación visual obligatoria:</b> La integridad física de la carga, sellos y embalajes debe ser validada minuciosamente al momento de la descarga. En caso de detectar daños, faltantes, discrepancias o cualquier anomalía, es <b>estrictamente indispensable</b> realizar la anotación técnica detallada en la <b>Carta Porte (POD)</b> antes de firmar. No se aceptarán reclamos, devoluciones ni garantías posteriores si el documento de transporte es firmado de conformidad sin observaciones. Este documento es generado por el sistema <b>NEXION</b> para control logístico interno y del cliente.
+                                </p>
+                            </div>
+                            <p style="text-align: center; font-size: 8px; color: #aaa; margin-top: 10px; text-transform: uppercase;">
+                                Documento Digital de Control Logístico Jypesa.
+                            </p>
+                        </div>
+                    </div>
+                    """
+                    return html_content
+                
+                # --- INTERFAZ DE CARGA EN NEXION ---
+                st.markdown("""
+                    <style>
+                    .nexion-container {
+                        background: linear-gradient(90deg, #2e3b4e 0%, #263243 100%);
+                        padding: 15px 25px;
+                        border-radius: 8px;
+                        border-left: 6px solid #4a90e2;
+                        margin-bottom: 20px;
+                    }
+                    .nexion-title {
+                        color: #ffffff;
+                        font-size: 20px;
+                        font-weight: 300;
+                        margin-bottom: 2px;
+                    }
+                    .nexion-subtitle {
+                        color: #808495;
+                        font-size: 14px;
+                        font-weight: 400;
+                    }
+                    </style>
+                    
+                    <div class="nexion-container">
+                        <div class="nexion-title">Generador de Packing List</div>
+                        <div class="nexion-subtitle">Sube el Excel del Packing List para generar el desglose por pallet</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                uploaded_file = st.file_uploader("", type=["xlsx", "xls"], label_visibility="collapsed", key="packing")
+                
+                if uploaded_file is not None:
+                    try:
+                        df_input = pd.read_excel(uploaded_file)
+                        
+                        st.subheader("Vista Previa de Datos")
+                        st.dataframe(df_input.head(), use_container_width=True)
+                        
+                        # ACTUALIZACIÓN DE COLUMNAS REQUERIDAS
+                        required_cols = ['Palet', 'Número de artículo', 'Descripción del artículo', 'Cantidad', 'CLIENTE', 'DIRECCION', 'REMITENTE']
+                        
+                        if all(col in df_input.columns for col in required_cols):
+                            if st.button("GENERAR PACKING LIST TÉCNICO", type="primary", use_container_width=True):
+                                html_final = generar_packing_list_html(df_input)
+                                
+                                components.html(f"""
+                                    <script>
+                                        var win = window.open('', '', 'height=1100,width=950');
+                                        win.document.write(`<html>
+                                            <head>
+                                                <title>Nexion - Packing List</title>
+                                                <style>
+                                                    @media print {{ body {{ margin: 0; }} }}
+                                                </style>
+                                            </head>
+                                            <body>
+                                                {html_final}
+                                            </body></html>`);
+                                        win.document.close();
+                                        win.onload = function() {{ 
+                                            win.print(); 
+                                        }};
+                                    </script>
+                                """, height=0)
+                                st.success("¡Documento enviado a impresión!")
+                        else:
+                            st.error(f"Faltan columnas. Asegúrate de incluir: {required_cols}")
+                            
+                    except Exception as e:
+                        st.error(f"Error al procesar el archivo: {e}")
+
+                
+                # 4. HERRAMIENTA: ACTUALIZADOR DE FACTURAS (Módulo Independiente)-----
+                                
+                # 1. Dibujamos la tarjeta visual exactamente igual a las anteriores
+                st.markdown("""
+                    <div class="nexion-container">
+                        <div class="nexion-title">Actualizador de Facturas</div>
+                        <div class="nexion-subtitle">Sube tu archivo de facturas para cruzar la información en tiempo real con T1</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # 2. El cargador de archivos independiente
+                archivo_usuario = st.file_uploader("", type=["xlsx"], label_visibility="collapsed", key="cargador_actualizador")
+                
+                # 3. Lógica de procesamiento que solo se ejecuta si se sube el archivo en esta sección
+                if archivo_usuario is not None:
+                    try:
+                        # Conexión a GitHub para descargar T1.xlsx en tiempo real
+                        GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+                        REPO_NAME = "RH2026/nexion"
+                        FILE_PATH_T1 = "T1.xlsx"
+                        URL_T1 = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH_T1}"
+                        
+                        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                        response = requests.get(URL_T1, headers=headers)
+                        
+                        if response.status_code == 200:
+                            df_t1 = pd.read_excel(BytesIO(response.content))
+                            df_user = pd.read_excel(archivo_usuario)
+                            
+                            # Función anidada para extraer folios sin afectar otras herramientas
+                            def extraer_folios(texto):
+                                if pd.isna(texto): return []
+                                import re
+                                return re.findall(r'\d+', str(texto))
+                
+                            # Expandimos OBSERVACION 1 por si vienen varias facturas juntas
+                            df_t1['factura_busqueda'] = df_t1['OBSERVACION 1'].apply(extraer_folios)
+                            df_t1_exp = df_t1.explode('factura_busqueda')
+                            df_t1_exp['factura_busqueda'] = df_t1_exp['factura_busqueda'].astype(str).str.strip()
+                
+                            # Aseguramos que la columna 'factura' del usuario sea texto para el cruce
+                            if 'factura' in df_user.columns:
+                                df_user['factura'] = df_user['factura'].astype(str).str.strip()
+                
+                                # Realizamos el Cruce (Match)
+                                resultado = pd.merge(
+                                    df_user[['factura']], 
+                                    df_t1_exp[['factura_busqueda', 'TALON', 'SUBTOTAL', 'F.DOC', 'BULTOS']],
+                                    left_on='factura',
+                                    right_on='factura_busqueda',
+                                    how='left'
+                                )
+                
+                                # Renombramos las columnas
+                                resultado = resultado.rename(columns={
+                                    'TALON': 'guia',
+                                    'SUBTOTAL': 'costo',
+                                    'F.DOC': 'fecha_envio',
+                                    'BULTOS': 'bultos'
+                                })
+                
+                                # Limpieza de columnas temporales
+                                resultado = resultado.drop(columns=['factura_busqueda'])
+                
+                                st.success("¡Datos cruzados con éxito!")
+                                st.dataframe(resultado.head(10), use_container_width=True)
+                
+                                # Generamos el Excel en memoria para la descarga
+                                output = BytesIO()
+                                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                                    resultado.to_excel(writer, index=False)
+                                
+                                # Botón de descarga estilizado y responsivo
+                                st.download_button(
+                                    label="Descargar Reporte para Nexion",
+                                    data=output.getvalue(),
+                                    file_name="nexion_actualizado.xlsx",
+                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    use_container_width=True
+                                )
+                            else:
+                                st.error("El archivo subido no tiene una columna llamada 'factura'. Revisa tu plantilla.")
+                        else:
+                            st.error(f"Error al conectar con GitHub (Status: {response.status_code}). Verifica tu Token.")
+                            
+                    except Exception as e:
+                        st.error(f"Hubo un detalle en el procesamiento: {e}")
+        
+        elif st.session_state.menu_main == "FINANZAS":
+            if st.session_state.menu_sub == "WALLET":
+                # ==============================================================================
+                # 1. CONFIGURACIÓN DE DATOS Y GITHUB PARA WALLET
+                # ==============================================================================
+                TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                REPO_NAME = "RH2026/nexion"
+                FILE_PATH = "cartera.csv"
+                LOCK_FILE_PATH = "lock_cartera.json"
+                
+                # Como ya estás logueado en Nexion, tomamos tu usuario directamente
+                current_user = st.session_state.get("usuario_activo", "UNKNOWN")
+                puede_editar = current_user.upper() == "RIGOBERTO"
+                
+                try:
+                    tz_gdl = pytz.timezone('America/Mexico_City')
+                except:
+                    pass # Por si ya lo tienes definido arriba
+                    
+                # Cuentas y Categorías (Colores Neon de Jypesa)
+                CUENTAS_MATRIX = {
+                    "Caja de Ahorros": {"color": "#00E5FF", "fondo_base": 0.00},
+                    "Scottiabank": {"color": "#00FFAA", "fondo_base": 0.00},
+                    "Santander": {"color": "#FF4B4B", "fondo_base": 0.00},
+                    "Cartera": {"color": "#8B9BB4", "fondo_base": 0.00},
+                    "Caja Jypesa": {"color": "#8B9BB8", "fondo_base": 0.00}
+                }
+                CATEGORIAS = [
+                    "Nómina", "Ahorros", "Ventas", "Freelance / Proyectos", "Rendimientos", "Reembolsos", "Ventas",
+                    "Renta", "Servicios Fijos", "Conectividad", "Mantenimiento",
+                    "Supermercado", "Restaurantes", "Cafeterías y Snacks",
+                    "Gasolina", "Mantenimiento Automotriz", "Trámites y Seguros", "Transporte Alternativo",
+                    "Mascotas", "Gastos Familiares", "Educación",
+                    "Deportes y Entrenamiento", "Cuidado Personal", "Gastos Médicos",
+                    "Suscripciones y Software", "Equipo y Gadgets",
+                    "Entretenimiento", "Ropa y Calzado", "Regalos",
+                    "Pago de Tarjetas", "Inversiones", "Ahorro", "Comisiones", "Varios"
+                ]
+                
+                # ==============================================================================
+                # 2. ESTILOS CSS "JYPESA NEXION CORE" (BOTONES Y RESET)
+                # ==============================================================================
+                st.markdown("""
+                    <style>
+                    /* Reset para que el contenedor use todo el ancho */
+                    div[data-testid="stBlock"] { max-width: 100% !important; padding: 0 !important; }
+                    
+                    /* Barra superior del dashboard Jypesa */
+                    header[data-testid="stHeader"] { background-color: #1D2A35 !important; border-bottom: 2px solid #34495E !important;}
+                    
+                    /* Tarjetas estilo Nexion Jypesa */
+                    .kpi-card {
+                        background-color: #253441 !important; 
+                        padding: 20px !important; 
+                        border-radius: 8px !important;
+                        border: 1px solid #34495E !important; 
+                        text-align: center !important; 
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
+                        margin-bottom: 15px;
+                    }
+                    .kpi-label { color: #8B9BB4 !important; font-size: 12px !important; font-weight: bold !important; text-transform: uppercase !important; letter-spacing: 1.5px !important;}
+                    .kpi-value { color: #FFFFFF !important; font-size: 34px !important; font-weight: bold !important; margin: 10px 0 !important;}
+                    .kpi-trend { font-size: 13px !important; font-weight: bold !important; }
+                    .neon-bar { height: 4px !important; border-radius: 2px !important; margin-top: 10px !important; width: 100% !important; }
+                
+                    /* --- ESTILO CHINGÓN PARA LOS BOTONES PERSONALIZADOS --- */
+                    div.stButton > button {
+                        background-color: #2B343B !important; 
+                        color: #FFFFFF !important;            
+                        border: 1px solid #34495E !important; 
+                        border-radius: 5px !important;
+                        transition: all 0.3s ease !important;
+                        width: 100% !important;
+                        font-weight: normal !important;
+                        font-size: 12px !important; /* <--- AQUÍ CAMBIAS EL TAMAÑO (ej. 12px, 14px, etc.) */
+                        text-transform: uppercase !important;
+                        letter-spacing: 1px !important;
+                    }
+                    div.stButton > button:hover {
+                        background-color: #00A3A3 !important; 
+                        color: #ffffff !important;            
+                        border-color: #00A3A3 !important;
+                        box-shadow: 0 0 15px rgba(0, 255, 170, 0.4) !important;
+                    }
+                    div.stButton > button:active {
+                        background-color: #00A3A3 !important;
+                        border-color: #00A3A3 !important;
+                    }
+                
+                    /* --- PESTAÑAS (TABS) ESTILO JYPESA --- */
+                    div[data-baseweb="tab-list"] {
+                        gap: 20px !important;
+                        border-bottom: 2px solid #34495E !important;
+                        margin-bottom: 15px !important;
+                    }
+                    div[data-baseweb="tab"] {
+                        background-color: transparent !important;
+                        color: #8B9BB4 !important;
+                        font-weight: bold !important;
+                        font-size: 13px !important;
+                        border: none !important;
+                        padding-top: 0px !important;
+                        padding-bottom: 10px !important;
+                    }
+                    div[aria-selected="true"] {
+                        color: #00FFAA !important;
+                        border-bottom: 3px solid #00FFAA !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # ==============================================================================
+                # 3. CONTROL DE CANDADO DE ARCHIVO (Para evitar que 2 editen el CSV a la vez)
+                # ==============================================================================
+                lock_info, bloqueado_por_otro = None, False
+                if puede_editar and TOKEN:
+                    try:
+                        repo = Github(TOKEN).get_repo(REPO_NAME)
+                        try:
+                            lock_info = json.loads(repo.get_contents(LOCK_FILE_PATH, ref="main").decoded_content.decode('utf-8'))
+                            if (datetime.now(tz_gdl) - tz_gdl.localize(datetime.strptime(lock_info["timestamp"], "%Y-%m-%d %H:%M:%S"))).total_seconds() < 600:
+                                if lock_info["usuario"] != current_user: bloqueado_por_otro = True
+                            else: lock_info = None
+                        except: pass
+                    except: pass
+                        
+                st.session_state["bloqueado_por_otro_efectivo"] = bloqueado_por_otro
+                if bloqueado_por_otro:
+                    st.warning(f"⚠️ MÓDULO PAUSADO: Sesión activa de **{lock_info['usuario']}**. No puedes registrar gastos ahora.")
+                    st.session_state["puede_editar_efectivo"] = False
+                else:
+                    st.session_state["puede_editar_efectivo"] = puede_editar
+                    if puede_editar and lock_info is None and TOKEN:
+                        try:
+                            repo = Github(TOKEN).get_repo(REPO_NAME)
+                            ahora_gdl = datetime.now(tz_gdl)
+                            lock_string = json.dumps({"usuario": current_user, "timestamp": ahora_gdl.strftime("%Y-%m-%d %H:%M:%S"), "hora": ahora_gdl.strftime("%H:%M:%S")}, indent=4)
+                            try: repo.update_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, sha=repo.get_contents(LOCK_FILE_PATH).sha)
+                            except: repo.create_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, branch="main")
+                        except: pass
+                
+                # ==============================================================================
+                # 4. MOTOR DE DATOS (GITHUB O LOCAL FALLBACK)
+                # ==============================================================================
+                def get_wallet_data_from_git():
+                    if 'df_wallet' not in st.session_state or st.session_state.get('force_reload', False):
+                        start_date = datetime.now(tz_gdl)
+                        ejemplos = [
+                            {"Fecha": (start_date - timedelta(days=10)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Nomina", "Concepto": "Pago Quincena 1 JYPESA", "Monto": 35000.0, "Cuenta": "Banco MX (Core)"},
+                            {"Fecha": (start_date - timedelta(days=8)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Renta", "Concepto": "Renta Oficinas", "Monto": -18000.0, "Cuenta": "Banco MX (Core)"},
+                            {"Fecha": (start_date - timedelta(days=5)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Freelance", "Concepto": "Proyecto Xenocode UI", "Monto": 15000.0, "Cuenta": "USD Wallet (Hedge)"},
+                            {"Fecha": (start_date - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Supermercado", "Concepto": "Compras Semanales", "Monto": -3500.0, "Cuenta": "Banco MX (Core)"},
+                        ]
+                        df_load = pd.DataFrame(ejemplos)
+                
+                        if TOKEN:
+                            try:
+                                repo = Github(TOKEN).get_repo(REPO_NAME)
+                                try:
+                                    df_load = pd.read_csv(io.StringIO(repo.get_contents(FILE_PATH, ref="main").decoded_content.decode('utf-8')), keep_default_na=False)
+                                except:
+                                    repo.create_file(path=FILE_PATH, message="INITIALIZE WALLET MATRIX", content=df_load.to_csv(index=False), branch="main")
+                            except Exception as e:
+                                st.error(f"Error conexión GitHub: {e}. Usando datos locales.")
+                
+                        df_load['Fecha'] = pd.to_datetime(df_load['Fecha'])
+                        st.session_state.df_wallet = df_load
+                        st.session_state.force_reload = False
+                        
+                    return st.session_state.df_wallet
+                
+                # ==============================================================================
+                # 5. RENDERIZADO DE INTERFAZ WALLET
+                # ==============================================================================
+                puede_editar_efectivo = st.session_state.get("puede_editar_efectivo", False)
+                df_actual = get_wallet_data_from_git()
+                
+                if not df_actual.empty:
+                    df_actual['Mes'] = df_actual['Fecha'].dt.strftime('%Y-%m')
+                    current_month = datetime.now(tz_gdl).strftime('%Y-%m')
+                    df_month = df_actual[df_actual['Mes'] == current_month]
+                else:
+                    df_month = pd.DataFrame()
+                
+                # Cálculos de saldos
+                saldos_actuales = {cuenta: datos['fondo_base'] for cuenta, datos in CUENTAS_MATRIX.items()}
+                if not df_actual.empty:
+                    for cuenta in CUENTAS_MATRIX.keys():
+                        saldos_actuales[cuenta] += df_actual[df_actual['Cuenta'] == cuenta]['Monto'].sum()
+                
+                total_general = sum(saldos_actuales.values())
+                inc_month = df_month[df_month['Tipo'] == "Ingreso"]['Monto'].sum() if not df_month.empty else 0
+                exp_month = abs(df_month[df_month['Tipo'] == "Gasto"]['Monto'].sum()) if not df_month.empty else 0
+                net_month = inc_month - exp_month
+                
+                # SISTEMA DE PESTAÑAS
+                tab_kpi, tab_flujos, tab_registro = st.tabs(["KPI'S WALLET", "FLUJOS DE EFECTIVO", "REGISTRO NUBE"])
+                
+                # --- PESTAÑA 1: KPI'S WALLET ---
+                with tab_kpi:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    kpi1, kpi2, kpi3 = st.columns(3)
+                    
+                    with kpi1:
+                        st.markdown(f"""
+                            <div class='kpi-card'>
+                                <div class='kpi-label'>PATRIMONIO NETO</div>
+                                <div class='kpi-value'>${total_general:,.2f}</div>
+                                <div class='kpi-trend' style='color:#00E5FF'>BALANCE GLOBAL</div>
+                                <div class='neon-bar' style='background: linear-gradient(90deg, #00E5FF, transparent);'></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                    with kpi2:
+                        st.markdown(f"""
+                            <div class='kpi-card'>
+                                <div class='kpi-label'>INGRESOS MTD</div>
+                                <div class='kpi-value'>${inc_month:,.2f}</div>
+                                <div class='kpi-trend' style='color:#00FFAA'>FLUJO DE ENTRADA</div>
+                                <div class='neon-bar' style='background: linear-gradient(90deg, #00FFAA, transparent);'></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                    with kpi3:
+                        st.markdown(f"""
+                            <div class='kpi-card'>
+                                <div class='kpi-label'>EGRESOS MTD</div>
+                                <div class='kpi-value'>${exp_month:,.2f}</div>
+                                <div class='kpi-trend' style='color:#FF4B4B'>GASTOS DEL MES</div>
+                                <div class='neon-bar' style='background: linear-gradient(90deg, #FF4B4B, transparent);'></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    
+                    st.markdown("<br><hr style='border-color: #34495E;'>", unsafe_allow_html=True)
+                    
+                    col_chart, _ = st.columns([2, 1]) 
+                    with col_chart:
+                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>🔍</span> DISTRIBUCIÓN DE CAPITAL POR CUENTA</p>", unsafe_allow_html=True)
+                        
+                        nombres_cuentas = list(saldos_actuales.keys())
+                        valores_saldos = list(saldos_actuales.values())
+                        colores_barras = [CUENTAS_MATRIX[c]['color'] for c in nombres_cuentas]
+                
+                        fig_bars = go.Figure(go.Bar(
+                            x=valores_saldos, y=nombres_cuentas, orientation='h',
+                            marker=dict(color=colores_barras, line=dict(color='#1D2A35', width=2)),
+                            text=valores_saldos, texttemplate='%{text:$,.2f}', textposition='auto',
+                            textfont=dict(color='#FFFFFF', size=12, family="monospace"),
+                            hovertemplate="<b>%{y}</b><br>Saldo: %{x:$,.2f}<extra></extra>"
+                        ))
+                
+                        fig_bars.update_layout(
+                            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', showlegend=False,
+                            margin=dict(t=10, b=10, l=10, r=10), height=350,
+                            xaxis=dict(showgrid=True, gridcolor="#34495E", color="#8B9BB4", tickformat="$,.0f", title=None),
+                            yaxis=dict(color="#E0E6ED", tickfont=dict(size=13), title=None, autorange="reversed"),
+                            hoverlabel=dict(bgcolor="#253441", font=dict(size=13, family="monospace"))
+                        )
+                        
+                        st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
+                
+                # --- PESTAÑA 2: FLUJOS DE EFECTIVO ---
+                with tab_flujos:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    gr_col1, gr_col2 = st.columns([2, 1.5])
+                    
+                    with gr_col1:
+                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#ffffff'></span> TENDENCIA DE FLUJO (MES ACTUAL)</p>", unsafe_allow_html=True)
+                        if not df_month.empty:
+                            df_daily = df_month.groupby([df_month['Fecha'].dt.date, 'Tipo'])['Monto'].sum().unstack().fillna(0)
+                            if 'Gasto' in df_daily: df_daily['Gasto'] = abs(df_daily['Gasto'])
+                            else: df_daily['Gasto'] = 0
+                            if 'Ingreso' not in df_daily: df_daily['Ingreso'] = 0
+                            
+                            fig_flow = go.Figure()
+                            fig_flow.add_trace(go.Scatter(x=df_daily.index, y=df_daily['Ingreso'], name='Ingresos', mode='lines', line=dict(width=3, color='#00FFAA'), fill='tozeroy', fillcolor='rgba(0, 255, 170, 0.05)'))
+                            fig_flow.add_trace(go.Scatter(x=df_daily.index, y=df_daily['Gasto'], name='Egresos', mode='lines', line=dict(width=3, color='#FF4B4B'), fill='tozeroy', fillcolor='rgba(255, 75, 75, 0.05)'))
+                            
+                            fig_flow.update_layout(
+                                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                xaxis=dict(showgrid=False, color="#8B9BB4", tickformat="%d %b"),
+                                yaxis=dict(showgrid=True, gridcolor="#34495E", color="#8B9BB4", zeroline=False),
+                                legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center", font=dict(color="#E0E6ED")),
+                                margin=dict(t=10, b=10, l=10, r=10), height=350, hovermode="x unified"
+                            )
+                            st.plotly_chart(fig_flow, use_container_width=True, config={'displayModeBar': False})
+                        else:
+                            st.info("Sin movimientos este mes.")
+                
+                    with gr_col2:
+                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#ffffff'></span> ANÁLISIS DE CONSUMO POR CATEGORÍA</p>", unsafe_allow_html=True)
+                        if not df_month.empty:
+                            df_gastos_cat = df_month[df_month['Tipo'] == "Gasto"].groupby('Categoria')['Monto'].sum().abs().reset_index()
+                            if not df_gastos_cat.empty:
+                                df_gastos_cat = df_gastos_cat.sort_values(by='Monto', ascending=True)
+                                fig_cat = px.bar(df_gastos_cat, x='Monto', y='Categoria', orientation='h', text_auto=',.0f')
+                                
+                                # --- NUEVA PALETA DE COLORES ESTILO NEXION ---
+                                # Generamos un degradé dinámico desde un cian/turquesa suave hasta el verde principal (#00FFAA)
+                                # o bien usando los tonos de la paleta corporativa de la interfaz.
+                                num_bars = len(df_gastos_cat)
+                                colors = []
+                                for i in range(num_bars):
+                                    # Hacemos que la barra más alta sea brillante (#00FFAA) y las demás varíen 
+                                    # entre tonos azules/grises estilizados (#34495E, #1F618D, #00E5FF)
+                                    if i == num_bars - 1:
+                                        colors.append('#44B3E1')  # La más alta destaca en verde Nexion
+                                    elif i >= num_bars - 3:
+                                        colors.append('#4D93D9')  # Las siguientes altas en cian brillante
+                                    else:
+                                        colors.append('#215C98')  # Las menores conservan el tono base elegante
+                                
+                                fig_cat.update_traces(marker_color=colors, hovertemplate="%{y}: $%{x:,.2f}", textposition='outside', textfont=dict(color="#E0E6ED"))
+                                fig_cat.update_layout(
+                                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                    xaxis=dict(title=None, showgrid=True, gridcolor="#34495E", color="#8B9BB4", tickformat="$,.0f"),
+                                    yaxis=dict(title=None, color="#E0E6ED"),
+                                    margin=dict(t=10, b=10, l=10, r=10), height=350
+                                )
+                                st.plotly_chart(fig_cat, use_container_width=True, config={'displayModeBar': False})
+                            else:
+                                st.info("Sin gastos registrados este mes.")
+                
+                # --- PESTAÑA 3: REGISTRO NUBE ---
+                with tab_registro:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    if not TOKEN:
+                        st.warning("⚠️ Modo de solo lectura local. Configure GITHUB_TOKEN para registrar operaciones.")
+                    
+                    st.markdown("<p class='kpi-label' style='margin-bottom: 10px;'><span style='color:#00E5FF'>⚡</span> EJECUTAR ORDEN DE REGISTRO</p>", unsafe_allow_html=True)
+                    
+                    # 4 CONTROLES EN LÍNEA
+                    in_col1, in_col2, in_col3, in_col4 = st.columns(4)
+                    with in_col1:
+                        f_monto = st.number_input("Cantidad MXN", min_value=0.0, step=100.0, key="inp_monto_nube")
+                    with in_col2:
+                        f_cat = st.selectbox("Categoría", CATEGORIAS, key="inp_cat_nube")
+                    with in_col3:
+                        f_desc = st.text_input("Concepto / Referencia", placeholder="Ej. Gastos de Operación", key="inp_desc_nube")
+                    with in_col4:
+                        f_cuenta = st.selectbox("Cuenta Destino/Origen", list(CUENTAS_MATRIX.keys()), key="inp_cuenta_nube")
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # 2 BOTONES ABAJO
+                    btn_l, btn_r = st.columns(2)
+                    block_submit = (not puede_editar_efectivo) or st.session_state.get("bloqueado_por_otro_efectivo", False) or (not TOKEN)
+                    
+                    with btn_l:
+                        gasto_sub = st.button("REGISTRAR INGRESO", icon=":material/save:", use_container_width=True, key="btn_ingreso_action")
+                    with btn_r:
+                        ingreso_sub = st.button("REGISTRAR GASTO", icon=":material/remove:", use_container_width=True, key="btn_gasto_action")
+                    
+                    if not block_submit and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
+                        with st.status("Sincronizando con Nube Nexion...", expanded=True):
+                            try:
+                                repo = Github(TOKEN).get_repo(REPO_NAME)
+                                contents = repo.get_contents(FILE_PATH)
+                                df_latest = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
+                                
+                                nueva_fila = {
+                                    "Fecha": datetime.now(tz_gdl).strftime("%Y-%m-%d %H:%M"),
+                                    "Tipo": "Gasto" if gasto_sub else "Ingreso",
+                                    "Categoria": f_cat,
+                                    "Concepto": f_desc,
+                                    "Monto": -f_monto if gasto_sub else f_monto,
+                                    "Cuenta": f_cuenta
+                                }
+                                
+                                df_latest = pd.concat([df_latest, pd.DataFrame([nueva_fila])], ignore_index=True)
+                                repo.update_file(path=FILE_PATH, message=f"UPDATE // {current_user} // {datetime.now(tz_gdl).strftime('%H:%M:%S')}", content=df_latest.to_csv(index=False), sha=contents.sha)
+                                
+                                try: repo.delete_file(path=LOCK_FILE_PATH, message=f"UNLOCK // {current_user}", sha=repo.get_contents(LOCK_FILE_PATH).sha)
+                                except: pass
+                                
+                                st.session_state.force_reload = True
+                                st.success("OPERACIÓN CLASIFICADA EXITOSAMENTE.")
+                                time.sleep(1)
+                                st.rerun()
+                            except Exception as e: st.error(f"Error crítico de sincronización: {e}")
+                
+                    # Título del historial
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>🔍</span> DETALLE DE OPERACIONES EN TIEMPO REAL</p>", unsafe_allow_html=True)
+                    
+                    # --- RENDER DE REGISTROS CON SCROLL INTEGRADO (ESTILO AGC TAILWIND) ---
+                    def render_wallet_flow_responsive(df_data):
+                        df_clean = df_data.fillna('')
+                        data_records = df_clean.to_dict('records')
+                        
+                        html_content = f"""
+                        <!DOCTYPE html>
+                        <html lang="es">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <script src="https://cdn.tailwindcss.com"></script>
+                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+                            <style>
+                                body {{ 
+                                    font-family: 'Inter', sans-serif; 
+                                    background-color: #384A52; 
+                                    color: #e2e8f0; 
+                                    margin: 0; 
+                                    padding: 5px; 
+                                    width: 100%; 
+                                }}
+                                ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                                ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.2); border-radius: 10px; }}
+                                ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 10px; border: 2px solid #384A52; }}
+                                ::-webkit-scrollbar-thumb:hover {{ background: #10b981; }}
+                                
+                                .list-row {{
+                                    background-color: #263238;
+                                    border: 1px solid rgba(255, 255, 255, 0.08);
+                                    transition: all 0.2s ease;
+                                    margin-bottom: 8px;
+                                    border-radius: 8px;
+                                    overflow: hidden;
+                                    width: 100%;
+                                }}
+                                .list-row:hover {{
+                                    background-color: #2c3b42;
+                                    border-color: rgba(0, 229, 255, 0.4);
+                                }}
+                                .label-mini {{
+                                    font-size: 9px;
+                                    text-transform: uppercase;
+                                    font-weight: 800;
+                                    color: #BFBFBF;
+                                    letter-spacing: 1px;
+                                }}
+                            </style>
+                        </head>
+                        <body>
+                            <div class="w-full space-y-2">
+                                {"".join([f'''
+                                <div class="list-row flex items-stretch">
+                                    <div class="w-2 shrink-0 {"bg-[#00FFAA]" if float(item['Monto']) > 0 else "bg-[#FF4B4B]"} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                                    <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
+                                        
+                                        <div class="w-full md:w-36 shrink-0">
+                                            <div class="label-mini">Fecha y Hora</div>
+                                            <div class="text-xs font-bold text-white font-mono mt-1">
+                                                {str(item['Fecha'])[:16]}
+                                            </div>
+                                        </div>
+                
+                                        <div class="w-full md:w-28 shrink-0">
+                                            <div class="label-mini">Tipo</div>
+                                            <div class="mt-1">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase {"bg-[#00FFAA]/15 text-[#00FFAA]" if float(item['Monto']) > 0 else "bg-[#FF4B4B]/15 text-[#FF4B4B]"}"">
+                                                    {str(item['Tipo']).upper()}
+                                                </span>
+                                            </div>
+                                        </div>
+                
+                                        <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                                            <div>
+                                                <div class="label-mini">Categoría</div>
+                                                <div class="text-xs font-bold text-slate-200 truncate">
+                                                    {str(item['Categoria'])}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="label-mini">Concepto</div>
+                                                <div class="text-xs font-semibold text-sky-200 truncate">
+                                                    {str(item['Concepto'])}
+                                                </div>
+                                            </div>
+                                        </div>
+                
+                                        <div class="w-full md:w-40 shrink-0">
+                                            <div class="label-mini">Cuenta</div>
+                                            <div class="text-xs font-bold text-slate-300 truncate mt-1">
+                                                {str(item['Cuenta'])}
+                                            </div>
+                                        </div>
+                
+                                        <div class="w-full md:w-32 text-right shrink-0">
+                                            <div class="label-mini">Monto</div>
+                                            <div class="text-sm font-black font-mono mt-0.5 {"text-[#00FFAA]" if float(item['Monto']) > 0 else "text-[#FF4B4B]"}"">
+                                                ${float(item['Monto']):,.2f}
+                                            </div>
+                                        </div>
+                
+                                    </div>
+                                </div>
+                                ''' for item in data_records])}
+                            </div>
+                        </body>
+                        </html>
+                        """
+                        return st.components.v1.html(html_content, height=450, scrolling=True)
+                
+                    if not df_actual.empty:
+                        df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
+                        render_wallet_flow_responsive(df_ledger)
+                    else:
+                        st.info("No hay registros en la nube actualmente.")
+                
+            
+            #PRESUPUESTOS________________________________________________________     
+            elif st.session_state.menu_sub == "CAJA CHICA":
+                # ==============================================================================
+                # 1. CONFIGURACIÓN DE DATOS Y GITHUB PARA WALLET
+                # ==============================================================================
+                TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+                REPO_NAME = "RH2026/nexion"
+                FILE_PATH = "cartera.csv"
+                LOCK_FILE_PATH = "lock_cartera.json"
+                
+                # Como ya estás logueado en Nexion, tomamos tu usuario directamente
+                current_user = st.session_state.get("usuario_activo", "UNKNOWN")
+                puede_editar = current_user.upper() == "RIGOBERTO"
+                
+                try:
+                    tz_gdl = pytz.timezone('America/Mexico_City')
+                except:
+                    pass # Por si ya lo tienes definido arriba
+                    
+                # Cuentas y Categorías (Colores Neon de Jypesa)
+                CUENTAS_MATRIX = {
+                    "Caja de Ahorros": {"color": "#00E5FF", "fondo_base": 0.00},
+                    "Scottiabank": {"color": "#00FFAA", "fondo_base": 0.00},
+                    "Santander": {"color": "#FF4B4B", "fondo_base": 0.00},
+                    "Cartera": {"color": "#8B9BB4", "fondo_base": 0.00},
+                    "Caja Jypesa": {"color": "#8B9BB8", "fondo_base": 0.00}
+                }
+                CATEGORIAS = [
+                    "Nómina", "Ahorros", "Ventas", "Freelance / Proyectos", "Rendimientos", "Reembolsos", "Ventas",
+                    "Renta", "Servicios Fijos", "Conectividad", "Mantenimiento",
+                    "Supermercado", "Restaurantes", "Cafeterías y Snacks",
+                    "Gasolina", "Mantenimiento Automotriz", "Trámites y Seguros", "Transporte Alternativo",
+                    "Mascotas", "Gastos Familiares", "Educación",
+                    "Deportes y Entrenamiento", "Cuidado Personal", "Gastos Médicos",
+                    "Suscripciones y Software", "Equipo y Gadgets",
+                    "Entretenimiento", "Ropa y Calzado", "Regalos",
+                    "Pago de Tarjetas", "Inversiones", "Ahorro", "Comisiones", "Varios"
+                ]
+                
+                # ==============================================================================
+                # 2. ESTILOS CSS "JYPESA NEXION CORE" (OPTIMIZADOS Y CON HOVER EN BOTONES)
+                # ==============================================================================
+                st.markdown("""
+                    <style>
+                    /* Tarjetas estilo Nexion Jypesa */
+                    .kpi-card {
+                        background-color: #253441; 
+                        padding: 20px; 
+                        border-radius: 8px;
+                        border: 1px solid #34495E; 
+                        text-align: center; 
+                        transition: transform 0.2s;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    }
+                    .kpi-card:hover { transform: translateY(-2px); border-color: #00E5FF; }
+                    .kpi-label { color: #8B9BB4; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px;}
+                    .kpi-value { color: #FFFFFF; font-size: 34px; font-weight: bold; margin: 10px 0;}
+                    .kpi-trend { font-size: 13px; font-weight: bold; }
+                
+                    /* Barra de progreso / Línea inferior neón estilo Jypesa */
+                    .neon-bar { height: 4px; border-radius: 2px; margin-top: 10px; width: 100%; }
+                
+                    /* --- ESTILOS BOTONES FORMULARIO (CON FONDO Y HOVER) --- */
+                    div[data-testid="stFormSubmitButton"] button[kind="secondary"] {
+                        background-color: rgba(255, 75, 75, 0.15) !important;
+                        color: #FF4B4B !important;
+                        border: 1px solid #FF4B4B !important;
+                        font-weight: bold !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: 1px !important;
+                        width: 100% !important;
+                        transition: all 0.3s ease !important;
+                    }
+                    div[data-testid="stFormSubmitButton"] button[kind="secondary"]:hover {
+                        background-color: #FF4B4B !important;
+                        color: #FFFFFF !important;
+                        box-shadow: 0 0 15px rgba(255, 75, 75, 0.5) !important;
+                    }
+                    
+                    div[data-testid="stFormSubmitButton"] button[kind="primary"] {
+                        background-color: rgba(0, 255, 170, 0.15) !important;
+                        color: #00FFAA !important;
+                        border: 1px solid #00FFAA !important;
+                        font-weight: bold !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: 1px !important;
+                        width: 100% !important;
+                        transition: all 0.3s ease !important;
+                    }
+                    div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+                        background-color: #00FFAA !important;
+                        color: #1D2A35 !important;
+                        box-shadow: 0 0 15px rgba(0, 255, 170, 0.5) !important;
+                    }
+                
+                    /* --- RENDER DE REGISTROS PERRONES (ALINEADOS Y COMPACTOS) --- */
+                    .r-card {
+                        background-color: #1D2A35;
+                        border: 1px solid #34495E;
+                        border-radius: 6px;
+                        padding: 10px 15px;
+                        margin-bottom: 8px;
+                        display: grid;
+                        grid-template-columns: 1.5fr 1fr 1.5fr 2fr 1.2fr 1fr;
+                        align-items: center;
+                        gap: 10px;
+                        transition: all 0.2s ease;
+                    }
+                    .r-card:hover {
+                        border-color: #00E5FF;
+                        box-shadow: 0 4px 10px rgba(0, 229, 255, 0.1);
+                    }
+                    .r-field {
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .r-label {
+                        font-size: 9px;
+                        color: #8B9BB4;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                        font-weight: bold;
+                    }
+                    .r-value {
+                        font-size: 12px;
+                        color: #E0E6ED;
+                        font-weight: 600;
+                        margin-top: 2px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .r-type-badge {
+                        padding: 2px 6px;
+                        border-radius: 4px;
+                        font-size: 10px;
+                        font-weight: bold;
+                        text-transform: uppercase;
+                        display: inline-block;
+                    }
+                
+                    /* --- PESTAÑAS (TABS) ESTILO JYPESA --- */
+                    div[data-baseweb="tab-list"] {
+                        gap: 20px;
+                        border-bottom: 2px solid #34495E;
+                        margin-bottom: 15px;
+                    }
+                    div[data-baseweb="tab"] {
+                        background-color: transparent !important;
+                        color: #8B9BB4 !important;
+                        font-weight: bold;
+                        font-size: 13px;
+                        border: none !important;
+                        padding-top: 0px;
+                        padding-bottom: 10px;
+                    }
+                    div[aria-selected="true"] {
+                        color: #00FFAA !important;
+                        border-bottom: 3px solid #00FFAA !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # ==============================================================================
+                # 3. CONTROL DE CANDADO DE ARCHIVO (Para evitar que 2 editen el CSV a la vez)
+                # ==============================================================================
+                lock_info, bloqueado_por_otro = None, False
+                if puede_editar and TOKEN:
+                    try:
+                        repo = Github(TOKEN).get_repo(REPO_NAME)
+                        try:
+                            lock_info = json.loads(repo.get_contents(LOCK_FILE_PATH, ref="main").decoded_content.decode('utf-8'))
+                            if (datetime.now(tz_gdl) - tz_gdl.localize(datetime.strptime(lock_info["timestamp"], "%Y-%m-%d %H:%M:%S"))).total_seconds() < 600:
+                                if lock_info["usuario"] != current_user: bloqueado_por_otro = True
+                            else: lock_info = None
+                        except: pass
+                    except: pass
+                        
+                st.session_state["bloqueado_por_otro_efectivo"] = bloqueado_por_otro
+                if bloqueado_por_otro:
+                    st.warning(f"⚠️ MÓDULO PAUSADO: Sesión activa de **{lock_info['usuario']}**. No puedes registrar gastos ahora.")
+                    st.session_state["puede_editar_efectivo"] = False
+                else:
+                    st.session_state["puede_editar_efectivo"] = puede_editar
+                    if puede_editar and lock_info is None and TOKEN:
+                        try:
+                            repo = Github(TOKEN).get_repo(REPO_NAME)
+                            ahora_gdl = datetime.now(tz_gdl)
+                            lock_string = json.dumps({"usuario": current_user, "timestamp": ahora_gdl.strftime("%Y-%m-%d %H:%M:%S"), "hora": ahora_gdl.strftime("%H:%M:%S")}, indent=4)
+                            try: repo.update_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, sha=repo.get_contents(LOCK_FILE_PATH).sha)
+                            except: repo.create_file(path=LOCK_FILE_PATH, message=f"LOCK // {current_user}", content=lock_string, branch="main")
+                        except: pass
+                
+                # ==============================================================================
+                # 4. MOTOR DE DATOS (GITHUB O LOCAL FALLBACK)
+                # ==============================================================================
+                def get_wallet_data_from_git():
+                    if 'df_wallet' not in st.session_state or st.session_state.get('force_reload', False):
+                        start_date = datetime.now(tz_gdl)
+                        ejemplos = [
+                            {"Fecha": (start_date - timedelta(days=10)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Nomina", "Concepto": "Pago Quincena 1 JYPESA", "Monto": 35000.0, "Cuenta": "Banco MX (Core)"},
+                            {"Fecha": (start_date - timedelta(days=8)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Renta", "Concepto": "Renta Oficinas", "Monto": -18000.0, "Cuenta": "Banco MX (Core)"},
+                            {"Fecha": (start_date - timedelta(days=5)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Freelance", "Concepto": "Proyecto Xenocode UI", "Monto": 15000.0, "Cuenta": "USD Wallet (Hedge)"},
+                            {"Fecha": (start_date - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Supermercado", "Concepto": "Compras Semanales", "Monto": -3500.0, "Cuenta": "Banco MX (Core)"},
+                        ]
+                        df_load = pd.DataFrame(ejemplos)
+                
+                        if TOKEN:
+                            try:
+                                repo = Github(TOKEN).get_repo(REPO_NAME)
+                                try:
+                                    df_load = pd.read_csv(io.StringIO(repo.get_contents(FILE_PATH, ref="main").decoded_content.decode('utf-8')), keep_default_na=False)
+                                except:
+                                    repo.create_file(path=FILE_PATH, message="INITIALIZE WALLET MATRIX", content=df_load.to_csv(index=False), branch="main")
+                            except Exception as e:
+                                st.error(f"Error conexión GitHub: {e}. Usando datos locales.")
+                
+                        df_load['Fecha'] = pd.to_datetime(df_load['Fecha'])
+                        st.session_state.df_wallet = df_load
+                        st.session_state.force_reload = False
+                        
+                    return st.session_state.df_wallet
+                
+                # ==============================================================================
+                # 5. RENDERIZADO DE INTERFAZ WALLET
+                # ==============================================================================
+                puede_editar_efectivo = st.session_state.get("puede_editar_efectivo", False)
+                df_actual = get_wallet_data_from_git()
+                
+                if not df_actual.empty:
+                    df_actual['Mes'] = df_actual['Fecha'].dt.strftime('%Y-%m')
+                    current_month = datetime.now(tz_gdl).strftime('%Y-%m')
+                    df_month = df_actual[df_actual['Mes'] == current_month]
+                else:
+                    df_month = pd.DataFrame()
+                
+                # Cálculos de saldos
+                saldos_actuales = {cuenta: datos['fondo_base'] for cuenta, datos in CUENTAS_MATRIX.items()}
+                if not df_actual.empty:
+                    for cuenta in CUENTAS_MATRIX.keys():
+                        saldos_actuales[cuenta] += df_actual[df_actual['Cuenta'] == cuenta]['Monto'].sum()
+                
+                total_general = sum(saldos_actuales.values())
+                inc_month = df_month[df_month['Tipo'] == "Ingreso"]['Monto'].sum() if not df_month.empty else 0
+                exp_month = abs(df_month[df_month['Tipo'] == "Gasto"]['Monto'].sum()) if not df_month.empty else 0
+                net_month = inc_month - exp_month
+                
+                # SISTEMA DE PESTAÑAS
+                tab_kpi, tab_flujos, tab_registro = st.tabs(["KPI'S WALLET", "FLUJOS DE EFECTIVO", "REGISTRO NUBE"])
+                
+                # --- PESTAÑA 1: KPI'S WALLET ---
+                with tab_kpi:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    kpi1, kpi2, kpi3 = st.columns(3)
+                    
+                    with kpi1:
+                        st.markdown(f"""
+                            <div class='kpi-card'>
+                                <div class='kpi-label'>PATRIMONIO NETO</div>
+                                <div class='kpi-value'>${total_general:,.2f}</div>
+                                <div class='kpi-trend' style='color:#00E5FF'>BALANCE GLOBAL</div>
+                                <div class='neon-bar' style='background: linear-gradient(90deg, #00E5FF, transparent);'></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                    with kpi2:
+                        st.markdown(f"""
+                            <div class='kpi-card'>
+                                <div class='kpi-label'>INGRESOS MTD</div>
+                                <div class='kpi-value'>${inc_month:,.2f}</div>
+                                <div class='kpi-trend' style='color:#00FFAA'>FLUJO DE ENTRADA</div>
+                                <div class='neon-bar' style='background: linear-gradient(90deg, #00FFAA, transparent);'></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                    with kpi3:
+                        st.markdown(f"""
+                            <div class='kpi-card'>
+                                <div class='kpi-label'>EGRESOS MTD</div>
+                                <div class='kpi-value'>${exp_month:,.2f}</div>
+                                <div class='kpi-trend' style='color:#FF4B4B'>GASTOS DEL MES</div>
+                                <div class='neon-bar' style='background: linear-gradient(90deg, #FF4B4B, transparent);'></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    
+                    st.markdown("<br><hr style='border-color: #34495E;'>", unsafe_allow_html=True)
+                    
+                    col_chart, _ = st.columns([2, 1]) 
+                    with col_chart:
+                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>🔍</span> DISTRIBUCIÓN DE CAPITAL POR CUENTA</p>", unsafe_allow_html=True)
+                        
+                        nombres_cuentas = list(saldos_actuales.keys())
+                        valores_saldos = list(saldos_actuales.values())
+                        colores_barras = [CUENTAS_MATRIX[c]['color'] for c in nombres_cuentas]
+                
+                        fig_bars = go.Figure(go.Bar(
+                            x=valores_saldos, y=nombres_cuentas, orientation='h',
+                            marker=dict(color=colores_barras, line=dict(color='#1D2A35', width=2)),
+                            text=valores_saldos, texttemplate='%{text:$,.2f}', textposition='auto',
+                            textfont=dict(color='#FFFFFF', size=12, family="monospace"),
+                            hovertemplate="<b>%{y}</b><br>Saldo: %{x:$,.2f}<extra></extra>"
+                        ))
+                
+                        fig_bars.update_layout(
+                            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', showlegend=False,
+                            margin=dict(t=10, b=10, l=10, r=10), height=350,
+                            xaxis=dict(showgrid=True, gridcolor="#34495E", color="#8B9BB4", tickformat="$,.0f", title=None),
+                            yaxis=dict(color="#E0E6ED", tickfont=dict(size=13), title=None, autorange="reversed"),
+                            hoverlabel=dict(bgcolor="#253441", font=dict(size=13, family="monospace"))
+                        )
+                        
+                        st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
+                
+                # --- PESTAÑA 2: FLUJOS DE EFECTIVO ---
+                with tab_flujos:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    gr_col1, gr_col2 = st.columns([2, 1.5])
+                    
+                    with gr_col1:
+                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>📉</span> TENDENCIA DE FLUJO (MES ACTUAL)</p>", unsafe_allow_html=True)
+                        if not df_month.empty:
+                            df_daily = df_month.groupby([df_month['Fecha'].dt.date, 'Tipo'])['Monto'].sum().unstack().fillna(0)
+                            if 'Gasto' in df_daily: df_daily['Gasto'] = abs(df_daily['Gasto'])
+                            else: df_daily['Gasto'] = 0
+                            if 'Ingreso' not in df_daily: df_daily['Ingreso'] = 0
+                            
+                            fig_flow = go.Figure()
+                            fig_flow.add_trace(go.Scatter(x=df_daily.index, y=df_daily['Ingreso'], name='Ingresos', mode='lines', line=dict(width=3, color='#00FFAA'), fill='tozeroy', fillcolor='rgba(0, 255, 170, 0.05)'))
+                            fig_flow.add_trace(go.Scatter(x=df_daily.index, y=df_daily['Gasto'], name='Egresos', mode='lines', line=dict(width=3, color='#FF4B4B'), fill='tozeroy', fillcolor='rgba(255, 75, 75, 0.05)'))
+                            
+                            fig_flow.update_layout(
+                                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                xaxis=dict(showgrid=False, color="#8B9BB4", tickformat="%d %b"),
+                                yaxis=dict(showgrid=True, gridcolor="#34495E", color="#8B9BB4", zeroline=False),
+                                legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center", font=dict(color="#E0E6ED")),
+                                margin=dict(t=10, b=10, l=10, r=10), height=350, hovermode="x unified"
+                            )
+                            st.plotly_chart(fig_flow, use_container_width=True, config={'displayModeBar': False})
+                        else:
+                            st.info("Sin movimientos este mes.")
+                
+                    with gr_col2:
+                        st.markdown("<p class='kpi-label' style='text-align:left;'><span style='color:#00E5FF'>📊</span> ANÁLISIS DE CONSUMO POR CATEGORÍA</p>", unsafe_allow_html=True)
+                        if not df_month.empty:
+                            df_gastos_cat = df_month[df_month['Tipo'] == "Gasto"].groupby('Categoria')['Monto'].sum().abs().reset_index()
+                            if not df_gastos_cat.empty:
+                                df_gastos_cat = df_gastos_cat.sort_values(by='Monto', ascending=True)
+                                fig_cat = px.bar(df_gastos_cat, x='Monto', y='Categoria', orientation='h', text_auto=',.0f')
+                                
+                                colors = ['#34495E'] * len(df_gastos_cat)
+                                if len(colors) > 0: colors[-1] = '#00FFAA' 
+                                
+                                fig_cat.update_traces(marker_color=colors, hovertemplate="%{y}: $%{x:,.2f}", textposition='outside', textfont=dict(color="#E0E6ED"))
+                                fig_cat.update_layout(
+                                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                    xaxis=dict(title=None, showgrid=True, gridcolor="#34495E", color="#8B9BB4", tickformat="$,.0f"),
+                                    yaxis=dict(title=None, color="#E0E6ED"),
+                                    margin=dict(t=10, b=10, l=10, r=10), height=350
+                                )
+                                st.plotly_chart(fig_cat, use_container_width=True, config={'displayModeBar': False})
+                            else:
+                                st.info("Sin gastos registrados este mes.")
+                
+                # --- PESTAÑA 3: REGISTRO NUBE ---
+                with tab_registro:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    if not TOKEN:
+                        st.warning("⚠️ Modo de solo lectura local. Configure GITHUB_TOKEN para registrar operaciones.")
+                    
+                    st.markdown("<p class='kpi-label' style='margin-bottom: 10px;'><span style='color:#00E5FF'>⚡</span> EJECUTAR ORDEN DE REGISTRO</p>", unsafe_allow_html=True)
+                    
+                    with st.form("elite_ops", clear_on_submit=True):
+                        # 4 INPUTS EN LÍNEA
+                        in_col1, in_col2, in_col3, in_col4 = st.columns(4)
+                        with in_col1:
+                            f_monto = st.number_input("Cantidad MXN", min_value=0.0, step=100.0)
+                        with in_col2:
+                            f_cat = st.selectbox("Categoría", CATEGORIAS)
+                        with in_col3:
+                            f_desc = st.text_input("Concepto / Referencia", placeholder="Ej. Gastos de Operación")
+                        with in_col4:
+                            f_cuenta = st.selectbox("Cuenta Destino/Origen", list(CUENTAS_MATRIX.keys()))
+                        
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        
+                        # 2 BOTONES ABAJO CENTRADOS
+                        _, c_btn1, c_btn2, _ = st.columns([1, 2, 2, 1])
+                        block_submit = (not puede_editar_efectivo) or st.session_state.get("bloqueado_por_otro_efectivo", False) or (not TOKEN)
+                        
+                        with c_btn1:
+                            gasto_sub = st.form_submit_button("📉 REGISTRAR GASTO", use_container_width=True, disabled=block_submit, type="secondary")
+                        with c_btn2:
+                            ingreso_sub = st.form_submit_button("📈 REGISTRAR INGRESO", use_container_width=True, disabled=block_submit, type="primary")
+                        
+                        if not block_submit and (gasto_sub or ingreso_sub) and f_monto > 0 and f_desc:
+                            with st.status("Sincronizando con Nube Nexion...", expanded=True):
+                                try:
+                                    repo = Github(TOKEN).get_repo(REPO_NAME)
+                                    contents = repo.get_contents(FILE_PATH)
+                                    df_latest = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
+                                    
+                                    nueva_fila = {
+                                        "Fecha": datetime.now(tz_gdl).strftime("%Y-%m-%d %H:%M"),
+                                        "Tipo": "Gasto" if gasto_sub else "Ingreso",
+                                        "Categoria": f_cat,
+                                        "Concepto": f_desc,
+                                        "Monto": -f_monto if gasto_sub else f_monto,
+                                        "Cuenta": f_cuenta
+                                    }
+                                    
+                                    df_latest = pd.concat([df_latest, pd.DataFrame([nueva_fila])], ignore_index=True)
+                                    repo.update_file(path=FILE_PATH, message=f"UPDATE // {current_user} // {datetime.now(tz_gdl).strftime('%H:%M:%S')}", content=df_latest.to_csv(index=False), sha=contents.sha)
+                                    
+                                    try: repo.delete_file(path=LOCK_FILE_PATH, message=f"UNLOCK // {current_user}", sha=repo.get_contents(LOCK_FILE_PATH).sha)
+                                    except: pass
+                                    
+                                    st.session_state.force_reload = True
+                                    st.success("OPERACIÓN CLASIFICADA EXITOSAMENTE.")
+                                    time.sleep(1)
+                                    st.rerun()
+                                except Exception as e: st.error(f"Error crítico de sincronización: {e}")
+                
+                    # Menos espacio entre el formulario y el historial
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("<p class='kpi-label'><span style='color:#00E5FF'>🔍</span> DETALLE DE OPERACIONES EN TIEMPO REAL</p>", unsafe_allow_html=True)
+                    
+                    # RENDER DE REGISTROS PERRONES CON HTML (ALINEADOS CON CSS GRID)
+                    if not df_actual.empty:
+                        df_ledger = df_actual.sort_values(by='Fecha', ascending=False).copy()
+                        
+                        for _, row in df_ledger.iterrows():
+                            fecha_str = row['Fecha'].strftime('%d/%m/%Y %H:%M') if pd.notnull(row['Fecha']) else ""
+                            tipo = row['Tipo']
+                            cat = row['Categoria']
+                            concepto = row['Concepto']
+                            monto = row['Monto']
+                            cuenta = row['Cuenta']
+                            
+                            # Estilos dinámicos según el tipo de operación
+                            color_monto = "#00FFAA" if monto > 0 else "#FF4B4B"
+                            monto_str = f"${monto:,.2f}"
+                            badge_bg = "rgba(0, 255, 170, 0.1)" if tipo == "Ingreso" else "rgba(255, 75, 75, 0.1)"
+                            badge_color = "#00FFAA" if tipo == "Ingreso" else "#FF4B4B"
+                            border_left_color = "#00FFAA" if tipo == "Ingreso" else "#FF4B4B"
+                            
+                            st.markdown(f"""
+                                <div class="r-card" style="border-left: 4px solid {border_left_color};">
+                                    <div class="r-field">
+                                        <div class="r-label">FECHA Y HORA</div>
+                                        <div class="r-value">{fecha_str}</div>
+                                    </div>
+                                    <div class="r-field">
+                                        <div class="r-label">TIPO</div>
+                                        <div class="r-value">
+                                            <span class="r-type-badge" style="background-color: {badge_bg}; color: {badge_color};">
+                                                {tipo.upper()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="r-field">
+                                        <div class="r-label">CATEGORÍA</div>
+                                        <div class="r-value">{cat}</div>
+                                    </div>
+                                    <div class="r-field">
+                                        <div class="r-label">CONCEPTO</div>
+                                        <div class="r-value">{concepto}</div>
+                                    </div>
+                                    <div class="r-field">
+                                        <div class="r-label">CUENTA</div>
+                                        <div class="r-value">{cuenta}</div>
+                                    </div>
+                                    <div class="r-field">
+                                        <div class="r-label">MONTO</div>
+                                        <div class="r-value" style="color: {color_monto}; font-size: 14px;">{monto_str}</div>
+                                    </div>
+                                </div>
+                            """, unsafe_allow_html=True)
+                    else:
+                        st.info("No hay registros en la nube actualmente.")
+
+            
+            elif st.session_state.menu_sub == "GASTOS":
+                st.title("💸 Control de Gastos")
+                st.info("AQUÍ VA EL CONTENIDO DE TUS GASTOS")
+
+        # --- LÓGICA DE VISUALIZACIÓN PARA EL MÓDULO ENFOQUE ---
+        elif st.session_state.menu_main == "ENFOQUE":
+            
+            if st.session_state.menu_sub == "MORENO":
+                # --- CSS ELITE INTEGRADO ---
+                st.markdown("""
+                    <style>
+                    /* Estilos Generales y de Tarjetas */
+                    .kpi-card { background: #242c33; padding: 15px; border-radius: 12px; border: 1px solid #343e47; text-align: center; margin-bottom: 20px; transition: 0.3s; }
+                    .kpi-card:hover { border-color: #5DADE2; transform: translateY(-3px); }
+                    .kpi-label { color: #A4B9C8; font-size: 10px; font-weight: 700; letter-spacing: 2px; margin-bottom: 5px; }
+                    .kpi-value { color: white; font-size: 20px; font-weight: 700; }
+                    .kpi-pct { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+                    .bar-bg { background-color: #0B1014; border-radius: 10px; height: 5px; width: 100%; }
+                    .bar-fill { height: 5px; border-radius: 10px; }
+                    
+                    /* Estilo de Pestañas (Tabs) Jypesa */
+                    div[data-baseweb="tab-list"] { gap: 15px; border-bottom: 2px solid #34495E; margin-bottom: 20px; }
+                    div[data-baseweb="tab"] { background-color: transparent !important; color: #8B9BB4 !important; font-weight: 700; font-size: 13px; letter-spacing: 1px; border: none !important; padding-bottom: 10px; }
+                    div[aria-selected="true"] { color: #00FFAA !important; border-bottom: 3px solid #00FFAA !important; }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # --- 1. BLOQUE DE FUNCIONES ---
+                
+                # Le agregamos ttl=60 para que los datos estén frescos cada minuto
+                @st.cache_data(ttl=60)
+                def cargar_datos_pedidos():
+                    g = Github(st.secrets["GITHUB_TOKEN"])
+                    repo = g.get_repo("RH2026/nexion")
+                    contents = repo.get_contents("pedidos.csv", ref="main")
+                    
+                    df = pd.read_csv(io.StringIO(contents.decoded_content.decode('utf-8')), keep_default_na=False)
+                    for col in df.columns:
+                        df[col] = df[col].astype(str).replace(['nan', 'NaN', 'None'], '').str.strip().str.upper()
+                    
+                    for col in ['PROGRAMACION', 'FECHA DE ENVIO']:
+                        df[col] = pd.to_datetime(df[col].str.replace(r'[^0-9/]', '', regex=True), dayfirst=True, errors='coerce', format='mixed')
+                    return df
+
+                def render_card(val, total, lab, col):
+                    porc = (val / total * 100) if total > 0 else 0
+                    st.markdown(f"""<div class="kpi-card"><div class="kpi-label">{lab.upper()}</div><div class="kpi-value">{val}</div><div class="kpi-pct" style="color: {col};">{porc:.1f}%</div><div class="bar-bg"><div class="bar-fill" style="background-color: {col}; width: {porc}%;"></div></div></div>""", unsafe_allow_html=True)
+
+                def modulo_kpi_fleteras(df):    
+                    # 1. Preparar los datos
+                    df_kpi = df.copy()
+                    
+                    # Asegurar que existan las columnas
+                    if 'HORA PROGRAMADA' not in df_kpi.columns: df_kpi['HORA PROGRAMADA'] = ''
+                    if 'HORA REAL' not in df_kpi.columns: df_kpi['HORA REAL'] = ''
+                    if 'PAQUETERIA' not in df_kpi.columns: df_kpi['PAQUETERIA'] = ''
+                    
+                    # --- FILTRO MAESTRO: EXCLUIR LO QUE NO ES FLETERA ---
+                    no_fleteras = ["", "CANCELADO", "CLIENTE PASA", "LOCAL", "EXPORTACION", "CEDIS CANCUN", "CEDIS MONTERREY", "SOLO FACTURA", "DETENIDA"]
+                    df_kpi = df_kpi[~df_kpi['PAQUETERIA'].isin(no_fleteras)]
+                    
+                    # Nos quedamos solo con los que ya llenaron sus horas
+                    df_kpi = df_kpi[(df_kpi['HORA PROGRAMADA'] != '') & (df_kpi['HORA REAL'] != '')]
+                    
+                    if df_kpi.empty:
+                        st.info("Aún no hay despachos a fleteras registrados con horarios.")
+                        return
+                
+                    # 2. Manejo de Fechas y Filtro de Mes
+                    df_kpi['fecha_envio_dt'] = pd.to_datetime(df_kpi['FECHA DE ENVIO'], format='mixed', dayfirst=True, errors='coerce')
+                    df_kpi = df_kpi.dropna(subset=['fecha_envio_dt'])
+                    
+                    if df_kpi.empty:
+                        st.warning("Faltan fechas de envío válidas para agrupar.")
+                        return
+                
+                    # Crear lista de meses disponibles
+                    df_kpi['MES_PROG'] = df_kpi['fecha_envio_dt'].dt.to_period('M')
+                    meses_disponibles = sorted(df_kpi['MES_PROG'].unique(), reverse=True)
+                    opciones_mes = [m.strftime('%Y-%m') for m in meses_disponibles]
+                    
+                    # Seleccionar mes actual por defecto
+                    tz_gdl = pytz.timezone('America/Mexico_City')
+                    mes_actual_str = datetime.now(tz_gdl).strftime('%Y-%m')
+                    indice_defecto = opciones_mes.index(mes_actual_str) if mes_actual_str in opciones_mes else 0
+                    
+                    mes_sel = st.selectbox(
+                        "Seleccionar Mes a Evaluar",
+                        options=opciones_mes,
+                        index=indice_defecto,
+                        key="filtro_mes_fleteras"
+                    )
+                    
+                    # Aplicar el filtro de mes seleccionado
+                    df_mes = df_kpi[df_kpi['MES_PROG'] == pd.Period(mes_sel, freq='M')].copy()
+                    
+                    if df_mes.empty:
+                        st.info(f"No hay operación de fleteras para el mes de {mes_sel}.")
+                        return
+                
+                    # 3. Calcular retrasos a nivel factura (para luego sumarlos por día)
+                    df_mes['prog_dt'] = pd.to_datetime(df_mes['HORA PROGRAMADA'], format='%H:%M', errors='coerce')
+                    df_mes['real_dt'] = pd.to_datetime(df_mes['HORA REAL'], format='%H:%M', errors='coerce')
+                    df_mes = df_mes.dropna(subset=['prog_dt', 'real_dt'])
+                    
+                    df_mes['MINUTOS DESVIACION'] = (df_mes['real_dt'] - df_mes['prog_dt']).dt.total_seconds() / 60
+                    df_mes['TUVO_RETRASO'] = df_mes['MINUTOS DESVIACION'] > 0
+                
+                    # --- 4. LA MAGIA: AGRUPACIÓN DIARIA ---
+                    df_diario = df_mes.groupby(df_mes['fecha_envio_dt'].dt.date).agg(
+                        TOTAL_DESPACHOS=('PAQUETERIA', 'count'),
+                        TOTAL_RETRASOS=('TUVO_RETRASO', 'sum')
+                    ).reset_index()
+                    
+                    df_diario.rename(columns={'fecha_envio_dt': 'FECHA'}, inplace=True)
+                    df_diario['A_TIEMPO'] = df_diario['TOTAL_DESPACHOS'] - df_diario['TOTAL_RETRASOS']
+                    
+                    # Clasificar el día: Si tuvo al menos 1 retraso, el día ya no fue perfecto
+                    df_diario['ESTATUS_DIA'] = df_diario['TOTAL_RETRASOS'].apply(
+                        lambda x: 'DÍA PERFECTO' if x == 0 else 'CON RETRASOS'
+                    )
+                    
+                    # 5. Calcular métricas para las tarjetas de arriba (días del mes)
+                    dias_trabajados = len(df_diario)
+                    dias_perfectos = len(df_diario[df_diario['ESTATUS_DIA'] == 'DÍA PERFECTO'])
+                    dias_malos = dias_trabajados - dias_perfectos
+                    
+                    pct_perfecto = (dias_perfectos / dias_trabajados) * 100 if dias_trabajados > 0 else 0
+                    pct_malo = (dias_malos / dias_trabajados) * 100 if dias_trabajados > 0 else 0
+                
+                    # 6. Dibujar Tarjetas Élite (Ajustadas en altura y con porcentajes más grandes)
+                    tarjetas_html = f"""
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                        <div style="flex: 1; background-color: #1E252B; padding: 8px 15px; border-radius: 6px; border-bottom: 3px solid #3B82F6; text-align: center;">
+                            <p style="margin: 0; font-size: 10px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">DÍAS TRABAJADOS</p>
+                            <h2 style="margin: 2px 0; color: white; font-size: 24px;">{dias_trabajados} <span style="font-size:12px; color:#5DADE2;">días</span></h2>
+                            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #3B82F6;">Total del mes</p>
+                        </div>
+                        <div style="flex: 1; background-color: #1E252B; padding: 8px 15px; border-radius: 6px; border-bottom: 3px solid #10B981; text-align: center;">
+                            <p style="margin: 0; font-size: 10px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">DÍAS PERFECTOS</p>
+                            <h2 style="margin: 2px 0; color: white; font-size: 24px;">{dias_perfectos} <span style="font-size:12px; color:#10B981;">días</span></h2>
+                            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #10B981;">{pct_perfecto:.1f}% de efectividad</p>
+                        </div>
+                        <div style="flex: 1; background-color: #1E252B; padding: 8px 15px; border-radius: 6px; border-bottom: 3px solid #EF4444; text-align: center;">
+                            <p style="margin: 0; font-size: 10px; color: #A0AAB2; font-weight: bold; letter-spacing: 1px;">DÍAS CON RETRASOS</p>
+                            <h2 style="margin: 2px 0; color: white; font-size: 24px;">{dias_malos} <span style="font-size:12px; color:#EF4444;">días</span></h2>
+                            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #EF4444;">{pct_malo:.1f}% fuera de meta</p>
+                        </div>
+                    </div>
+                    """
+                    st.markdown(tarjetas_html, unsafe_allow_html=True)
+                
+                    # 7. RENDER CHINGÓN AGRUPADO POR DÍA
+                    st.markdown("<p style='font-size: 13px; color: #3498db; font-weight: bold;'>🔵 RESUMEN DIARIO DE OPERACIÓN</p>", unsafe_allow_html=True)
+                    
+                    # Ordenamos del día más reciente al más antiguo
+                    df_diario = df_diario.sort_values(by='FECHA', ascending=False)
+                    alto_detalle = min(len(df_diario) * 85 + 20, 500)
+                    
+                    filas_html = ""
+                    for _, row in df_diario.iterrows():
+                        color_estatus = '#00FFAA' if row['ESTATUS_DIA'] == 'DÍA PERFECTO' else '#FF4B4B'
+                        fecha_str = row['FECHA'].strftime('%d/%m/%Y')
+                        
+                        filas_html += f'''
+                        <div class="row-detalle" style="border-left-color: {color_estatus};">
+                            <div class="col-box" style="flex: 1.2;">
+                                <div style="font-size:8px; opacity:0.6; color:white;">FECHA</div>
+                                <div style="color:white; font-weight:700; font-size:15px;">{fecha_str}</div>
+                            </div>
+                            <div class="col-box" style="flex: 1;">
+                                <div style="font-size:8px; opacity:0.6; color:white;">TOTAL FLETERAS</div>
+                                <div style="color:white; font-size:14px; font-weight:bold;">{row['TOTAL_DESPACHOS']} envíos</div>
+                            </div>
+                            <div class="col-box" style="flex: 1;">
+                                <div style="font-size:8px; opacity:0.6; color:white;">A TIEMPO</div>
+                                <div style="color:#00FFAA; font-size:14px; font-weight:bold;">{row['A_TIEMPO']}</div>
+                            </div>
+                            <div class="col-box" style="flex: 1;">
+                                <div style="font-size:8px; opacity:0.6; color:white;">CON RETRASO</div>
+                                <div style="color:#FF4B4B; font-size:14px; font-weight:bold;">{row['TOTAL_RETRASOS']}</div>
+                            </div>
+                            <div class="col-box" style="text-align:right; flex: 1.2;">
+                                <div style="color:{color_estatus}; font-weight:500; font-size:11px; letter-spacing: 0.5px;">{row['ESTATUS_DIA']}</div>
+                            </div>
+                        </div>
+                        '''
+                
+                    html_detalle = f"""
+                    <div style="font-family: sans-serif;">
+                        <style>
+                            ::-webkit-scrollbar {{ width: 6px; }}
+                            ::-webkit-scrollbar-thumb {{ background: #2ecc71; border-radius: 10px; }}
+                            .row-detalle {{ background: #263238; border-left: 5px solid; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
+                            .row-detalle:hover {{ background: #2d3b42; transform: translateX(3px); }}
+                            .col-box {{ padding: 0 8px; }}
+                        </style>
+                        {filas_html}
+                    </div>
+                    """
+                    
+                    components.html(html_detalle, height=alto_detalle, scrolling=True)
+                
+                
+                
+                
+                def modulo_kpi_subordinado():
+                    
+                    # --- VARIABLES DE GITHUB ---
+                    GITHUB_USER = "RH2026"
+                    GITHUB_REPO = "nexion"
+                    GITHUB_PATH = "muestras.csv" 
+                    GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
+                    
+                    try:
+                        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+                        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                        r = requests.get(url, headers=headers)
+                        if r.status_code == 200:
+                            content = r.json()
+                            import base64
+                            from io import BytesIO
+                            import streamlit.components.v1 as components
+                            
+                            df_kpi = pd.read_csv(BytesIO(base64.b64decode(content['content'])))
+                            
+                            if not df_kpi.empty:
+                                # Limpieza y fechas
+                                df_kpi['FECHA'] = pd.to_datetime(df_kpi['FECHA'], format='mixed', errors='coerce')
+                                df_kpi['COSTO_TOTAL'] = pd.to_numeric(df_kpi['COSTO_TOTAL'].astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce').fillna(0)
+                                
+                                # --- 1. FILTRO INDEPENDIENTE DE MUESTRAS ---
+                                df_kpi['MES_PROG'] = df_kpi['FECHA'].dt.to_period('M')
+                                meses_muestras = sorted(df_kpi['MES_PROG'].dropna().unique(), reverse=True)
+                                opciones_mes_muestras = [m.strftime('%Y-%m') for m in meses_muestras]
+                                
+                                # --- MAGIA CORREGIDA PARA SELECCIONAR EL MES ACTUAL ---
+                                from datetime import datetime
+                                mes_actual_str = datetime.now().strftime('%Y-%m') # Esto nos da "2026-06" exactamente
+                                
+                                # Verificamos buscando el string exacto en tu lista
+                                if mes_actual_str in opciones_mes_muestras:
+                                    indice_defecto = opciones_mes_muestras.index(mes_actual_str) + 1
+                                else:
+                                    indice_defecto = 0 
+                                
+                                mes_sel_muestras = st.selectbox(
+                                    "Seleccionar Mes (Muestras)", 
+                                    options=["TODAS"] + opciones_mes_muestras, 
+                                    index=indice_defecto,
+                                    key="filtro_muestras"
+                                )
+
+                                if mes_sel_muestras != "TODAS":
+                                    df_kpi = df_kpi[df_kpi['MES_PROG'] == pd.Period(mes_sel_muestras, freq='M')].copy()
+                                
+                                if df_kpi.empty:
+                                    st.warning(f"No hay registros de muestras para el mes seleccionado.")
+                                    return
+                                
+                                # --- 2. TARJETAS ARRIBA (RENDER ÉLITE) ---
+                                total_envios = len(df_kpi)
+                                inversion_total = df_kpi['COSTO_TOTAL'].sum()
+                                destinos_unicos = df_kpi['DESTINO'].nunique()
+                                
+                                c1, c2, c3 = st.columns(3)
+                                
+                                with c1:
+                                    st.markdown(f"""
+                                    <div class="kpi-card" style="border-bottom: 3px solid #5a8dee;">
+                                        <div class="kpi-label">TOTAL ENVÍOS</div>
+                                        <div class="kpi-value">{total_envios}</div>
+                                    </div>""", unsafe_allow_html=True)
+                                
+                                with c2:
+                                    st.markdown(f"""
+                                    <div class="kpi-card" style="border-bottom: 3px solid #39da8a;">
+                                        <div class="kpi-label">INVERSIÓN TOTAL</div>
+                                        <div class="kpi-value" style="color:#39da8a;">${inversion_total:,.2f}</div>
+                                    </div>""", unsafe_allow_html=True)
+                                
+                                with c3:
+                                    st.markdown(f"""
+                                    <div class="kpi-card" style="border-bottom: 3px solid #f6c23e;">
+                                        <div class="kpi-label">DESTINOS ÚNICOS</div>
+                                        <div class="kpi-value" style="color:#f6c23e;">{destinos_unicos}</div>
+                                    </div>""", unsafe_allow_html=True)
+                                
+                                # --- 3. TABLA CHINGONA (DETALLE DE OPERACIÓN) ---
+                                st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; margin-top:5px; margin-bottom:10px;'>🔍 DETALLE DE ENVÍOS DE MUESTRAS</p>", unsafe_allow_html=True)
+                                
+                                df_kpi['FECHA_STR'] = df_kpi['FECHA'].dt.strftime('%d/%m/%Y').fillna("S/D")
+                                alto_detalle = min(len(df_kpi) * 85 + 20, 500)
+                                
+                                html_detalle = f"""
+                                <div style="font-family: sans-serif;">
+                                    <style>
+                                        ::-webkit-scrollbar {{ width: 6px; }}
+                                        ::-webkit-scrollbar-thumb {{ background: #2ecc71; border-radius: 10px; }}
+                                        .row-detalle {{ background: #263238; border-left: 5px solid #00FFAA; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; transition: 0.3s; }}
+                                        .row-detalle:hover {{ background: #2d3b42; transform: translateX(3px); }}
+                                        .col-box {{ flex: 1; padding: 0 8px; }}
+                                    </style>
+                                    {"".join([f'''
+                                    <div class="row-detalle">
+                                        <div class="col-box" style="flex: 0.7;"><div style="font-size:8px; opacity:0.6; color:white;">FOLIO</div><div style="color:#00FFAA; font-weight:700; font-size:14px;">{row.get('FOLIO', 'S/F')}</div></div>
+                                        <div class="col-box" style="flex: 0.8;"><div style="font-size:8px; opacity:0.6; color:white;">FECHA</div><div style="color:white; font-size:12px;">{row['FECHA_STR']}</div></div>
+                                        <div class="col-box" style="flex: 1.5;"><div style="font-size:8px; opacity:0.6; color:white;">HOTEL</div><div style="color:white; font-size:12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{row.get('NOMBRE DEL HOTEL', 'S/D')}</div></div>
+                                        <div class="col-box" style="flex: 1;"><div style="font-size:8px; opacity:0.6; color:white;">DESTINO</div><div style="color:white; font-size:12px;">{row.get('DESTINO', 'S/D')}</div></div>
+                                        <div class="col-box" style="text-align:right; flex: 0.8;"><div style="font-size:8px; opacity:0.6; color:white;">COSTO TOTAL</div><div style="color:#39da8a; font-weight:700; font-size:13px;">${float(row.get('COSTO_TOTAL', 0)):,.2f}</div></div>
+                                    </div>''' for _, row in df_kpi.iterrows()])}
+                                </div>"""
+                                
+                                components.html(html_detalle, height=alto_detalle, scrolling=True)
+                                
+                            else:
+                                st.info("El archivo de muestras está vacío, amor.")
+                        else:
+                            st.warning("No se pudo conectar con GitHub. Verifica el archivo.") 
+                    except Exception as e:
+                        st.error(f"Error al cargar KPIs de muestras: {e}")
+
+                # --- 2. LÓGICA PRINCIPAL Y RENDERIZADO ---
+                try:
+                    df = cargar_datos_pedidos()
+                    df['MES_PROG'] = df['PROGRAMACION'].dt.to_period('M')
+                    meses = sorted(df['MES_PROG'].dropna().unique(), reverse=True)
+                    
+                    # --- SISTEMA DE TABS ---
+                    tab1, tab2, tab3, tab4, tab5 = st.tabs(["KPI DESPACHOS", "KPI DESPACHO FLETERAS", "KPI MUESTRAS", "CONFIG", "BITÁCORA"])
+                
+                    with tab1:
+                        # --- 1. FILTRO INDEPENDIENTE DE DESPACHOS ---
+                        mes_actual = pd.Period(datetime.now(), freq='M')
+                        opciones_mes = [m.strftime('%Y-%m') for m in meses]
+                        default_index = opciones_mes.index(mes_actual.strftime('%Y-%m')) if mes_actual.strftime('%Y-%m') in opciones_mes else 0
+                        
+                        mes_sel = st.selectbox(
+                            "Seleccionar Mes de Programación", 
+                            options=["TODAS"] + opciones_mes, 
+                            index=default_index + 1 if default_index != -1 else 0,
+                            key="filtro_despachos"
+                        )
+
+                        if mes_sel == "TODAS":
+                            df_vol = df[df['FECHA DE ENVIO'].notna()].copy()
+                        else:
+                            df_vol = df[(df['MES_PROG'] == pd.Period(mes_sel, freq='M')) & (df['FECHA DE ENVIO'].notna())].copy()
+                
+                        df_vol['Estado_KPI'] = df_vol.apply(lambda x: "A TIEMPO" if (x['FECHA DE ENVIO'] - x['PROGRAMACION']) <= timedelta(days=1) else "FUERA DE TIEMPO", axis=1)
+                        tot, ok, no = len(df_vol), len(df_vol[df_vol['Estado_KPI'] == "A TIEMPO"]), len(df_vol[df_vol['Estado_KPI'] != "A TIEMPO"])
+                
+                        # --- 2. TARJETAS ARRIBA ---
+                        c1, c2, c3 = st.columns(3)
+                        with c1: render_card(tot, tot, "Total Facturas", "#5a8dee")
+                        with c2: render_card(ok, tot, "A Tiempo", "#39da8a")
+                        with c3: render_card(no, tot, "Fuera de Meta", "#ff5b5c")
+                
+                        # --- 3. TABLA CHINGONA ---
+                        st.markdown("<p style='font-size:12px; font-weight:bold; color:#54AFE7; margin-top:15px; margin-bottom:10px;'>🔍 DETALLE DE OPERACIÓN</p>", unsafe_allow_html=True)
+                        df_vol['EMIS_STR'] = df_vol['PROGRAMACION'].dt.strftime('%d/%m/%Y').fillna("S/D")
+                        df_vol['ENVIO_STR'] = df_vol['FECHA DE ENVIO'].dt.strftime('%d/%m/%Y').fillna("S/D")
+                        
+                        alto_detalle = min(len(df_vol) * 85 + 20, 500)
+                        html_detalle = f"""
+                        <div style="font-family: sans-serif;">
+                            <style>
+                                ::-webkit-scrollbar {{ width: 6px; }}
+                                ::-webkit-scrollbar-thumb {{ background: #2ecc71; border-radius: 10px; }}
+                                .row-detalle {{ background: #263238; border-left: 5px solid; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; transition: 0.3s; }}
+                                .row-detalle:hover {{ background: #2d3b42; transform: translateX(3px); }}
+                                .col-box {{ flex: 1; padding: 0 8px; }}
+                            </style>
+                            {"".join([f'''
+                            <div class="row-detalle" style="border-left-color: {'#00FFAA' if row['Estado_KPI']=='A TIEMPO' else '#FF4B4B'};">
+                                <div class="col-box"><div style="font-size:8px; opacity:0.6; color:white;">PEDIDO</div><div style="color:#00FFAA; font-weight:700; font-size:14px;">{row['FACTURA']}</div></div>
+                                <div class="col-box"><div style="font-size:8px; opacity:0.6; color:white;">PROGRAMACIÓN</div><div style="color:white; font-size:12px;">{row['EMIS_STR']}</div></div>
+                                <div class="col-box"><div style="font-size:8px; opacity:0.6; color:white;">SALIDA ALMACÉN</div><div style="color:white; font-size:12px;">{row['ENVIO_STR']}</div></div>
+                                <div class="col-box" style="text-align:right;"><div style="color:{'#00FFAA' if row['Estado_KPI']=='A TIEMPO' else '#FF4B4B'}; font-weight:700; font-size:12px;">{row['Estado_KPI']}</div></div>
+                            </div>''' for _, row in df_vol.iterrows()])}
+                        </div>"""
+                        import streamlit.components.v1 as components
+                        components.html(html_detalle, height=alto_detalle, scrolling=True)
+                
+                    with tab2: 
+                        # Llamar al nuevo módulo pasándole la información actualizada
+                        modulo_kpi_fleteras(df)                    
+                    
+                    with tab3: 
+                        # Ahora llamamos a la función limpia, ¡ella misma hace todo en orden!
+                        modulo_kpi_subordinado()
+                    
+                    with tab4: 
+                        st.info("Configuración en desarrollo...")
+                    
+                    with tab5: 
+                        st.info("Bitácora en desarrollo...")
+                
+                except Exception as e:
+                    st.error(f"Error en Nexion: {e}")
+                
+        elif st.session_state.menu_sub == "VAZQUEZ":
+            st.info("Configuración de vista para Vazquez...")
+                
+        elif st.session_state.menu_sub == "MIGUEL":
+            st.info("Configuración de vista para Miguel...")
+                
+    # ── FOOTER FIJO (BRANDING XENOCODE) ────────────────────────
+    st.markdown(f"""
+        <div class="footer">
+            NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
+            <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
+            <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
+        </div>
+    """, unsafe_allow_html=True)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
