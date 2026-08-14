@@ -839,7 +839,7 @@ def main():
     # ── HEADER VISUAL PREMIUM ──
     st.markdown('''
         <div class="hud-header">
-            <div style="font-size: 32px; filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));">🗄️</div>
+            <div style="font-size: 32px; filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));"></div>
             <div>
                 <h2 style="margin:0; color:#FFFFFF; font-size: 22px; font-weight: 900; letter-spacing: 1.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">CENTRAL DATA HUB</h2>
                 <p style="margin:2px 0 0 0; color:#00D4FF; font-size:10px; letter-spacing: 4px; font-weight: 700; opacity: 0.9;">NEXION LOGISTIC NODE // MULTIPLE UPLINK</p>
@@ -886,7 +886,7 @@ def main():
 
     # ── ÁREA DE CARGA MULTIPLE ──
     with st.container(border=True):
-        st.markdown("<h4 style='color: white; font-weight: 700; font-size: 16px; letter-spacing: 1px;'>🛡️ SECURE MULTI-UPLINK</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: white; font-weight: 700; font-size: 16px; letter-spacing: 1px;'>🛡️SECURE MULTI-UPLINK</h4>", unsafe_allow_html=True)
         st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}`, `{PEDIDOS_FILE}` and `T1, T2, T3` (XLSX)")
 
         uploaded_files = st.file_uploader("", type=["csv", "xlsx"], accept_multiple_files=True, key="multi_uploader")
@@ -951,28 +951,41 @@ def main():
                 from github import Github
                 g = Github(TOKEN)
                 repo = g.get_repo(REPO_NAME)
+                
+                # Traemos el historial global
                 commits = repo.get_commits()
-
-                for i, commit in enumerate(commits):
-                    if i >= 5: break 
-                    fecha_utc = commit.commit.author.date.replace(tzinfo=pytz.utc)
-                    fecha_local = fecha_utc.astimezone(tz_gdl)
-                    
-                    # Consola estilo Terminal
-                    st.markdown(f"""
-                        <div class="terminal-log">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="color: #64748B; font-size: 11px; font-weight: 600;">[{fecha_local.strftime('%d/%m/%Y %H:%M:%S')}]</span>
-                                <span style="color: #00D4FF; font-size: 11px; font-weight: 600;">SHA: {commit.sha[:8]}</span>
+                commits_filtrados = []
+                
+                # FILTRO INTELIGENTE: Ignoramos los registros de acceso al menú
+                for c in commits:
+                    if "Registro de acceso" not in c.commit.message:
+                        commits_filtrados.append(c)
+                    # Nos detenemos en cuanto tengamos las últimas 5 cargas reales
+                    if len(commits_filtrados) == 10:
+                        break
+                
+                if not commits_filtrados:
+                    st.markdown("<div class='terminal-log' style='color:#64748B;'>No hay cargas de datos recientes.</div>", unsafe_allow_html=True)
+                else:
+                    for commit in commits_filtrados:
+                        fecha_utc = commit.commit.author.date.replace(tzinfo=pytz.utc)
+                        fecha_local = fecha_utc.astimezone(tz_gdl)
+                        
+                        # Consola estilo Terminal
+                        st.markdown(f"""
+                            <div class="terminal-log">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="color: #64748B; font-size: 11px; font-weight: 600;">[{fecha_local.strftime('%d/%m/%Y %H:%M:%S')}]</span>
+                                    <span style="color: #00D4FF; font-size: 11px; font-weight: 600;">SHA: {commit.sha[:8]}</span>
+                                </div>
+                                <div style="color: #E2E8F0; font-size: 13px; font-weight: 600; margin-bottom: 6px; line-height: 1.4;">
+                                    <span style="color: #00FFAA;">></span> {commit.commit.message}
+                                </div>
+                                <div style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 700; letter-spacing: 1px;">
+                                    AUTHORIZED_AGENT: <span style="color: white;">{commit.commit.author.name}</span>
+                                </div>
                             </div>
-                            <div style="color: #E2E8F0; font-size: 13px; font-weight: 600; margin-bottom: 6px; line-height: 1.4;">
-                                <span style="color: #00FFAA;">></span> {commit.commit.message}
-                            </div>
-                            <div style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 700; letter-spacing: 1px;">
-                                AUTHORIZED_AGENT: <span style="color: white;">{commit.commit.author.name}</span>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"Error de conexión con la terminal de logs: {e}")
 
