@@ -17,7 +17,7 @@ PAGINAS = {
     "muestras": "pages/muestras.py",
     "picking": "pages/picking.py",
     "qrup": "pages/qrup.py",
-    "facturacion": "pages/facturacion.py",
+    "facturacion": "pages/facturacion_af.py",
 }
 
 
