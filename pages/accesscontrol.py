@@ -16,6 +16,8 @@ import qrcode
 import streamlit.components.v1 as components
 import streamlit as st
 from auth import exigir_autenticacion
+import pytz
+
 
 exigir_autenticacion("accesscontrol")
 
