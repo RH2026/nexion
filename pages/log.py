@@ -592,7 +592,7 @@ def login_screen():
 
             st.success(
                 f"¡BIENVENIDO!, "
-                f"{st.session_state.get('nombre_completo', '').upper()}"
+                f"{str(st.session_state.get('nombre_completo') or '').upper()}"
             )
 
             time.sleep(
