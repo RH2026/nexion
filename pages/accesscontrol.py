@@ -908,57 +908,57 @@ def main():
         # Asegurar que df_editado refleje de forma reactiva el session_state actual
         df_editado = st.session_state["df_permisos_local"].copy()
 
-    def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
-        c_m1, c_m2, c_esp = st.columns([1.5, 1.5, 4])
-        with c_m1:
-            if st.button("✅ Marcar Todo", key=f"btn_marcar_todo_{tab_key}", use_container_width=True):
-                for c in cols_tab:
-                    # SOLO MARCAR LOS CHECKBOXES, NO LAS COLUMNAS DE TEXTO
-                    if c not in ["USUARIO", "NOMBRE REAL", "GENERO"]:
-                        df_fuente.loc[:, c] = True
-                st.session_state["df_permisos_local"] = df_fuente
-                st.rerun()
+def renderizar_pestana_compacta(cols_tab, tab_key, df_fuente):
+    c_m1, c_m2, c_esp = st.columns([1.5, 1.5, 4])
+    with c_m1:
+        if st.button("✅ Marcar Todo", key=f"btn_marcar_todo_{tab_key}", use_container_width=True):
+            for c in cols_tab:
+                # SOLO MARCAR LOS CHECKBOXES, NO LAS COLUMNAS DE TEXTO
+                if c not in ["USUARIO", "NOMBRE REAL", "GENERO"]:
+                    df_fuente.loc[:, c] = True
+            st.session_state["df_permisos_local"] = df_fuente
+            st.rerun()
 
-        with c_m2:
-            if st.button("❌ Desmarcar Todo", key=f"btn_desmarcar_todo_{tab_key}", use_container_width=True):
-                for c in cols_tab:
-                    if c not in ["USUARIO", "NOMBRE REAL", "GENERO"]:
-                        df_fuente.loc[:, c] = False
-                st.session_state["df_permisos_local"] = df_fuente
-                st.rerun()
+    with c_m2:
+        if st.button("❌ Desmarcar Todo", key=f"btn_desmarcar_todo_{tab_key}", use_container_width=True):
+            for c in cols_tab:
+                if c not in ["USUARIO", "NOMBRE REAL", "GENERO"]:
+                    df_fuente.loc[:, c] = False
+            st.session_state["df_permisos_local"] = df_fuente
+            st.rerun()
 
-        st.markdown("<hr style='border-top:1px solid rgba(255,255,255,0.08); margin:8px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-top:1px solid rgba(255,255,255,0.08); margin:8px 0;'>", unsafe_allow_html=True)
 
-        # CONFIGURACIÓN MAESTRA: ESTO ES LO QUE TE FALTABA
-        column_config = {}
-        for col in cols_tab:
-            if col in ["USUARIO", "NOMBRE REAL", "GENERO"]:
-                # ESTO BLOQUEA LA COLUMNA PARA QUE SEA SOLO LECTURA Y NO SE VUELVA CHECKBOX
-                column_config[col] = st.column_config.TextColumn(col, disabled=True)
-            else:
-                column_config[col] = st.column_config.CheckboxColumn(col)
+    # CONFIGURACIÓN MAESTRA: ESTO ES LO QUE TE FALTABA
+    column_config = {}
+    for col in cols_tab:
+        if col in ["USUARIO", "NOMBRE REAL", "GENERO"]:
+            # ESTO BLOQUEA LA COLUMNA PARA QUE SEA SOLO LECTURA Y NO SE VUELVA CHECKBOX
+            column_config[col] = st.column_config.TextColumn(col, disabled=True)
+        else:
+            column_config[col] = st.column_config.CheckboxColumn(col)
 
-        # RENDERIZAMOS CON LA CONFIGURACIÓN ESTRICTA
-        df_t = df_fuente[[c for c in cols_tab if c in df_fuente.columns]].copy()
-        
-        sub_ed = st.data_editor(
-            df_t, 
-            use_container_width=True, 
-            hide_index=True, 
-            key=f"ed_{tab_key}", 
-            height=360,
-            column_config=column_config # <-- APLICANDO LA RESTRICCIÓN
-        )
-        
-        # ACTUALIZACIÓN SEGURA
-        for c in sub_ed.columns:
-            if c not in ["USUARIO", "NOMBRE REAL", "GENERO"]:
-                for idx, val in sub_ed[c].items():
-                    user_val = sub_ed.loc[idx, "USUARIO"]
-                    df_fuente.loc[df_fuente["USUARIO"] == user_val, c] = val
-        
-        st.session_state["df_permisos_local"] = df_fuente
-        return df_fuente
+    # RENDERIZAMOS CON LA CONFIGURACIÓN ESTRICTA
+    df_t = df_fuente[[c for c in cols_tab if c in df_fuente.columns]].copy()
+    
+    sub_ed = st.data_editor(
+        df_t, 
+        use_container_width=True, 
+        hide_index=True, 
+        key=f"ed_{tab_key}", 
+        height=360,
+        column_config=column_config # <-- APLICANDO LA RESTRICCIÓN
+    )
+    
+    # ACTUALIZACIÓN SEGURA
+    for c in sub_ed.columns:
+        if c not in ["USUARIO", "NOMBRE REAL", "GENERO"]:
+            for idx, val in sub_ed[c].items():
+                user_val = sub_ed.loc[idx, "USUARIO"]
+                df_fuente.loc[df_fuente["USUARIO"] == user_val, c] = val
+    
+    st.session_state["df_permisos_local"] = df_fuente
+    return df_fuente
 
         with tab_dash:
             df_editado = renderizar_pestana_compacta(cols_dash, "dash", df_editado)
