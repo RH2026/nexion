@@ -4,21 +4,29 @@ from datetime import datetime
 import requests
 import io
 import pandas as pd
+import time
 
 # ============================================================
-# FUNCIÓN DE REGISTRO GLOBAL (Mantenla aquí o en un utils.py)
+# FUNCIÓN DE REGISTRO GLOBAL (OPTIMIZADA)
 # ============================================================
 def registrar_acceso_github(usuario, modulo):
+    # Control: No registrar si ya se registró el mismo módulo en los últimos 30 segundos
+    clave_sesion = f"ultimo_registro_{modulo}"
+    ahora = time.time()
+    if st.session_state.get(clave_sesion, 0) + 30 > ahora:
+        return 
+
+    st.session_state[clave_sesion] = ahora
+
     GITHUB_USER = "RH2026"
     GITHUB_REPO = "nexion"
-    # Asegúrate de tener el token accesible desde st.secrets
     GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN")
     
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/auditoria_accesos.csv"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     
     try:
-        r = requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers, timeout=3)
         fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         if r.status_code == 200:
@@ -33,6 +41,10 @@ def registrar_acceso_github(usuario, modulo):
         nuevo_registro = pd.DataFrame([{"FECHA_HORA": fecha_hora, "USUARIO": usuario, "MODULO": modulo}])
         df_aud = pd.concat([df_aud, nuevo_registro], ignore_index=True)
         
+        # Mantener solo los últimos 200 para velocidad
+        if len(df_aud) > 200:
+            df_aud = df_aud.tail(200)
+        
         csv_string = df_aud.to_csv(index=False)
         payload = {
             "message": f"Registro de acceso de {usuario} al módulo {modulo}",
@@ -40,10 +52,9 @@ def registrar_acceso_github(usuario, modulo):
         }
         if sha:
             payload["sha"] = sha
-        requests.put(url, json=payload, headers=headers)
-    except Exception as e:
-        # Fallo silencioso para no romper la navegación si falla el log
-        pass
+        requests.put(url, json=payload, headers=headers, timeout=3)
+    except Exception:
+        pass 
 
 # ============================================================
 # PÁGINAS DISPONIBLES
@@ -64,45 +75,26 @@ PAGINAS = {
 }
 
 # ============================================================
-# GUARDAR/OBTENER DESTINO (Igual que antes)
+# FUNCIONES DE NAVEGACIÓN
 # ============================================================
 def guardar_destino(pagina_actual):
     pagina_actual = str(pagina_actual).strip().lower()
-    if pagina_actual not in PAGINAS:
-        pagina_actual = "dashboard"
-    st.session_state["pagina_pendiente"] = pagina_actual
+    st.session_state["pagina_pendiente"] = pagina_actual if pagina_actual in PAGINAS else "dashboard"
     try:
-        st.query_params["return_to"] = pagina_actual
+        st.query_params["return_to"] = st.session_state["pagina_pendiente"]
     except Exception:
         pass
     return True
 
-def obtener_destino():
-    destino = st.session_state.get("pagina_pendiente", None)
-    if destino:
-        destino = str(destino).strip().lower()
-        if destino in PAGINAS: return destino
-    try:
-        destino = st.query_params.get("return_to", None)
-        if destino:
-            destino = str(destino).strip().lower()
-            if destino in PAGINAS: return destino
-    except Exception:
-        pass
-    return "dashboard"
-
 # ============================================================
-# EXIGIR AUTENTICACIÓN Y REGISTRO
+# EXIGIR AUTENTICACIÓN Y REGISTRO (BLINDADO)
 # ============================================================
 def exigir_autenticacion(pagina_actual):
-    autenticado = st.session_state.get("autenticado", False)
-
-    if not autenticado:
+    if not st.session_state.get("autenticado", False):
         guardar_destino(pagina_actual)
         st.switch_page("pages/log.py")
         st.stop()
     
-    # --- REGISTRO AUTOMÁTICO DE USUARIO ---
-    # Esto ocurre cada vez que una página verifica autenticación
-    usuario_activo = st.session_state.get("usuario_activo", "GUEST")
+    # Registro automático (solo si el usuario está autenticado)
+    usuario_activo = str(st.session_state.get("usuario_activo", "GUEST"))
     registrar_acceso_github(usuario_activo, pagina_actual.upper())
