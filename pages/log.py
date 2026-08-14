@@ -67,7 +67,7 @@ DESTINOS_VALIDOS = {
         "pages/qrup.py",
         
     "facturacion":
-        "pages/facturacion.py",
+        "pages/facturacion_af.py",
 }
 
 
