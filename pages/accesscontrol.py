@@ -990,50 +990,55 @@ def main():
                 st.markdown(f"""
                     <div style='display:flex;align-items:center;gap:10px;margin:15px 0;'>
                         <div style='background:#FF4B4B;width:5px;height:25px;border-radius:2px;box-shadow:0 0 10px #FF4B4B;'></div>
-                        <span style='color:white;font-size:16px;font-weight:800;letter-spacing:2px;text-transform:uppercase;'>MONITOR DE ACTIVIDAD // AUDITORÍA EN TIEMPO REAL</span>
+                        <span style='color:white;font-size:16px;font-weight:800;letter-spacing:2px;text-transform:uppercase;'>MONITOR TOTAL DE ACTIVIDAD</span>
                     </div>
                 """, unsafe_allow_html=True)
             with c_aud2:
-                st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-                if st.button("🔄 ACTUALIZAR LOGS", use_container_width=True):
-                    st.cache_data.clear()
+                if st.button("🔄 REFRESCAR TODO", use_container_width=True):
+                    st.cache_data.clear() # Limpia la caché para forzar lectura fresca
                     st.rerun()
             
+            # Carga de datos fresca
+            url_logs = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/refs/heads/main/auditoria_accesos.csv?t={int(time.time())}"
             try:
-                df_logs = cargar_datos_auditoria()
+                df_logs = pd.read_csv(url_logs)
                 
-                st.markdown(f"<style>.card-log {{ transition: all 0.3s ease; cursor: pointer; }} .card-log:hover {{ transform: translateX(5px); border-color: #FF4B4B !important; background: rgba(255, 75, 75, 0.05) !important; }}</style>", unsafe_allow_html=True)
-                st.markdown("<br>", unsafe_allow_html=True)
+                # --- AQUÍ ESTÁ EL KITSCROLL (Contenedor con scroll) ---
+                st.markdown("""
+                    <style>
+                    .scroll-container {
+                        height: 500px; 
+                        overflow-y: auto; 
+                        padding: 10px;
+                        background: rgba(0,0,0,0.2);
+                        border-radius: 8px;
+                        border: 1px solid rgba(255,255,255,0.05);
+                    }
+                    .card-log { transition: all 0.2s ease; margin-bottom: 8px; }
+                    .card-log:hover { background: rgba(255, 75, 75, 0.1) !important; border-left: 4px solid #FF4B4B !important; }
+                    </style>
+                """, unsafe_allow_html=True)
+
+                st.markdown('<div class="scroll-container">', unsafe_allow_html=True)
                 
-                if not df_logs.empty:
-                    for index, row in df_logs.iloc[::-1].head(15).iterrows():
-                        usr = str(row.get('USUARIO', 'GUEST'))
-                        fch = str(row.get('FECHA_HORA', 'N/A'))
-                        mod = str(row.get('MODULO', 'GENERAL'))
-                        
-                        st.markdown(f"""
-                            <div class='card-log' style='background:rgba(30,39,46,0.5); border:1px solid rgba(255,255,255,0.05); border-left:4px solid #FF4B4B; border-radius:8px; padding:10px 20px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;'>
-                                <div style='flex:1;'>
-                                    <span style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>OPERADOR</span><br>
-                                    <b style='font-size:14px; color:white; letter-spacing:0.5px;'>{usr.upper()}</b>
-                                </div>
-                                <div style='flex:2; padding-left:20px; border-left:1px solid rgba(255,255,255,0.08);'>
-                                    <span style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>MÓDULO ACCEDIDO</span><br>
-                                    <b style='font-size:12px; color:#82D4E6;'>{mod.upper()}</b>
-                                </div>
-                                <div style='flex:2; padding-left:20px; border-left:1px solid rgba(255,255,255,0.08);'>
-                                    <span style='color:rgba(255,255,255,0.4); font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>FECHA Y HORA DE ACCESO</span><br>
-                                    <span style='font-size:12px; color:#FF4B4B; font-family:monospace; font-weight:700;'>{fch}</span>
-                                </div>
-                                <div style='flex:0.5; text-align:right;'>
-                                    <span style='background:rgba(0,255,170,0.1); color:#00FFAA; padding:3px 8px; border-radius:4px; font-size:8px; font-weight:800;'>ENTRY OK</span>
-                                </div>
-                            </div>
-                        """, unsafe_allow_html=True)
-                else:
-                    st.info("Esperando el primer registro de acceso para mostrar el historial...")
+                # Iteramos sobre TODO el DF sin .head(15)
+                for index, row in df_logs.iloc[::-1].iterrows():
+                    usr = str(row.get('USUARIO', 'GUEST'))
+                    fch = str(row.get('FECHA_HORA', 'N/A'))
+                    mod = str(row.get('MODULO', 'GENERAL'))
+                    
+                    st.markdown(f"""
+                        <div class='card-log' style='background:rgba(30,39,46,0.5); border:1px solid rgba(255,255,255,0.05); border-left:4px solid #444; border-radius:8px; padding:8px 15px; display:flex; align-items:center; justify-content:space-between;'>
+                            <div style='flex:1;'><span style='font-size:9px; color:#888;'>USR</span><br><b style='font-size:12px;'>{usr.upper()}</b></div>
+                            <div style='flex:2;'><span style='font-size:9px; color:#888;'>MÓDULO</span><br><b style='font-size:12px; color:#82D4E6;'>{mod.upper()}</b></div>
+                            <div style='flex:2;'><span style='font-size:9px; color:#888;'>TIMESTAMP</span><br><span style='font-size:11px; font-family:monospace;'>{fch}</span></div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown('</div>', unsafe_allow_html=True)
+                
             except Exception as e:
-                st.warning("No se pudo cargar el registro de auditoría en este momento.")
+                st.warning("No se pudo conectar con el log en GitHub. Revisa conexión.")
 
         st.markdown("<br>", unsafe_allow_html=True)
         col_b1, col_b2 = st.columns([1.5, 4])
