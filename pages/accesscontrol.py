@@ -340,22 +340,25 @@ def asegurar_y_actualizar_matriz_en_github():
 
 asegurar_y_actualizar_matriz_en_github()
 
-# Función de registro optimizada para no congelar la app (con control de tiempo)
 def registrar_acceso_github(usuario, modulo):
-    # Control para evitar registrar el mismo módulo repetidas veces en menos de 30 segundos
+    # Control de 30 segundos
     clave_sesion = f"ultimo_registro_{modulo}"
     ahora_timestamp = time.time()
     if st.session_state.get(clave_sesion, 0) + 30 > ahora_timestamp:
-        return # Si ya entró a este módulo hace unos segundos, omite la petición a GitHub para que vuele
+        return
 
     st.session_state[clave_sesion] = ahora_timestamp
+
+    # --- AQUÍ ESTÁ LA HORA EXACTA DE GUADALAJARA ---
+    zona_gdl = pytz.timezone('America/Mexico_City')
+    fecha_hora = datetime.now(zona_gdl).strftime("%Y-%m-%d %H:%M:%S")
+    # -----------------------------------------------
 
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/auditoria_accesos.csv"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     
     try:
         r = requests.get(url, headers=headers, timeout=3)
-        fecha_hora = (datetime.utcnow() - timedelta(hours=6)).strftime("%Y-%m-%d %H:%M:%S")
         
         if r.status_code == 200:
             file_data = r.json()
@@ -369,7 +372,6 @@ def registrar_acceso_github(usuario, modulo):
         nuevo_registro = pd.DataFrame([{"FECHA_HORA": fecha_hora, "USUARIO": usuario, "MODULO": modulo}])
         df_aud = pd.concat([df_aud, nuevo_registro], ignore_index=True)
         
-        # Mantener solo los últimos 200 registros para que el archivo CSV no pese y cargue ultra rápido
         if len(df_aud) > 200:
             df_aud = df_aud.tail(200)
 
@@ -383,7 +385,7 @@ def registrar_acceso_github(usuario, modulo):
             
         requests.put(url, json=payload, headers=headers, timeout=3)
     except Exception:
-        pass # Si falla el internet o GitHub se pone lento, la app jamás se traba
+        pass
 
 # Registrar la visita actual a Access Control
 usuario_actual = st.session_state.get("usuario_activo", "GUEST")
