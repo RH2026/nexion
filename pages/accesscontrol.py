@@ -61,6 +61,56 @@ st.markdown(
     animation: fadeInUp 0.6s ease-out;
 }}
 
+/* --- ESTILO DE TABS PERSONALIZADO NEXION --- */
+
+/* Contenedor principal de las pestañas */
+div[data-testid="stTabs"] [data-baseweb="tab-list"] {{
+    gap: 10px !important;
+    background-color: transparent !important;
+}}
+
+/* Botones de las pestañas (estado inactivo) */
+div[data-testid="stTabs"] button[role="tab"] {{
+    background-color: {vars_css['card']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    border-radius: 4px !important;
+    padding: 0px 15px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    transition: all 0.3s ease !important;
+}}
+
+/* Estado activo de la pestaña */
+div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
+    background-color: #00A3A3 !important;
+    color: #ffffff !important;
+    border-color: #00A3A3 !important;
+}}
+
+/* Eliminar efectos de enfoque por defecto de Streamlit */
+div[data-testid="stTabs"] button:focus,
+div[data-testid="stTabs"] button:active {{
+    outline: none !important;
+    box-shadow: none !important;
+}}
+
+/* Línea de selección (Highlighter) */
+div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
+    background-color: #00FFAA !important;
+    height: 2px !important;
+}}
+
+/* Contenedor del contenido de la tab */
+div[data-testid="stTabs"] [data-testid="stTabPanel"] {{
+    background-color: {vars_css['card']} !important;
+    padding: 20px !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 8px !important;
+    margin-top: 10px !important;
+}}
+
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
 header, footer, [data-testid="stHeader"] {{
