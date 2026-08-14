@@ -219,7 +219,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                         ACCESS RESTRICTED // MÓDULO NO AUTORIZADO
                     </span>
                 </div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
+                <div style="font-size: 11px; color: #FFFFFF; font-weight: 600; padding-left: 20px;">
                     No tienes permisos para acceder al módulo: <b style="color: white; text-transform: uppercase;">{modulo}</b>.
                 </div>
             </div>
@@ -255,7 +255,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                         ACCESS RESTRICTED // SECCIÓN BLOQUEADA
                     </span>
                 </div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
+                <div style="font-size: 11px; color: #FFFFFF; font-weight: 600; padding-left: 20px;">
                     No tienes permisos para acceder a la sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
                 </div>
             </div>
@@ -696,7 +696,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (DATA HUB PREMIUM)
+# 5. INTERFAZ PRINCIPAL (DATA HUB PREMIUM CON TEXTOS CLAROS)
 # ==========================================
 def main():    
     if "animacion_cargada" not in st.session_state:
@@ -714,7 +714,7 @@ def main():
                     <div style="background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(239,68,68,0.3);"><span style="font-size: 20px;">🛑</span></div>
                     <div style="display: flex; flex-direction: column;">
                         <span style="color: #EF4444; font-weight: 900; font-size: 13px; letter-spacing: 2px; text-transform: uppercase;">ACCESO RESTRINGIDO AL NODO</span>
-                        <span style="color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 4px;">El operador <strong style="color: white;">{current_user}</strong> no tiene clearance para el Hub de Datos.</span>
+                        <span style="color: #FFFFFF; font-size: 13px; margin-top: 4px;">El operador <strong style="color: #00D4FF;">{current_user}</strong> no tiene clearance para el Hub de Datos.</span>
                     </div>
                 </div>
                 <div style="border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 6px; padding: 6px 15px; color: #EF4444; font-family: monospace; font-size: 11px; font-weight: 800; background: rgba(239, 68, 68, 0.05); letter-spacing: 2px;">ID: {current_user}</div>
@@ -725,13 +725,11 @@ def main():
     import pytz
     tz_gdl = pytz.timezone('America/Mexico_City')
 
-    # ── ESTILO VISUAL PREMIUM (CSS) ──
+    # ── ESTILO VISUAL PREMIUM (TEXTOS CLAROS Y LEGIBLES) ──
     st.markdown("""
         <style>
-        /* Fondo profundo */
         .main { background-color: #0A0D12; }
         
-        /* Panel Principal (Header) con Glassmorphism */
         .hud-header {
             background: linear-gradient(135deg, rgba(0, 212, 255, 0.04) 0%, rgba(0, 0, 0, 0.3) 100%);
             border: 1px solid rgba(0, 212, 255, 0.12);
@@ -746,11 +744,11 @@ def main():
             gap: 20px;
         }
         
-        /* Tarjetas de Estatus (Nodos) */
+        /* Tarjetas de Estatus con texto secundario brillante (#94A3B8) */
         .node-card {
             background: linear-gradient(145deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 14px;
             padding: 20px 22px;
             text-align: left;
@@ -764,12 +762,11 @@ def main():
         }
         .node-card:hover {
             transform: translateY(-5px);
-            border-color: rgba(0, 212, 255, 0.3);
-            box-shadow: 0 15px 35px -5px rgba(0, 212, 255, 0.15);
+            border-color: rgba(0, 212, 255, 0.4);
+            box-shadow: 0 15px 35px -5px rgba(0, 212, 255, 0.2);
             background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
         }
         
-        /* Destello interno en las tarjetas */
         .node-card::before {
             content: '';
             position: absolute;
@@ -777,26 +774,26 @@ def main():
             right: -40px;
             width: 90px;
             height: 90px;
-            background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
             border-radius: 50%;
         }
 
         .node-icon {
             font-size: 22px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
             width: 46px;
             height: 46px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
 
         .node-label {
-            font-size: 9px;
-            color: #64748B;
+            font-size: 10px;
+            color: #CBD5E1; /* ¡Texto mucho más claro y visible! */
             letter-spacing: 2.5px;
             font-weight: 800;
             margin-bottom: 5px;
@@ -805,11 +802,11 @@ def main():
         .node-value {
             font-size: 16px;
             font-weight: 900;
-            color: #F8FAFC;
+            color: #FFFFFF;
             letter-spacing: 0.5px;
         }
 
-        /* Consola de Logs (Terminal Hacker) */
+        /* Consola de Logs con textos totalmente visibles */
         .terminal-log {
             background: #0D1117;
             border: 1px solid #1E293B;
@@ -839,7 +836,6 @@ def main():
     # ── HEADER VISUAL PREMIUM ──
     st.markdown('''
         <div class="hud-header">
-            <div style="font-size: 32px; filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));"></div>
             <div>
                 <h2 style="margin:0; color:#FFFFFF; font-size: 22px; font-weight: 900; letter-spacing: 1.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">CENTRAL DATA HUB</h2>
                 <p style="margin:2px 0 0 0; color:#00D4FF; font-size:10px; letter-spacing: 4px; font-weight: 700; opacity: 0.9;">NEXION LOGISTIC NODE // MULTIPLE UPLINK</p>
@@ -886,7 +882,7 @@ def main():
 
     # ── ÁREA DE CARGA MULTIPLE ──
     with st.container(border=True):
-        st.markdown("<h4 style='color: white; font-weight: 700; font-size: 16px; letter-spacing: 1px;'>🛡️SECURE MULTI-UPLINK</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: white; font-weight: 700; font-size: 16px; letter-spacing: 1px;'>SECURE MULTI-UPLINK</h4>", unsafe_allow_html=True)
         st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}`, `{PEDIDOS_FILE}` and `T1, T2, T3` (XLSX)")
 
         uploaded_files = st.file_uploader("", type=["csv", "xlsx"], accept_multiple_files=True, key="multi_uploader")
@@ -902,8 +898,8 @@ def main():
                             <div style="font-size: 24px;">⚠️</div>
                             <div>
                                 <strong style="color: #FF453A; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;">CRITICAL: PROTOCOL VIOLATION</strong><br>
-                                <span style="color: rgba(255,255,255,0.7); font-size: 13px;">Asset no autorizado: <span style="color: white; font-weight: 700;">{uploaded_file.name}</span></span><br>
-                                <small style="color: #FF453A; opacity: 0.8; font-weight: 600;">[ SYSTEM ACTION: UPLINK BLOCKED ]</small>
+                                <span style="color: #FFFFFF; font-size: 13px;">Asset no autorizado: <span style="color: white; font-weight: 700;">{uploaded_file.name}</span></span><br>
+                                <small style="color: #FF453A; opacity: 0.9; font-weight: 600;">[ SYSTEM ACTION: UPLINK BLOCKED ]</small>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
@@ -943,7 +939,7 @@ def main():
                         except Exception as e:
                             status.update(label=f"Fallo en Uplink: {str(e)}", state="error")
 
-    # ── LOGS DEL SISTEMA (ESTILO TERMINAL) ──
+    # ── LOGS DEL SISTEMA (ESTILO TERMINAL CON TEXTOS CLAROS) ──
     st.markdown("<br>", unsafe_allow_html=True)
     with st.expander("💻 SYSTEM AUDIT LOGS (GITHUB COMMITS)", expanded=False):
         if TOKEN:
@@ -952,37 +948,33 @@ def main():
                 g = Github(TOKEN)
                 repo = g.get_repo(REPO_NAME)
                 
-                # Traemos el historial global
                 commits = repo.get_commits()
                 commits_filtrados = []
                 
-                # FILTRO INTELIGENTE: Ignoramos los registros de acceso al menú
                 for c in commits:
                     if "Registro de acceso" not in c.commit.message:
                         commits_filtrados.append(c)
-                    # Nos detenemos en cuanto tengamos las últimas 5 cargas reales
                     if len(commits_filtrados) == 10:
                         break
                 
                 if not commits_filtrados:
-                    st.markdown("<div class='terminal-log' style='color:#64748B;'>No hay cargas de datos recientes.</div>", unsafe_allow_html=True)
+                    st.markdown("<div class='terminal-log' style='color:#CBD5E1;'>No hay cargas de datos recientes.</div>", unsafe_allow_html=True)
                 else:
                     for commit in commits_filtrados:
                         fecha_utc = commit.commit.author.date.replace(tzinfo=pytz.utc)
                         fecha_local = fecha_utc.astimezone(tz_gdl)
                         
-                        # Consola estilo Terminal
                         st.markdown(f"""
                             <div class="terminal-log">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                    <span style="color: #64748B; font-size: 11px; font-weight: 600;">[{fecha_local.strftime('%d/%m/%Y %H:%M:%S')}]</span>
-                                    <span style="color: #00D4FF; font-size: 11px; font-weight: 600;">SHA: {commit.sha[:8]}</span>
+                                    <span style="color: #94A3B8; font-size: 11px; font-weight: 700;">[{fecha_local.strftime('%d/%m/%Y %H:%M:%S')}]</span>
+                                    <span style="color: #38BDF8; font-size: 11px; font-weight: 700;">SHA: {commit.sha[:8]}</span>
                                 </div>
-                                <div style="color: #E2E8F0; font-size: 13px; font-weight: 600; margin-bottom: 6px; line-height: 1.4;">
+                                <div style="color: #F8FAFC; font-size: 13px; font-weight: 700; margin-bottom: 6px; line-height: 1.4;">
                                     <span style="color: #00FFAA;">></span> {commit.commit.message}
                                 </div>
-                                <div style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 700; letter-spacing: 1px;">
-                                    AUTHORIZED_AGENT: <span style="color: white;">{commit.commit.author.name}</span>
+                                <div style="color: #94A3B8; font-size: 10px; font-weight: 800; letter-spacing: 1px;">
+                                    AUTHORIZED_AGENT: <span style="color: #FFFFFF;">{commit.commit.author.name}</span>
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
@@ -997,8 +989,8 @@ st.markdown(
     f"""
     <div class="footer">
         NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
-        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
-        <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
+        <span style="opacity:0.7; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
+        <span style="color:{vars_css['text']}; font-weight:600; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
     </div>
 """,
     unsafe_allow_html=True,
