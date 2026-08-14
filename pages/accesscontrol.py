@@ -355,7 +355,7 @@ def registrar_acceso_github(usuario, modulo):
     
     try:
         r = requests.get(url, headers=headers, timeout=3)
-        fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        fecha_hora = (datetime.utcnow() - timedelta(hours=6)).strftime("%Y-%m-%d %H:%M:%S")
         
         if r.status_code == 200:
             file_data = r.json()
