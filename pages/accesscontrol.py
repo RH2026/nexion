@@ -61,142 +61,31 @@ st.markdown(
     animation: fadeInUp 0.6s ease-out;
 }}
 
-/* ============================================================
-   NEXION TABS
-   TEXTO Y LINEA TOTALMENTE INDEPENDIENTES
-   ============================================================ */
-
-/* CONTENEDOR GENERAL */
-div[data-testid="stTabs"] {{
-    width: 100% !important;
-}}
-
-/* LISTA DE TABS */
 div[data-testid="stTabs"] [data-baseweb="tab-list"] {{
     gap: 18px !important;
     border-bottom: 1px solid rgba(255,255,255,0.12) !important;
-    background: transparent !important;
 }}
 
-/* ============================================================
-   CADA TAB
-   ============================================================ */
-
-div[data-testid="stTabs"] button[data-baseweb="tab"] {{
-    position: relative !important;
-
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-
-    padding: 8px 4px 10px 4px !important;
-
-    font-family: 'Inter', sans-serif !important;
-
-    opacity: 1 !important;
-
-    color: #D7DEE3 !important;
-
-    outline: none !important;
-}}
-
-/* ============================================================
-   TEXTO DE LA TAB
-   ============================================================ */
-
+/* TEXTO INACTIVO */
 div[data-testid="stTabs"] button[data-baseweb="tab"] p {{
     color: #D7DEE3 !important;
     font-weight: 600 !important;
-    font-family: 'Inter', sans-serif !important;
-    margin: 0 !important;
-    transition: color 0.2s ease !important;
 }}
 
-/* ============================================================
-   TAB ACTIVA
-   ============================================================ */
-
+/* TEXTO ACTIVO */
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {{
     color: #00D4FF !important;
     font-weight: 700 !important;
 }}
 
-/* ============================================================
-   ELIMINAR INDICADOR NATIVO DE STREAMLIT
-   ============================================================ */
-
+/* OCULTAR LINEA NATIVA */
 div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {{
-    display: none !important;
-    background: transparent !important;
-    height: 0 !important;
-}}
-
-/* ============================================================
-   NUESTRA PROPIA LINEA ACTIVA
-   ============================================================ */
-
-div[data-testid="stTabs"] button[data-baseweb="tab"]::after {{
-    content: "" !important;
-
-    position: absolute !important;
-
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-
-    height: 2px !important;
-
-    background: transparent !important;
-
-    border-radius: 2px !important;
-
-    transition:
-        background-color 0.2s ease,
-        box-shadow 0.2s ease !important;
-}}
-
-/* ============================================================
-   LINEA DE LA TAB ACTIVA
-   ============================================================ */
-
-div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"]::after {{
-    background: #FFD700 !important;
-
-    box-shadow:
-        0 0 6px rgba(255,215,0,0.45) !important;
-}}
-
-/* ============================================================
-   HOVER
-   ============================================================ */
-
-div[data-testid="stTabs"] button[data-baseweb="tab"]:hover p {{
-    color: #FFFFFF !important;
-}}
-
-div[data-testid="stTabs"] button[data-baseweb="tab"]:hover::after {{
-    background: rgba(255,215,0,0.35) !important;
-}}
-
-/* ============================================================
-   QUITAR ESTILOS INTERNOS DE BASEWEB
-   ============================================================ */
-
-div[data-testid="stTabs"] button[data-baseweb="tab"] > div {{
     background: transparent !important;
 }}
 
-div[data-testid="stTabs"] button[data-baseweb="tab"] > div::after {{
-    background: transparent !important;
-    display: none !important;
-}}
-
-/* ============================================================
-   LINEA BASE DEL CONTENEDOR
-   ============================================================ */
-
-div[data-testid="stTabs"] [data-baseweb="tab-border"] {{
-    background-color: rgba(255,255,255,0.12) !important;
+/* LINEA ACTIVA NUESTRA */
+div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {{
+    border-bottom: 2px solid #FFD700 !important;
 }}
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
