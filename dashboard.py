@@ -16,7 +16,6 @@ import qrcode
 import streamlit.components.v1 as components
 import streamlit as st
 from auth import exigir_autenticacion
-import log
 
 # Exigimos autenticación (esto frena la carga si no hay sesión)
 exigir_autenticacion("dashboard")
