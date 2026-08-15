@@ -269,7 +269,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("pages/indicadores.py")
         st.stop()
 
-# Blindaje de Módulo CENTRO DE DATOS
+# Blindaje de Módulo CENTRO DE DATOS vía Access Control
 verificar_permiso_pagina("CENTRO DE DATOS", "CARGAR DATOS")
 
 
@@ -391,7 +391,6 @@ with header_zone:
             except Exception:
                 df_matriz_fresco = cargar_datos_dashboard()
 
-            # 1. Búsqueda en Matriz Principal (Global)
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
                 cols_op = [
@@ -408,7 +407,6 @@ with header_zone:
                     ).any(axis=1)
                     res_ops = df_matriz_fresco[mask_ops].copy()
 
-            # 2. Búsqueda en Archivo T1.xlsx
             res_t1 = pd.DataFrame()
             try:
                 df_t1_temp = pd.read_excel("T1.xlsx") 
@@ -436,23 +434,18 @@ with header_zone:
             except Exception:
                 pass
 
-            # 3. CRUCE DE INFORMACIÓN (Si está en Matriz Global pero le falta la guía, se la inyectamos desde T1)
             if not res_ops.empty and not res_t1.empty:
                 for idx, row in res_ops.iterrows():
                     guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
                     if guia_actual in ["", "nan", "0", "None"]:
                         pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        # Buscamos coincidencia en T1 por número de pedido/factura
                         match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
                         if not match_en_t1.empty:
-                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
                             res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
                             res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
                             if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
                                 res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
 
-            # 4. Búsqueda en Inventario (Por si acaso se busca un SKU/Código)
             res_inv = pd.DataFrame()
             if res_ops.empty and res_t1.empty:
                 try:
@@ -467,7 +460,6 @@ with header_zone:
                 except Exception:
                     pass
 
-            # Asignación final de resultados
             if not res_ops.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
@@ -702,25 +694,6 @@ def main():
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
-
-    # ── VALIDACIÓN DE ACCESO EXCLUSIVO ──
-    current_user = st.session_state.get("usuario_activo", "UNKNOWN")
-    AUTHORIZED_USERS = ["JMoreno", "Rigoberto"]
-
-    if current_user not in AUTHORIZED_USERS:
-        st.markdown(f'''
-            <div style="background: linear-gradient(135deg, #1A1515 0%, #110A0A 100%); border: 1px solid rgba(239, 68, 68, 0.2); border-left: 5px solid #EF4444; border-radius: 10px; padding: 20px 25px; display: flex; align-items: center; justify-content: space-between; margin-top: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-                <div style="display: flex; align-items: center; gap: 20px;">
-                    <div style="background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(239,68,68,0.3);"><span style="font-size: 20px;">🛑</span></div>
-                    <div style="display: flex; flex-direction: column;">
-                        <span style="color: #EF4444; font-weight: 900; font-size: 13px; letter-spacing: 2px; text-transform: uppercase;">ACCESO RESTRINGIDO AL NODO</span>
-                        <span style="color: #FFFFFF; font-size: 13px; margin-top: 4px;">El operador <strong style="color: #00D4FF;">{current_user}</strong> no tiene clearance para el Hub de Datos.</span>
-                    </div>
-                </div>
-                <div style="border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 6px; padding: 6px 15px; color: #EF4444; font-family: monospace; font-size: 11px; font-weight: 800; background: rgba(239, 68, 68, 0.05); letter-spacing: 2px;">ID: {current_user}</div>
-            </div>
-        ''', unsafe_allow_html=True)
-        st.stop()
 
     import pytz
     tz_gdl = pytz.timezone('America/Mexico_City')
