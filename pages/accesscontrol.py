@@ -260,7 +260,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "ALERTAS": True, "GANTT": False, "QUEJAS": True, "AGC": True, "AMAZON": True, "BARCELO": True, "NACIONAL": True,
             "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "ESCANEAR QR": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+            "FACTURACION": True, "CARGAR DATOS": True, "ETIQUETAS": True, "ESCANEAR QR": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
         {
             "USUARIO": "Brenda", 
@@ -348,7 +348,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True, "NACIONAL": True,
             "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "ESCANEAR QR": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+            "FACTURACION": True, "CARGAR DATOS": True, "ETIQUETAS": True, "ESCANEAR QR": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         }
     ])
 
@@ -971,7 +971,7 @@ def main():
         cols_ent = ["USUARIO", "NOMBRE REAL", "GENERO", "ENTREGAS", "AGC", "AMAZON", "BARCELO", "NACIONAL"]
         cols_rep = ["USUARIO", "NOMBRE REAL", "GENERO", "REPORTES", "COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS", "PANEL MUESTRAS"]
         cols_for = ["USUARIO", "NOMBRE REAL", "GENERO", "FORMATOS", "SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
-        cols_dat = ["USUARIO", "NOMBRE REAL", "GENERO", "CENTRO DE DATOS", "ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "ESCANEAR QR", "HERRAMIENTAS"]
+        cols_dat = ["USUARIO", "NOMBRE REAL", "GENERO", "CENTRO DE DATOS", "FACTURACION", "CARGAR DATOS", "ETIQUETAS", "ESCANEAR QR", "HERRAMIENTAS"]
         cols_fin = ["USUARIO", "NOMBRE REAL", "GENERO", "FINANZAS", "WALLET", "CAJA CHICA", "GASTOS"]
         cols_enf = ["USUARIO", "NOMBRE REAL", "GENERO", "ENFOQUE", "MORENO", "VAZQUEZ", "MIGUEL"]
         cols_acc = ["USUARIO", "NOMBRE REAL", "GENERO", "ACCESS CONTROL"]
