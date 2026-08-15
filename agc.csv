@@ -1,82 +1,84 @@
-PO Customer,OV Jypesa,Name,Item No.,Item/Service Description,PRODUCTO,FECHA HORACIO,Cajas a Entregar,Tarimas,Unidad,CITA,HORA,ESTATUS,Unnamed: 13,Unnamed: 14,Unnamed: 15,Unnamed: 16,Unnamed: 17,Unnamed: 18,Unnamed: 19,Unnamed: 20,Unnamed: 21,Unnamed: 22,Unnamed: 23,Unnamed: 24
-OC10663,185231,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,01/06/2026,1120,8.0,Camion,01/06/2026,08:00:00 a. m.,ENTREGADA,,,,,,,,,,,,
-OC12089,187890,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,05/06/2026,4200,30.0,Trailer,05/06/2026,12:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC10663,185231,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,12/06/2026,1120,8.0,Camion,12/06/2026,12:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC10663,185231,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,16/06/2026,1120,8.0,Camion,16/06/2026,08:00:00 a. m.,ENTREGADA,,,,,,,,,,,,
-OC10663,185231,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,16/06/2026,160,2.0,Camion,17/06/2026,08:00:00 a. m.,ENTREGADA,,,,,,,,,,,,
-OC12089,187890,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,19/06/2026,1120,8.0,Camion,19/06/2026,11:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC13268,189332,GRUPO AGC,C09421-L02,PT10219 Shampoo SEH Rizos de Impacto 1000 ml 6 pzs/caja [140 cpp],SHAMPOO RIZOS,19/06/2026,1120,8.0,Camion,22/06/2026,11:00:00 a. m,ENTREGADA,,,,,,,,,,,,
-OC13268,189332,GRUPO AGC,C09421-L02,PT10219 Shampoo SEH Rizos de Impacto 1000 ml 6 pzs/caja [140 cpp],SHAMPOO RIZOS,19/06/2026,560,4.0,Camion,22/06/2026,04:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC12089,187890,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,24/06/2026,4074,30.0,Trailer,24/06/2026,13:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC13419,189472,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,26/06/2026,1120,8.0,Camion,26/06/2026,10:00:00 a. m.,ENTREGADA,,,,,,,,,,,,
-OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,29/06/2026,4200,30.0,Trailer,29/06/2026,13:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,03/07/2026,4200,30.0,Trailer,03/07/2026,12:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC13419,189472,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,06/07/2026,1120,8.0,Camion,06/07/2026,12:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,08/07/2026,4200,30.0,Trailer,08/07/2026,13:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,13/07/2026,4200,30.0,Trailer,13/07/2026,13:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC13419,189472,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,14/07/2026,1120,8.0,Camion,14/07/2026,12:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,16/07/2026,4200,30.0,Trailer,16/07/2026,13:00:00 p. m.,ENTREGADA,,,,,,,,,,,,
-OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,21/07/2026,4200,30.0,Trailer,21/07/2026,12:00:00 p.m.,ENTREGADA,,,,,,,,,,,,
-OC13419,189472,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,22/07/2026,1120,8.0,Camion,22/07/2026,12:00:00 p.m.,ENTREGADA,,,,,,,,,,,,
-OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,24/07/2026,4200,30.0,Trailer,27/07/2026,12:00:00 p.m.,ENTREGADA,,,,,,,,,,,,
-OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,28/07/2026,3934,30.0,Trailer,28/07/2026,13:00:00 p.m.,ENTREGADA,,,,,,,,,,,,
-OC13419,189472,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,29/07/2026,520,3.0,Camion,29/07/2026,12:00:00 p.m.,ENTREGADA,,,,,,,,,,,,
-OC13577,189878,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,29/07/2026,600,5.0,Camion,29/07/2026,12:00:00 p.m.,ENTREGADA,,,,,,,,,,,,
-OC13577,189878,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,30/07/2026,1120,8.0,Camion,30/07/2026,12:00:00 p.m.,ENTREGADA,,,,,,,,,,,,
-OC13577,189878,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,31/07/2026,1120,8.0,Camion,31/07/2026,08:00:00 a. m.,ENTREGADA,,,,,,,,,,,,
-OC13577,189878,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,31/07/2026,494,4.0,Camion,03/08/2026,12:00:00 p.m.,ENTREGADA,,,,,,,,,,,,
-OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,03/08/2026,4200,30.0,Trailer,04/08/2026,10:00:00 a.m.,ENTREGADA,,,,,,,,,,,,
-OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,05/08/2026,4200,30.0,Trailer,05/08/2026,12:00:00 p.m.,ENTREGADA,,,,,,,,,,,,
-OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,11/08/2026,4200,30.0,Trailer,11/08/2026,11:00:00 a.m.,ENTREGADA,,,,,,,,,,,,
-OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,13/08/2026,1120,8.0,Camion,13/08/2026,11:00:00 a.m.,ENTREGADA,,,,,,,,,,,,
-OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,13/08/2026,4200,30.0,Trailer,13/08/2026,12:00:00 p.m.,ENTREGADA,,,,,,,,,,,,
-OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,14/08/2026,1120,8.0,Camion,14/08/2026,11:00:00 a.m.,ENTREGADA,,,,,,,,,,,,
-OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,17/08/2026,1120,8.0,Camion,17/08/2026,12:00:00 p.m.,En Tiempo,,,,,,,,,,,,
-OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,18/08/2026,4200,30.0,Trailer,18/08/2026,11:00:00 a.m.,En Tiempo,,,,,,,,,,,,
-OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,20/08/2026,1120,8.0,Camion,20/08/2026,11:00:00 a.m.,En Tiempo,,,,,,,,,,,,
-OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,20/08/2026,4200,30.0,Trailer,20/08/2026,13:00:00 p.m.,En Tiempo,,,,,,,,,,,,
-OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,21/08/2026,1120,8.0,Camion,21/08/2026,12:00:00 p.m.,En Tiempo,,,,,,,,,,,,
-OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,24/08/2026,1120,8.0,Camion,24/08/2026,12:00:00 p.m.,En Tiempo,,,,,,,,,,,,
-OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,24/08/2026,4200,30.0,Trailer,24/08/2026,11:00:00 a.m.,En Tiempo,,,,,,,,,,,,
-OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,25/08/2026,3934,30.0,Trailer,25/08/2026,13:00:00 p.m.,En Tiempo,,,,,,,,,,,,
-OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,27/08/2026,1120,8.0,Camion,27/08/2026,08:00:00 a.m.,En Tiempo,,,,,,,,,,,,
-OC14766,192183,GRUPO AGC,C09421-L02,PT10219 Shampoo SEH Rizos de Impacto 1000 ml 6 pzs/caja [140 cpp],SHAMPOO RIZOS,27/08/2026,1668,11.91428571,Camion,27/08/2026,11:00:00 a.m.,En Tiempo,,,,,,,,,,,,
-OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,27/08/2026,2532,18.08571429,Trailer,27/08/2026,15:00:00 p. m.,En Tiempo,,,,,,,,,,,,
-OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,28/08/2026,494,4.0,Camion,28/08/2026,12:00:00 p.m.,En Tiempo,,,,,,,,,,,,
-OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,31/08/2026,1120,8.0,Camion,31/08/2026,10:00:00 a.m.,En Tiempo,,,,,,,,,,,,
-OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,31/08/2026,4200,30.0,Trailer,31/08/2026,13:00:00 p. m.,En Tiempo,,,,,,,,,,,,
-OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,01/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,03/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,03/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,04/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,07/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,07/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,08/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,10/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,10/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,11/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,14/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,14/09/2026,3934,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,15/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,17/09/2026,494,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,17/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,18/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,21/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,21/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,22/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,24/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,24/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,25/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,28/09/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,28/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,29/09/2026,4200,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC13722,190058,GRUPO AGC,C09421-L03,PT10264 Crema corporal ARV UREA Almendra calendula 420 ml 12 pzs/caja [120 cpp],CREMA CORPORAL,30/09/2026,834,7.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,01/10/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,01/10/2026,3934,30.0,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,02/10/2026,1120,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],ACONDICIONADOR,05/10/2026,494,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC12088,188473,GRUPO AGC,C09421-L08,PT10184 Crema Estilizadora Carbon Activado Lobo Negro Depresible 150 ml C/12 pzs [224 CPP],CREMA ESTILIZADORA,15/10/2026,1667,8.0,Camion,,,En Tiempo,,,,,,,,,,,,
-OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],SAMPOO ANTICAIDA,16/10/2026,1668,11.91428571,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14976,192120,GRUPO AGC,C09421-L02,PT10219 Shampoo SEH Rizos de Impacto 1000 ml 6 pzs/caja [140 cpp],SHAMPOO RIZOS,16/10/2026,1668,11.91428571,Trailer,,,En Tiempo,,,,,,,,,,,,
-OC14734,191388,GRUPO AGC,C09421-L03,PT10264 Crema corporal ARV UREA Almendra calendula 420 ml 12 pzs/caja [120 cpp],CREMA CORPORAL,06/11/2026,833,6.941666667,Camión,,,En Tiempo,,,,,,,,,,,,
-OC14734,191388,GRUPO AGC,C09421-L04,"PT10271 Crema corporal ARV Concha Nacar, Manzanilla y Arroz 420 ml 12 pzs/caja [120 cpp]",CREMA COR CONCHA N,06/11/2026,833,6.941666667,Camión,,,En Tiempo,,,,,,,,,,,,
+﻿PO Customer,OV Jypesa,Name,Item No.,Item/Service Description,,FECHA HORACIO,Cajas a Entregar,Tarimas,Unidad,ESTATUS,CITA,HORA,,PRODUCTO
+OC10663,185231,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,01/06/2026,1120,8,Camion,ENTREGADA,01/06/2026,08:00:00 a. m.,,ACONDICIONADOR
+OC12089,187890,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,05/06/2026,4200,30,Trailer,ENTREGADA,05/06/2026,12:00:00 p. m.,,SAMPOO ANTICAIDA
+OC10663,185231,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,12/06/2026,1120,8,Camion,ENTREGADA,12/06/2026,12:00:00 p. m.,,ACONDICIONADOR
+OC10663,185231,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,16/06/2026,1120,8,Camion,ENTREGADA,16/06/2026,08:00:00 a. m.,,ACONDICIONADOR
+OC10663,185231,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,16/06/2026,160,2,Camion,ENTREGADA,17/06/2026,08:00:00 a. m.,,ACONDICIONADOR
+OC12089,187890,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,19/06/2026,1120,8,Camion,ENTREGADA,19/06/2026,11:00:00 p. m.,,SAMPOO ANTICAIDA
+OC13268,189332,GRUPO AGC,C09421-L02,PT10219 Shampoo SEH Rizos de Impacto 1000 ml 6 pzs/caja [140 cpp],,19/06/2026,1120,8,Camion,ENTREGADA,22/06/2026,11:00:00 a. m,,SHAMPOO RIZOS
+OC13268,189332,GRUPO AGC,C09421-L02,PT10219 Shampoo SEH Rizos de Impacto 1000 ml 6 pzs/caja [140 cpp],,19/06/2026,560,4,Camion,ENTREGADA,22/06/2026,04:00:00 p. m.,,SHAMPOO RIZOS
+OC12089,187890,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,24/06/2026,4074,30,Trailer,ENTREGADA,24/06/2026,13:00:00 p. m.,,SAMPOO ANTICAIDA
+OC13419,189472,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,26/06/2026,1120,8,Camion,ENTREGADA,26/06/2026,10:00:00 a. m.,,ACONDICIONADOR
+OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,29/06/2026,4200,30,Trailer,ENTREGADA,29/06/2026,13:00:00 p. m.,,SAMPOO ANTICAIDA
+OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,03/07/2026,4200,30,Trailer,ENTREGADA,03/07/2026,12:00:00 p. m.,,SAMPOO ANTICAIDA
+OC13419,189472,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,06/07/2026,1120,8,Camion,ENTREGADA,06/07/2026,12:00:00 p. m.,,ACONDICIONADOR
+OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,08/07/2026,4200,30,Trailer,ENTREGADA,08/07/2026,13:00:00 p. m.,,SAMPOO ANTICAIDA
+OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,13/07/2026,4200,30,Trailer,ENTREGADA,13/07/2026,13:00:00 p. m.,,SAMPOO ANTICAIDA
+OC13419,189472,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,14/07/2026,1120,8,Camion,ENTREGADA,14/07/2026,12:00:00 p. m.,,ACONDICIONADOR
+OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,16/07/2026,4200,30,Trailer,ENTREGADA,16/07/2026,13:00:00 p. m.,,SAMPOO ANTICAIDA
+OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,21/07/2026,4200,30,Trailer,ENTREGADA,21/07/2026,12:00:00 p.m.,,SAMPOO ANTICAIDA
+OC13419,189472,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,22/07/2026,1120,8,Camion,ENTREGADA,22/07/2026,12:00:00 p.m.,,ACONDICIONADOR
+OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,24/07/2026,4200,30,Trailer,ENTREGADA,27/07/2026,12:00:00 p.m.,,SAMPOO ANTICAIDA
+OC13682,189880,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,28/07/2026,3934,30,Trailer,ENTREGADA,28/07/2026,13:00:00 p.m.,,SAMPOO ANTICAIDA
+OC13419,189472,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,29/07/2026,520,3,Camion,ENTREGADA,29/07/2026,12:00:00 p.m.,,ACONDICIONADOR
+OC13577,189878,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,29/07/2026,600,5,Camion,ENTREGADA,29/07/2026,12:00:00 p.m.,,ACONDICIONADOR
+OC13577,189878,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,30/07/2026,1120,8,Camion,ENTREGADA,30/07/2026,12:00:00 p.m.,,ACONDICIONADOR
+OC13577,189878,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,31/07/2026,1120,8,Camion,ENTREGADA,31/07/2026,08:00:00 a. m.,,ACONDICIONADOR
+OC13577,189878,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,31/07/2026,494,4,Camion,ENTREGADA,03/08/2026,12:00:00 p.m.,,ACONDICIONADOR
+OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,03/08/2026,4200,30,Trailer,ENTREGADA,04/08/2026,10:00:00 a.m.,,SAMPOO ANTICAIDA
+OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,05/08/2026,4200,30,Trailer,ENTREGADA,05/08/2026,12:00:00 p.m.,,SAMPOO ANTICAIDA
+OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,11/08/2026,4200,30,Trailer,ENTREGADA,11/08/2026,11:00:00 a.m.,,SAMPOO ANTICAIDA
+OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,13/08/2026,1120,8,Camion,ENTREGADA,13/08/2026,11:00:00 a.m.,,ACONDICIONADOR
+OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,13/08/2026,4200,30,Trailer,ENTREGADA,13/08/2026,12:00:00 p.m.,,SAMPOO ANTICAIDA
+OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,14/08/2026,1120,8,Camion,ENTREGADA,14/08/2026,11:00:00 a.m.,,ACONDICIONADOR
+OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,17/08/2026,1120,8,Camion,En Tiempo,17/08/2026,12:00:00 p.m.,,ACONDICIONADOR
+OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,20/08/2026,1120,8,Camion,En Tiempo,20/08/2026,11:00:00 a.m.,,SAMPOO ANTICAIDA
+OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,20/08/2026,4200,30,Trailer,En Tiempo,20/08/2026,13:00:00 p.m.,,ACONDICIONADOR
+OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,21/08/2026,1120,8,Camion,En Tiempo,21/08/2026,12:00:00 p.m.,,SAMPOO ANTICAIDA
+OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,24/08/2026,1120,8,Camion,En Tiempo,24/08/2026,12:00:00 p.m.,,ACONDICIONADOR
+OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,24/08/2026,4200,30,Trailer,En Tiempo,24/08/2026,11:00:00 a.m.,,ACONDICIONADOR
+OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,25/08/2026,3934,30,Trailer,En Tiempo,25/08/2026,13:00:00 p.m.,,SAMPOO ANTICAIDA
+OC14091,191063,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,26/08/2026,4200,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,27/08/2026,1120,8,Camion,En Tiempo,27/08/2026,08:00:00 a.m.,,ACONDICIONADOR
+OC14766,192183,GRUPO AGC,C09421-L02,PT10219 Shampoo SEH Rizos de Impacto 1000 ml 6 pzs/caja [140 cpp],,27/08/2026,1668,11.91428571,Camion,En Tiempo,27/08/2026,11:00:00 a.m.,,SHAMPOO RIZOS
+OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,27/08/2026,2532,18.08571429,Trailer,En Tiempo,27/08/2026,15:00:00 p. m.,,SAMPOO ANTICAIDA
+OC14188,190963,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,28/08/2026,494,4,Camion,En Tiempo,28/08/2026,12:00:00 p.m.,,ACONDICIONADOR
+OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,31/08/2026,1120,8,Camion,En Tiempo,31/08/2026,10:00:00 a.m.,,ACONDICIONADOR
+OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,31/08/2026,4200,30,Trailer,En Tiempo,31/08/2026,13:00:00 p. m.,,SAMPOO ANTICAIDA
+OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,01/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,03/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,03/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,04/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,07/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,07/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,08/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,10/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,10/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,11/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,14/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,14/09/2026,08/10/1910,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,15/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14492/1,191067,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,17/09/2026,08/05/1901,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,17/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,18/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,21/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,21/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,22/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,24/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,24/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,25/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,28/09/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,28/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,29/09/2026,01/07/1911,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC13722,190058,GRUPO AGC,C09421-L03,PT10264 Crema corporal ARV UREA Almendra calendula 420 ml 12 pzs/caja [120 cpp],,30/09/2026,20/02/1901,3,Camion,En Tiempo,,,,CREMA ALMENDRA
+OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,01/10/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14490/2,191064,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,01/10/2026,08/10/1910,30,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,02/10/2026,24/01/1903,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC14492/2,191068,GRUPO AGC,C09421-L01,712117 Acondicionador SEH Cola de Caballo Jalea Real 1000 ml 6 pzs/caja [140 cpp],,05/10/2026,08/05/1901,8,Camion,En Tiempo,,,,ACONDICIONADOR
+OC12088,188473,GRUPO AGC,C09421-L08,PT10184 Crema Estilizadora Carbon Activado Lobo Negro Depresible 150 ml C/12 pzs [224 CPP],,15/10/2026,24/07/1904,8,Camion,En Tiempo,,,,CREMA ESTILIZADORA
+OC14490/1,191062,GRUPO AGC,C09421-L07,PT10065 Shampoo Anticaida Cola de Caballo y Romero 1000 ml 6 pzs/caja [140 cpp],,16/10/2026,25/07/1904,11.91428571,Trailer,En Tiempo,,,,SAMPOO ANTICAIDA
+OC14976,192120,GRUPO AGC,C09421-L02,PT10219 Shampoo SEH Rizos de Impacto 1000 ml 6 pzs/caja [140 cpp],,16/10/2026,25/07/1904,11.91428571,Trailer,En Tiempo,,,,SHAMPOO RIZOS
+OC14734,191388,GRUPO AGC,C09421-L04,"PT10271 Crema corporal ARV Concha Nacar, Manzanilla y Arroz 420 ml 12 pzs/caja [120 cpp]",,20/10/2026,20/02/1901,3.475,Camión,En Tiempo,,,,CREMA CONCHA NACAR
+OC13722,193251,GRUPO AGC,C09421-L06,"PT20066 Intensive Hydration Lotion ARV (STP) 14,2 oz/420 ml 12 pzs/caja [120 cpp]",,06/11/2026,12/04/1902,6.941666667,Camión,En Tiempo,,,,CREMA Intensive
+OC14734,191388,GRUPO AGC,C09421-L04,"PT10271 Crema corporal ARV Concha Nacar, Manzanilla y Arroz 420 ml 12 pzs/caja [120 cpp]",,06/11/2026,417,3.475,Camión,En Tiempo,,,,CREMA CONCHA NACAR
+OC13722,190058,GRUPO AGC,C09421-L03,PT10264 Crema corporal ARV UREA Almendra calendula 420 ml 12 pzs/caja [120 cpp],,06/11/2026,417,3,Camion,En Tiempo,,,,CREMA ALMENDRA
