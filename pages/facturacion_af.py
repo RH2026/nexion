@@ -259,7 +259,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("pages/indicadores.py")
         st.stop()
 
-verificar_permiso_pagina("CENTRO DE DATOS", "FACTURACIÓN")
+verificar_permiso_pagina("CENTRO DE DATOS", "ASIGNAR FLETERA")
 
 
 # ==========================================
