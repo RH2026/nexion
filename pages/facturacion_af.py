@@ -701,13 +701,10 @@ with header_zone:
             if not res_ops.empty and not res_t1.empty:
                 for idx, row in res_ops.iterrows():
                     guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
                     if guia_actual in ["", "nan", "0", "None"]:
                         pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        # Buscamos coincidencia en T1 por número de pedido/factura
                         match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
                         if not match_en_t1.empty:
-                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
                             res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
                             res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
                             if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
@@ -1117,7 +1114,8 @@ def main():
                     df_trabajo["COSTO"] = [r[1] for r in res]
                     df_trabajo["FECHA DE PROGRAMACION"] = calcular_fecha_programacion()
 
-                    cols_deseadas = ["Factura", "FECHA DE PROGRAMACION", "RECOMENDACION", "Transporte", "DIRECCION", "COSTO", "Nombre_Cliente", "DESTINO"]
+                    # 🔹 AQUÍ SE APLICÓ EL CAMBIO: Se agregó "Quantity" y se cambió "Nombre_Cliente" por "Nombre_Extran"
+                    cols_deseadas = ["Factura", "FECHA DE PROGRAMACION", "RECOMENDACION", "Transporte", "DIRECCION", "COSTO", "Nombre_Extran", "Quantity", "DESTINO"]
                     cols_finales = [c for c in cols_deseadas if c in df_trabajo.columns]
 
                     st.session_state.df_analisis = df_trabajo[cols_finales]
