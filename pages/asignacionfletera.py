@@ -114,19 +114,19 @@ html, body, .stApp {{
     margin-bottom: 20px;
 }}
 
-/* ELIMINAR ESPACIOS EXCESIVOS ENTRE ELEMENTOS DE STREAMLIT */
+/* ELIMINAR ESPACIOS EXCESIVOS ENTRE ELEMENTOS */
 div[data-testid="stVerticalBlock"] {{
-    gap: 0.15rem !important;
+    gap: 0.1rem !important;
 }}
 
-/* AJUSTE FINO DE COLUMNAS PARA ALINEACIÓN HOMBRO CON HOMBRO */
+/* FORZAR ALINEACIÓN VERTICAL ESTRICTA EN COLUMNAS */
 [data-testid="column"] {{
     padding: 0px !important;
     display: flex !important;
     align-items: center !important;
 }}
 
-/* FORZAR ALTURA Y CENTRADO PERFECTO DEL SELECTBOX */
+/* FORZAR ALTURA Y CENTRADO EXACTO DEL SELECTBOX (COMO TU EJEMPLO "SI") */
 div[data-baseweb="select"] > div {{
     min-height: 42px !important;
     height: 42px !important;
@@ -145,10 +145,11 @@ div[data-baseweb="select"] span {{
     font-weight: 700 !important;
 }}
 
-/* COMPENSAR EL CONTENEDOR DEL SELECTBOX PARA QUE NO QUEDE DESFASADO */
+/* ELIMINAR EL MARGEN SUPERIOR QUE DESFAVORIZA EL CENTRADO DE STREAMLIT */
 .stSelectbox {{
     width: 100% !important;
-    margin-top: -18px !important;
+    margin-top: -22px !important;
+    margin-bottom: 0px !important;
 }}
 
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
@@ -679,7 +680,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON ALTURA 42PX EXACTA Y ALINEACIÓN VERTICAL
+# 5. RENDER DE HISTORIAL CON CENTRADO SIMÉTRICO PERFECTO
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -742,7 +743,7 @@ def render_historial_almacen(data):
                 fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
-                # Altura exacta a 42px para empatar hombro con hombro con el selectbox
+                # Tarjeta de 42px con flexbox centrado verticalmente
                 st.markdown(f"""
                 <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 42px;">
                     <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
@@ -768,7 +769,7 @@ def render_historial_almacen(data):
                     st.session_state[key_estatus] = nuevo_estatus
                     st.rerun()
 
-            # Separación vertical milimétrica entre renglones
+            # Separación vertical milimétrica entre filas
             st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
