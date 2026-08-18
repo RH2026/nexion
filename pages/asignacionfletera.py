@@ -692,7 +692,7 @@ def render_historial_almacen(data):
     data_invertida = list(reversed(data))
     
     # Configuración de Paginación de 30 en 30
-    tamanio_pagina = 20
+    tamanio_pagina = 15
     total_registros = len(data_invertida)
     total_paginas = max(1, (total_registros + tamanio_pagina - 1) // tamanio_pagina)
 
