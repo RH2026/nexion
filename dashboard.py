@@ -178,7 +178,7 @@ div[data-testid="stTabs"] [role="tab"] span {{
 /* HOVER EN PESTAÑAS */
 div[data-testid="stTabs"] [role="tab"]:hover p,
 div[data-testid="stTabs"] [role="tab"]:hover span {{
-    color: #ffffff !important;
+    color: #38bdf8 !important;
 }}
 
 /* TAB ACTIVA (TEXTO BLANCO PURO) */
