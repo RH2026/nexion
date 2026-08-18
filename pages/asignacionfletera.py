@@ -734,7 +734,7 @@ def render_historial_almacen(data):
                     color_fecha = "#f59e0b"  # Naranja de alerta si no tiene fecha
                 
                 st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 2px 16px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 80px 1fr 220px 160px; align-items: center; gap: 15px; height: 50px;">
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 2px 16px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 80px 1fr 220px 160px; align-items: center; gap: 15px; height: 51px;">
                     <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
                     <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
                     <span style="color: #fde047; font-weight: bold; white-space: nowrap; font-size: 11px; overflow: hidden; text-overflow: ellipsis;">{transporte_display}</span>
