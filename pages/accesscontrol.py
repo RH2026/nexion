@@ -240,52 +240,90 @@ div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
 
 
 # ==========================================
-# 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN)
+# 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
     st.session_state.pagina_destino = "pages/accesscontrol.py"
     st.switch_page("pages/log.py")
 
-# Validación exclusiva para Rigoberto (Admin supremo)
-usuario_actual_val = st.session_state.get("usuario_activo", "").upper()
-if usuario_actual_val != "RIGOBERTO":
-    st.markdown(
-        f"""
-        <div style="
-            background: {vars_css['card']}; 
-            border: 1px solid {vars_css['border']}; 
-            border-left: 5px solid #FFD700; 
-            padding: 20px 25px; 
-            border-radius: 8px; 
-            width: 100%; 
-            font-family: 'Inter', sans-serif; 
-            color: white; 
-            box-sizing: border-box; 
-            margin-bottom: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        ">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
-                <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
-                    ACCESS RESTRICTED // NIVEL INSUFICIENTE
-                </span>
+def verificar_permiso_pagina(modulo, submodulo=None):
+    permisos = st.session_state.get("permisos", {})
+    if st.session_state.get("usuario_activo", "").upper() == "RIGOBERTO":
+        return True
+        
+    if not permisos.get(modulo.upper(), False):
+        st.markdown(
+            f"""
+            <div style="
+                background: {vars_css['card']}; 
+                border: 1px solid {vars_css['border']}; 
+                border-left: 5px solid #FFD700; 
+                padding: 20px 25px; 
+                border-radius: 8px; 
+                width: 100%; 
+                font-family: 'Inter', sans-serif; 
+                color: white; 
+                box-sizing: border-box; 
+                margin-bottom: 25px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            ">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
+                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
+                        ACCESS RESTRICTED // MÓDULO NO AUTORIZADO
+                    </span>
+                </div>
+                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
+                    No cuentas con los permisos activos en la matriz para acceder al módulo: <b style="color: white; text-transform: uppercase;">{modulo}</b>.
+                </div>
             </div>
-            <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
-                Módulo exclusivo para administración central. Credenciales de operador estándar detectadas.
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        col_regresar_m, col_vacia_m = st.columns([1.5, 4])
+        with col_regresar_m:
+            if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
+                st.switch_page("dashboard.py")
+        st.stop()
+        
+    if submodulo and not permisos.get(submodulo.upper(), False):
+        st.markdown(
+            f"""
+            <div style="
+                background: {vars_css['card']}; 
+                border: 1px solid {vars_css['border']}; 
+                border-left: 5px solid #FFD700; 
+                padding: 20px 25px; 
+                border-radius: 8px; 
+                width: 100%; 
+                font-family: 'Inter', sans-serif; 
+                color: white; 
+                box-sizing: border-box; 
+                margin-bottom: 25px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            ">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
+                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
+                        ACCESS RESTRICTED // SECCIÓN BLOQUEADA
+                    </span>
+                </div>
+                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
+                    No cuentas con los privilegios necesarios para visualizar la sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
+                </div>
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    
-    col_regresar, col_vacia = st.columns([1.5, 4])
-    with col_regresar:
-        if st.button("REGRESAR AL PANEL PRINCIPAL", use_container_width=True):
-            st.session_state.autenticado = False
-            st.session_state.login_exitoso = False
-            st.switch_page("pages/log.py")
-            
-    st.stop()
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        col_regresar_s, col_vacia_s = st.columns([1.5, 4])
+        with col_regresar_s:
+            if st.button("REGRESAR AL INICIO", key="btn_regresar_submodulo", use_container_width=True):
+                st.switch_page("dashboard.py")
+        st.stop()
+
+verificar_permiso_pagina("ACCESS CONTROL")
 
 
 # ==========================================
