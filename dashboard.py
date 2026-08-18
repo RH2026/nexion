@@ -1160,12 +1160,10 @@ def main():
                 components.html(html_historial, height=450, scrolling=True)
             else:
                 st.markdown(f"""
-                <div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #FF5252; border-radius: 12px; padding: 20px 25px; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; width: 100%;">
-                    <div>
-                        <div style="font-size: 10px; color: #FF5252; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">AVISO DE SISTEMA</div>
-                        <div style="font-size: 14px; color: #ffffff; font-weight: 600;">Lo siento <b style="color: #00FFAA;">Rigoberto Del Real Hernandez</b>, no se encontró historial de envíos para: <b style="color: #38bdf8;">{busqueda_manual}</b></div>
-                    </div>
-                    <div style="font-size: 22px; color: #FF5252; font-weight: 900; background: rgba(255, 82, 82, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255, 82, 82, 0.3);">⚠️</div>
+                <div style="background-color: #212529; border: 1px solid #ff4d4d; border-radius: 6px; padding: 14px 18px; font-family: 'Inter', sans-serif; box-sizing: border-box; width: 100%;">
+                    <div style="font-size: 10px; color: #ff4d4d; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">AVISO DEL SISTEMA: SIN COINCIDENCIAS</div>
+                    <div style="font-size: 13px; color: #d1d5db; font-weight: 500; margin-bottom: 6px;">Lo siento <b style="color: #ffffff;">Rigoberto Del Real Hernandez</b>, no se encontró historial de envíos para: <b style="color: #ff4d4d;">{busqueda_manual}</b></div>
+                    <div style="font-size: 9px; color: #ff4d4d; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">[ ACCIÓN: VERIFIQUE LOS DATOS DE BÚSQUEDA ]</div>
                 </div>
                 """, unsafe_allow_html=True)
 
