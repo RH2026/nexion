@@ -666,7 +666,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON ALTURA AJUSTADA Y ALINEACIÓN VERTICAL
+# 5. RENDER DE HISTORIAL CON MÁS AIRE Y ESPACIADO VERTICAL
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -724,7 +724,7 @@ def render_historial_almacen(data):
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
                 st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 2px 14px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 44px;">
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 2px 16px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 50px;">
                     <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
                         <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap; min-width: 60px;">#{item['factura']}</b>
                         <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
@@ -748,7 +748,8 @@ def render_historial_almacen(data):
                     st.session_state[key_estatus] = nuevo_estatus
                     st.rerun()
 
-            st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
+            # Espacio vertical holgado entre cada tarjeta
+            st.markdown("<div style='margin-bottom: 6px;'></div>", unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
