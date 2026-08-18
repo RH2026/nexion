@@ -187,18 +187,20 @@ def registrar_acceso_github(usuario, modulo):
 
 def verificar_permiso_pagina(modulo, submodulo=None):
     permisos = st.session_state.get("permisos", {})
-    if st.session_state.get("usuario_activo", "").upper() == "RIGOBERTO":
+    usuario_actual = st.session_state.get("usuario_activo", "").upper()
+    
+    # Rigoberto pasa siempre
+    if usuario_actual == "RIGOBERTO":
         return True
         
-    # Validar permiso del módulo principal
-    tiene_permiso_modulo = permisos.get(modulo.upper(), False)
-    # Validar permiso del submódulo (si se especifica)
-    tiene_permiso_sub = permisos.get(submodulo.upper(), False) if submodulo else True
+    # Extracción estricta de permisos (forzando booleano real)
+    permiso_modulo = bool(permisos.get(modulo.upper(), False))
+    permiso_sub = bool(permisos.get(submodulo.upper(), False)) if submodulo else True
 
-    if not tiene_permiso_modulo or not tiene_permiso_sub:
-        # Definimos el texto dependiendo de qué fue lo que falló
-        item_fallido = submodulo if (submodulo and not tiene_permiso_sub) else modulo
-        tipo_bloqueo = "SECCIÓN BLOQUEADA" if (submodulo and not tiene_permiso_sub) else "MÓDULO NO AUTORIZADO"
+    # Si falta cualquiera de los dos permisos, bloqueamos de inmediato
+    if not permiso_modulo or not permiso_sub:
+        item_fallido = submodulo if (submodulo and not permiso_sub) else modulo
+        tipo_bloqueo = "SECCIÓN BLOQUEADA" if (submodulo and not permiso_sub) else "MÓDULO NO AUTORIZADO"
         
         st.markdown(
             f"""
@@ -231,9 +233,13 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         
         col_regresar, col_vacia = st.columns([1.5, 4])
         with col_regresar:
-            if st.button("REGRESAR AL INICIO", key=f"btn_regresar_{modulo}", use_container_width=True):
+            if st.button("REGRESAR AL INICIO", key=f"btn_bloqueo_{modulo}_{submodulo or 'mod'}", use_container_width=True):
                 st.switch_page("dashboard.py")
+        
+        # ¡ESTE STOP ES CLAVE! Obliga a detener la ejecución por completo aquí mismo
         st.stop()
+
+    return True
 
 
 # ==========================================
