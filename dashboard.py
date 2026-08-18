@@ -1164,7 +1164,7 @@ def main():
                     <div style="background-color: #212529; border: 1px solid #ff4d4d; border-radius: 6px; padding: 14px 18px; font-family: 'Inter', sans-serif; box-sizing: border-box; width: 100%;">
                         <div style="font-size: 10px; color: #ff4d4d; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">AVISO DEL SISTEMA: SIN COINCIDENCIAS</div>
                         <div style="font-size: 13px; color: #d1d5db; font-weight: 500; margin-bottom: 6px;">Lo siento <b style="color: #ffffff;">{st.session_state.get("nombre_completo", usuario_actual)}</b>, no se encontró historial de envíos para: <b style="color: #ff4d4d;">{busqueda_manual}</b></div>
-                        <div style="font-size: 9px; color: #ffffff; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 6px;">[ ACCIÓN: VERIFIQUE LOS DATOS O VALIDE COBERTURA DIRECTA EN LOGÍSTICA // 33 19 75 31 22 ]</div>
+                        <div style="font-size: 9px; color: #ffffff; font-weight: 300; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 6px;">[ ACCIÓN: VERIFICA LOS DATOS O VALIDA COBERTURA DIRECTA EN LOGÍSTICA // 33 19 75 31 22 ]</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
