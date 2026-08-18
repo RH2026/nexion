@@ -119,25 +119,6 @@ div[data-testid="stVerticalBlock"] {{
     gap: 0.15rem !important;
 }}
 
-/* FORZAR ALTURA Y CENTRADO PERFECTO DEL SELECTBOX */
-div[data-baseweb="select"] > div {{
-    min-height: 42px !important;
-    height: 42px !important;
-    font-size: 10px !important;
-    padding: 0px 8px !important;
-    background-color: #2B343B !important;
-    color: #ffffff !important;
-    border: 1px solid #4B5D67 !important;
-    border-radius: 6px !important;
-    display: flex !important;
-    align-items: center !important;
-}}
-div[data-baseweb="select"] span {{
-    line-height: normal !important;
-    font-size: 10px !important;
-    font-weight: 700 !important;
-}}
-
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
 div.stButton > button, div.stDownloadButton > button {{
     background-color: {vars_css['card']} !important;
@@ -193,7 +174,7 @@ div[data-baseweb="select"] > div:first-child {{
 }}
 
 div[data-baseweb="select"] span {{
-    font-size: 50px !important;
+    font-size: 14px !important;
     font-weight: 700 !important;
 }}
 </style>
@@ -335,6 +316,10 @@ if "search_key_version" not in st.session_state:
     st.session_state.search_key_version = 1
 if "tipo_resultado" not in st.session_state:
     st.session_state.tipo_resultado = "OPERACION"
+
+# Estado para la paginación de almacén
+if "pagina_almacen" not in st.session_state:
+    st.session_state.pagina_almacen = 0
 
 # ==========================================
 # 4. HEADER CON 4 COLUMNAS Y MENÚ BLINDADO
@@ -689,7 +674,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON COLUMNAS FIJAS Y ESTADOS DINÁMICOS DE ENVÍO
+# 5. RENDER DE HISTORIAL CON PAGINACIÓN (20 EN 20, MÁS NUEVOS PRIMERO)
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -702,6 +687,24 @@ def render_historial_almacen(data):
         return
 
     st.markdown('<p style="color:#FFFFFF; font-weight:800; letter-spacing:2px; font-size:12px; margin-bottom:12px;">HISTORIAL DE ALMACÉN // CONTROL DE FACTURAS</p>', unsafe_allow_html=True)
+
+    # Invertir la lista para mostrar lo más nuevo al principio
+    data_invertida = list(reversed(data))
+    
+    # Configuración de Paginación de 20 en 20
+    tamanio_pagina = 20
+    total_registros = len(data_invertida)
+    total_paginas = max(1, (total_registros + tamanio_pagina - 1) // tamanio_pagina)
+
+    # Asegurar que la página actual esté dentro de los límites válidos
+    if st.session_state.pagina_almacen >= total_paginas:
+        st.session_state.pagina_almacen = total_paginas - 1
+    if st.session_state.pagina_almacen < 0:
+        st.session_state.pagina_almacen = 0
+
+    inicio = st.session_state.pagina_almacen * tamanio_pagina
+    fin = min(inicio + tamanio_pagina, total_registros)
+    datos_pagina = data_invertida[inicio:fin]
 
     opciones_estatus_posibles = [
         "ENVIADA", 
@@ -717,10 +720,10 @@ def render_historial_almacen(data):
 
     st.markdown('<div class="scroll-container-almacen">', unsafe_allow_html=True)
 
-    for idx, item in enumerate(data):
-        key_estatus = f"estatus_sel_{idx}_{item['factura']}"
+    for idx_relativo, item in enumerate(datos_pagina):
+        idx_absoluto = inicio + idx_relativo
+        key_estatus = f"estatus_sel_{idx_absoluto}_{item['factura']}"
         
-        # Validación automática del estado base según si tiene o no fecha de envío
         tiene_fecha = bool(item.get('fecha_envio')) and str(item.get('fecha_envio')).strip().lower() not in ['', 'nan', '0', 'nat', 'none']
         
         if key_estatus not in st.session_state:
@@ -743,7 +746,7 @@ def render_historial_almacen(data):
             color_borde = "#64748b"
 
         with st.container():
-            st.markdown('<div style="margin-bottom: 24px;">', unsafe_allow_html=True)
+            st.markdown('<div style="margin-bottom: 20px;">', unsafe_allow_html=True)
             col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
@@ -751,16 +754,16 @@ def render_historial_almacen(data):
                 
                 if tiene_fecha:
                     fecha_envio_display = str(item['fecha_envio'])
-                    color_fecha = "#10b981"  # Verde si tiene fecha
+                    color_fecha = "#10b981"
                 else:
                     fecha_envio_display = "SIN ENVIAR"
-                    color_fecha = "#f59e0b"  # Naranja de alerta si no tiene fecha
+                    color_fecha = "#f59e0b"
                 
                 st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 2px 16px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 80px 1fr 220px 160px; align-items: center; gap: 15px; height: 53px;">
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 2px 16px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 80px 1fr 220px 160px; align-items: center; gap: 15px; height: 48px;">
                     <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
                     <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
-                    <span style="color: #ffffff; font-weight: bold; white-space: nowrap; font-size: 11px; overflow: hidden; text-overflow: ellipsis;">{transporte_display}</span>
+                    <span style="color: #fde047; font-weight: bold; white-space: nowrap; font-size: 11px; overflow: hidden; text-overflow: ellipsis;">{transporte_display}</span>
                     <span style="color: {color_fecha}; font-weight: 700; font-size: 10px; white-space: nowrap;">{fecha_envio_display}</span>
                 </div>
                 """, unsafe_allow_html=True)
@@ -772,7 +775,7 @@ def render_historial_almacen(data):
                     "Estatus",
                     opciones_estatus_posibles,
                     index=index_actual,
-                    key=f"sel_estatus_{idx}_{item['factura']}",
+                    key=f"sel_estatus_{idx_absoluto}_{item['factura']}",
                     label_visibility="collapsed"
                 )
                 if nuevo_estatus != estatus_val:
@@ -783,7 +786,30 @@ def render_historial_almacen(data):
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-def main():    
+    # ── BOTONES DE PAGINACIÓN AL FINAL ────────────────────────
+    col_izq, col_centro, col_der = st.columns([1, 2, 1])
+
+    with col_izq:
+        if st.session_state.pagina_almacen > 0:
+            if st.button("⬅️ ANTERIORES", use_container_width=True, key="btn_pag_anterior"):
+                st.session_state.pagina_almacen -= 1
+                st.rerun()
+
+    with col_centro:
+        st.markdown(
+            f"""<div style='text-align: center; color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 700; padding-top: 6px;'>
+                PÁGINA {st.session_state.pagina_almacen + 1} DE {total_paginas} &nbsp;|&nbsp; TOTAL: {total_registros} REGISTROS
+            </div>""",
+            unsafe_allow_html=True
+        )
+
+    with col_der:
+        if st.session_state.pagina_almacen < total_paginas - 1:
+            if st.button("SIGUIENTES ➡️", use_container_width=True, key="btn_pag_siguiente"):
+                st.session_state.pagina_almacen += 1
+                st.rerun()
+
+def main():     
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
