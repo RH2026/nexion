@@ -717,7 +717,7 @@ def render_historial_almacen(data):
 
         # Contenedor con un margen inferior de 20px para forzar una separación real y amplia
         with st.container():
-            st.markdown('<div style="margin-bottom: 18px;">', unsafe_allow_html=True)
+            st.markdown('<div style="margin-bottom: 21px;">', unsafe_allow_html=True)
             col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
