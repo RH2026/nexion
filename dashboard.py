@@ -169,7 +169,7 @@ div[data-testid="stTabs"] [role="tab"] p,
 div[data-testid="stTabs"] [role="tab"] span {{
     color: rgba(255, 255, 255, 0.6) !important;
     font-size: 13px !important;
-    font-weight: 300 !important;
+    font-weight: 400 !important;
     letter-spacing: 3px !important;
     text-transform: uppercase !important;
     margin: 0 !important;
@@ -192,7 +192,7 @@ div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
 div[data-testid="stTabs"] [role="tab"][aria-selected="true"] p,
 div[data-testid="stTabs"] [role="tab"][aria-selected="true"] span {{
     color: #FFFFFF !important;
-    font-weight: 300 !important;
+    font-weight: 400 !important;
     letter-spacing: 5px !important;
 }}
 
