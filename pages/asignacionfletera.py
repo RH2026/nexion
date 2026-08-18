@@ -108,10 +108,15 @@ html, body, .stApp {{
 
 /* CONTENEDOR CON SCROLL PARA LA LISTA DE ALMACÉN */
 .scroll-container-almacen {{
-    max-height: 68vh;
+    max-height: 70vh;
     overflow-y: auto;
     padding-right: 5px;
     margin-bottom: 20px;
+}}
+
+/* ELIMINAR ESPACIOS EXCESIVOS ENTRE ELEMENTOS DE STREAMLIT EN LA LISTA */
+div[data-testid="stVerticalBlock"] {{
+    gap: 0.2rem !important;
 }}
 
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
@@ -123,7 +128,7 @@ div.stButton > button, div.stDownloadButton > button {{
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 32px !important;
+    height: 30px !important;
     width: 100% !important;
     transition: all 0.3s ease !important;
 }}
@@ -642,7 +647,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL COMPACTO SIN ESPACIOS
+# 5. RENDER DE HISTORIAL COMPACTO SIN ESPACIOS VERTICALES
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -699,16 +704,14 @@ def render_historial_almacen(data):
             color_texto_estatus = "#94a3b8"
 
         with st.container():
-            # Columnas con distribución fluida sin separaciones vacías
             col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
                 fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
-                # Flexbox con distribución space-between para aprovechar todo el ancho de forma fluida
                 st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 5px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 30px;">
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 4px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 30px;">
                     <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
                         <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
                         <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
@@ -721,7 +724,6 @@ def render_historial_almacen(data):
             with col_select:
                 index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
                 
-                # CSS para mantener el selectbox alineado exactamente a 30px de altura
                 st.markdown("""
                 <style>
                 div[data-baseweb="select"] > div {
@@ -753,6 +755,7 @@ def render_historial_almacen(data):
                     st.session_state[key_estatus] = nuevo_estatus
                     st.rerun()
 
+            # Espacio vertical reducido al mínimo absoluto (3px) para que no queden huecos
             st.markdown("<div style='margin-bottom: 3px;'></div>", unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
