@@ -1126,39 +1126,50 @@ def main():
             # --- SECCIÓN DE HISTORIAL Y SCROLL CHINGÓN ---
             st.markdown(f'<p style="color:{"#FFFFFF" if not historial.empty else "rgba(255,255,255,0.5)"}; font-weight:800; letter-spacing:2px; font-size:14px; margin-bottom:15px; border-left: 4px solid {"#00FFAA" if not historial.empty else "#FFD700"}; padding-left: 10px;">{"HISTORIAL DE ENVÍOS ENCONTRADOS" if not historial.empty else "SIN HISTORIAL DE ENVÍOS PREVIOS"}</p>', unsafe_allow_html=True)
             
-            if not historial.empty:
-                # Preparación de datos
-                historial_sorted = historial[['NÚMERO DE PEDIDO','NOMBRE DEL CLIENTE','DOMICILIO','FECHA DE ENVÍO','FLETERA']].sort_values(by='FECHA DE ENVÍO', ascending=False).copy()
-                historial_sorted['FECHA_STR'] = historial_sorted['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
-                data_hist = historial_sorted.fillna('').to_dict('records')
-    
-                # Renderizado con Scroll Chidote (Components HTML)
-                html_historial = f"""
-                <div style="padding: 5px; font-family: 'Inter', sans-serif;">
-                    <style>
-                        .card-historial {{ background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 14px 20px; margin-bottom: 10px; transition: all 0.3s ease; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; }}
-                        .card-historial:hover {{ border-color: #38bdf8; background-color: #2d3b42; transform: translateX(4px); }}
-                        .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px; }}
-                        .valor-id {{ font-size: 15px; font-weight: 800; color: #00FFAA; font-family: monospace; }}
-                        .valor-text {{ font-size: 12px; font-weight: 600; color: #FFFFFF; }}
-                        .sub-text {{ font-size: 10px; color: rgba(255,255,255,0.6); font-style: italic; }}
-                        
-                        /* Scrollbar chingón */
-                        ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
-                        ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); }}
-                        ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
-                        ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
-                    </style>
-                    {"".join([f'''
-                    <div class="card-historial">
-                        <div style="flex: 1;"><div class="label-mini">Pedido</div><div class="valor-id">{str(item.get('NÚMERO DE PEDIDO', ''))}</div></div>
-                        <div style="flex: 2; padding: 0 15px;"><div class="label-mini">Cliente / Domicilio</div><div class="valor-text">{str(item.get('NOMBRE DEL CLIENTE', ''))[:35]}</div><div class="sub-text">{str(item.get('DOMICILIO', ''))[:50]}</div></div>
-                        <div style="flex: 1; text-align: right;"><div class="label-mini">Fletera / Fecha</div><div style="color: #38bdf8; font-size: 12px; font-weight: 700;">{str(item.get('FLETERA', ''))}</div><div class="valor-text" style="font-size: 11px; opacity: 0.8;">{item.get('FECHA_STR', '')}</div></div>
-                    </div>''' for item in data_hist])}
-                </div>"""
-                components.html(html_historial, height=450, scrolling=True)
-            else:
-                st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")
+            # --- SECCIÓN DE HISTORIAL Y SCROLL CHINGÓN ---
+        st.markdown(f'<p style="color:{"#FFFFFF" if not historial.empty else "rgba(255,255,255,0.5)"}; font-weight:800; letter-spacing:2px; font-size:14px; margin-bottom:15px; border-left: 4px solid {"#00FFAA" if not historial.empty else "#FFD700"}; padding-left: 10px;">{"HISTORIAL DE ENVÍOS ENCONTRADOS" if not historial.empty else "SIN HISTORIAL DE ENVÍOS PREVIOS"}</p>', unsafe_allow_html=True)
+        
+        if not historial.empty:
+            # Preparación de datos
+            historial_sorted = historial[['NÚMERO DE PEDIDO','NOMBRE DEL CLIENTE','DOMICILIO','FECHA DE ENVÍO','FLETERA']].sort_values(by='FECHA DE ENVÍO', ascending=False).copy()
+            historial_sorted['FECHA_STR'] = historial_sorted['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
+            data_hist = historial_sorted.fillna('').to_dict('records')
+
+            # Renderizado con Scroll Chidote (Components HTML)
+            html_historial = f"""
+            <div style="padding: 5px; font-family: 'Inter', sans-serif;">
+                <style>
+                    .card-historial {{ background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 14px 20px; margin-bottom: 10px; transition: all 0.3s ease; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; }}
+                    .card-historial:hover {{ border-color: #38bdf8; background-color: #2d3b42; transform: translateX(4px); }}
+                    .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px; }}
+                    .valor-id {{ font-size: 15px; font-weight: 800; color: #00FFAA; font-family: monospace; }}
+                    .valor-text {{ font-size: 12px; font-weight: 600; color: #FFFFFF; }}
+                    .sub-text {{ font-size: 10px; color: rgba(255,255,255,0.6); font-style: italic; }}
+                    
+                    /* Scrollbar chingón */
+                    ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                    ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); }}
+                    ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                    ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                </style>
+                {"".join([f'''
+                <div class="card-historial">
+                    <div style="flex: 1;"><div class="label-mini">Pedido</div><div class="valor-id">{str(item.get('NÚMERO DE PEDIDO', ''))}</div></div>
+                    <div style="flex: 2; padding: 0 15px;"><div class="label-mini">Cliente / Domicilio</div><div class="valor-text">{str(item.get('NOMBRE DEL CLIENTE', ''))[:35]}</div><div class="sub-text">{str(item.get('DOMICILIO', ''))[:50]}</div></div>
+                    <div style="flex: 1; text-align: right;"><div class="label-mini">Fletera / Fecha</div><div style="color: #38bdf8; font-size: 12px; font-weight: 700;">{str(item.get('FLETERA', ''))}</div><div class="valor-text" style="font-size: 11px; opacity: 0.8;">{item.get('FECHA_STR', '')}</div></div>
+                </div>''' for item in data_hist])}
+            </div>"""
+            components.html(html_historial, height=450, scrolling=True)
+        else:
+            st.markdown(f"""
+            <div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #FF5252; border-radius: 12px; padding: 20px 25px; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; width: 100%;">
+                <div>
+                    <div style="font-size: 10px; color: #FF5252; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">AVISO DE SISTEMA</div>
+                    <div style="font-size: 14px; color: #ffffff; font-weight: 600;">Lo siento <b style="color: #00FFAA;">Rigoberto Del Real Hernandez</b>, no se encontró historial de envíos para: <b style="color: #38bdf8;">{busqueda_manual}</b></div>
+                </div>
+                <div style="font-size: 22px; color: #FF5252; font-weight: 900; background: rgba(255, 82, 82, 0.1); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255, 82, 82, 0.3);">⚠️</div>
+            </div>
+            """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
