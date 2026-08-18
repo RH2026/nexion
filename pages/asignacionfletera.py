@@ -666,7 +666,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON SEPARACIÓN REAL Y HOLGADA
+# 5. RENDER DE HISTORIAL CON SEPARACIÓN AMPLIA Y HOLGADA
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -716,9 +716,9 @@ def render_historial_almacen(data):
         else:
             color_borde = "#64748b"
 
-        # Contenedor envolvente con margen inferior real de 12px para obligar la separación
+        # Contenedor con un margen inferior de 20px para forzar una separación real y amplia
         with st.container():
-            st.markdown('<div style="margin-bottom: 12px;">', unsafe_allow_html=True)
+            st.markdown('<div style="margin-bottom: 20px;">', unsafe_allow_html=True)
             col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
