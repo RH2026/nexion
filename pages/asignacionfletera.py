@@ -674,7 +674,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON 30 REGISTROS, SCROLL FIJO Y TEXTO VERDE
+# 5. RENDER DE HISTORIAL CON 15 REGISTROS, SCROLL FIJO Y TEXTO VERDE
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -691,7 +691,7 @@ def render_historial_almacen(data):
     # Invertir la lista para mostrar lo más nuevo al principio
     data_invertida = list(reversed(data))
     
-    # Configuración de Paginación de 30 en 30
+    # Configuración de Paginación de 15 en 15
     tamanio_pagina = 15
     total_registros = len(data_invertida)
     total_paginas = max(1, (total_registros + tamanio_pagina - 1) // tamanio_pagina)
@@ -791,72 +791,10 @@ def render_historial_almacen(data):
     # Cierre del contenedor scroll
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── BARRA DE PAGINACIÓN: INICIO Y FIN MÁS PEQUEÑOS ──
-    st.markdown("""
-        <style>
-            /* Hacer más compactos los botones de inicio y fin específicos */
-            div[data-testid="column"]:has(button[key="btn_pag_inicio"]) button,
-            div[data-testid="column"]:has(button[key="btn_pag_fin"]) button {
-                font-size: 9px !important;
-                padding: 0px 4px !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-    col_info, col_vacio, col_inicio, col_ant, col_sig, col_fin = st.columns([2.0, 0.4, 0.7, 1.3, 1.3, 0.7], vertical_alignment="center")
-
-    with col_info:
-        st.markdown(
-            f"""<div style='text-align: left; color: #10b981; font-size: 11px; font-weight: 700;'>
-                PÁGINA {st.session_state.pagina_almacen + 1} DE {total_paginas} &nbsp;|&nbsp; TOTAL: {total_registros} REGISTROS
-            </div>""",
-            unsafe_allow_html=True
-        )
-
-    with col_inicio:
-        if st.button("⏮️ INICIO", use_container_width=True, key="btn_pag_inicio"):
-            if st.session_state.pagina_almacen != 0:
-                st.session_state.pagina_almacen = 0
-                st.rerun()
-
-    with col_ant:
-        if st.button("⬅️ ANTERIORES", use_container_width=True, key="btn_pag_anterior"):
-            if st.session_state.pagina_almacen > 0:
-                st.session_state.pagina_almacen -= 1
-                st.rerun()
-
-    with col_sig:
-        if st.button("SIGUIENTES ➡️", use_container_width=True, key="btn_pag_siguiente"):
-            if st.session_state.pagina_almacen < total_paginas - 1:
-                st.session_state.pagina_almacen += 1
-                st.rerun()
-
-    with col_fin:
-        if st.button("⏭️ FIN", use_container_width=True, key="btn_pag_fin"):
-            if st.session_state.pagina_almacen != total_paginas - 1:
-                st.session_state.pagina_almacen = total_paginas - 1
-                st.rerun()
-
 def main():     
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
-
-    # ── BOTÓN DE ACTUALIZACIÓN RÁPIDA ────────────────────────
-    col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
-    with col_titulo:
-        st.markdown("""
-            <div style='text-align:left; margin-top:15px; margin-bottom:10px;'>
-                <span style='color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;'>
-                    HISTORIAL DE ALMACÉN // FACTURACIÓN & CRUCE DE ENVÍOS
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
-    with col_btn_refrescar:
-        if st.button("ACTUALIZAR DATOS", key="btn_refrescar_almacen", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
 
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
@@ -941,6 +879,62 @@ def main():
         data_completa = df_filtrado.to_dict('records')
     else:
         data_completa = []
+
+    # Calcular total de páginas para la paginación superior junto al botón de actualizar
+    tamanio_pagina = 15
+    total_registros = len(data_completa)
+    total_paginas = max(1, (total_registros + tamanio_pagina - 1) // tamanio_pagina)
+
+    # ── BARRA SUPERIOR CON TÍTULO, BOTÓN DE ACTUALIZAR Y BOTONES DE PAGINACIÓN UNIFICADOS ──
+    col_titulo, col_btn_refrescar, col_inicio, col_ant, col_info_pag, col_sig, col_fin = st.columns([2.5, 1.1, 0.7, 1.1, 1.6, 1.1, 0.7], vertical_alignment="center")
+
+    with col_titulo:
+        st.markdown("""
+            <div style='text-align:left; margin-top:5px; margin-bottom:5px;'>
+                <span style='color:#FFFFFF; font-weight:400; font-size:11px; letter-spacing:2px;'>
+                    HISTORIAL DE ALMACÉN // FACTURACIÓN
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with col_btn_refrescar:
+        if st.button("ACTUALIZAR", key="btn_refrescar_almacen", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
+
+    with col_inicio:
+        if st.button("⏮️", use_container_width=True, key="btn_pag_inicio"):
+            if st.session_state.pagina_almacen != 0:
+                st.session_state.pagina_almacen = 0
+                st.rerun()
+
+    with col_ant:
+        if st.button("⬅️ ANTERIOR", use_container_width=True, key="btn_pag_anterior"):
+            if st.session_state.pagina_almacen > 0:
+                st.session_state.pagina_almacen -= 1
+                st.rerun()
+
+    with col_info_pag:
+        st.markdown(
+            f"""<div style='text-align: center; color: #10b981; font-size: 10px; font-weight: 700; white-space: nowrap;'>
+                PÁG {st.session_state.pagina_almacen + 1}/{total_paginas} &nbsp;|&nbsp; {total_registros} REGS
+            </div>""",
+            unsafe_allow_html=True
+        )
+
+    with col_sig:
+        if st.button("SIGUIENTE ➡️", use_container_width=True, key="btn_pag_siguiente"):
+            if st.session_state.pagina_almacen < total_paginas - 1:
+                st.session_state.pagina_almacen += 1
+                st.rerun()
+
+    with col_fin:
+        if st.button("⏭️", use_container_width=True, key="btn_pag_fin"):
+            if st.session_state.pagina_almacen != total_paginas - 1:
+                st.session_state.pagina_almacen = total_paginas - 1
+                st.rerun()
+
+    st.markdown("<hr style='border-top:1px solid #ffffff; margin:8px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
     render_historial_almacen(data_completa)
     st.markdown('</div>', unsafe_allow_html=True)
