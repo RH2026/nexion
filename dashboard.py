@@ -167,7 +167,7 @@ div[data-testid="stTabs"] [role="tab"] {{
 /* TEXTO INTERNO DE LAS PESTAÑAS (INACTIVO: BLANCO TENUE) */
 div[data-testid="stTabs"] [role="tab"] p,
 div[data-testid="stTabs"] [role="tab"] span {{
-    color: rgba(255, 255, 255, 0.5) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
     font-size: 13px !important;
     font-weight: 600 !important;
     letter-spacing: 1px !important;
