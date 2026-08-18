@@ -18,7 +18,7 @@ import streamlit as st
 import pytz
 from auth import exigir_autenticacion
 
-exigir_autenticacion("envios")
+exigir_autenticacion("asignacionfletera")
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
@@ -134,7 +134,7 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/envios.py"
+    st.session_state.pagina_destino = "pages/asignacionfletera.py"
     st.switch_page("pages/log.py")
 
 def verificar_permiso_pagina(modulo, submodulo=None):
@@ -214,7 +214,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("dashboard.py")
         st.stop()
 
-verificar_permiso_pagina("ENTREGAS", "NACIONAL")
+verificar_permiso_pagina("CARGAR DATOS", "ASIGNAR FLETERA")
 
 # ==========================================
 # 3. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
