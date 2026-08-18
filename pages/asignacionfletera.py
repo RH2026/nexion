@@ -119,6 +119,13 @@ div[data-testid="stVerticalBlock"] {{
     gap: 0.15rem !important;
 }}
 
+/* AJUSTE FINO DE COLUMNAS PARA ALINEACIÓN HOMBRO CON HOMBRO */
+[data-testid="column"] {{
+    padding: 0px !important;
+    display: flex !important;
+    align-items: center !important;
+}}
+
 /* FORZAR ALTURA Y CENTRADO PERFECTO DEL SELECTBOX */
 div[data-baseweb="select"] > div {{
     min-height: 42px !important;
@@ -136,6 +143,12 @@ div[data-baseweb="select"] span {{
     line-height: normal !important;
     font-size: 10px !important;
     font-weight: 700 !important;
+}}
+
+/* COMPENSAR EL CONTENEDOR DEL SELECTBOX PARA QUE NO QUEDE DESFASADO */
+.stSelectbox {{
+    width: 100% !important;
+    margin-top: -18px !important;
 }}
 
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
@@ -729,7 +742,7 @@ def render_historial_almacen(data):
                 fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
-                # Altura aumentada a 42px para igualar exactamente el alto del selectbox de Streamlit
+                # Altura exacta a 42px para empatar hombro con hombro con el selectbox
                 st.markdown(f"""
                 <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 42px;">
                     <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
