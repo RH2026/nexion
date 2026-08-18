@@ -885,8 +885,8 @@ def main():
     total_registros = len(data_completa)
     total_paginas = max(1, (total_registros + tamanio_pagina - 1) // tamanio_pagina)
 
-    # ── BARRA SUPERIOR CON TÍTULO Y BOTÓN DE ACTUALIZAR ──
-    col_titulo, col_btn_refrescar = st.columns([6, 1.5], vertical_alignment="center")
+    # ── BARRA SUPERIOR CON TÍTULO, BOTÓN DE ACTUALIZAR Y CONTROLES DE PAGINACIÓN ──
+    col_titulo, col_btn_refrescar, col_inicio, col_ant, col_sig, col_fin = st.columns([2.5, 1.1, 0.7, 1.1, 1.1, 0.7], vertical_alignment="center")
 
     with col_titulo:
         st.markdown("""
@@ -902,16 +902,6 @@ def main():
             st.cache_data.clear()
             st.rerun()
 
-    st.markdown("<hr style='border-top:1px solid #ffffff; margin:8px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
-
-    # Renderizar los resultados de la tabla primero
-    render_historial_almacen(data_completa)
-
-    st.markdown("<hr style='border-top:1px solid #ffffff; margin:15px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
-
-    # ── CONTROLES DE PAGINACIÓN ABAJO DE LOS RESULTADOS ──
-    col_inicio, col_ant, col_info_pag, col_sig, col_fin = st.columns([0.8, 1.5, 2.5, 1.5, 0.8], vertical_alignment="center")
-
     with col_inicio:
         if st.button("⏮️", use_container_width=True, key="btn_pag_inicio"):
             if st.session_state.pagina_almacen != 0:
@@ -924,14 +914,6 @@ def main():
                 st.session_state.pagina_almacen -= 1
                 st.rerun()
 
-    with col_info_pag:
-        st.markdown(
-            f"""<div style='text-align: center; color: #10b981; font-size: 11px; font-weight: 700; white-space: nowrap;'>
-                PÁGINA {st.session_state.pagina_almacen + 1} DE {total_paginas} &nbsp;|&nbsp; TOTAL: {total_registros} REGISTROS
-            </div>""",
-            unsafe_allow_html=True
-        )
-
     with col_sig:
         if st.button("SIGUIENTE ➡️", use_container_width=True, key="btn_pag_siguiente"):
             if st.session_state.pagina_almacen < total_paginas - 1:
@@ -943,6 +925,21 @@ def main():
             if st.session_state.pagina_almacen != total_paginas - 1:
                 st.session_state.pagina_almacen = total_paginas - 1
                 st.rerun()
+
+    st.markdown("<hr style='border-top:1px solid #ffffff; margin:8px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+
+    # 1. Renderizar la lista de resultados de almacén
+    render_historial_almacen(data_completa)
+
+    st.markdown("<hr style='border-top:1px solid #ffffff; margin:15px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+
+    # 2. Solo texto de paginación ABAJO de los resultados
+    st.markdown(
+        f"""<div style='text-align: center; color: #10b981; font-size: 11px; font-weight: 700; margin-bottom: 10px;'>
+            PÁGINA {st.session_state.pagina_almacen + 1} DE {total_paginas} &nbsp;|&nbsp; TOTAL: {total_registros} REGISTROS
+        </div>""",
+        unsafe_allow_html=True
+    )
 
 if __name__ == "__main__":
     main()
