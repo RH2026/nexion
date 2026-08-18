@@ -174,22 +174,26 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     z-index: 999999 !important; 
 }}
 
-/* FORZAR ALTURA Y CENTRADO PERFECTO DEL SELECTBOX */
-div[data-baseweb="select"] > div {{
-    min-height: 48px !important;
+/* FORZAR ALTURA Y CENTRADO REAL DEL SELECTBOX */
+div[data-baseweb="select"] {{
+    min-height: 55px !important;
     height: 55px !important;
-    font-size: 14px !important;
-    padding: 5px 8px !important;
+}}
+
+div[data-baseweb="select"] > div:first-child {{
+    min-height: 55px !important;
+    height: 55px !important;
     background-color: {vars_css['card']} !important;
     color: #ffffff !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 6px !important;
     display: flex !important;
     align-items: center !important;
+    padding: 0px 8px !important;
 }}
+
 div[data-baseweb="select"] span {{
-    line-height: normal !important;
-    font-size: 10px !important;
+    font-size: 14px !important;
     font-weight: 700 !important;
 }}
 </style>
