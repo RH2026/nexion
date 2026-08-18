@@ -167,7 +167,7 @@ div[data-testid="stTabs"] [role="tab"] {{
 /* TEXTO INTERNO DE LAS PESTAÑAS (INACTIVO: BLANCO TENUE) */
 div[data-testid="stTabs"] [role="tab"] p,
 div[data-testid="stTabs"] [role="tab"] span {{
-    color: rgba(255, 255, 255, 0.8) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
     font-size: 13px !important;
     font-weight: 600 !important;
     letter-spacing: 1px !important;
@@ -206,7 +206,7 @@ div[data-testid="stTabs"] [role="tab"]:focus {{
 
 /* LÍNEA INFERIOR DE SELECCIÓN (INDICADOR DE COLOR) */
 div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
-    background-color: #00FFAA !important;
+    background-color: #38bdf8 !important;
     height: 2px !important;
 }}
 
