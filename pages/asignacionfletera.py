@@ -116,7 +116,24 @@ html, body, .stApp {{
 
 /* ELIMINAR ESPACIOS EXCESIVOS ENTRE ELEMENTOS DE STREAMLIT EN LA LISTA */
 div[data-testid="stVerticalBlock"] {{
-    gap: 0.2rem !important;
+    gap: 0.15rem !important;
+}}
+
+/* FORZAR LA ALTURA DEL SELECTBOX DE STREAMLIT PARA EMPAREJAR CON LA TARJETA */
+div[data-baseweb="select"] > div {{
+    min-height: 38px !important;
+    height: 38px !important;
+    font-size: 10px !important;
+    padding: 0px 6px !important;
+    background-color: #2B343B !important;
+    color: #ffffff !important;
+    border: 1px solid #4B5D67 !important;
+    border-radius: 6px !important;
+}}
+div[data-baseweb="select"] span {{
+    line-height: 38px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
 }}
 
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
@@ -128,7 +145,7 @@ div.stButton > button, div.stDownloadButton > button {{
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 30px !important;
+    height: 32px !important;
     width: 100% !important;
     transition: all 0.3s ease !important;
 }}
@@ -647,7 +664,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL COMPACTO SIN ESPACIOS VERTICALES
+# 5. RENDER DE HISTORIAL CON ALTURA EXACTAMENTE IGUAL A 38PX
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -710,8 +727,9 @@ def render_historial_almacen(data):
                 fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
+                # Altura forzada exactamente a 38px para emparejar con el selectbox
                 st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 4px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 30px;">
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 38px;">
                     <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
                         <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
                         <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
@@ -724,26 +742,6 @@ def render_historial_almacen(data):
             with col_select:
                 index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
                 
-                st.markdown("""
-                <style>
-                div[data-baseweb="select"] > div {
-                    min-height: 30px !important;
-                    height: 30px !important;
-                    font-size: 9px !important;
-                    padding: 0px 4px !important;
-                    background-color: #2B343B !important;
-                    color: #ffffff !important;
-                    border: 1px solid #4B5D67 !important;
-                    border-radius: 6px !important;
-                }
-                div[data-baseweb="select"] span {
-                    line-height: 30px !important;
-                    font-size: 9px !important;
-                    font-weight: 700 !important;
-                }
-                </style>
-                """, unsafe_allow_html=True)
-
                 nuevo_estatus = st.selectbox(
                     "Estatus",
                     opciones_estatus_posibles,
@@ -755,8 +753,8 @@ def render_historial_almacen(data):
                     st.session_state[key_estatus] = nuevo_estatus
                     st.rerun()
 
-            # Espacio vertical reducido al mínimo absoluto (3px) para que no queden huecos
-            st.markdown("<div style='margin-bottom: 3px;'></div>", unsafe_allow_html=True)
+            # Separación mínima vertical entre filas
+            st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
