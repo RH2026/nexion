@@ -618,7 +618,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL PARA ALMACÉN (CON SELECTOR DE ESTATUS INTERACTIVO)
+# 5. RENDER DE HISTORIAL PARA ALMACÉN (CON CRUCE DE FECHA DE ENVÍO Y SELECTOR EXTENDIDO)
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -632,52 +632,67 @@ def render_historial_almacen(data):
 
     st.markdown('<p style="color:#FFFFFF; font-weight:800; letter-spacing:2px; font-size:12px; margin-bottom:12px;">HISTORIAL DE ALMACÉN // CONTROL DE FACTURAS</p>', unsafe_allow_html=True)
 
-    opciones_estatus_posibles = ["ENVIADA", "CANCELADA", "DETENIDA", "DUPLICADA"]
+    opciones_estatus_posibles = [
+        "ENVIADA", 
+        "CANCELADA", 
+        "DETENIDA", 
+        "DUPLICADA", 
+        "CEDIS", 
+        "SOLO FACTURA", 
+        "NO ENTREGADA", 
+        "MOSTRADOR", 
+        "EXPORTACION"
+    ]
 
     for idx, item in enumerate(data):
-        # Usamos session_state para recordar el estatus cambiado de cada tarjeta de forma interactiva
         key_estatus = f"estatus_sel_{idx}_{item['factura']}"
+        
+        # Determinamos el estatus inicial: si hay fecha de envío cruzada, arranca como ENVIADA (a menos que el usuario lo cambie manualmente)
         if key_estatus not in st.session_state:
-            estatus_inicial = str(item.get('estatus', 'ENVIADA')).upper()
-            if estatus_inicial not in opciones_estatus_posibles:
-                estatus_inicial = "ENVIADA"
-            st.session_state[key_estatus] = estatus_inicial
+            estatus_base = "ENVIADA" if item.get('fecha_envio') else "PENDIENTE"
+            st.session_state[key_estatus] = estatus_base
 
         estatus_val = st.session_state[key_estatus]
         
-        # Colores dinámicos según el estatus seleccionado
+        # Colores personalizados para cada tipo de estatus
         if estatus_val == "ENVIADA":
             color_borde = "#10b981"
             color_texto_estatus = "#34d399"
-        elif estatus_val == "CANCELADA":
+        elif estatus_val in ["CANCELADA", "NO ENTregada".upper()]:
             color_borde = "#ef4444"
             color_texto_estatus = "#f87171"
-        elif estatus_val == "DETENIDA":
+        elif estatus_val in ["DETENIDA", "SOLO FACTURA"]:
             color_borde = "#f59e0b"
             color_texto_estatus = "#fbbf24"
         elif estatus_val == "DUPLICADA":
             color_borde = "#a855f7"
             color_texto_estatus = "#c084fc"
-        else:
+        elif estatus_val in ["CEDIS", "MOSTRADOR", "EXPORTACION"]:
             color_borde = "#38bdf8"
             color_texto_estatus = "#7dd3fc"
+        else:
+            color_borde = "#64748b"
+            color_texto_estatus = "#94a3b8"
 
         with st.container():
-            # Encabezado visual de la tarjeta
+            # Encabezado visual de la tarjeta mostrando la Factura, la Fecha de Envío cruzada y el Estatus actual
+            fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN FECHA DE ENVÍO'
+            
             st.markdown(f"""
             <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 10px 15px; font-family: 'Inter', sans-serif; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box;">
                 <div>
-                    <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Factura / Folio: </span>
+                    <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Factura: </span>
                     <b style="font-size: 13px; color: white; font-style: italic;">{item['factura']}</b>
+                    <span style="margin-left: 15px; font-size: 9px; color: #38bdf8; font-weight: 700;">📅 F. ENVÍO: {fecha_envio_display}</span>
                 </div>
                 <div>
-                    <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Estatus Actual: </span>
+                    <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Estatus: </span>
                     <b style="font-size: 11px; color: {color_texto_estatus}; text-transform: uppercase;">{estatus_val}</b>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # Columnas con tus campos solicitados: Check, Extran, Ciudad, EstadoCP y Selector de Estatus
+            # Columnas con tus campos solicitados: Check, Extran, Ciudad, EstadoCP y Selector de Estatus ampliado
             col1, col2, col3, col4, col5 = st.columns([0.8, 2, 2, 1.8, 2.2])
             
             with col1:
@@ -689,11 +704,12 @@ def render_historial_almacen(data):
             with col4:
                 st.markdown(f"<div style='font-size:11px; color:#fde047; padding-top:6px;'><b>Estado/CP:</b> {item['estado_cp']}</div>", unsafe_allow_html=True)
             with col5:
-                # Selector interactivo para cambiar el estatus en tiempo real en cada tarjeta
+                # Selector interactivo con todas las opciones manuales requeridas
+                index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
                 nuevo_estatus = st.selectbox(
                     "Cambiar Estatus",
                     opciones_estatus_posibles,
-                    index=opciones_estatus_posibles.index(estatus_val),
+                    index=index_actual,
                     key=f"sel_estatus_{idx}_{item['factura']}",
                     label_visibility="collapsed"
                 )
@@ -714,7 +730,7 @@ def main():
         st.markdown("""
             <div style='text-align:left; margin-top:15px; margin-bottom:10px;'>
                 <span style='color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;'>
-                    HISTORIAL DE ALMACÉN // FACTURACIÓN
+                    HISTORIAL DE ALMACÉN // FACTURACIÓN & CRUCE DE ENVÍOS
                 </span>
             </div>
         """, unsafe_allow_html=True)
@@ -725,30 +741,57 @@ def main():
 
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
-    FILE_PATH = "facturacion.csv"
     
     current_t = int(time.time() * 1000)
-    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}?_t={current_t}"
+    URL_FACTURACION = f"https://raw.githubusercontent.com/{REPO_NAME}/main/facturacion.csv?_t={current_t}"
+    URL_ENVIOS = f"https://raw.githubusercontent.com/{REPO_NAME}/main/envios.csv?_t={current_t}"
 
     @st.cache_data(ttl=60)
-    def get_facturacion_data(url, token):
+    def cargar_csv_remoto(url, token):
         headers = {"Authorization": f"token {token}"} if token else {}
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             return pd.read_csv(io.StringIO(response.text), encoding="utf-8-sig")
         return pd.DataFrame()
 
-    df_raw = get_facturacion_data(CSV_URL, TOKEN)
+    df_fact = cargar_csv_remoto(URL_FACTURACION, TOKEN)
+    df_envios = cargar_csv_remoto(URL_ENVIOS, TOKEN)
 
-    if not df_raw.empty:
-        df_raw.columns = df_raw.columns.str.strip()
+    if not df_fact.empty:
+        df_fact.columns = df_fact.columns.str.strip()
 
         df_proc = pd.DataFrame()
-        df_proc['factura'] = df_raw.get('Factura', df_raw.get('FACTURA', pd.Series(dtype=str))).fillna('').astype(str)
-        df_proc['nombre_extran'] = df_raw.get('Nombre_Extran', df_raw.get('NOMBRE_EXTRAN', pd.Series(dtype=str))).fillna('').astype(str)
-        df_proc['ciudad'] = df_raw.get('Ciudad', df_raw.get('CIUDAD', df_raw.get('DESTINO', pd.Series(dtype=str)))).fillna('').astype(str)
-        df_proc['estado_cp'] = df_raw.get('EstadoCP', df_raw.get('ESTADOCP', df_raw.get('CP', pd.Series(dtype=str)))).fillna('').astype(str)
-        df_proc['estatus'] = df_raw.get('Estatus', df_raw.get('ESTATUS', pd.Series(['ENVIADA'] * len(df_raw)))).fillna('ENVIADA').astype(str)
+        df_proc['factura'] = df_fact.get('Factura', df_fact.get('FACTURA', pd.Series(dtype=str))).fillna('').astype(str).str.strip()
+        df_proc['nombre_extran'] = df_fact.get('Nombre_Extran', df_fact.get('NOMBRE_EXTRAN', pd.Series(dtype=str))).fillna('').astype(str)
+        df_proc['ciudad'] = df_fact.get('Ciudad', df_fact.get('CIUDAD', df_fact.get('DESTINO', pd.Series(dtype=str)))).fillna('').astype(str)
+        df_proc['estado_cp'] = df_fact.get('EstadoCP', df_fact.get('ESTADOCP', df_fact.get('CP', pd.Series(dtype=str)))).fillna('').astype(str)
+
+        # ── CRUCE DE INFORMACIÓN CON envios.csv (FECHA DE ENVÍO) ──
+        mapa_fechas_envio = {}
+        if not df_envios.empty:
+            df_envios.columns = df_envios.columns.str.strip()
+            # Buscamos columnas clave de factura y fecha de envío en envios.csv
+            col_fac_env = None
+            for c in ['Factura', 'FACTURA', 'NÚMERO DE PEDIDO', 'PEDIDO']:
+                if c in df_envios.columns:
+                    col_fac_env = c
+                    break
+            
+            col_fec_env = None
+            for c in ['FECHA DE ENVIO', 'FECHA_ENVIO', 'FECHA DE ENVÍO']:
+                if c in df_envios.columns:
+                    col_fec_env = c
+                    break
+
+            if col_fac_env and col_fec_env:
+                for _, row in df_envios.iterrows():
+                    f_val = str(row.get(col_fac_env, '')).strip()
+                    fe_val = str(row.get(col_fec_env, '')).strip()
+                    if f_val and fe_val and fe_val.lower() not in ['', 'nan', '0', 'nat', 'none']:
+                        mapa_fechas_envio[f_val] = fe_val
+
+        # Asignar la fecha cruzada al DataFrame procesado
+        df_proc['fecha_envio'] = df_proc['factura'].map(mapa_fechas_envio).fillna('')
 
         # Quedarse solo con la primera línea de cada folio (evita duplicados por partidas)
         df_proc = df_proc.drop_duplicates(subset=['factura'], keep='first')
@@ -760,14 +803,23 @@ def main():
             facturas_opts = ["TODAS"] + sorted(list(df_proc['factura'].unique()))
             filtro_factura = st.selectbox("FILTRAR POR FACTURA", facturas_opts, key="filtro_factura_almacen")
         with f2:
-            estatus_opts = ["TODOS", "ENVIADA", "CANCELADA", "DETENIDA", "DUPLICADA"]
+            estatus_opts = [
+                "TODOS", 
+                "ENVIADA", 
+                "CANCELADA", 
+                "DETENIDA", 
+                "DUPLICADA", 
+                "CEDIS", 
+                "SOLO FACTURA", 
+                "NO ENTREGADA", 
+                "MOSTRADOR", 
+                "EXPORTACION"
+            ]
             filtro_estatus = st.selectbox("FILTRAR POR ESTATUS", estatus_opts, key="filtro_estatus_almacen")
 
         df_filtrado = df_proc.copy()
         if filtro_factura != "TODAS":
             df_filtrado = df_filtrado[df_filtrado['factura'] == filtro_factura]
-        if filtro_estatus != "TODOS":
-            df_filtrado = df_filtrado[df_filtrado['estatus'].str.upper() == filtro_estatus]
 
         data_completa = df_filtrado.to_dict('records')
     else:
