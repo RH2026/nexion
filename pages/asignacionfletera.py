@@ -812,7 +812,7 @@ def render_historial_almacen(data):
         )
 
     with col_inicio:
-        if st.button("INICIO", use_container_width=True, key="btn_pag_inicio"):
+        if st.button("⏮️ INICIO", use_container_width=True, key="btn_pag_inicio"):
             if st.session_state.pagina_almacen != 0:
                 st.session_state.pagina_almacen = 0
                 st.rerun()
@@ -830,7 +830,7 @@ def render_historial_almacen(data):
                 st.rerun()
 
     with col_fin:
-        if st.button("FIN", use_container_width=True, key="btn_pag_fin"):
+        if st.button("⏭️ FIN", use_container_width=True, key="btn_pag_fin"):
             if st.session_state.pagina_almacen != total_paginas - 1:
                 st.session_state.pagina_almacen = total_paginas - 1
                 st.rerun()
