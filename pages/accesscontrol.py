@@ -452,7 +452,7 @@ def asegurar_y_actualizar_matriz_en_github():
             "ALERTAS": True, "GANTT": False, "QUEJAS": False, "AGC": True, "AMAZON": True, "BARCELO": True, "NACIONAL": True,
             "COSTOS CEDIS": False, "ANALISIS MENSUAL": False, "DETALLE COSTOS": False, "ENVIOS ESPECIALES": False, "ENVIO DE MUESTRAS": True, "PANEL MUESTRAS": False,
             "SALIDA DE PT": True, "CHECK LIST AGC": True, "QR AGC": True, "PREGUIA PAQMEX": True, "RECOLECCION 3G": True, "RECOLECCION ONE": True, "CARTA RECLAMO": True, "COTIZACIONES": True,
-            "ASIGNAR FLETERA": True, "CARGAR DATOS": True, "ETIQUETAS": True, "ESCANEAR QR": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
+            "ASIGNAR FLETERA": True, "CARGAR DATOS": False, "ETIQUETAS": True, "ESCANEAR QR": True, "HERRAMIENTAS": True, "WALLET": False, "CAJA CHICA": False, "GASTOS": False, "MORENO": False, "VAZQUEZ": False, "MIGUEL": False
         },
         {
             "USUARIO": "Ucadena",
