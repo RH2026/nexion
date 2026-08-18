@@ -618,7 +618,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER NATIVO INTERACTIVO DE ENVÍOS (CON TARJETAS Y ESTILO CLARO)
+# 5. RENDER NATIVO INTERACTIVO DE ENVÍOS CON CHECKS POR TARJETA
 # ==========================================
 def render_envios_flow_responsive(data):
     if not data:
@@ -631,82 +631,60 @@ def render_envios_flow_responsive(data):
         """, unsafe_allow_html=True)
         return
 
+    st.markdown('<p style="color:#FFFFFF; font-weight:800; letter-spacing:2px; font-size:12px; margin-bottom:12px;">GESTIÓN INTERACTIVA DE ENVÍOS</p>', unsafe_allow_html=True)
+
     for idx, item in enumerate(data):
         estatus_val = item['estatus']
         if estatus_val in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or estatus_val == "ENVIADA":
-            color_borde = "#10b981" # Esmeralda
+            color_borde = "#10b981"
             color_texto_estatus = "#34d399"
         elif "RETRASO" in estatus_val:
-            color_borde = "#ef4444" # Rojo
+            color_borde = "#ef4444"
             color_texto_estatus = "#f87171"
         else:
-            color_borde = "#f59e0b" # Ámbar
+            color_borde = "#f59e0b"
             color_texto_estatus = "#fbbf24"
 
-        # Tarjeta visual estilo Nexion oscura con barra lateral de color según estatus
-        st.markdown(f"""
-        <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; font-family: 'Inter', sans-serif; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box;">
-            <div style="flex: 1.2;">
-                <div style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800; letter-spacing: 0.5px;">Factura</div>
-                <div style="font-size: 14px; font-weight: 900; color: white; font-style: italic;">{item['factura']}</div>
-                <div style="font-size: 11px; color: #38bdf8; font-weight: 700; margin-top: 2px;">RECO: {item['recomendacion']}</div>
+        with st.container():
+            # Encabezado visual de la tarjeta
+            st.markdown(f"""
+            <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 10px 15px; font-family: 'Inter', sans-serif; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box;">
+                <div>
+                    <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Factura: </span>
+                    <b style="font-size: 13px; color: white; font-style: italic;">{item['factura']}</b>
+                    <span style="margin-left: 15px; font-size: 10px; color: #38bdf8; font-weight: 700;">RECO: {item['recomendacion']}</span>
+                </div>
+                <div>
+                    <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Estatus: </span>
+                    <b style="font-size: 11px; color: {color_texto_estatus}; text-transform: uppercase;">{"ENVIADA EN ESPERA DE GUÍA" if estatus_val == "ENVIADA" else estatus_val}</b>
+                </div>
             </div>
-            <div style="flex: 1.2; padding: 0 10px;">
-                <div style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800; letter-spacing: 0.5px;">No. Guía / Talón</div>
-                <div style="font-size: 12px; font-family: monospace; font-weight: bold; color: #fde047;">{item['numero_guia'] if item['numero_guia'] else 'PENDIENTE'}</div>
-            </div>
-            <div style="flex: 1.2; padding: 0 10px;">
-                <div style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800; letter-spacing: 0.5px;">F. Programación</div>
-                <div style="font-size: 12px; font-weight: bold; color: #e2e8f0;">{item['fecha_programacion'] if item['fecha_programacion'] else 'N/A'}</div>
-            </div>
-            <div style="flex: 2.5; padding: 0 10px;">
-                <div style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800; letter-spacing: 0.5px;">Cliente / Extran</div>
-                <div style="font-size: 12px; font-weight: 600; color: #7dd3fc;">{item['nombre_cliente']} {f"/ {item['nombre_extran']}" if item['nombre_extran'] else ""}</div>
-            </div>
-            <div style="flex: 1.8; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05);">
-                <div style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800; letter-spacing: 0.5px;">Destino</div>
-                <div style="font-size: 13px; font-weight: bold; color: white;">{item['destino']}</div>
-            </div>
-            <div style="flex: 1.5; text-align: right; padding-left: 10px;">
-                <div style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800; letter-spacing: 0.5px;">Fecha Envío / Estatus</div>
-                <div style="font-size: 10px; font-weight: bold; color: #38bdf8; text-transform: uppercase;">{item['fecha_envio'] if item['fecha_envio'] else 'SIN ENVIAR'}</div>
-                <div style="font-size: 11px; font-weight: 900; color: {color_texto_estatus}; text-transform: uppercase; letter-spacing: -0.5px;">{"ENVIADA EN ESPERA DE GUÍA" if estatus_val == "ENVIADA" else estatus_val}</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+
+            # Controles nativos y datos en columnas para cada tarjeta
+            col1, col2, col3, col4, col5 = st.columns([1, 2.2, 2.2, 2.2, 1])
+            
+            with col1:
+                chk = st.checkbox("Check", value=False, key=f"chk_tarjeta_{idx}")
+            with col2:
+                st.markdown(f"<div style='font-size:11px; color:#fde047; padding-top:6px;'><b>Guía:</b> {item['numero_guia'] if item['numero_guia'] else 'PENDIENTE'}</div>", unsafe_allow_html=True)
+            with col3:
+                st.markdown(f"<div style='font-size:11px; color:#7dd3fc; padding-top:6px;'><b>Cliente:</b> {item['nombre_cliente']}</div>", unsafe_allow_html=True)
+            with col4:
+                st.markdown(f"<div style='font-size:11px; color:white; padding-top:6px;'><b>Destino:</b> {item['destino']}</div>", unsafe_allow_html=True)
+            with col5:
+                if st.button("💾", key=f"btn_guardar_{idx}", use_container_width=True):
+                    if chk:
+                        st.success(f"¡Marcado #{item['factura']}!")
+                    else:
+                        st.info(f"Guardado #{item['factura']}")
+            
+            st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
 def main():    
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
-    
-    usuario_actual = st.session_state.get("usuario_activo", "").upper()
-    es_admin = usuario_actual == "RIGOBERTO"
-
-    if es_admin:
-        with st.expander("🔐 Panel de Seguridad / Modo Edición Admin", expanded=False):
-            st.markdown(
-                """
-                <div style='background: rgba(0, 255, 170, 0.08); border: 1px solid #00FFAA; border-left: 5px solid #00FFAA; padding: 12px 18px; border-radius: 6px; margin-bottom: 15px; font-family: "Inter", sans-serif; color: white;'>
-                    <div style='display: flex; align-items: center; gap: 8px; margin-bottom: 2px;'>
-                        <div style='width: 7px; height: 7px; background: #00FFAA; border-radius: 50%; box-shadow: 0 0 8px #00FFAA;'></div>
-                        <span style='font-size: 10px; font-weight: 800; color: #00FFAA; letter-spacing: 1.5px; text-transform: uppercase;'>ACCESS GRANTED // NIVEL 5 (ROOT)</span>
-                    </div>
-                    <div style='font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600; margin-left: 15px;'>
-                        Administrador Reconocido. Credenciales de seguridad validadas en el sistema central.
-                    </div>
-                </div>
-            """,
-                unsafe_allow_html=True,
-            )
-
-            modo_edicion = st.checkbox(
-                "Activar Modo Edición de Envíos en Pantalla",
-                value=False,
-                key="check_modo_edicion_envios_session",
-            )
-    else:
-        modo_edicion = False
 
     # ── BOTÓN DE ACTUALIZACIÓN RÁPIDA ────────────────────────
     col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
@@ -748,38 +726,6 @@ def main():
             st.error(f"Hubo un error al cargar los datos: {response.status_code}")
             return pd.DataFrame()
 
-    def guardar_cambios_github(df_nuevo):
-        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
-        api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
-        
-        r_get = requests.get(api_url, headers=headers)
-        if r_get.status_code != 200:
-            st.error("No se pudo obtener el identificador actual del archivo en GitHub.")
-            return False
-        sha_actual = r_get.json().get("sha")
-        
-        csv_buffer = io.StringIO()
-        df_nuevo.to_csv(csv_buffer, index=False)
-        csv_content = csv_buffer.getvalue()
-        
-        content_encoded = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
-        
-        payload = {
-            "message": "Actualización automática de envíos desde panel admin seguro de Rigoberto",
-            "content": content_encoded,
-            "sha": sha_actual
-        }
-        
-        r_put = requests.put(api_url, json=payload, headers=headers)
-        if r_put.status_code in [200, 201]:
-            st.success("¡Envíos guardados en GitHub con éxito! 🚀")
-            st.cache_data.clear()
-            st.session_state["editor_version"] = st.session_state.get("editor_version", 1) + 1
-            return True
-        else:
-            st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
-            return False
-
     df_raw = get_github_data()
 
     df_dashboard_global = cargar_datos_dashboard()
@@ -792,38 +738,6 @@ def main():
 
     if not df_raw.empty:
         df_raw.columns = df_raw.columns.str.strip()
-
-        if modo_edicion:
-            st.markdown(
-                """
-                <div style='background: rgba(234, 179, 8, 0.08); border: 1px solid #eab308; border-left: 5px solid #eab308; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-family: "Inter", sans-serif; color: white;'>
-                    <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 4px;'>
-                        <div style='width: 8px; height: 8px; background: #eab308; border-radius: 50%; box-shadow: 0 0 8px #eab308;'></div>
-                        <span style='font-size: 11px; font-weight: 800; color: #eab308; letter-spacing: 1.5px; text-transform: uppercase;'>NEXION SECURITY // MODO EDICIÓN ACTIVO</span>
-                    </div>
-                    <div style='font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; margin-left: 18px;'>
-                        Modifica los registros en la matriz inferior y ejecuta la sincronización para actualizar la base remota de forma segura.
-                    </div>
-                </div>
-            """,
-                unsafe_allow_html=True,
-            )
-
-            editor_key = f"editor_envios_admin_session_{st.session_state.get('editor_version', 1)}"
-
-            df_editado = st.data_editor(
-                df_raw,
-                use_container_width=True,
-                num_rows="dynamic",
-                key=editor_key,
-            )
-
-            if st.button(
-                "Guardar Cambios en GitHub", key="btn_guardar_github_envios_session"
-            ):
-                if guardar_cambios_github(df_editado):
-                    st.rerun()
-            st.markdown("---")
 
         df_envios = pd.DataFrame()
         df_envios['factura'] = df_raw.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
