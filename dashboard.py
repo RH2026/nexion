@@ -133,6 +133,83 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
     }}
 }}
 
+/* ===================== TABS - ESTILO NEXION (TEXTO BLANCO / LÍNEA COLOR) ===================== */
+
+/* CONTENEDOR DE LAS PESTAÑAS */
+div[data-testid="stTabs"] [role="tablist"] {{
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+    border-bottom: 1px solid {vars_css['border']} !important;
+}}
+
+/* CADA PESTAÑA (INACTIVA / BASE) */
+div[data-testid="stTabs"] button,
+div[data-testid="stTabs"] div[data-baseweb="tab"],
+div[data-testid="stTabs"] [role="tab"] {{
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 0px 4px !important;
+    margin: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transition: all .25s ease !important;
+    flex: 0 0 auto !important;
+}}
+
+/* TEXTO INTERNO DE LAS PESTAÑAS (INACTIVO: BLANCO TENUE) */
+div[data-testid="stTabs"] [role="tab"] p,
+div[data-testid="stTabs"] [role="tab"] span {{
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
+}}
+
+/* HOVER EN PESTAÑAS */
+div[data-testid="stTabs"] [role="tab"]:hover p,
+div[data-testid="stTabs"] [role="tab"]:hover span {{
+    color: #ffffff !important;
+}}
+
+/* TAB ACTIVA (TEXTO BLANCO PURO) */
+div[data-testid="stTabs"] button[aria-selected="true"],
+div[data-testid="stTabs"] div[aria-selected="true"],
+div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
+    background: transparent !important;
+    background-color: transparent !important;
+}}
+
+div[data-testid="stTabs"] [role="tab"][aria-selected="true"] p,
+div[data-testid="stTabs"] [role="tab"][aria-selected="true"] span {{
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+}}
+
+/* ELIMINAR FOCUS / SOMBRAS DE STREAMLIT */
+div[data-testid="stTabs"] button:focus,
+div[data-testid="stTabs"] button:active,
+div[data-testid="stTabs"] [role="tab"]:focus {{
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}}
+
+/* LÍNEA INFERIOR DE SELECCIÓN (INDICADOR DE COLOR) */
+div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
+    background-color: #00FFAA !important;
+    height: 2px !important;
+}}
+
 /*FOOTER FIJO */
 .footer {{ 
     position: fixed; 
