@@ -90,6 +90,30 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
+/* SCROLLBAR CHINGÓN Y ELEGANTE */
+::-webkit-scrollbar {{
+    width: 6px;
+    height: 6px;
+}}
+::-webkit-scrollbar-track {{
+    background: {vars_css['bg']};
+}}
+::-webkit-scrollbar-thumb {{
+    background: {vars_css['border']};
+    border-radius: 3px;
+}}
+::-webkit-scrollbar-thumb:hover {{
+    background: #00A3A3;
+}}
+
+/* CONTENEDOR CON SCROLL PARA LA LISTA DE ALMACÉN */
+.scroll-container-almacen {{
+    max-height: 65vh;
+    overflow-y: auto;
+    padding-right: 5px;
+    margin-bottom: 20px;
+}}
+
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
 div.stButton > button, div.stDownloadButton > button {{
     background-color: {vars_css['card']} !important;
@@ -618,7 +642,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL COMPACTO CON TRANSPORTE DIRECTO DE FACTURACIÓN
+# 5. RENDER DE HISTORIAL COMPACTO CON SCROLL Y SELECTOR PEQUEÑO
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -643,6 +667,9 @@ def render_historial_almacen(data):
         "MOSTRADOR", 
         "EXPORTACION"
     ]
+
+    # Abrimos el contenedor con el scroll chingón
+    st.markdown('<div class="scroll-container-almacen">', unsafe_allow_html=True)
 
     for idx, item in enumerate(data):
         key_estatus = f"estatus_sel_{idx}_{item['factura']}"
@@ -673,19 +700,21 @@ def render_historial_almacen(data):
             color_texto_estatus = "#94a3b8"
 
         with st.container():
-            col_tarjeta, col_select = st.columns([4.2, 1.8], vertical_alignment="center")
+            # Columnas ajustadas para que el selectbox quede delgado y estético a un lado
+            col_tarjeta, col_select = st.columns([4.8, 1.2], vertical_alignment="center")
 
             with col_tarjeta:
                 fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN FECHA DE ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
+                # Tarjeta limpia sin etiquetas de "Extran:" ni "Transporte:", solo los valores puros
                 st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 8px; padding: 10px 14px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 5px;">
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 8px; padding: 8px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 4px;">
                         <div>
                             <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Factura: </span>
-                            <b style="font-size: 12px; color: white; font-style: italic;">{item['factura']}</b>
-                            <span style="margin-left: 10px; font-size: 9px; color: #38bdf8; font-weight: 700;">📅 F. ENVÍO: {fecha_envio_display}</span>
+                            <b style="font-size: 11px; color: white; font-style: italic;">{item['factura']}</b>
+                            <span style="margin-left: 10px; font-size: 9px; color: #38bdf8; font-weight: 700;">📅 {fecha_envio_display}</span>
                         </div>
                         <div>
                             <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Estatus: </span>
@@ -693,14 +722,35 @@ def render_historial_almacen(data):
                         </div>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                        <div style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;"><b>Extran:</b> {item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</div>
-                        <div style="color: #fde047; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 35%;"><b>Transporte:</b> {transporte_display}</div>
+                        <div style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</div>
+                        <div style="color: #fde047; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 35%;">{transporte_display}</div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
 
             with col_select:
                 index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
+                
+                # CSS personalizado inyectado para reducir la altura y el tamaño del selectbox exactamente a la mitad
+                st.markdown("""
+                <style>
+                div[data-baseweb="select"] > div {
+                    min-height: 26px !important;
+                    height: 26px !important;
+                    font-size: 10px !important;
+                    padding: 0px 6px !important;
+                    background-color: #2B343B !important;
+                    color: #ffffff !important;
+                    border: 1px solid #4B5D67 !important;
+                }
+                div[data-baseweb="select"] span {
+                    line-height: 26px !important;
+                    font-size: 10px !important;
+                    font-weight: 700 !important;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+
                 nuevo_estatus = st.selectbox(
                     "Estatus",
                     opciones_estatus_posibles,
@@ -713,6 +763,8 @@ def render_historial_almacen(data):
                     st.rerun()
 
             st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True) # Cierre del scroll-container-almacen
 
 def main():    
     if "animacion_cargada" not in st.session_state:
@@ -758,8 +810,6 @@ def main():
         df_proc = pd.DataFrame()
         df_proc['factura'] = df_fact.get('Factura', df_fact.get('FACTURA', pd.Series(dtype=str))).fillna('').astype(str).str.strip()
         df_proc['nombre_extran'] = df_fact.get('Nombre_Extran', df_fact.get('NOMBRE_EXTRAN', pd.Series(dtype=str))).fillna('').astype(str)
-        
-        # Leemos la columna de transporte directamente desde facturacion.csv
         df_proc['transporte'] = df_fact.get('Transporte', df_fact.get('TRANSPORTE', df_fact.get('FLETERA', pd.Series(dtype=str)))).fillna('').astype(str).str.strip()
 
         # ── CRUCE DE INFORMACIÓN CON envios.csv (SOLO PARA LA FECHA DE ENVÍO) ──
