@@ -176,8 +176,8 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
 
 /* FORZAR ALTURA Y CENTRADO PERFECTO DEL SELECTBOX */
 div[data-baseweb="select"] > div {{
-    min-height: 58px !important;
-    height: 48px !important;
+    min-height: 48px !important;
+    height: 55px !important;
     font-size: 10px !important;
     padding: 0px 8px !important;
     background-color: {vars_css['card']} !important;
