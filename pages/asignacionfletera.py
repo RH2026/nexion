@@ -674,7 +674,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON PAGINACIÓN (12 EN 12, FUERA DEL SCROLL)
+# 5. RENDER DE HISTORIAL CON PAGINACIÓN (12 EN 12, INFO IZQ Y BOTONES DER)
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -788,25 +788,25 @@ def render_historial_almacen(data):
     # Cierre del contenedor scroll
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── BOTONES DE PAGINACIÓN FUERA DEL SCROLL (EVITA QUE SE ENCIMEN) ──
-    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-    col_izq, col_centro, col_der = st.columns([1, 2, 1], vertical_alignment="center")
+    # ── BARRA DE PAGINACIÓN: INFO IZQ Y BOTONES JUNTOS DER ──
+    st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+    col_info, col_vacio, col_ant, col_sig = st.columns([2.5, 2.0, 1.1, 1.1], vertical_alignment="center")
 
-    with col_izq:
-        if st.session_state.pagina_almacen > 0:
-            if st.button("⬅️ ANTERIORES", use_container_width=True, key="btn_pag_anterior"):
-                st.session_state.pagina_almacen -= 1
-                st.rerun()
-
-    with col_centro:
+    with col_info:
         st.markdown(
-            f"""<div style='text-align: center; color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 700;'>
+            f"""<div style='text-align: left; color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 700;'>
                 PÁGINA {st.session_state.pagina_almacen + 1} DE {total_paginas} &nbsp;|&nbsp; TOTAL: {total_registros} REGISTROS
             </div>""",
             unsafe_allow_html=True
         )
 
-    with col_der:
+    with col_ant:
+        if st.session_state.pagina_almacen > 0:
+            if st.button("⬅️ ANTERIORES", use_container_width=True, key="btn_pag_anterior"):
+                st.session_state.pagina_almacen -= 1
+                st.rerun()
+
+    with col_sig:
         if st.session_state.pagina_almacen < total_paginas - 1:
             if st.button("SIGUIENTES ➡️", use_container_width=True, key="btn_pag_siguiente"):
                 st.session_state.pagina_almacen += 1
