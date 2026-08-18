@@ -715,7 +715,8 @@ def render_historial_almacen(data):
         "SOLO FACTURA", 
         "NO ENTREGADA", 
         "MOSTRADOR", 
-        "EXPORTACION"
+        "EXPORTACION",
+        "SIN ENVIAR"
     ]
 
     # Contenedor con altura fija y scroll elegante
@@ -926,7 +927,8 @@ def main():
                 "SOLO FACTURA", 
                 "NO ENTREGADA", 
                 "MOSTRADOR", 
-                "EXPORTACION"
+                "EXPORTACION",
+                "SIN ENVIAR"
             ]
             filtro_estatus = st.selectbox("FILTRAR POR ESTATUS", estatus_opts, key="filtro_estatus_almacen")
 
