@@ -189,7 +189,7 @@ def registrar_acceso_github(usuario, modulo):
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/cargardt.py"
+    st.session_state.pagina_destino = "dashboard.py"
     st.switch_page("pages/log.py")
 
 def verificar_permiso_pagina(modulo, submodulo=None):
