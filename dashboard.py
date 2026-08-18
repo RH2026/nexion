@@ -1159,13 +1159,16 @@ def main():
                 </div>"""
                 components.html(html_historial, height=450, scrolling=True)
             else:
-                st.markdown(f"""
-                <div style="background-color: #212529; border: 1px solid #ff4d4d; border-radius: 6px; padding: 14px 18px; font-family: 'Inter', sans-serif; box-sizing: border-box; width: 100%;">
-                    <div style="font-size: 10px; color: #ff4d4d; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">AVISO DEL SISTEMA: SIN COINCIDENCIAS</div>
-                    <div style="font-size: 13px; color: #d1d5db; font-weight: 500; margin-bottom: 6px;">Lo siento <b style="color: #ffffff;">Rigoberto Del Real Hernandez</b>, no se encontró historial de envíos para: <b style="color: #ff4d4d;">{busqueda_manual}</b></div>
-                    <div style="font-size: 9px; color: #ff4d4d; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">[ ACCIÓN: VERIFIQUE LOS DATOS DE BÚSQUEDA ]</div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(
+                    f"""
+                    <div style="background-color: #212529; border: 1px solid #ff4d4d; border-radius: 6px; padding: 14px 18px; font-family: 'Inter', sans-serif; box-sizing: border-box; width: 100%;">
+                        <div style="font-size: 10px; color: #ff4d4d; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">AVISO DEL SISTEMA: SIN COINCIDENCIAS</div>
+                        <div style="font-size: 13px; color: #d1d5db; font-weight: 500; margin-bottom: 6px;">Lo siento <b style="color: #ffffff;">{st.session_state.get("nombre_completo", usuario_actual)}</b>, no se encontró historial de envíos para: <b style="color: #ff4d4d;">{busqueda_manual}</b></div>
+                        <div style="font-size: 9px; color: #ff4d4d; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">[ ACCIÓN: VERIFIQUE LOS DATOS DE BÚSQUEDA ]</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
 if __name__ == "__main__":
     main()
