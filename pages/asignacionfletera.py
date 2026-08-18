@@ -666,7 +666,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON ALINEACIÓN EN COLUMNAS FIJAS
+# 5. RENDER DE HISTORIAL CON COLUMNAS FIJAS Y ESTADOS DINÁMICOS DE ENVÍO
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -697,8 +697,11 @@ def render_historial_almacen(data):
     for idx, item in enumerate(data):
         key_estatus = f"estatus_sel_{idx}_{item['factura']}"
         
+        # Validación automática del estado base según si tiene o no fecha de envío
+        tiene_fecha = bool(item.get('fecha_envio')) and str(item.get('fecha_envio')).strip().lower() not in ['', 'nan', '0', 'nat', 'none']
+        
         if key_estatus not in st.session_state:
-            estatus_base = "ENVIADA" if item.get('fecha_envio') else "PENDIENTE"
+            estatus_base = "ENVIADA" if tiene_fecha else "SIN ENVIAR"
             st.session_state[key_estatus] = estatus_base
 
         estatus_val = st.session_state[key_estatus]
@@ -721,16 +724,21 @@ def render_historial_almacen(data):
             col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
-                fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
-                # Se utiliza grid con anchos de columna fijos para garantizar una alineación perfecta en todos los renglones
+                if tiene_fecha:
+                    fecha_envio_display = f"📅 {item['fecha_envio']}"
+                    color_fecha = "#10b981"  # Verde si tiene fecha
+                else:
+                    fecha_envio_display = "⚠️ SIN ENVIAR"
+                    color_fecha = "#f59e0b"  # Naranja de alerta si no tiene fecha
+                
                 st.markdown(f"""
                 <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 2px 16px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 80px 1fr 220px 160px; align-items: center; gap: 15px; height: 48px;">
                     <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
                     <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
                     <span style="color: #fde047; font-weight: bold; white-space: nowrap; font-size: 11px; overflow: hidden; text-overflow: ellipsis;">{transporte_display}</span>
-                    <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
+                    <span style="color: {color_fecha}; font-weight: 700; font-size: 10px; white-space: nowrap;">{fecha_envio_display}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
