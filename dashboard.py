@@ -697,7 +697,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (SOLO DONITAS Y GRÁFICOS)
+# 5. INTERFAZ PRINCIPAL CON SISTEMA DE TABS
 # ==========================================
 def main():    
     if "animacion_cargada" not in st.session_state:
@@ -795,81 +795,128 @@ def main():
         retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
         total_t = len(df_trans)  
 
-        st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-        c1, c2, c3, c4, c5 = st.columns(5)
-        with c1: render_kpi(total_p, total_p, "Pedidos", "#f6c23e")
-        with c2: render_kpi(entregados, total_p, "Entregados", "#1cc88a")
-        with c3: render_kpi(total_t, total_p, "Tránsito", "#4e73df")
-        with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#36b9cc")
-        with c5: render_kpi(retrasados, total_p, "Retraso", "#fb7185")
+        # ==========================================================
+        # DEFINICIÓN DE LAS 5 PESTAÑAS (TABS) BIEN SEPARADAS
+        # ==========================================================
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            "📊 KPIS", 
+            "🚀 PESTAÑA 2", 
+            "📦 PESTAÑA 3", 
+            "📈 PESTAÑA 4", 
+            "⚙️ PESTAÑA 5"
+        ])
+
+        # ----------------------------------------------------------
+        # TAB 1: KPIS (Donitas y Gráficos originales)
+        # ----------------------------------------------------------
+        with tab1:
+            st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
+            c1, c2, c3, c4, c5 = st.columns(5)
+            with c1: render_kpi(total_p, total_p, "Pedidos", "#f6c23e")
+            with c2: render_kpi(entregados, total_p, "Entregados", "#1cc88a")
+            with c3: render_kpi(total_t, total_p, "Tránsito", "#4e73df")
+            with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#36b9cc")
+            with c5: render_kpi(retrasados, total_p, "Retraso", "#fb7185")
                     
-        st.markdown("<br>", unsafe_allow_html=True)
-    
-        st.markdown(f"""
-            <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 40px 0; opacity: 0.3;">
-            <div style="
-                color: {vars_css['sub']}; 
-                font-size: 14px; 
-                font-weight: 500; 
-                letter-spacing: 2px; 
-                margin-bottom: 20px; 
-                text-transform: uppercase;
-            ">
-                Distribución de Carga actual
-            </div>
-        """, unsafe_allow_html=True)
-        
-        color_transito = "#36b9cc"
-        color_retraso = "#fb7185"
-        
-        col_graf1, col_graf2 = st.columns(2)
-        
-        with col_graf1:
-            df_t = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] >= hoy_dt)].copy()
-            df_t_count = df_t.groupby("FLETERA").size().reset_index(name="CANTIDAD")
-            total_t_graf = df_t_count["CANTIDAD"].sum()
+            st.markdown("<br>", unsafe_allow_html=True)
         
             st.markdown(f"""
-                <div style='background: linear-gradient(90deg, {color_transito}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_transito};'>
-                    <p style='margin:0; color:{color_transito}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔵 En tránsito en tiempo</p>
-                    <h2 style='margin:0; color:white; font-size:28px;'>{total_t_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
+                <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 40px 0; opacity: 0.3;">
+                <div style="
+                    color: {vars_css['sub']}; 
+                    font-size: 14px; 
+                    font-weight: 500; 
+                    letter-spacing: 2px; 
+                    margin-bottom: 20px; 
+                    text-transform: uppercase;
+                ">
+                    Distribución de Carga actual
                 </div>
             """, unsafe_allow_html=True)
-        
-            import altair as alt
-            if not df_t_count.empty:
-                h_t = len(df_t_count) * 35 + 50
-                chart_t = alt.Chart(df_t_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_transito).encode(
-                    x=alt.X("CANTIDAD:Q", title=None, axis=None),
-                    y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
-                )
-                text_t = chart_t.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
-                st.altair_chart((chart_t + text_t).properties(height=h_t).configure_view(strokeOpacity=0), use_container_width=True)
-            else:
-                st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin carga en tránsito</div>", unsafe_allow_html=True)
-        
-        with col_graf2:
-            df_r = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] < hoy_dt)].copy()
-            df_r_count = df_r.groupby("FLETERA").size().reset_index(name="CANTIDAD")
-            total_r_graf = df_r_count["CANTIDAD"].sum()
-        
-            st.markdown(f"""
-                <div style='background: linear-gradient(90deg, {color_retraso}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_retraso};'>
-                    <p style='margin:0; color:{color_retraso}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔴 En tránsito con Retraso</p>
-                    <h2 style='margin:0; color:white; font-size:28px;'>{total_r_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
-                </div>
-            """, unsafe_allow_html=True)
-        
-            if not df_r_count.empty:
-                h_r = len(df_r_count) * 35 + 50
-                chart_r = alt.Chart(df_r_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_retraso).encode(
-                    x=alt.X("CANTIDAD:Q", title=None, axis=None),
-                    y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
-                )
-                text_r = chart_r.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
-                st.altair_chart((chart_r + text_r).properties(height=h_r).configure_view(strokeOpacity=0), use_container_width=True)
-            else:
-                st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
+            
+            color_transito = "#36b9cc"
+            color_retraso = "#fb7185"
+            
+            col_graf1, col_graf2 = st.columns(2)
+            
+            with col_graf1:
+                df_t = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] >= hoy_dt)].copy()
+                df_t_count = df_t.groupby("FLETERA").size().reset_index(name="CANTIDAD")
+                total_t_graf = df_t_count["CANTIDAD"].sum()
+            
+                st.markdown(f"""
+                    <div style='background: linear-gradient(90deg, {color_transito}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_transito};'>
+                        <p style='margin:0; color:{color_transito}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔵 En tránsito en tiempo</p>
+                        <h2 style='margin:0; color:white; font-size:28px;'>{total_t_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+                import altair as alt
+                if not df_t_count.empty:
+                    h_t = len(df_t_count) * 35 + 50
+                    chart_t = alt.Chart(df_t_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_transito).encode(
+                        x=alt.X("CANTIDAD:Q", title=None, axis=None),
+                        y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
+                    )
+                    text_t = chart_t.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
+                    st.altair_chart((chart_t + text_t).properties(height=h_t).configure_view(strokeOpacity=0), use_container_width=True)
+                else:
+                    st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin carga en tránsito</div>", unsafe_allow_html=True)
+            
+            with col_graf2:
+                df_r = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] < hoy_dt)].copy()
+                df_r_count = df_r.groupby("FLETERA").size().reset_index(name="CANTIDAD")
+                total_r_graf = df_r_count["CANTIDAD"].sum()
+            
+                st.markdown(f"""
+                    <div style='background: linear-gradient(90deg, {color_retraso}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_retraso};'>
+                        <p style='margin:0; color:{color_retraso}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔴 En tránsito con Retraso</p>
+                        <h2 style='margin:0; color:white; font-size:28px;'>{total_r_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+                if not df_r_count.empty:
+                    h_r = len(df_r_count) * 35 + 50
+                    chart_r = alt.Chart(df_r_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_retraso).encode(
+                        x=alt.X("CANTIDAD:Q", title=None, axis=None),
+                        y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
+                    )
+                    text_r = chart_r.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
+                    st.altair_chart((chart_r + text_r).properties(height=h_r).configure_view(strokeOpacity=0), use_container_width=True)
+                else:
+                    st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
+
+        # ----------------------------------------------------------
+        # TAB 2: PESTAÑA 2 (Espacio reservado para futuro contenido)
+        # ----------------------------------------------------------
+        with tab2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.info("💡 **Espacio reservado para la Pestaña 2.** Aquí podrás agregar tus tablas, reportes o métricas secundarias cuando lo requieras.")
+            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 2
+
+        # ----------------------------------------------------------
+        # TAB 3: PESTAÑA 3 (Espacio reservado para futuro contenido)
+        # ----------------------------------------------------------
+        with tab3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.info("💡 **Espacio reservado para la Pestaña 3.** Aquí podrás agregar contenido adicional de manera totalmente independiente.")
+            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 3
+
+        # ----------------------------------------------------------
+        # TAB 4: PESTAÑA 4 (Espacio reservado para futuro contenido)
+        # ----------------------------------------------------------
+        with tab4:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.info("💡 **Espacio reservado para la Pestaña 4.** Espacio libre y bien delimitado para nuevos componentes.")
+            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 4
+
+        # ----------------------------------------------------------
+        # TAB 5: PESTAÑA 5 (Espacio reservado para futuro contenido)
+        # ----------------------------------------------------------
+        with tab5:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.info("💡 **Espacio reservado para la Pestaña 5.** Última sección configurada y lista para recibir requerimientos.")
+            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 5
 
 if __name__ == "__main__":
     main()
