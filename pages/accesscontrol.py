@@ -39,6 +39,16 @@ vars_css = {
     "logo": "n1.png",
 }
 
+# ── TEMA Y CSS MAESTROS ──────────────────────────────────────────
+vars_css = {
+    "bg": "#384A52",
+    "card": "#2B343B",
+    "text": "#FFFFFF",
+    "sub": "#FFFFFF",
+    "border": "#4B5D67",
+    "logo": "n1.png",
+}
+
 st.markdown(
     f"""
 <style>
@@ -92,8 +102,8 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* BOTONES SLIM Y BOTONES DE DESCARGA */
-div.stButton > button, div.stDownloadButton > button {{
+/* BOTONES GENERALES (EXCEPTO ACCIONES ESPECÍFICAS) */
+div.stButton > button:not([kind="primary"]) {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
@@ -106,7 +116,7 @@ div.stButton > button, div.stDownloadButton > button {{
     transition: all 0.3s ease !important;
 }}
 
-div.stButton > button:hover, div.stDownloadButton > button:hover {{
+div.stButton > button:not([kind="primary"]):hover {{
     background-color: #00A3A3 !important;
     color: #ffffff !important;
     border-color: #00A3A3 !important;
@@ -161,7 +171,7 @@ div[data-testid="stTabs"] [role="tab"] {{
     flex: 0 0 auto !important;
 }}
 
-/* TEXTO INTERNO DE LAS PESTAÑAS (IGUALADO A TÍTULOS DINÁMICOS: 13px y 5px de espacio) */
+/* TEXTO INTERNO DE LAS PESTAÑAS */
 div[data-testid="stTabs"] [role="tab"] p,
 div[data-testid="stTabs"] [role="tab"] span {{
     color: rgba(255, 255, 255, 0.6) !important;
@@ -178,7 +188,7 @@ div[data-testid="stTabs"] [role="tab"]:hover span {{
     color: #FFD700 !important;
 }}
 
-/* TAB ACTIVA (TEXTO BLANCO PURO IDÉNTICO AL HEADER) */
+/* TAB ACTIVA */
 div[data-testid="stTabs"] button[aria-selected="true"],
 div[data-testid="stTabs"] div[aria-selected="true"],
 div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
