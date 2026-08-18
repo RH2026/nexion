@@ -692,7 +692,7 @@ def render_historial_almacen(data):
     data_invertida = list(reversed(data))
     
     # Configuración de Paginación de 30 en 30
-    tamanio_pagina = 30
+    tamanio_pagina = 20
     total_registros = len(data_invertida)
     total_paginas = max(1, (total_registros + tamanio_pagina - 1) // tamanio_pagina)
 
@@ -728,9 +728,11 @@ def render_historial_almacen(data):
         
         tiene_fecha = bool(item.get('fecha_envio')) and str(item.get('fecha_envio')).strip().lower() not in ['', 'nan', '0', 'nat', 'none']
         
+        # Forzar "SIN ENVIAR" si no tiene fecha, o inicializar según corresponda
         if key_estatus not in st.session_state:
-            estatus_base = "ENVIADA" if tiene_fecha else "SIN ENVIAR"
-            st.session_state[key_estatus] = estatus_base
+            st.session_state[key_estatus] = "ENVIADA" if tiene_fecha else "SIN ENVIAR"
+        elif not tiene_fecha and st.session_state[key_estatus] == "ENVIADA":
+            st.session_state[key_estatus] = "SIN ENVIAR"
 
         estatus_val = st.session_state[key_estatus]
         
