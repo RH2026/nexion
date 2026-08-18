@@ -193,7 +193,7 @@ div[data-baseweb="select"] > div:first-child {{
 }}
 
 div[data-baseweb="select"] span {{
-    font-size: 14px !important;
+    font-size: 50px !important;
     font-weight: 700 !important;
 }}
 </style>
@@ -760,7 +760,7 @@ def render_historial_almacen(data):
                 <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 2px 16px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 80px 1fr 220px 160px; align-items: center; gap: 15px; height: 53px;">
                     <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
                     <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
-                    <span style="color: #fde047; font-weight: bold; white-space: nowrap; font-size: 11px; overflow: hidden; text-overflow: ellipsis;">{transporte_display}</span>
+                    <span style="color: #ffffff; font-weight: bold; white-space: nowrap; font-size: 11px; overflow: hidden; text-overflow: ellipsis;">{transporte_display}</span>
                     <span style="color: {color_fecha}; font-weight: 700; font-size: 10px; white-space: nowrap;">{fecha_envio_display}</span>
                 </div>
                 """, unsafe_allow_html=True)
