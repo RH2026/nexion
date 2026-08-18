@@ -642,7 +642,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL EN UNA SOLA LÍNEA Y ALTURA PERFECTA
+# 5. RENDER DE HISTORIAL COMPACTO SIN ESPACIOS
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -699,21 +699,21 @@ def render_historial_almacen(data):
             color_texto_estatus = "#94a3b8"
 
         with st.container():
-            # Columnas con proporción exacta para mantener la tarjeta y el selectbox alineados y de la misma altura
-            col_tarjeta, col_select = st.columns([5.2, 0.8], vertical_alignment="center")
+            # Columnas con distribución fluida sin separaciones vacías
+            col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
                 fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
-                # Todo en una sola línea elegante, sin la palabra "Factura:" y ultra compacta
+                # Flexbox con distribución space-between para aprovechar todo el ancho de forma fluida
                 st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 5px 10px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 30px;">
-                    <div style="display: flex; align-items: center; gap: 18px; font-size: 11px; width: 100%; overflow: hidden;">
-                        <b style="color: white; font-style: italic; font-size: 12px; min-width: 55px;">#{item['factura']}</b>
-                        <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 2;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
-                        <span style="color: #fde047; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: right;">{transporte_display}</span>
-                        <span style="color: #38bdf8; font-weight: 700; font-size: 10px; min-width: 110px; text-align: right;">📅 {fecha_envio_display}</span>
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 5px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 30px;">
+                    <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
+                        <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
+                        <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
+                        <span style="color: #fde047; font-weight: bold; white-space: nowrap; margin-left: auto; padding-right: 15px;">{transporte_display}</span>
+                        <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -721,7 +721,7 @@ def render_historial_almacen(data):
             with col_select:
                 index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
                 
-                # CSS personalizado para hacer el selectbox ultra pequeño y de la misma altura (30px)
+                # CSS para mantener el selectbox alineado exactamente a 30px de altura
                 st.markdown("""
                 <style>
                 div[data-baseweb="select"] > div {
