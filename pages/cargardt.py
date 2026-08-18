@@ -186,61 +186,6 @@ def registrar_acceso_github(usuario, modulo):
 
 
 # ==========================================
-# 2. SISTEMA DE SEGURIDAD (BLOQUEO DIRECTO)
-# ==========================================
-if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/cargardt.py"
-    st.switch_page("pages/log.py")
-
-_usuario = str(st.session_state.get("usuario_activo", "")).upper()
-_permisos = st.session_state.get("permisos", {})
-
-# Forzamos validación booleana estricta de la matriz
-_tiene_modulo = bool(_permisos.get("CENTRO DE DATOS", False))
-_tiene_sub = bool(_permisos.get("CARGAR DATOS", False))
-
-if _usuario != "RIGOBERTO" and (not _tiene_modulo or not _tiene_sub):
-    st.markdown(
-        f"""
-        <div style="
-            background: {vars_css['card']}; 
-            border: 1px solid {vars_css['border']}; 
-            border-left: 5px solid #FFD700; 
-            padding: 20px 25px; 
-            border-radius: 8px; 
-            width: 100%; 
-            font-family: 'Inter', sans-serif; 
-            color: white; 
-            box-sizing: border-box; 
-            margin-top: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        ">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
-                <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
-                    ACCESS RESTRICTED // MÓDULO O SECCIÓN BLOQUEADA
-                </span>
-            </div>
-            <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
-                No cuentas con los permisos necesarios en la matriz para acceder a la sección <b style="color: white; text-transform: uppercase;">CARGAR DATOS</b>.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    
-    col_reg, _ = st.columns([1.5, 4])
-    with col_reg:
-        if st.button("REGRESAR AL INICIO", key="btn_regresar_cargardt_final", use_container_width=True):
-            st.session_state.menu_main = "DASHBOARD"
-            st.session_state.menu_sub = "GENERAL"
-            st.switch_page("dashboard.py")
-            
-    st.stop()
-
-
-# ==========================================
 # 3. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
 # ==========================================
 @st.cache_data(ttl=60)
@@ -654,10 +599,62 @@ with header_zone:
 
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
+
 # ==========================================
-# 5. INTERFAZ PRINCIPAL (DATA HUB PREMIUM CON TEXTOS CLAROS)
+# 5. INTERFAZ PRINCIPAL CON SEGURIDAD INTEGRADA ADENTRO
 # ==========================================
 def main():    
+    # ── SISTEMA DE SEGURIDAD BLINDADO (BLOQUEO DIRECTO) ──
+    if not st.session_state.get("autenticado", False):
+        st.session_state.pagina_destino = "pages/cargardt.py"
+        st.switch_page("pages/log.py")
+
+    _usuario = str(st.session_state.get("usuario_activo", "")).upper()
+    _permisos = st.session_state.get("permisos", {})
+
+    _tiene_modulo = bool(_permisos.get("CENTRO DE DATOS", False))
+    _tiene_sub = bool(_permisos.get("CARGAR DATOS", False))
+
+    if _usuario != "RIGOBERTO" and (not _tiene_modulo or not _tiene_sub):
+        st.markdown(
+            f"""
+            <div style="
+                background: {vars_css['card']}; 
+                border: 1px solid {vars_css['border']}; 
+                border-left: 5px solid #FFD700; 
+                padding: 20px 25px; 
+                border-radius: 8px; 
+                width: 100%; 
+                font-family: 'Inter', sans-serif; 
+                color: white; 
+                box-sizing: border-box; 
+                margin-top: 20px;
+                margin-bottom: 25px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            ">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
+                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
+                        ACCESS RESTRICTED // MÓDULO O SECCIÓN BLOQUEADA
+                    </span>
+                </div>
+                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
+                    No cuentas con los permisos necesarios en la matriz para acceder a la sección <b style="color: white; text-transform: uppercase;">CARGAR DATOS</b>.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        col_reg, _ = st.columns([1.5, 4])
+        with col_reg:
+            if st.button("REGRESAR AL INICIO", key="btn_regresar_cargardt_final", use_container_width=True):
+                st.session_state.menu_main = "DASHBOARD"
+                st.session_state.menu_sub = "GENERAL"
+                st.switch_page("dashboard.py")
+                
+        st.stop()
+
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
@@ -665,7 +662,6 @@ def main():
     import pytz
     tz_gdl = pytz.timezone('America/Mexico_City')
 
-    # ── ESTILO VISUAL PREMIUM (TEXTOS CLAROS Y LEGIBLES) ──
     st.markdown("""
         <style>
         .main { background-color: #0A0D12; }
@@ -684,7 +680,6 @@ def main():
             gap: 20px;
         }
         
-        /* Tarjetas de Estatus con texto secundario brillante (#94A3B8) */
         .node-card {
             background: linear-gradient(145deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -733,7 +728,7 @@ def main():
 
         .node-label {
             font-size: 10px;
-            color: #CBD5E1; /* ¡Texto mucho más claro y visible! */
+            color: #CBD5E1;
             letter-spacing: 2.5px;
             font-weight: 800;
             margin-bottom: 5px;
@@ -746,7 +741,6 @@ def main():
             letter-spacing: 0.5px;
         }
 
-        /* Consola de Logs con textos totalmente visibles */
         .terminal-log {
             background: #0D1117;
             border: 1px solid #1E293B;
@@ -764,7 +758,6 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # ── CONFIGURACIÓN DE SEGURIDAD ──
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
     DASHBOARD_NAME = "Matriz_Excel_Dashboard.csv"
@@ -773,7 +766,6 @@ def main():
     MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx"]
     TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME, CONSIGNAS_FILE, PEDIDOS_FILE] + MATRICES_EXCEL
 
-    # ── HEADER VISUAL PREMIUM ──
     st.markdown('''
         <div class="hud-header">
             <div>
@@ -783,7 +775,6 @@ def main():
         </div>
     ''', unsafe_allow_html=True)
 
-    # ── DASHBOARD DE ESTADOS (NODOS) ──
     c1, c2, c3 = st.columns(3)
     with c1:
         st.markdown(f'''
@@ -820,7 +811,6 @@ def main():
 
     st.markdown("<div style='margin: 25px 0;'></div>", unsafe_allow_html=True)
 
-    # ── ÁREA DE CARGA MULTIPLE ──
     with st.container(border=True):
         st.markdown("<h4 style='color: white; font-weight: 700; font-size: 16px; letter-spacing: 1px;'>SECURE MULTI-UPLINK</h4>", unsafe_allow_html=True)
         st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}`, `{PEDIDOS_FILE}` and `T1, T2, T3` (XLSX)")
@@ -879,7 +869,6 @@ def main():
                         except Exception as e:
                             status.update(label=f"Fallo en Uplink: {str(e)}", state="error")
 
-    # ── LOGS DEL SISTEMA (ESTILO TERMINAL CON TEXTOS CLAROS) ──
     st.markdown("<br>", unsafe_allow_html=True)
     with st.expander("💻 SYSTEM AUDIT LOGS (GITHUB COMMITS)", expanded=False):
         if TOKEN:
