@@ -42,8 +42,7 @@ vars_css = {
 st.markdown(
     f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&display=swap');
 
 /* --- ANIMACIONES DE ENTRADA --- */
 @keyframes fadeInUp {{
@@ -57,10 +56,9 @@ st.markdown(
     }}
 }}
 
-[data-testid="stVerticalBlock"] > div:not(:has(.footer)) {{
+[data-testid="stVerticalBlock"] > div {{
     animation: fadeInUp 0.6s ease-out;
 }}
-
 
 /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
 header, footer, [data-testid="stHeader"] {{
@@ -94,7 +92,7 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* BOTONES SLIM Y BOTONES DE DESCARGA GENERALES */
+/* BOTONES SLIM Y BOTONES DE DESCARGA */
 div.stButton > button, div.stDownloadButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
@@ -103,7 +101,7 @@ div.stButton > button, div.stDownloadButton > button {{
     font-weight: 700 !important;
     text-transform: uppercase;
     font-size: 10px !important;
-    height: 28px !important;
+    height: 32px !important;
     width: 100% !important;
     transition: all 0.3s ease !important;
 }}
@@ -114,36 +112,105 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
-/* --- ESTILO NEXION AMPLIADO PARA EL DATA EDITOR --- */
-[data-testid="stDataFrame"] {{
-    background-color: {vars_css['card']} !important;
-    border: 1px solid {vars_css['border']} !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
-}}
-
 /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
 div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
-    gap: 0.35rem !important;
+    gap: 0.45rem !important;
 }}
 
 div[data-testid="stPopoverBody"] .stButton {{
-    margin-bottom: 4px !important;
+    margin-bottom: 0rem !important;
 }}
 
 div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
     border: none !important;
     background: transparent !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 0rem !important;
     > div {{
         padding: 0 !important;
     }}
 }}
 
-/*FOOTER FIJO BLINDADO */
+/* ===================== TABS - ESTILO NEXION (IGUAL A TÍTULOS DINÁMICOS) ===================== */
+
+/* CONTENEDOR DE LAS PESTAÑAS */
+div[data-testid="stTabs"] [role="tablist"] {{
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+    border-bottom: 1px solid {vars_css['border']} !important;
+}}
+
+/* CADA PESTAÑA (INACTIVA / BASE) */
+div[data-testid="stTabs"] button,
+div[data-testid="stTabs"] div[data-baseweb="tab"],
+div[data-testid="stTabs"] [role="tab"] {{
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 0px 4px !important;
+    margin: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transition: all .25s ease !important;
+    flex: 0 0 auto !important;
+}}
+
+/* TEXTO INTERNO DE LAS PESTAÑAS (IGUALADO A TÍTULOS DINÁMICOS: 13px y 5px de espacio) */
+div[data-testid="stTabs"] [role="tab"] p,
+div[data-testid="stTabs"] [role="tab"] span {{
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    letter-spacing: 0px !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
+}}
+
+/* HOVER EN PESTAÑAS */
+div[data-testid="stTabs"] [role="tab"]:hover p,
+div[data-testid="stTabs"] [role="tab"]:hover span {{
+    color: #FFD700 !important;
+}}
+
+/* TAB ACTIVA (TEXTO BLANCO PURO IDÉNTICO AL HEADER) */
+div[data-testid="stTabs"] button[aria-selected="true"],
+div[data-testid="stTabs"] div[aria-selected="true"],
+div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
+    background: transparent !important;
+    background-color: transparent !important;
+}}
+
+div[data-testid="stTabs"] [role="tab"][aria-selected="true"] p,
+div[data-testid="stTabs"] [role="tab"][aria-selected="true"] span {{
+    color: #FFFFFF !important;
+    font-weight: 400 !important;
+    letter-spacing: 0px !important;
+}}
+
+/* ELIMINAR FOCUS / SOMBRAS DE STREAMLIT */
+div[data-testid="stTabs"] button:focus,
+div[data-testid="stTabs"] button:active,
+div[data-testid="stTabs"] [role="tab"]:focus {{
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}}
+
+/* LÍNEA INFERIOR DE SELECCIÓN (INDICADOR DE COLOR) */
+div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
+    background-color: #38bdf8 !important;
+    height: 2px !important;
+}}
+
+/*FOOTER FIJO */
 .footer {{ 
-    position: fixed !important; 
+    position: fixed; 
     bottom: 0 !important; 
     left: 0 !important; 
     width: 100% !important; 
@@ -155,9 +222,6 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
     letter-spacing: 2px; 
     border-top: 1px solid {vars_css['border']} !important; 
     z-index: 999999 !important; 
-    animation: none !important;
-    transform: none !important;
-    opacity: 1 !important;
 }}
 </style>
 """,
