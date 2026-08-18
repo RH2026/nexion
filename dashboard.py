@@ -890,10 +890,212 @@ def main():
         # TAB 2: PESTAÑA 2 (Espacio reservado para futuro contenido)
         # ----------------------------------------------------------
         with tab2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.info("💡 **Espacio reservado para la Pestaña 2.** Aquí podrás agregar tus tablas, reportes o métricas secundarias cuando lo requieras.")
-            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 2
+            st.write("") 
+            # =========================================================
+            # 1. PROCESAMIENTO DE DATOS
+            # =========================================================
+            df['FECHA DE ENVÍO'] = pd.to_datetime(df['FECHA DE ENVÍO'], errors='coerce')
+            df['FECHA DE ENTREGA REAL'] = pd.to_datetime(df['FECHA DE ENTREGA REAL'], errors='coerce')
+            df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
+            
+            # =========================================================
+            # 2. SECCIÓN DEL CALCULADOR INTELIGENTE
+            # =========================================================                
+            usuario_actual = st.session_state.get('usuario_activo', 'Cielo')
+            
+            c1, c2, c3 = st.columns([1, 1, 0.8])
+            
+            with c1:
+                st.text_input("ORIGEN", value="GUADALAJARA (GDL)", disabled=True, key="orig_fix")
+            
+            with c2:
+                busqueda_manual = st.text_input(
+                    "BUSCAR POR DESTINO, CP O DOMICILIO", 
+                    placeholder="Ej: 63734, Litibu, Cancún...",
+                    key="busqueda_manual_v6"
+                )
+            
+            with c3:
+                num_cajas = st.number_input("CANTIDAD DE CAJAS", min_value=1, value=1, step=1)
+            
+            # --- LÓGICA DE VISUALIZACIÓN POR DEFECTO ---
+            if not busqueda_manual:
+                df_validos = df[df['DIAS_REALES'].notna()]
+                rutas_dos_dias = df_validos[df_validos['DIAS_REALES'] == 2]
+                if not rutas_dos_dias.empty:
+                    busqueda_activa = rutas_dos_dias['DESTINO'].iloc[0]
+                    texto_mostrar = f"{busqueda_activa}"
+                elif not df_validos.empty:
+                    busqueda_activa = df_validos.groupby('DESTINO')['DIAS_REALES'].mean().idxmin()
+                    texto_mostrar = f"{busqueda_activa} (Ruta sugerida)"
+                else:
+                    busqueda_activa = ""
+                    texto_mostrar = "CONSULTA DE RUTA"
+            else:
+                busqueda_activa = busqueda_manual
+                texto_mostrar = busqueda_manual.upper()
+            
+            # --- FILTRADO ORIGINAL (SIN ROMPER NADA) ---                   
+            # Validamos que busqueda_activa no sea nula y la forzamos a ser texto seguro
+            busqueda_aux = str(busqueda_activa).lower() if pd.notna(busqueda_activa) else ""
+            mask = (
+                df['DESTINO'].astype(str).str.lower().str.contains(busqueda_aux, na=False) |
+                df['DOMICILIO'].astype(str).str.lower().str.contains(busqueda_aux, na=False)
+            )
+            
+            historial = df[mask & (df['DIAS_REALES'].notna())].copy()
+            
+            if not historial.empty:
+                # --- CÁLCULO DE TIEMPOS ---
+                fletera_recomendada = historial['FLETERA'].value_counts().idxmax()
+                promedio_dias = historial['DIAS_REALES'].mean()
+                total_viajes = len(historial)
+                dias_redondeados = math.ceil(promedio_dias)
+        
+                # --- MOTOR LÓGICO DE PRECIOS NEXION ELITE ---
 
+                # 1. Preparación del texto de búsqueda
+                texto_domicilio = str(historial['DOMICILIO'].iloc[0]).upper()
+                
+                # 2. Lista Maestra de Región $65 (Convenio Especial + Bajío/Centro)
+                regiones_65 = [
+                    # TUS DESTINOS DEL NORTE/PACÍFICO (FORMATO DOBLE)
+                    "HERMOSILLO", "HERMOSILLO, SON", "GUAYMAS", "GUAYMAS, SON", 
+                    "DURANGO", "DURANGO, DUR", "SALTILLO", "SALTILLO, COA", 
+                    "TEPIC", "TEPIC, NAY", "MAZATLAN", "MAZATLAN, SIN", 
+                    "CANANEA", "CANANEA, SON", "TORREON", "TORREON, COA", 
+                    "CULIACAN", "CULIACAN, SIN", "CIUDAD OBREGON", "CIUDAD OBREGON, SON", 
+                    "LOS MOCHIS", "LOS MOCHIS, SIN", "OBREGON", "OBREGON, SON", 
+                    "CABORCA", "CABORCA, SON", "NOGALES", "NOGALES, SON", 
+                    "NAVOJOA", "NAVOJOA, SON", "MONTERREY", "MONTERREY, NL",
+                    "APODACA", "APODACA, NL", "PIEDRAS NEGRAS", "PIEDRAS NEGRAS, COA",
+                    "NUEVO VALLARTA", "NUEVO VALLARTA, NAY", "RINCON DE GUAYABITOS", "RINCON DE GUAYABITOS, NAY",
+                    "CAJEME, CIUDAD OBREGON, SON", "TORREON COAHUILA, COA",
+                
+                    # ESTADOS Y ABREVIACIONES GENERALES (CENTRO/BAJÍO)
+                    "QUERETARO", "QRO", "QUE", "GUANAJUATO", "GTO", "LEON", "CELAYA", 
+                    "AGUASCALIENTES", "AGS", "SAN LUIS POTOSI", "SLP", "HIDALGO", "HID", 
+                    "PUEBLA", "PUE", "JALISCO", "JAL", "ESTADO DE MEXICO", "EDOMEX",
+                    "TLAXCALA", "TLA", "MORELOS", "MOR", "CDMX", "CMX", "DF", "DF2",
+                    
+                    # VARIANTES CDMX Y CIUDAD DE MÉXICO
+                    "MEXICO, DF", "MEXICO, DF2", "CIUDAD DE MEXICO", "MÉXICO, DF2", ", CMX",
+                    "CIUDAD DE MÉXICO, DF2", "DELEGACION CUAUHTEMOC, CMX", "ALCALDIA CUAUHTEMOC, CMX",
+                    "ALCALDIA CUAJIMALPA DE MORELOS, CMX", "CUAJIMALPA DE MORELOS, DF2",
+                    
+                    # CIUDADES ESPECÍFICAS DE TU IMAGEN
+                    "MATEHUALA, SLP", "IXTAPAN DE LA SAL, MEX", "QUERETARO, QUE", "ATITALAQUIA, HID",
+                    "MORELIA, MCH", "SILAO, GTO", "TOLUCA, MEX", "SALAMANCA, GTO", "SANTIAGO DE QUERETARO, QUE",
+                    "JURIQUILLA, QUE", "PACHUCA, HID", "CALVILLO, AGS", "PUEBLA, PUE", "AMEALCO DE BONFIL, QUE",
+                    "TULA DE ALLENDE, HID", "ACAMBARO, GTO", "CUAUTLANCINGO, PUE", "NUEVA ITALIA, MCH", 
+                    "JACONA, MCH", "CORONANGO, PUE", "IRAPUATO, GTO", "GUANAJUATO, GTO", 
+                    "SAN MIGUEL DE ALLENDE, GTO", "ZAMORA, MCH", "CUERNAVACA, MOR", "TOLUCA, DF2", 
+                    "IXTAPALUCA, MEX", "IZTACALCO, CMX", "TETLATLAHUACA, TLA", "NAUCALPAN DE JUAREZ, MEX", 
+                    "NICOLAS ROMERO, MEX", "SAN ANDRES, PUE", "TLANEPANTLA, MEX", "TEPOTZOTLAN, MEX", 
+                    "VALLE DE BRAVO, MEX", "PATZCUARO, MCH", "ALVARO OBREGON, CMX", "TLALPAN, DF2", 
+                    "SAN ANDRES CHOLULA, PUE", "TOLUCA DE LERDO, MEX", "CEDRAL, SLP", "TEQUISQUIAPAN, QUE", 
+                    "TLALNEPANTLA DE BAZ, CMX", "MÉXICO, DF2", "BERNAL, QUE", "SILAO DE LA VICTORIA, GTO", 
+                    "SAN JUAN DEL RIO, QUE", "CUAHUTEMOC, CMX", "METEPEC, MEX", "PACHUCA de SOTO, HID", 
+                    "MUNICIPIO ALVARO OBREGON, MCH", "TLANEPANTLA, CMX", "ATLIXCO, PUE", "MIGUEL HIDALGO, CMX", 
+                    "SANTA CRUZ TECÁMAC, MEX", "EL MARQUES, QUE", "MARINA NACIONAL, CMX", "MEXICO, DF2", 
+                    "CUAJIMALPA DE MORELOS, CMX", "URUAPAN, MCH", "CIUDAD DE MEXICO, DF2", "BENITO JUAREZ, CMX", 
+                    "YAUHQUEMEHCAN, TLA", "NAUCALPAN DE JUAREZ, CMX", "GUADALAJARA, JAL", "ZAPOTLAN EL GRANDE, JAL",
+                    "ARANDAS, JAL", "SAN JUAN DE LOS LAGOS, JAL", "JOCOTEPEC, JAL", "CD GUZMAN, JAL"
+                ]
+                
+                # 3. Aplicación del "SEGURO VERACRUZ" y Evaluación de Región
+                # Si detecta Veracruz en el domicilio, bloquea los $65 inmediatamente
+                if any(x in texto_domicilio for x in ["VERACRUZ", " VER ", " VER.", ", VER"]):
+                    es_region_65 = False
+                else:
+                    es_region_65 = any(region in texto_domicilio for region in regiones_65)
+                
+                # 4. Cálculo de Tarifas según cantidad de cajas
+                if 1 <= num_cajas <= 4:
+                    precio_unitario = 450 / num_cajas
+                    total_sin_iva = 450
+                    leyenda_region = "Tarifa Plana Nacional (1-4 cajas)"
+                else:
+                    if es_region_65:
+                        precio_unitario = 65
+                        leyenda_region = "Zona con Tarifa Preferencial"
+                    else:
+                        precio_unitario = 95
+                        leyenda_region = "Zona Norte / Sur / Costa"
+                    total_sin_iva = num_cajas * precio_unitario
+                
+                # 5. Impuesto y Total Final
+                total_con_iva = total_sin_iva * 1.16
+        
+                # --- RENDERIZADO ESTILO ONYX REPOTENCIADO ---
+                st.markdown(f"""<div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;"><div class="kpi-ruta-card" style="flex: 1; min-width: 280px; border-left: 5px solid #A4B9C8; position: relative; overflow: hidden;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 0.7rem; color: #A4B9C8; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Tiempo Estimado</span><span style="font-size: 1.1rem; color: #FFFFFF; font-weight: 900;">{fletera_recomendada}</span></div><div class="kpi-route-flow" style="margin: 15px 0;"><span class="city" style="font-size: 1.2rem;">GDL</span><div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;"><span style="font-size: 0.7rem; color: #A4B9C8; letter-spacing: 2px;">TRANSIT</span><div style="width: 80%; height: 2px; background: linear-gradient(90deg, transparent, #A4B9C8, transparent);"></div></div><span class="city" style="font-size: 1.2rem; color: #FFFFFF;">{texto_mostrar[:15]}</span></div><div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 2.2rem; font-weight: 900; color: #FFFFFF;">{dias_redondeados}</span><span style="font-size: 1rem; color: #A4B9C8; font-weight: bold;">DÍAS HÁBILES</span></div><div style="margin-top: 10px; font-size: 0.9rem; color: #A4B9C8; border-top: 1px solid rgba(164, 185, 200, 0.1); padding-top: 8px;">Basado en {total_viajes} entregas exitosas a esta zona.</div></div><div class="kpi-ruta-card" style="flex: 1; min-width: 280px; border-left: 5px solid #D4AF37; background: linear-gradient(145deg, #1c2a35, #111b22);"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="color: #D4AF37; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px;">Costo de Flete</span></div><div style="margin-top: 5px;"><div style="font-size: 0.75rem; color: #A4B9C8; text-transform: uppercase; letter-spacing: 1px;">Inversión Total</div><div style="display: flex; align-items: baseline; gap: 5px;"><span style="font-size: 2.2rem; font-weight: 400; color: #D4AF37;">${total_con_iva:,.2f}</span><span style="font-size: 0.8rem; color: #A4B9C8;">MXN</span></div></div><div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; margin-top: 10px; border: 1px solid rgba(212, 175, 55, 0.1);"><div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #E0E6ED;"><span>Cajas: <b>{num_cajas}</b></span><span>Unit: <b>${precio_unitario:,.2f}</b></span></div><div style="font-size: 0.7rem; color: #D4AF37; margin-top: 5px; text-transform: uppercase; font-weight: bold;">✓ {leyenda_region}</div></div><div style="text-align: right; margin-top: 8px; font-size: 0.6rem; color: #A4B9C8; font-style: italic;">*Incluye 16% de IVA</div></div></div>""", unsafe_allow_html=True) # 3. Tabla de Detalles (Tu código original)
+                #------------
+                # --- HISTORIAL DE ENVÍOS ENCONTRADOS (DISEÑO PREMIUM) ---
+                if not historial.empty:
+                    st.markdown('<p style="color:#FFFFFF; font-weight:800; letter-spacing:2px; font-size:14px; margin-bottom:15px; border-left: 4px solid #00FFAA; padding-left: 10px;">HISTORIAL DE ENVÍOS ENCONTRADOS</p>', unsafe_allow_html=True)
+                    
+                    # Preparación de datos
+                    historial_sorted = historial[['NÚMERO DE PEDIDO','NOMBRE DEL CLIENTE','DOMICILIO','FECHA DE ENVÍO','FLETERA']].sort_values(by='FECHA DE ENVÍO', ascending=False).copy()
+                    historial_sorted['FECHA_STR'] = historial_sorted['FECHA DE ENVÍO'].dt.strftime('%d/%m/%Y')
+                    data_hist = historial_sorted.fillna('').to_dict('records')
+                
+                    # Renderizado de Tarjetas
+                    html_historial = f"""
+                    <div style="padding: 5px; font-family: 'Inter', sans-serif;">
+                        <style>
+                            .card-historial {{
+                                background-color: #263238;
+                                border: 1px solid rgba(255, 255, 255, 0.05);
+                                border-radius: 10px;
+                                padding: 14px 20px;
+                                margin-bottom: 10px;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                width: 100%;
+                                box-sizing: border-box;
+                            }}
+                            .card-historial:hover {{
+                                border-color: #38bdf8;
+                                background-color: #2d3b42;
+                                transform: translateX(4px);
+                            }}
+                            .label-mini {{ font-size: 8px; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px; }}
+                            .valor-id {{ font-size: 15px; font-weight: 800; color: #00FFAA; font-family: monospace; }}
+                            .valor-text {{ font-size: 12px; font-weight: 600; color: #FFFFFF; }}
+                            .sub-text {{ font-size: 10px; color: rgba(255,255,255,0.6); font-style: italic; }}
+                            
+                            /* Scrollbar */
+                            ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                            ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); }}
+                            ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; }}
+                            ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
+                        </style>
+                        {"".join([f'''
+                        <div class="card-historial">
+                            <div style="flex: 1;">
+                                <div class="label-mini">Pedido</div>
+                                <div class="valor-id">{str(item.get('NÚMERO DE PEDIDO', ''))}</div>
+                            </div>
+                            <div style="flex: 2; padding: 0 15px;">
+                                <div class="label-mini">Cliente / Domicilio</div>
+                                <div class="valor-text uppercase truncate">{str(item.get('NOMBRE DEL CLIENTE', ''))[:35]}</div>
+                                <div class="sub-text truncate">{str(item.get('DOMICILIO', ''))[:50]}</div>
+                            </div>
+                            <div style="flex: 1; text-align: right;">
+                                <div class="label-mini">Fletera / Fecha</div>
+                                <div style="color: #38bdf8; font-size: 12px; font-weight: 700;">{str(item.get('FLETERA', ''))}</div>
+                                <div class="valor-text" style="font-size: 11px; opacity: 0.8;">{item.get('FECHA_STR', '')}</div>
+                            </div>
+                        </div>
+                        ''' for item in data_hist])}
+                    </div>
+                    """
+                    components.html(html_historial, height=450, scrolling=True)
+                
+                else:
+                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")   
         # ----------------------------------------------------------
         # TAB 3: PESTAÑA 3 (Espacio reservado para futuro contenido)
         # ----------------------------------------------------------
