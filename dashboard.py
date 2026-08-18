@@ -799,11 +799,11 @@ def main():
         # DEFINICIÓN DE LAS 5 PESTAÑAS (TABS) BIEN SEPARADAS
         # ==========================================================
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
-            "📊 KPIS", 
-            "🚀 PESTAÑA 2", 
-            "📦 PESTAÑA 3", 
-            "📈 PESTAÑA 4", 
-            "⚙️ PESTAÑA 5"
+            "KPIs", 
+            "COTIZADOR", 
+            "PESTAÑA 3", 
+            "PESTAÑA 4", 
+            "PESTAÑA 5"
         ])
 
         # ----------------------------------------------------------
