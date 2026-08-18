@@ -705,22 +705,16 @@ def render_historial_almacen(data):
         
         if estatus_val == "ENVIADA":
             color_borde = "#10b981"
-            color_texto_estatus = "#34d399"
         elif estatus_val in ["CANCELADA", "NO ENTREGADA"]:
             color_borde = "#ef4444"
-            color_texto_estatus = "#f87171"
         elif estatus_val in ["DETENIDA", "SOLO FACTURA"]:
             color_borde = "#f59e0b"
-            color_texto_estatus = "#fbbf24"
         elif estatus_val == "DUPLICADA":
             color_borde = "#a855f7"
-            color_texto_estatus = "#c084fc"
         elif estatus_val in ["CEDIS", "MOSTRADOR", "EXPORTACION"]:
             color_borde = "#38bdf8"
-            color_texto_estatus = "#7dd3fc"
         else:
             color_borde = "#64748b"
-            color_texto_estatus = "#94a3b8"
 
         with st.container():
             col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
@@ -729,11 +723,10 @@ def render_historial_almacen(data):
                 fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
-                # Altura aumentada a 42px para igualar exactamente el alto del selectbox de Streamlit
                 st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 42px;">
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 14px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 42px;">
                     <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
-                        <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
+                        <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap; min-width: 60px;">#{item['factura']}</b>
                         <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
                         <span style="color: #fde047; font-weight: bold; white-space: nowrap; margin-left: auto; padding-right: 15px;">{transporte_display}</span>
                         <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
@@ -755,7 +748,6 @@ def render_historial_almacen(data):
                     st.session_state[key_estatus] = nuevo_estatus
                     st.rerun()
 
-            # Separación vertical milimétrica entre renglones
             st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
