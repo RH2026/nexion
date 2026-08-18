@@ -618,7 +618,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL COMPACTO CON ST.COLUMNS
+# 5. RENDER DE HISTORIAL COMPACTO CON TRANSPORTE DIRECTO DE FACTURACIÓN
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -673,13 +673,12 @@ def render_historial_almacen(data):
             color_texto_estatus = "#94a3b8"
 
         with st.container():
-            # Dividimos en 2 columnas: Izquierda (Tarjeta compacta), Derecha (Selector de estatus)
             col_tarjeta, col_select = st.columns([4.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
                 fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN FECHA DE ENVÍO'
+                transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
-                # Tarjeta compacta en un solo bloque HTML estilizado
                 st.markdown(f"""
                 <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 8px; padding: 10px 14px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 5px;">
@@ -694,9 +693,8 @@ def render_historial_almacen(data):
                         </div>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                        <div style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 50%;"><b>Extran:</b> {item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</div>
-                        <div style="color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 30%;"><b>Ciudad:</b> {item['ciudad']}</div>
-                        <div style="color: #fde047; font-weight: bold;"><b>CP:</b> {item['estado_cp']}</div>
+                        <div style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;"><b>Extran:</b> {item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</div>
+                        <div style="color: #fde047; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 35%;"><b>Transporte:</b> {transporte_display}</div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -760,10 +758,11 @@ def main():
         df_proc = pd.DataFrame()
         df_proc['factura'] = df_fact.get('Factura', df_fact.get('FACTURA', pd.Series(dtype=str))).fillna('').astype(str).str.strip()
         df_proc['nombre_extran'] = df_fact.get('Nombre_Extran', df_fact.get('NOMBRE_EXTRAN', pd.Series(dtype=str))).fillna('').astype(str)
-        df_proc['ciudad'] = df_fact.get('Ciudad', df_fact.get('CIUDAD', df_fact.get('DESTINO', pd.Series(dtype=str)))).fillna('').astype(str)
-        df_proc['estado_cp'] = df_fact.get('EstadoCP', df_fact.get('ESTADOCP', df_fact.get('CP', pd.Series(dtype=str)))).fillna('').astype(str)
+        
+        # Leemos la columna de transporte directamente desde facturacion.csv
+        df_proc['transporte'] = df_fact.get('Transporte', df_fact.get('TRANSPORTE', df_fact.get('FLETERA', pd.Series(dtype=str)))).fillna('').astype(str).str.strip()
 
-        # ── CRUCE DE INFORMACIÓN CON envios.csv (FECHA DE ENVÍO) ──
+        # ── CRUCE DE INFORMACIÓN CON envios.csv (SOLO PARA LA FECHA DE ENVÍO) ──
         mapa_fechas_envio = {}
         if not df_envios.empty:
             df_envios.columns = df_envios.columns.str.strip()
