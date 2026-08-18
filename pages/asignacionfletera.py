@@ -618,7 +618,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL PARA ALMACÉN (CON CRUCE DE FECHA DE ENVÍO Y SELECTOR EXTENDIDO)
+# 5. RENDER DE HISTORIAL COMPACTO CON ST.COLUMNS
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -647,18 +647,16 @@ def render_historial_almacen(data):
     for idx, item in enumerate(data):
         key_estatus = f"estatus_sel_{idx}_{item['factura']}"
         
-        # Determinamos el estatus inicial: si hay fecha de envío cruzada, arranca como ENVIADA (a menos que el usuario lo cambie manualmente)
         if key_estatus not in st.session_state:
             estatus_base = "ENVIADA" if item.get('fecha_envio') else "PENDIENTE"
             st.session_state[key_estatus] = estatus_base
 
         estatus_val = st.session_state[key_estatus]
         
-        # Colores personalizados para cada tipo de estatus
         if estatus_val == "ENVIADA":
             color_borde = "#10b981"
             color_texto_estatus = "#34d399"
-        elif estatus_val in ["CANCELADA", "NO ENTregada".upper()]:
+        elif estatus_val in ["CANCELADA", "NO ENTREGADA"]:
             color_borde = "#ef4444"
             color_texto_estatus = "#f87171"
         elif estatus_val in ["DETENIDA", "SOLO FACTURA"]:
@@ -675,39 +673,38 @@ def render_historial_almacen(data):
             color_texto_estatus = "#94a3b8"
 
         with st.container():
-            # Encabezado visual de la tarjeta mostrando la Factura, la Fecha de Envío cruzada y el Estatus actual
-            fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN FECHA DE ENVÍO'
-            
-            st.markdown(f"""
-            <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 10px 15px; font-family: 'Inter', sans-serif; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box;">
-                <div>
-                    <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Factura: </span>
-                    <b style="font-size: 13px; color: white; font-style: italic;">{item['factura']}</b>
-                    <span style="margin-left: 15px; font-size: 9px; color: #38bdf8; font-weight: 700;">📅 F. ENVÍO: {fecha_envio_display}</span>
-                </div>
-                <div>
-                    <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Estatus: </span>
-                    <b style="font-size: 11px; color: {color_texto_estatus}; text-transform: uppercase;">{estatus_val}</b>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            # Dividimos en 2 columnas: Izquierda (Tarjeta compacta), Derecha (Selector de estatus)
+            col_tarjeta, col_select = st.columns([4.2, 1.8], vertical_alignment="center")
 
-            # Columnas con tus campos solicitados: Check, Extran, Ciudad, EstadoCP y Selector de Estatus ampliado
-            col1, col2, col3, col4, col5 = st.columns([0.8, 2, 2, 1.8, 2.2])
-            
-            with col1:
-                chk = st.checkbox("Check", value=False, key=f"chk_alm_{idx}")
-            with col2:
-                st.markdown(f"<div style='font-size:11px; color:#7dd3fc; padding-top:6px;'><b>Extran:</b> {item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</div>", unsafe_allow_html=True)
-            with col3:
-                st.markdown(f"<div style='font-size:11px; color:#e2e8f0; padding-top:6px;'><b>Ciudad:</b> {item['ciudad']}</div>", unsafe_allow_html=True)
-            with col4:
-                st.markdown(f"<div style='font-size:11px; color:#fde047; padding-top:6px;'><b>Estado/CP:</b> {item['estado_cp']}</div>", unsafe_allow_html=True)
-            with col5:
-                # Selector interactivo con todas las opciones manuales requeridas
+            with col_tarjeta:
+                fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN FECHA DE ENVÍO'
+                
+                # Tarjeta compacta en un solo bloque HTML estilizado
+                st.markdown(f"""
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 8px; padding: 10px 14px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 5px;">
+                        <div>
+                            <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Factura: </span>
+                            <b style="font-size: 12px; color: white; font-style: italic;">{item['factura']}</b>
+                            <span style="margin-left: 10px; font-size: 9px; color: #38bdf8; font-weight: 700;">📅 F. ENVÍO: {fecha_envio_display}</span>
+                        </div>
+                        <div>
+                            <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Estatus: </span>
+                            <b style="font-size: 10px; color: {color_texto_estatus}; text-transform: uppercase;">{estatus_val}</b>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                        <div style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 50%;"><b>Extran:</b> {item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</div>
+                        <div style="color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 30%;"><b>Ciudad:</b> {item['ciudad']}</div>
+                        <div style="color: #fde047; font-weight: bold;"><b>CP:</b> {item['estado_cp']}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with col_select:
                 index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
                 nuevo_estatus = st.selectbox(
-                    "Cambiar Estatus",
+                    "Estatus",
                     opciones_estatus_posibles,
                     index=index_actual,
                     key=f"sel_estatus_{idx}_{item['factura']}",
@@ -717,7 +714,7 @@ def render_historial_almacen(data):
                     st.session_state[key_estatus] = nuevo_estatus
                     st.rerun()
 
-            st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
 
 def main():    
     if "animacion_cargada" not in st.session_state:
@@ -770,7 +767,6 @@ def main():
         mapa_fechas_envio = {}
         if not df_envios.empty:
             df_envios.columns = df_envios.columns.str.strip()
-            # Buscamos columnas clave de factura y fecha de envío en envios.csv
             col_fac_env = None
             for c in ['Factura', 'FACTURA', 'NÚMERO DE PEDIDO', 'PEDIDO']:
                 if c in df_envios.columns:
@@ -790,7 +786,6 @@ def main():
                     if f_val and fe_val and fe_val.lower() not in ['', 'nan', '0', 'nat', 'none']:
                         mapa_fechas_envio[f_val] = fe_val
 
-        # Asignar la fecha cruzada al DataFrame procesado
         df_proc['fecha_envio'] = df_proc['factura'].map(mapa_fechas_envio).fillna('')
 
         # Quedarse solo con la primera línea de cada folio (evita duplicados por partidas)
