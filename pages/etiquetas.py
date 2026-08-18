@@ -190,7 +190,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         col_regresar_m, _ = st.columns([1.5, 4])
         with col_regresar_m:
             if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
-                st.switch_page("pages/indicadores.py")
+                st.switch_page("dashboard.py")
         st.stop()
 
 # Blindaje correcto para ETIQUETAS (dentro de CENTRO DE DATOS)
