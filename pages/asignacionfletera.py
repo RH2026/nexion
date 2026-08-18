@@ -114,12 +114,19 @@ html, body, .stApp {{
     margin-bottom: 20px;
 }}
 
-/* ELIMINAR ESPACIOS EXCESIVOS ENTRE ELEMENTOS */
+/* COMPACTAR ESPACIADO VERTICAL ENTRE ELEMENTOS */
 div[data-testid="stVerticalBlock"] {{
-    gap: 0.08rem !important;
+    gap: 0.05rem !important;
 }}
 
-/* FORZAR ALTURA Y CENTRADO EXACTO DEL SELECTBOX */
+/* ALINEACIÓN ESTRICTA HOMBRO CON HOMBRO EN LAS COLUMNAS */
+[data-testid="column"] {{
+    padding: 0px !important;
+    display: flex !important;
+    align-items: center !important;
+}}
+
+/* FORZAR ALTURA EXACTA DE 42PX Y CENTRADO DEL SELECTBOX */
 div[data-baseweb="select"] > div {{
     min-height: 42px !important;
     height: 42px !important;
@@ -136,6 +143,13 @@ div[data-baseweb="select"] span {{
     line-height: normal !important;
     font-size: 10px !important;
     font-weight: 700 !important;
+}}
+
+/* NEUTRALIZAR EL MARGEN SUPERIOR DEL SELECTBOX DE STREAMLIT */
+.stSelectbox {{
+    width: 100% !important;
+    margin-top: -22px !important;
+    margin-bottom: 0px !important;
 }}
 
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
@@ -666,7 +680,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL UNIFICADO EN UN SOLO CONTENEDOR FLEX (SIMÉTRICO AL 100%)
+# 5. RENDER DE HISTORIAL CON COLUMNAS NATIVAS DE STREAMLIT (ALINEACIÓN PERFECTA)
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -719,11 +733,12 @@ def render_historial_almacen(data):
         fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
         transporte_display = item['transporte'] if item['transporte'] else 'S/T'
 
-        # Contenedor flex único para alinear perfectamente la tarjeta y el selectbox sin columnas de Streamlit
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 10px; width: 100%; margin-bottom: 3px; height: 42px;">
-            <!-- Tarjeta Izquierda -->
-            <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 82%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 42px;">
+        # Usando columnas nativas de Streamlit con proporción exacta 8.4 a 1.6
+        col_tarjeta, col_select = st.columns([8.4, 1.6], vertical_alignment="center")
+
+        with col_tarjeta:
+            st.markdown(f"""
+            <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 42px;">
                 <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
                     <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
                     <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
@@ -731,24 +746,24 @@ def render_historial_almacen(data):
                     <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
                 </div>
             </div>
-            <!-- Contenedor Derecho para el Selectbox -->
-            <div style="width: 18%; height: 42px; display: flex; align-items: center;" id="selectbox_wrapper_{idx}">
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-        index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
-        
-        nuevo_estatus = st.selectbox(
-            "Estatus",
-            opciones_estatus_posibles,
-            index=index_actual,
-            key=f"sel_estatus_{idx}_{item['factura']}",
-            label_visibility="collapsed"
-        )
-        if nuevo_estatus != estatus_val:
-            st.session_state[key_estatus] = nuevo_estatus
-            st.rerun()
+        with col_select:
+            index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
+            
+            nuevo_estatus = st.selectbox(
+                "Estatus",
+                opciones_estatus_posibles,
+                index=index_actual,
+                key=f"sel_estatus_{idx}_{item['factura']}",
+                label_visibility="collapsed"
+            )
+            if nuevo_estatus != estatus_val:
+                st.session_state[key_estatus] = nuevo_estatus
+                st.rerun()
 
-        st.markdown("</div></div>", unsafe_allow_html=True)
+        # Separación vertical milimétrica y limpia entre cada renglón
+        st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
