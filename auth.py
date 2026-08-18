@@ -17,6 +17,7 @@ PAGINAS = {
     "qrup": "pages/qrup.py",
     "facturacion": "pages/facturacion_af.py",
     "main": "pages/main.py",
+    "cargardt": "pages/cargardt.py",
 }
 
 # ============================================================
