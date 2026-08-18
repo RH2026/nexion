@@ -720,7 +720,7 @@ def render_historial_almacen(data):
             color_borde = "#64748b"
 
         with st.container():
-            st.markdown('<div style="margin-bottom: 20px;">', unsafe_allow_html=True)
+            st.markdown('<div style="margin-bottom: 28px;">', unsafe_allow_html=True)
             col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
