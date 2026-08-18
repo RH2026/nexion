@@ -878,10 +878,10 @@ def main():
         # ==========================================================
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "KPIs", 
-            "COTIZADOR", 
-            "PESTAÑA 3", 
-            "PESTAÑA 4", 
-            "PESTAÑA 5"
+            "DISTRIBUCION DE CARGA", 
+            "EFECTIVIDAD DE ENVIOS", 
+            "RANKING DE FLETERAS",
+            "COTIZADOR" 
         ])
 
         # ----------------------------------------------------------
@@ -968,6 +968,28 @@ def main():
         # TAB 2: PESTAÑA 2 (Espacio reservado para futuro contenido)
         # ----------------------------------------------------------
         with tab2:
+            st.write("") 
+             
+        # ----------------------------------------------------------
+        # TAB 3: PESTAÑA 3 (Espacio reservado para futuro contenido)
+        # ----------------------------------------------------------
+        with tab3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.info("💡 **Espacio reservado para la Pestaña 3.** Aquí podrás agregar contenido adicional de manera totalmente independiente.")
+            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 3
+
+        # ----------------------------------------------------------
+        # TAB 4: PESTAÑA 4 (Espacio reservado para futuro contenido)
+        # ----------------------------------------------------------
+        with tab4:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.info("💡 **Espacio reservado para la Pestaña 4.** Espacio libre y bien delimitado para nuevos componentes.")
+            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 4
+
+        # ----------------------------------------------------------
+        # TAB 5: PESTAÑA 5 (Espacio reservado para futuro contenido)
+        # ----------------------------------------------------------
+        with tab5:
             st.write("") 
             # =========================================================
             # 1. PROCESAMIENTO DE DATOS
@@ -1171,30 +1193,7 @@ def main():
                     components.html(html_historial, height=450, scrolling=True)
                 
                 else:
-                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**")   
-        # ----------------------------------------------------------
-        # TAB 3: PESTAÑA 3 (Espacio reservado para futuro contenido)
-        # ----------------------------------------------------------
-        with tab3:
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.info("💡 **Espacio reservado para la Pestaña 3.** Aquí podrás agregar contenido adicional de manera totalmente independiente.")
-            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 3
-
-        # ----------------------------------------------------------
-        # TAB 4: PESTAÑA 4 (Espacio reservado para futuro contenido)
-        # ----------------------------------------------------------
-        with tab4:
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.info("💡 **Espacio reservado para la Pestaña 4.** Espacio libre y bien delimitado para nuevos componentes.")
-            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 4
-
-        # ----------------------------------------------------------
-        # TAB 5: PESTAÑA 5 (Espacio reservado para futuro contenido)
-        # ----------------------------------------------------------
-        with tab5:
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.info("💡 **Espacio reservado para la Pestaña 5.** Última sección configurada y lista para recibir requerimientos.")
-            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 5
+                    st.info(f"Lo siento **{usuario_actual}**, no encontré historial para: **{busqueda_manual}**") 
 
 if __name__ == "__main__":
     main()
