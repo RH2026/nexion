@@ -666,7 +666,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON SEPARACIÓN AMPLIA Y HOLGADA
+# 5. RENDER DE HISTORIAL CON ELEMENTOS ALINEADOS A LA IZQUIERDA
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -678,7 +678,8 @@ def render_historial_almacen(data):
         """, unsafe_allow_html=True)
         return
 
-    
+    st.markdown('<p style="color:#FFFFFF; font-weight:800; letter-spacing:2px; font-size:12px; margin-bottom:12px;">HISTORIAL DE ALMACÉN // CONTROL DE FACTURAS</p>', unsafe_allow_html=True)
+
     opciones_estatus_posibles = [
         "ENVIADA", 
         "CANCELADA", 
@@ -715,9 +716,8 @@ def render_historial_almacen(data):
         else:
             color_borde = "#64748b"
 
-        # Contenedor con un margen inferior de 20px para forzar una separación real y amplia
         with st.container():
-            st.markdown('<div style="margin-bottom: 21px;">', unsafe_allow_html=True)
+            st.markdown('<div style="margin-bottom: 20px;">', unsafe_allow_html=True)
             col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
@@ -729,7 +729,7 @@ def render_historial_almacen(data):
                     <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
                         <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap; min-width: 60px;">#{item['factura']}</b>
                         <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
-                        <span style="color: #fde047; font-weight: bold; white-space: nowrap; margin-left: auto; padding-right: 15px;">{transporte_display}</span>
+                        <span style="color: #fde047; font-weight: bold; white-space: nowrap; min-width: 130px;">{transporte_display}</span>
                         <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
                     </div>
                 </div>
