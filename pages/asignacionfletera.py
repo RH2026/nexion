@@ -674,7 +674,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON PAGINACIÓN (12 EN 12, INFO IZQ Y BOTONES DER)
+# 5. RENDER DE HISTORIAL CON 30 REGISTROS, SCROLL FIJO Y TEXTO VERDE
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -691,8 +691,8 @@ def render_historial_almacen(data):
     # Invertir la lista para mostrar lo más nuevo al principio
     data_invertida = list(reversed(data))
     
-    # Configuración de Paginación de 12 en 12
-    tamanio_pagina = 12
+    # Configuración de Paginación de 30 en 30
+    tamanio_pagina = 30
     total_registros = len(data_invertida)
     total_paginas = max(1, (total_registros + tamanio_pagina - 1) // tamanio_pagina)
 
@@ -718,8 +718,8 @@ def render_historial_almacen(data):
         "EXPORTACION"
     ]
 
-    # Contenedor con scroll para las tarjetas
-    st.markdown('<div class="scroll-container-almacen">', unsafe_allow_html=True)
+    # Contenedor con altura fija y scroll elegante
+    st.markdown('<div class="scroll-container-almacen" style="max-height: 60vh; overflow-y: auto; padding-right: 5px;">', unsafe_allow_html=True)
 
     for idx_relativo, item in enumerate(datos_pagina):
         idx_absoluto = inicio + idx_relativo
@@ -788,13 +788,13 @@ def render_historial_almacen(data):
     # Cierre del contenedor scroll
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── BARRA DE PAGINACIÓN: INFO IZQ Y BOTONES JUNTOS DER ──
+    # ── BARRA DE PAGINACIÓN: TEXTO VERDE IZQ Y BOTONES JUNTOS DER ──
     st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
     col_info, col_vacio, col_ant, col_sig = st.columns([2.5, 2.0, 1.1, 1.1], vertical_alignment="center")
 
     with col_info:
         st.markdown(
-            f"""<div style='text-align: left; color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 700;'>
+            f"""<div style='text-align: left; color: #10b981; font-size: 11px; font-weight: 700;'>
                 PÁGINA {st.session_state.pagina_almacen + 1} DE {total_paginas} &nbsp;|&nbsp; TOTAL: {total_registros} REGISTROS
             </div>""",
             unsafe_allow_html=True
