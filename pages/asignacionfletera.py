@@ -114,19 +114,12 @@ html, body, .stApp {{
     margin-bottom: 20px;
 }}
 
-/* ELIMINAR ESPACIOS EXCESIVOS ENTRE ELEMENTOS */
+/* ELIMINAR ESPACIOS EXCESIVOS ENTRE ELEMENTOS DE STREAMLIT */
 div[data-testid="stVerticalBlock"] {{
-    gap: 0.05rem !important;
+    gap: 0.15rem !important;
 }}
 
-/* ALINEACIÓN ESTRICTA HOMBRO CON HOMBRO EN LAS COLUMNAS */
-[data-testid="column"] {{
-    padding: 0px !important;
-    display: flex !important;
-    align-items: center !important;
-}}
-
-/* FORZAR ALTURA EXACTA DE 42PX Y CENTRADO DEL SELECTBOX */
+/* FORZAR ALTURA Y CENTRADO PERFECTO DEL SELECTBOX */
 div[data-baseweb="select"] > div {{
     min-height: 42px !important;
     height: 42px !important;
@@ -143,13 +136,6 @@ div[data-baseweb="select"] span {{
     line-height: normal !important;
     font-size: 10px !important;
     font-weight: 700 !important;
-}}
-
-/* NEUTRALIZAR EL MARGEN SUPERIOR DEL SELECTBOX DE STREAMLIT */
-.stSelectbox {{
-    width: 100% !important;
-    margin-top: -22px !important;
-    margin-bottom: 0px !important;
 }}
 
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
@@ -680,7 +666,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON ALTURA DE 42PX EXACTA
+# 5. RENDER DE HISTORIAL CON ALTURA 42PX EXACTA Y ALINEACIÓN VERTICAL
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -719,24 +705,31 @@ def render_historial_almacen(data):
         
         if estatus_val == "ENVIADA":
             color_borde = "#10b981"
+            color_texto_estatus = "#34d399"
         elif estatus_val in ["CANCELADA", "NO ENTREGADA"]:
             color_borde = "#ef4444"
+            color_texto_estatus = "#f87171"
         elif estatus_val in ["DETENIDA", "SOLO FACTURA"]:
             color_borde = "#f59e0b"
+            color_texto_estatus = "#fbbf24"
         elif estatus_val == "DUPLICADA":
             color_borde = "#a855f7"
+            color_texto_estatus = "#c084fc"
         elif estatus_val in ["CEDIS", "MOSTRADOR", "EXPORTACION"]:
             color_borde = "#38bdf8"
+            color_texto_estatus = "#7dd3fc"
         else:
             color_borde = "#64748b"
+            color_texto_estatus = "#94a3b8"
 
         with st.container():
-            col_tarjeta, col_select = st.columns([8.4, 1.6], vertical_alignment="center")
+            col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
                 fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
+                # Altura aumentada a 42px para igualar exactamente el alto del selectbox de Streamlit
                 st.markdown(f"""
                 <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 42px;">
                     <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
@@ -762,6 +755,7 @@ def render_historial_almacen(data):
                     st.session_state[key_estatus] = nuevo_estatus
                     st.rerun()
 
+            # Separación vertical milimétrica entre renglones
             st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
@@ -837,9 +831,11 @@ def main():
 
         df_proc['fecha_envio'] = df_proc['factura'].map(mapa_fechas_envio).fillna('')
 
+        # Quedarse solo con la primera línea de cada folio (evita duplicados por partidas)
         df_proc = df_proc.drop_duplicates(subset=['factura'], keep='first')
         df_proc = df_proc[df_proc['factura'] != ''].sort_values(by='factura', ascending=True, ignore_index=True)
 
+        # Filtros tácticos de búsqueda para almacén
         f1, f2 = st.columns(2)
         with f1:
             facturas_opts = ["TODAS"] + sorted(list(df_proc['factura'].unique()))
