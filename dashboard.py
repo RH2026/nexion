@@ -847,32 +847,6 @@ def main():
         hoy_dt = pd.Timestamp(hoy_gdl)
         meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
                 
-        mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1)
-        
-        df_raw = cargar_datos()
-
-        if df_raw is not None:
-            df_raw["FECHA DE ENVÍO DT"] = pd.to_datetime(df_raw["FECHA DE ENVÍO"], dayfirst=True, errors='coerce')
-            num_mes_sel = meses.index(mes_sel) + 1
-            
-            df_filtrado_mes = df_raw[df_raw["FECHA DE ENVÍO DT"].dt.month == num_mes_sel].copy()
-            df_filtrado_mes = df_filtrado_mes.sort_values(by="FECHA DE ENVÍO DT", ascending=False)
-            
-            st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic;'>Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}</p>", unsafe_allow_html=True)
-        
-        df = df_raw.copy()
-        for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-            df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
-    
-        df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
-    
-        total_p = len(df_mes)
-        entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
-        df_trans = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
-        en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
-        retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
-        total_t = len(df_trans)  
-
         # ==========================================================
         # DEFINICIÓN DE LAS 5 PESTAÑAS (TABS) BIEN SEPARADAS
         # ==========================================================
@@ -885,10 +859,39 @@ def main():
         ])
 
         # ----------------------------------------------------------
-        # TAB 1: KPIS (Donitas y Gráficos originales)
+        # TAB 1: KPIS (Donitas, Gráficos y el selector de Período integrado)
         # ----------------------------------------------------------
         with tab1:
             st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
+            
+            # --- FILTRO DE PERÍODO INTEGRADO DENTRO DE LA TAB 1 ---
+            mes_sel = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1, key="select_mes_tab1")
+            
+            df_raw_tab1 = cargar_datos()
+
+            if df_raw_tab1 is not None:
+                df_raw_tab1["FECHA DE ENVÍO DT"] = pd.to_datetime(df_raw_tab1["FECHA DE ENVÍO"], dayfirst=True, errors='coerce')
+                num_mes_sel = meses.index(mes_sel) + 1
+                
+                df_filtrado_mes = df_raw_tab1[df_raw_tab1["FECHA DE ENVÍO DT"].dt.month == num_mes_sel].copy()
+                df_filtrado_mes = df_filtrado_mes.sort_values(by="FECHA DE ENVÍO DT", ascending=False)
+                
+                st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic; margin-top:5px;'>Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}</p>", unsafe_allow_html=True)
+            
+            df = df_raw_tab1.copy()
+            for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
+        
+            df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
+        
+            total_p = len(df_mes)
+            entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
+            df_trans = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna()]
+            en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
+            retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
+            total_t = len(df_trans)  
+
+            st.markdown("<br>", unsafe_allow_html=True)
             c1, c2, c3, c4, c5 = st.columns(5)
             with c1: render_kpi(total_p, total_p, "Pedidos", "#f6c23e")
             with c2: render_kpi(entregados, total_p, "Entregados", "#1cc88a")
