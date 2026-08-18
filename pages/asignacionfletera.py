@@ -666,7 +666,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON ELEMENTOS ALINEADOS A LA IZQUIERDA
+# 5. RENDER DE HISTORIAL CON ALINEACIÓN EN COLUMNAS FIJAS
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -724,14 +724,13 @@ def render_historial_almacen(data):
                 fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
+                # Se utiliza grid con anchos de columna fijos para garantizar una alineación perfecta en todos los renglones
                 st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 2px 16px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 48px;">
-                    <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
-                        <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap; min-width: 60px;">#{item['factura']}</b>
-                        <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
-                        <span style="color: #fde047; font-weight: bold; white-space: nowrap; min-width: 130px;">{transporte_display}</span>
-                        <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
-                    </div>
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 2px 16px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 80px 1fr 220px 160px; align-items: center; gap: 15px; height: 48px;">
+                    <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
+                    <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
+                    <span style="color: #fde047; font-weight: bold; white-space: nowrap; font-size: 11px; overflow: hidden; text-overflow: ellipsis;">{transporte_display}</span>
+                    <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
