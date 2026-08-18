@@ -178,8 +178,8 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
 div[data-baseweb="select"] > div {{
     min-height: 48px !important;
     height: 55px !important;
-    font-size: 10px !important;
-    padding: 0px 8px !important;
+    font-size: 14px !important;
+    padding: 5px 8px !important;
     background-color: {vars_css['card']} !important;
     color: #ffffff !important;
     border: 1px solid {vars_css['border']} !important;
