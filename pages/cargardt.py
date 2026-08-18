@@ -189,7 +189,7 @@ def registrar_acceso_github(usuario, modulo):
 # 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "pages/indicadores.py"
+    st.session_state.pagina_destino = "pages/cargardt.py"
     st.switch_page("pages/log.py")
 
 def verificar_permiso_pagina(modulo, submodulo=None):
@@ -230,7 +230,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         col_regresar_m, col_vacia_m = st.columns([1.5, 4])
         with col_regresar_m:
             if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
-                st.switch_page("pages/indicadores.py")
+                st.switch_page("dashboard.py")
         st.stop()
             
     if submodulo and not permisos.get(submodulo.upper(), False):
@@ -266,7 +266,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         col_regresar_s, col_vacia_s = st.columns([1.5, 4])
         with col_regresar_s:
             if st.button("REGRESAR AL INICIO", key="btn_regresar_submodulo", use_container_width=True):
-                st.switch_page("pages/indicadores.py")
+                st.switch_page("dashboard.py")
         st.stop()
 
 # Blindaje de Módulo CENTRO DE DATOS vía Access Control
