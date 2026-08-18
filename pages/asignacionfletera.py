@@ -30,7 +30,7 @@ st.set_page_config(
 # ── TEMA Y CSS MAESTROS ──────────────────────────────────────────
 vars_css = {
     "bg": "#384A52",
-    "card": "#3E4C55",
+    "card": "#3D4A53",
     "text": "#FFFFFF",
     "sub": "#FFFFFF",
     "border": "#4B5D67",
