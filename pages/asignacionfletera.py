@@ -114,42 +114,26 @@ html, body, .stApp {{
     margin-bottom: 20px;
 }}
 
-/* COMPACTAR ESPACIADO VERTICAL ENTRE ELEMENTOS */
+/* ELIMINAR ESPACIOS EXCESIVOS ENTRE ELEMENTOS DE STREAMLIT EN LA LISTA */
 div[data-testid="stVerticalBlock"] {{
-    gap: 0.05rem !important;
+    gap: 0.15rem !important;
 }}
 
-/* ALINEACIÓN ESTRICTA HOMBRO CON HOMBRO EN LAS COLUMNAS */
-[data-testid="column"] {{
-    padding: 0px !important;
-    display: flex !important;
-    align-items: center !important;
-}}
-
-/* FORZAR ALTURA EXACTA DE 42PX Y CENTRADO DEL SELECTBOX */
+/* FORZAR LA ALTURA DEL SELECTBOX DE STREAMLIT PARA EMPAREJAR CON LA TARJETA */
 div[data-baseweb="select"] > div {{
-    min-height: 42px !important;
-    height: 42px !important;
+    min-height: 38px !important;
+    height: 38px !important;
     font-size: 10px !important;
-    padding: 0px 8px !important;
+    padding: 0px 6px !important;
     background-color: #2B343B !important;
     color: #ffffff !important;
     border: 1px solid #4B5D67 !important;
     border-radius: 6px !important;
-    display: flex !important;
-    align-items: center !important;
 }}
 div[data-baseweb="select"] span {{
-    line-height: normal !important;
+    line-height: 38px !important;
     font-size: 10px !important;
     font-weight: 700 !important;
-}}
-
-/* NEUTRALIZAR EL MARGEN SUPERIOR DEL SELECTBOX DE STREAMLIT */
-.stSelectbox {{
-    width: 100% !important;
-    margin-top: -22px !important;
-    margin-bottom: 0px !important;
 }}
 
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
@@ -680,7 +664,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON COLUMNAS NATIVAS DE STREAMLIT (ALINEACIÓN PERFECTA)
+# 5. RENDER DE HISTORIAL CON ALTURA EXACTAMENTE IGUAL A 38PX
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -719,51 +703,58 @@ def render_historial_almacen(data):
         
         if estatus_val == "ENVIADA":
             color_borde = "#10b981"
+            color_texto_estatus = "#34d399"
         elif estatus_val in ["CANCELADA", "NO ENTREGADA"]:
             color_borde = "#ef4444"
+            color_texto_estatus = "#f87171"
         elif estatus_val in ["DETENIDA", "SOLO FACTURA"]:
             color_borde = "#f59e0b"
+            color_texto_estatus = "#fbbf24"
         elif estatus_val == "DUPLICADA":
             color_borde = "#a855f7"
+            color_texto_estatus = "#c084fc"
         elif estatus_val in ["CEDIS", "MOSTRADOR", "EXPORTACION"]:
             color_borde = "#38bdf8"
+            color_texto_estatus = "#7dd3fc"
         else:
             color_borde = "#64748b"
+            color_texto_estatus = "#94a3b8"
 
-        fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
-        transporte_display = item['transporte'] if item['transporte'] else 'S/T'
+        with st.container():
+            col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
-        # Usando columnas nativas de Streamlit con proporción exacta 8.4 a 1.6
-        col_tarjeta, col_select = st.columns([8.4, 1.6], vertical_alignment="center")
-
-        with col_tarjeta:
-            st.markdown(f"""
-            <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 42px;">
-                <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
-                    <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
-                    <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
-                    <span style="color: #fde047; font-weight: bold; white-space: nowrap; margin-left: auto; padding-right: 15px;">{transporte_display}</span>
-                    <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
+            with col_tarjeta:
+                fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
+                transporte_display = item['transporte'] if item['transporte'] else 'S/T'
+                
+                # Altura forzada exactamente a 38px para emparejar con el selectbox
+                st.markdown(f"""
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 38px;">
+                    <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
+                        <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
+                        <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
+                        <span style="color: #fde047; font-weight: bold; white-space: nowrap; margin-left: auto; padding-right: 15px;">{transporte_display}</span>
+                        <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
+                    </div>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
-        with col_select:
-            index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
-            
-            nuevo_estatus = st.selectbox(
-                "Estatus",
-                opciones_estatus_posibles,
-                index=index_actual,
-                key=f"sel_estatus_{idx}_{item['factura']}",
-                label_visibility="collapsed"
-            )
-            if nuevo_estatus != estatus_val:
-                st.session_state[key_estatus] = nuevo_estatus
-                st.rerun()
+            with col_select:
+                index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
+                
+                nuevo_estatus = st.selectbox(
+                    "Estatus",
+                    opciones_estatus_posibles,
+                    index=index_actual,
+                    key=f"sel_estatus_{idx}_{item['factura']}",
+                    label_visibility="collapsed"
+                )
+                if nuevo_estatus != estatus_val:
+                    st.session_state[key_estatus] = nuevo_estatus
+                    st.rerun()
 
-        # Separación vertical milimétrica y limpia entre cada renglón
-        st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
+            # Separación mínima vertical entre filas
+            st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
