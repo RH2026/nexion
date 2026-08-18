@@ -885,6 +885,7 @@ def main():
     total_registros = len(data_completa)
     total_paginas = max(1, (total_registros + tamanio_pagina - 1) // tamanio_pagina)
 
+    st.write("")
     # ── BARRA SUPERIOR CON TÍTULO, BOTÓN DE ACTUALIZAR Y CONTROLES DE PAGINACIÓN ──
     col_titulo, col_btn_refrescar, col_inicio, col_ant, col_sig, col_fin = st.columns([2.5, 1.1, 0.7, 1.1, 1.1, 0.7], vertical_alignment="center")
 
