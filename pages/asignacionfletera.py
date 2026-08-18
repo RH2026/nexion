@@ -108,7 +108,7 @@ html, body, .stApp {{
 
 /* CONTENEDOR CON SCROLL PARA LA LISTA DE ALMACÉN */
 .scroll-container-almacen {{
-    max-height: 65vh;
+    max-height: 68vh;
     overflow-y: auto;
     padding-right: 5px;
     margin-bottom: 20px;
@@ -642,7 +642,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL COMPACTO CON SCROLL Y SELECTOR PEQUEÑO
+# 5. RENDER DE HISTORIAL EN UNA SOLA LÍNEA Y ALTURA PERFECTA
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -668,7 +668,6 @@ def render_historial_almacen(data):
         "EXPORTACION"
     ]
 
-    # Abrimos el contenedor con el scroll chingón
     st.markdown('<div class="scroll-container-almacen">', unsafe_allow_html=True)
 
     for idx, item in enumerate(data):
@@ -700,30 +699,21 @@ def render_historial_almacen(data):
             color_texto_estatus = "#94a3b8"
 
         with st.container():
-            # Columnas ajustadas para que el selectbox quede delgado y estético a un lado
-            col_tarjeta, col_select = st.columns([4.8, 1.2], vertical_alignment="center")
+            # Columnas con proporción exacta para mantener la tarjeta y el selectbox alineados y de la misma altura
+            col_tarjeta, col_select = st.columns([5.2, 0.8], vertical_alignment="center")
 
             with col_tarjeta:
-                fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN FECHA DE ENVÍO'
+                fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
                 transporte_display = item['transporte'] if item['transporte'] else 'S/T'
                 
-                # Tarjeta limpia sin etiquetas de "Extran:" ni "Transporte:", solo los valores puros
+                # Todo en una sola línea elegante, sin la palabra "Factura:" y ultra compacta
                 st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 8px; padding: 8px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 4px;">
-                        <div>
-                            <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Factura: </span>
-                            <b style="font-size: 11px; color: white; font-style: italic;">{item['factura']}</b>
-                            <span style="margin-left: 10px; font-size: 9px; color: #38bdf8; font-weight: 700;">📅 {fecha_envio_display}</span>
-                        </div>
-                        <div>
-                            <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Estatus: </span>
-                            <b style="font-size: 10px; color: {color_texto_estatus}; text-transform: uppercase;">{estatus_val}</b>
-                        </div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                        <div style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</div>
-                        <div style="color: #fde047; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 35%;">{transporte_display}</div>
+                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 5px 10px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 30px;">
+                    <div style="display: flex; align-items: center; gap: 18px; font-size: 11px; width: 100%; overflow: hidden;">
+                        <b style="color: white; font-style: italic; font-size: 12px; min-width: 55px;">#{item['factura']}</b>
+                        <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 2;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
+                        <span style="color: #fde047; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: right;">{transporte_display}</span>
+                        <span style="color: #38bdf8; font-weight: 700; font-size: 10px; min-width: 110px; text-align: right;">📅 {fecha_envio_display}</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -731,21 +721,22 @@ def render_historial_almacen(data):
             with col_select:
                 index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
                 
-                # CSS personalizado inyectado para reducir la altura y el tamaño del selectbox exactamente a la mitad
+                # CSS personalizado para hacer el selectbox ultra pequeño y de la misma altura (30px)
                 st.markdown("""
                 <style>
                 div[data-baseweb="select"] > div {
-                    min-height: 26px !important;
-                    height: 26px !important;
-                    font-size: 10px !important;
-                    padding: 0px 6px !important;
+                    min-height: 30px !important;
+                    height: 30px !important;
+                    font-size: 9px !important;
+                    padding: 0px 4px !important;
                     background-color: #2B343B !important;
                     color: #ffffff !important;
                     border: 1px solid #4B5D67 !important;
+                    border-radius: 6px !important;
                 }
                 div[data-baseweb="select"] span {
-                    line-height: 26px !important;
-                    font-size: 10px !important;
+                    line-height: 30px !important;
+                    font-size: 9px !important;
                     font-weight: 700 !important;
                 }
                 </style>
@@ -762,9 +753,9 @@ def render_historial_almacen(data):
                     st.session_state[key_estatus] = nuevo_estatus
                     st.rerun()
 
-            st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='margin-bottom: 3px;'></div>", unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True) # Cierre del scroll-container-almacen
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def main():    
     if "animacion_cargada" not in st.session_state:
