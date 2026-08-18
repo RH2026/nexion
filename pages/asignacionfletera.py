@@ -674,7 +674,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON 15 REGISTROS, SCROLL FIJO Y PAGINACIÓN ABAJO
+# 5. RENDER DE HISTORIAL CON 15 REGISTROS, SCROLL FIJO Y TEXTO VERDE
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -791,42 +791,6 @@ def render_historial_almacen(data):
     # Cierre del contenedor scroll
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── BARRA DE PAGINACIÓN INFERIOR (DEBAJO DE LAS TARJETAS Y EN MEDIO) ──
-    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-    col_inicio, col_ant, col_info_pag, col_sig, col_fin = st.columns([0.8, 1.4, 2.2, 1.4, 0.8], vertical_alignment="center")
-
-    with col_inicio:
-        if st.button("⏮️", use_container_width=True, key="btn_pag_inicio"):
-            if st.session_state.pagina_almacen != 0:
-                st.session_state.pagina_almacen = 0
-                st.rerun()
-
-    with col_ant:
-        if st.button("⬅️ ANTERIOR", use_container_width=True, key="btn_pag_anterior"):
-            if st.session_state.pagina_almacen > 0:
-                st.session_state.pagina_almacen -= 1
-                st.rerun()
-
-    with col_info_pag:
-        st.markdown(
-            f"""<div style='text-align: center; color: #10b981; font-size: 11px; font-weight: 700; white-space: nowrap; padding: 6px 0;'>
-                PÁG {st.session_state.pagina_almacen + 1} DE {total_paginas} &nbsp;|&nbsp; {total_registros} REGISTROS
-            </div>""",
-            unsafe_allow_html=True
-        )
-
-    with col_sig:
-        if st.button("SIGUIENTE ➡️", use_container_width=True, key="btn_pag_siguiente"):
-            if st.session_state.pagina_almacen < total_paginas - 1:
-                st.session_state.pagina_almacen += 1
-                st.rerun()
-
-    with col_fin:
-        if st.button("⏭️", use_container_width=True, key="btn_pag_fin"):
-            if st.session_state.pagina_almacen != total_paginas - 1:
-                st.session_state.pagina_almacen = total_paginas - 1
-                st.rerun()
-
 def main():     
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
@@ -916,8 +880,13 @@ def main():
     else:
         data_completa = []
 
-    # ── BARRA SUPERIOR SOLO CON EL TÍTULO Y EL BOTÓN DE ACTUALIZAR ──
-    col_titulo, col_btn_refrescar = st.columns([3.5, 1.5], vertical_alignment="center")
+    # Calcular total de páginas
+    tamanio_pagina = 15
+    total_registros = len(data_completa)
+    total_paginas = max(1, (total_registros + tamanio_pagina - 1) // tamanio_pagina)
+
+    # ── BARRA SUPERIOR CON TÍTULO Y BOTÓN DE ACTUALIZAR ──
+    col_titulo, col_btn_refrescar = st.columns([6, 1.5], vertical_alignment="center")
 
     with col_titulo:
         st.markdown("""
@@ -929,14 +898,51 @@ def main():
         """, unsafe_allow_html=True)
 
     with col_btn_refrescar:
-        if st.button("ACTUALIZAR DATOS", key="btn_refrescar_almacen", use_container_width=True):
+        if st.button("ACTUALIZAR", key="btn_refrescar_almacen", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
 
     st.markdown("<hr style='border-top:1px solid #ffffff; margin:8px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
+    # Renderizar los resultados de la tabla primero
     render_historial_almacen(data_completa)
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("<hr style='border-top:1px solid #ffffff; margin:15px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+
+    # ── CONTROLES DE PAGINACIÓN ABAJO DE LOS RESULTADOS ──
+    col_inicio, col_ant, col_info_pag, col_sig, col_fin = st.columns([0.8, 1.5, 2.5, 1.5, 0.8], vertical_alignment="center")
+
+    with col_inicio:
+        if st.button("⏮️", use_container_width=True, key="btn_pag_inicio"):
+            if st.session_state.pagina_almacen != 0:
+                st.session_state.pagina_almacen = 0
+                st.rerun()
+
+    with col_ant:
+        if st.button("⬅️ ANTERIOR", use_container_width=True, key="btn_pag_anterior"):
+            if st.session_state.pagina_almacen > 0:
+                st.session_state.pagina_almacen -= 1
+                st.rerun()
+
+    with col_info_pag:
+        st.markdown(
+            f"""<div style='text-align: center; color: #10b981; font-size: 11px; font-weight: 700; white-space: nowrap;'>
+                PÁGINA {st.session_state.pagina_almacen + 1} DE {total_paginas} &nbsp;|&nbsp; TOTAL: {total_registros} REGISTROS
+            </div>""",
+            unsafe_allow_html=True
+        )
+
+    with col_sig:
+        if st.button("SIGUIENTE ➡️", use_container_width=True, key="btn_pag_siguiente"):
+            if st.session_state.pagina_almacen < total_paginas - 1:
+                st.session_state.pagina_almacen += 1
+                st.rerun()
+
+    with col_fin:
+        if st.button("⏭️", use_container_width=True, key="btn_pag_fin"):
+            if st.session_state.pagina_almacen != total_paginas - 1:
+                st.session_state.pagina_almacen = total_paginas - 1
+                st.rerun()
 
 if __name__ == "__main__":
     main()
