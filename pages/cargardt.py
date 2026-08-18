@@ -186,7 +186,7 @@ def registrar_acceso_github(usuario, modulo):
 
 
 # ==========================================
-# 2. SISTEMA DE SEGURIDAD (VALIDACIÓN DE SESIÓN Y PERMISOS)
+# 2. SISTEMA DE SEGURIDAD BLINDADO (CARGAR DATOS)
 # ==========================================
 if not st.session_state.get("autenticado", False):
     st.session_state.pagina_destino = "pages/cargardt.py"
@@ -199,7 +199,6 @@ def verificar_permiso_pagina(modulo, submodulo=None):
     if usuario_actual == "RIGOBERTO":
         return True
         
-    # Lectura estricta a booleano para evitar fallos de tipos de datos de pandas
     mod_key = str(modulo).upper().strip()
     permiso_modulo = bool(permisos.get(mod_key, False))
     
@@ -235,7 +234,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         
         col_regresar_m, _ = st.columns([1.5, 4])
         with col_regresar_m:
-            if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo_cargardt", use_container_width=True):
+            if st.button("REGRESAR AL INICIO", key="btn_reg_mod_cargardt", use_container_width=True):
                 st.switch_page("dashboard.py")
         st.stop()
         
@@ -256,30 +255,27 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                     font-family: 'Inter', sans-serif; 
                     color: white; 
                     box-sizing: border-box; 
-                    margin-bottom: 25px;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                ">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                        <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
-                        <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
-                            ACCESS RESTRICTED // SECCIÓN BLOQUEADA
-                        </span>
-                    </div>
-                    <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
-                        No cuentas con los privilegios necesarios para visualizar la sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
-                    </div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
+                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
+                        ACCESS RESTRICTED // SECCIÓN BLOQUEADA
+                    </span>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            
-            col_regresar_s, _ = st.columns([1.5, 4])
-            with col_regresar_s:
-                if st.button("REGRESAR AL INICIO", key="btn_regresar_submodulo_cargardt", use_container_width=True):
-                    st.switch_page("dashboard.py")
-            st.stop()
+                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
+                    No cuentas con los privilegios necesarios para visualizar la sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        col_regresar_s, _ = st.columns([1.5, 4])
+        with col_regresar_s:
+            if st.button("REGRESAR AL INICIO", key="btn_reg_sub_cargardt", use_container_width=True):
+                st.switch_page("dashboard.py")
+        st.stop()
 
-# Blindaje correcto para Cargar Datos
+# Ejecución inmediata del blindaje para Cargar Datos
 verificar_permiso_pagina("CENTRO DE DATOS", "CARGAR DATOS")
 
 
