@@ -116,17 +116,10 @@ html, body, .stApp {{
 
 /* ELIMINAR ESPACIOS EXCESIVOS ENTRE ELEMENTOS */
 div[data-testid="stVerticalBlock"] {{
-    gap: 0.1rem !important;
+    gap: 0.08rem !important;
 }}
 
-/* FORZAR ALINEACIÓN VERTICAL ESTRICTA EN COLUMNAS */
-[data-testid="column"] {{
-    padding: 0px !important;
-    display: flex !important;
-    align-items: center !important;
-}}
-
-/* FORZAR ALTURA Y CENTRADO EXACTO DEL SELECTBOX (COMO TU EJEMPLO "SI") */
+/* FORZAR ALTURA Y CENTRADO EXACTO DEL SELECTBOX */
 div[data-baseweb="select"] > div {{
     min-height: 42px !important;
     height: 42px !important;
@@ -143,13 +136,6 @@ div[data-baseweb="select"] span {{
     line-height: normal !important;
     font-size: 10px !important;
     font-weight: 700 !important;
-}}
-
-/* ELIMINAR EL MARGEN SUPERIOR QUE DESFAVORIZA EL CENTRADO DE STREAMLIT */
-.stSelectbox {{
-    width: 100% !important;
-    margin-top: -22px !important;
-    margin-bottom: 0px !important;
 }}
 
 /* BOTONES SLIM Y BOTONES DE DESCARGA */
@@ -680,7 +666,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL CON CENTRADO SIMÉTRICO PERFECTO
+# 5. RENDER DE HISTORIAL UNIFICADO EN UN SOLO CONTENEDOR FLEX (SIMÉTRICO AL 100%)
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -719,58 +705,50 @@ def render_historial_almacen(data):
         
         if estatus_val == "ENVIADA":
             color_borde = "#10b981"
-            color_texto_estatus = "#34d399"
         elif estatus_val in ["CANCELADA", "NO ENTREGADA"]:
             color_borde = "#ef4444"
-            color_texto_estatus = "#f87171"
         elif estatus_val in ["DETENIDA", "SOLO FACTURA"]:
             color_borde = "#f59e0b"
-            color_texto_estatus = "#fbbf24"
         elif estatus_val == "DUPLICADA":
             color_borde = "#a855f7"
-            color_texto_estatus = "#c084fc"
         elif estatus_val in ["CEDIS", "MOSTRADOR", "EXPORTACION"]:
             color_borde = "#38bdf8"
-            color_texto_estatus = "#7dd3fc"
         else:
             color_borde = "#64748b"
-            color_texto_estatus = "#94a3b8"
 
-        with st.container():
-            col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
+        fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
+        transporte_display = item['transporte'] if item['transporte'] else 'S/T'
 
-            with col_tarjeta:
-                fecha_envio_display = item['fecha_envio'] if item['fecha_envio'] else 'SIN F. ENVÍO'
-                transporte_display = item['transporte'] if item['transporte'] else 'S/T'
-                
-                # Tarjeta de 42px con flexbox centrado verticalmente
-                st.markdown(f"""
-                <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 42px;">
-                    <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
-                        <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
-                        <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
-                        <span style="color: #fde047; font-weight: bold; white-space: nowrap; margin-left: auto; padding-right: 15px;">{transporte_display}</span>
-                        <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
-                    </div>
+        # Contenedor flex único para alinear perfectamente la tarjeta y el selectbox sin columnas de Streamlit
+        st.markdown(f"""
+        <div style="display: flex; align-items: center; gap: 10px; width: 100%; margin-bottom: 3px; height: 42px;">
+            <!-- Tarjeta Izquierda -->
+            <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-radius: 6px; padding: 0px 12px; font-family: 'Inter', sans-serif; width: 82%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 42px;">
+                <div style="display: flex; align-items: center; gap: 20px; font-size: 11px; width: 100%;">
+                    <b style="color: white; font-style: italic; font-size: 12px; white-space: nowrap;">#{item['factura']}</b>
+                    <span style="color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">{item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</span>
+                    <span style="color: #fde047; font-weight: bold; white-space: nowrap; margin-left: auto; padding-right: 15px;">{transporte_display}</span>
+                    <span style="color: #38bdf8; font-weight: 700; font-size: 10px; white-space: nowrap;">📅 {fecha_envio_display}</span>
                 </div>
-                """, unsafe_allow_html=True)
+            </div>
+            <!-- Contenedor Derecho para el Selectbox -->
+            <div style="width: 18%; height: 42px; display: flex; align-items: center;" id="selectbox_wrapper_{idx}">
+        """, unsafe_allow_html=True)
 
-            with col_select:
-                index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
-                
-                nuevo_estatus = st.selectbox(
-                    "Estatus",
-                    opciones_estatus_posibles,
-                    index=index_actual,
-                    key=f"sel_estatus_{idx}_{item['factura']}",
-                    label_visibility="collapsed"
-                )
-                if nuevo_estatus != estatus_val:
-                    st.session_state[key_estatus] = nuevo_estatus
-                    st.rerun()
+        index_actual = opciones_estatus_posibles.index(estatus_val) if estatus_val in opciones_estatus_posibles else 0
+        
+        nuevo_estatus = st.selectbox(
+            "Estatus",
+            opciones_estatus_posibles,
+            index=index_actual,
+            key=f"sel_estatus_{idx}_{item['factura']}",
+            label_visibility="collapsed"
+        )
+        if nuevo_estatus != estatus_val:
+            st.session_state[key_estatus] = nuevo_estatus
+            st.rerun()
 
-            # Separación vertical milimétrica entre filas
-            st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
