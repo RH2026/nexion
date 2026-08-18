@@ -618,7 +618,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. RENDER DE HISTORIAL PARA ALMACÉN (FACTURACIÓN CON CHECKS Y ESTATUS)
+# 5. RENDER DE HISTORIAL PARA ALMACÉN (CON SELECTOR DE ESTATUS INTERACTIVO)
 # ==========================================
 def render_historial_almacen(data):
     if not data:
@@ -632,9 +632,20 @@ def render_historial_almacen(data):
 
     st.markdown('<p style="color:#FFFFFF; font-weight:800; letter-spacing:2px; font-size:12px; margin-bottom:12px;">HISTORIAL DE ALMACÉN // CONTROL DE FACTURAS</p>', unsafe_allow_html=True)
 
+    opciones_estatus_posibles = ["ENVIADA", "CANCELADA", "DETENIDA", "DUPLICADA"]
+
     for idx, item in enumerate(data):
-        estatus_val = str(item.get('estatus', 'ENVIADA')).upper()
+        # Usamos session_state para recordar el estatus cambiado de cada tarjeta de forma interactiva
+        key_estatus = f"estatus_sel_{idx}_{item['factura']}"
+        if key_estatus not in st.session_state:
+            estatus_inicial = str(item.get('estatus', 'ENVIADA')).upper()
+            if estatus_inicial not in opciones_estatus_posibles:
+                estatus_inicial = "ENVIADA"
+            st.session_state[key_estatus] = estatus_inicial
+
+        estatus_val = st.session_state[key_estatus]
         
+        # Colores dinámicos según el estatus seleccionado
         if estatus_val == "ENVIADA":
             color_borde = "#10b981"
             color_texto_estatus = "#34d399"
@@ -652,6 +663,7 @@ def render_historial_almacen(data):
             color_texto_estatus = "#7dd3fc"
 
         with st.container():
+            # Encabezado visual de la tarjeta
             st.markdown(f"""
             <div style="background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 5px solid {color_borde}; border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 10px 15px; font-family: 'Inter', sans-serif; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box;">
                 <div>
@@ -659,29 +671,36 @@ def render_historial_almacen(data):
                     <b style="font-size: 13px; color: white; font-style: italic;">{item['factura']}</b>
                 </div>
                 <div>
-                    <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Estatus Almacén: </span>
+                    <span style="font-size: 8px; text-transform: uppercase; color: #BFBFBF; font-weight: 800;">Estatus Actual: </span>
                     <b style="font-size: 11px; color: {color_texto_estatus}; text-transform: uppercase;">{estatus_val}</b>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            col1, col2, col3, col4, col5 = st.columns([1, 2.5, 2.5, 2, 1])
+            # Columnas con tus campos solicitados: Check, Extran, Ciudad, EstadoCP y Selector de Estatus
+            col1, col2, col3, col4, col5 = st.columns([0.8, 2, 2, 1.8, 2.2])
             
             with col1:
                 chk = st.checkbox("Check", value=False, key=f"chk_alm_{idx}")
             with col2:
-                st.markdown(f"<div style='font-size:11px; color:#7dd3fc; padding-top:6px;'><b>Cliente Extran:</b> {item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size:11px; color:#7dd3fc; padding-top:6px;'><b>Extran:</b> {item['nombre_extran'] if item['nombre_extran'] else 'N/A'}</div>", unsafe_allow_html=True)
             with col3:
                 st.markdown(f"<div style='font-size:11px; color:#e2e8f0; padding-top:6px;'><b>Ciudad:</b> {item['ciudad']}</div>", unsafe_allow_html=True)
             with col4:
-                st.markdown(f"<div style='font-size:11px; color:#fde047; padding-top:6px;'><b>Estado / CP:</b> {item['estado_cp']}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size:11px; color:#fde047; padding-top:6px;'><b>Estado/CP:</b> {item['estado_cp']}</div>", unsafe_allow_html=True)
             with col5:
-                if st.button("💾", key=f"btn_alm_{idx}", use_container_width=True):
-                    if chk:
-                        st.success(f"¡Marcado #{item['factura']}!")
-                    else:
-                        st.info(f"Guardado #{item['factura']}")
-            
+                # Selector interactivo para cambiar el estatus en tiempo real en cada tarjeta
+                nuevo_estatus = st.selectbox(
+                    "Cambiar Estatus",
+                    opciones_estatus_posibles,
+                    index=opciones_estatus_posibles.index(estatus_val),
+                    key=f"sel_estatus_{idx}_{item['factura']}",
+                    label_visibility="collapsed"
+                )
+                if nuevo_estatus != estatus_val:
+                    st.session_state[key_estatus] = nuevo_estatus
+                    st.rerun()
+
             st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
 def main():    
