@@ -192,7 +192,7 @@ div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
 div[data-testid="stTabs"] [role="tab"][aria-selected="true"] p,
 div[data-testid="stTabs"] [role="tab"][aria-selected="true"] span {{
     color: #FFFFFF !important;
-    font-weight: 700 !important;
+    font-weight: 400 !important;
 }}
 
 /* ELIMINAR FOCUS / SOMBRAS DE STREAMLIT */
