@@ -45,7 +45,7 @@ vars_css = {
 st.markdown(
     f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&display=swap');
 
 /* --- ANIMACIONES DE ENTRADA --- */
 @keyframes fadeInUp {{
@@ -133,7 +133,7 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
     }}
 }}
 
-/* ===================== TABS - ESTILO NEXION (TEXTO BLANCO / LÍNEA COLOR) ===================== */
+/* ===================== TABS - ESTILO NEXION (IGUAL A TÍTULOS DINÁMICOS) ===================== */
 
 /* CONTENEDOR DE LAS PESTAÑAS */
 div[data-testid="stTabs"] [role="tablist"] {{
@@ -164,13 +164,13 @@ div[data-testid="stTabs"] [role="tab"] {{
     flex: 0 0 auto !important;
 }}
 
-/* TEXTO INTERNO DE LAS PESTAÑAS (INACTIVO: BLANCO TENUE) */
+/* TEXTO INTERNO DE LAS PESTAÑAS (IGUALADO A TÍTULOS DINÁMICOS: 13px y 5px de espacio) */
 div[data-testid="stTabs"] [role="tab"] p,
 div[data-testid="stTabs"] [role="tab"] span {{
     color: rgba(255, 255, 255, 0.6) !important;
     font-size: 13px !important;
-    font-weight: 600 !important;
-    letter-spacing: 1px !important;
+    font-weight: 500 !important;
+    letter-spacing: 5px !important;
     text-transform: uppercase !important;
     margin: 0 !important;
 }}
@@ -181,7 +181,7 @@ div[data-testid="stTabs"] [role="tab"]:hover span {{
     color: #FFD700 !important;
 }}
 
-/* TAB ACTIVA (TEXTO BLANCO PURO) */
+/* TAB ACTIVA (TEXTO BLANCO PURO IDÉNTICO AL HEADER) */
 div[data-testid="stTabs"] button[aria-selected="true"],
 div[data-testid="stTabs"] div[aria-selected="true"],
 div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
@@ -192,7 +192,8 @@ div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
 div[data-testid="stTabs"] [role="tab"][aria-selected="true"] p,
 div[data-testid="stTabs"] [role="tab"][aria-selected="true"] span {{
     color: #FFFFFF !important;
-    font-weight: 400 !important;
+    font-weight: 500 !important;
+    letter-spacing: 5px !important;
 }}
 
 /* ELIMINAR FOCUS / SOMBRAS DE STREAMLIT */
