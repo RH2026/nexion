@@ -885,6 +885,7 @@ def main():
     total_registros = len(data_completa)
     total_paginas = max(1, (total_registros + tamanio_pagina - 1) // tamanio_pagina)
 
+    st.markdown("<br>", unsafe_allow_html=True)
     st.write("")
     st.write("")
     # ── BARRA SUPERIOR CON TÍTULO, BOTÓN DE ACTUALIZAR Y CONTROLES DE PAGINACIÓN ──
