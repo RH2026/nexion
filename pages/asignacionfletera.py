@@ -788,9 +788,20 @@ def render_historial_almacen(data):
     # Cierre del contenedor scroll
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── BARRA DE PAGINACIÓN UNIFORME Y EQUILIBRADA ──
+    # ── BARRA DE PAGINACIÓN: INICIO Y FIN MÁS PEQUEÑOS ──
+    st.markdown("""
+        <style>
+            /* Hacer más compactos los botones de inicio y fin específicos */
+            div[data-testid="column"]:has(button[key="btn_pag_inicio"]) button,
+            div[data-testid="column"]:has(button[key="btn_pag_fin"]) button {
+                font-size: 9px !important;
+                padding: 0px 4px !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
     st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-    col_info, col_vacio, col_inicio, col_ant, col_sig, col_fin = st.columns([2.0, 0.6, 1.1, 1.1, 1.1, 1.1], vertical_alignment="center")
+    col_info, col_vacio, col_inicio, col_ant, col_sig, col_fin = st.columns([2.0, 0.4, 0.7, 1.3, 1.3, 0.7], vertical_alignment="center")
 
     with col_info:
         st.markdown(
@@ -807,13 +818,13 @@ def render_historial_almacen(data):
                 st.rerun()
 
     with col_ant:
-        if st.button("ANTERIOR", use_container_width=True, key="btn_pag_anterior"):
+        if st.button("⬅️ ANTERIORES", use_container_width=True, key="btn_pag_anterior"):
             if st.session_state.pagina_almacen > 0:
                 st.session_state.pagina_almacen -= 1
                 st.rerun()
 
     with col_sig:
-        if st.button("SIGUIENTE", use_container_width=True, key="btn_pag_siguiente"):
+        if st.button("SIGUIENTES ➡️", use_container_width=True, key="btn_pag_siguiente"):
             if st.session_state.pagina_almacen < total_paginas - 1:
                 st.session_state.pagina_almacen += 1
                 st.rerun()
