@@ -788,9 +788,9 @@ def render_historial_almacen(data):
     # Cierre del contenedor scroll
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── BARRA DE PAGINACIÓN CON BOTONES DE INICIO Y FIN ──
+    # ── BARRA DE PAGINACIÓN UNIFORME Y EQUILIBRADA ──
     st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-    col_info, col_vacio, col_inicio, col_ant, col_sig, col_fin = st.columns([2.0, 1.2, 0.7, 1.1, 1.1, 0.7], vertical_alignment="center")
+    col_info, col_vacio, col_inicio, col_ant, col_sig, col_fin = st.columns([2.0, 0.6, 1.1, 1.1, 1.1, 1.1], vertical_alignment="center")
 
     with col_info:
         st.markdown(
@@ -801,25 +801,25 @@ def render_historial_almacen(data):
         )
 
     with col_inicio:
-        if st.button("⏮️", use_container_width=True, key="btn_pag_inicio", help="Ir al inicio"):
+        if st.button("INICIO", use_container_width=True, key="btn_pag_inicio"):
             if st.session_state.pagina_almacen != 0:
                 st.session_state.pagina_almacen = 0
                 st.rerun()
 
     with col_ant:
-        if st.session_state.pagina_almacen > 0:
-            if st.button("⬅️ ANTERIORES", use_container_width=True, key="btn_pag_anterior"):
+        if st.button("ANTERIOR", use_container_width=True, key="btn_pag_anterior"):
+            if st.session_state.pagina_almacen > 0:
                 st.session_state.pagina_almacen -= 1
                 st.rerun()
 
     with col_sig:
-        if st.session_state.pagina_almacen < total_paginas - 1:
-            if st.button("SIGUIENTES ➡️", use_container_width=True, key="btn_pag_siguiente"):
+        if st.button("SIGUIENTE", use_container_width=True, key="btn_pag_siguiente"):
+            if st.session_state.pagina_almacen < total_paginas - 1:
                 st.session_state.pagina_almacen += 1
                 st.rerun()
 
     with col_fin:
-        if st.button("⏭️", use_container_width=True, key="btn_pag_fin", help="Ir al final"):
+        if st.button("FIN", use_container_width=True, key="btn_pag_fin"):
             if st.session_state.pagina_almacen != total_paginas - 1:
                 st.session_state.pagina_almacen = total_paginas - 1
                 st.rerun()
