@@ -678,8 +678,7 @@ def render_historial_almacen(data):
         """, unsafe_allow_html=True)
         return
 
-    st.markdown('<p style="color:#FFFFFF; font-weight:800; letter-spacing:2px; font-size:12px; margin-bottom:12px;">HISTORIAL DE ALMACÉN // CONTROL DE FACTURAS</p>', unsafe_allow_html=True)
-
+    
     opciones_estatus_posibles = [
         "ENVIADA", 
         "CANCELADA", 
@@ -718,7 +717,7 @@ def render_historial_almacen(data):
 
         # Contenedor con un margen inferior de 20px para forzar una separación real y amplia
         with st.container():
-            st.markdown('<div style="margin-bottom: 20px;">', unsafe_allow_html=True)
+            st.markdown('<div style="margin-bottom: 30px;">', unsafe_allow_html=True)
             col_tarjeta, col_select = st.columns([8.2, 1.8], vertical_alignment="center")
 
             with col_tarjeta:
