@@ -709,15 +709,20 @@ def render_envios_flow_responsive(data):
                     </div>
 
                     <!-- DESTINO -->
-                    <div class="w-full md:w-24 shrink-0 text-left md:text-right">
+                    <div class="w-full md:w-28 shrink-0 text-left md:text-right border-l border-white/5 pl-3">
                         <div class="label-mini">Destino</div>
                         <div class="text-[10px] font-bold text-white truncate">{item['destino']}</div>
                     </div>
 
-                    <!-- FECHA DE ENVÍO Y ESTATUS -->
-                    <div class="w-full md:w-28 shrink-0 text-left md:text-right border-l border-white/5 pl-3">
-                        <div class="label-mini">Envío / Estatus</div>
+                    <!-- FECHA DE ENVÍO -->
+                    <div class="w-full md:w-24 shrink-0 text-left md:text-right border-l border-white/5 pl-3">
+                        <div class="label-mini">Fecha Envío</div>
                         <div class="text-[10px] font-bold text-sky-400">{item['fecha_envio'] if item['fecha_envio'] and item['fecha_envio'] != 'nan' else 'SIN ENVIAR'}</div>
+                    </div>
+
+                    <!-- ESTATUS -->
+                    <div class="w-full md:w-28 shrink-0 text-left md:text-right border-l border-white/5 pl-3">
+                        <div class="label-mini">Estatus</div>
                         <div class="text-[9px] font-black uppercase {("text-emerald-400" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("text-red-400" if "RETRASO" in item['estatus'] else "text-amber-400"))} tracking-tighter">
                             {item['estatus']}
                         </div>
