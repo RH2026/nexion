@@ -1082,7 +1082,7 @@ def main():
             except ValueError:
                 tarimas_limpias.append(t_val)
         
-        df_entregas['cantidad'] = cajas + " CJS / " + tarimas + " TARIMAS"
+        df_entregas['cantidad'] = cajas + " CJS / " + pd.Series(tarimas_limpias).values + " TARIMAS"
         df_entregas['semana'] = "OV: " + df_raw.get('OV Jypesa', pd.Series(dtype=str)).fillna('').astype(str)
         df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', pd.Series(dtype=str)).fillna('').astype(str)
         
