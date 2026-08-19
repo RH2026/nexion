@@ -668,11 +668,11 @@ def render_envios_flow_responsive(data):
             .list-row:hover {{ background-color: #2c3b42; border-color: rgba(56, 189, 248, 0.3); }}
             .label-mini {{ font-size: 8px; text-transform: uppercase; font-weight: 800; color: #BFBFBF; letter-spacing: 0.5px; margin-bottom: 2px; }}
             
-            /* GRID DISTRIBUIDO PARA QUE OCUPE TODO EL ANCHO SIN HUECOS */
+            /* GRID REPARTIDO: Cliente toma el mayor espacio, los demás se reparten equitativamente */
             .grid-envios {{
                 display: grid;
-                grid-template-columns: 80px 100px 110px 100px 2fr 110px 100px 110px;
-                gap: 12px;
+                grid-template-columns: 70px 85px 85px 90px 2fr 90px 90px 90px;
+                gap: 10px;
                 align-items: center;
                 width: 100%;
                 padding: 10px 14px;
@@ -720,21 +720,21 @@ def render_envios_flow_responsive(data):
                     </div>
 
                     <!-- DESTINO -->
-                    <div class="border-l border-white/5 pl-3">
+                    <div class="border-l border-white/5 pl-2">
                         <div class="label-mini">Destino</div>
                         <div class="text-[10px] font-bold text-white truncate">{item['destino']}</div>
                     </div>
 
                     <!-- FECHA DE ENVÍO -->
-                    <div class="border-l border-white/5 pl-3">
+                    <div class="border-l border-white/5 pl-2">
                         <div class="label-mini">Fecha Envío</div>
-                        <div class="text-[10px] font-bold text-sky-400 truncate">{item['fecha_envio'] if item['fecha_envio'] and item['fecha_envio'] != 'nan' else 'SIN ENVIAR'}</div>
+                        <div class="text-[10px] font-bold text-sky-400">{item['fecha_envio'] if item['fecha_envio'] and item['fecha_envio'] != 'nan' else 'SIN ENVIAR'}</div>
                     </div>
 
                     <!-- ESTATUS -->
-                    <div class="border-l border-white/5 pl-3">
+                    <div class="border-l border-white/5 pl-2">
                         <div class="label-mini">Estatus</div>
-                        <div class="text-[9px] font-black uppercase {("text-emerald-400" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("text-red-400" if "RETRASO" in item['estatus'] else "text-amber-400"))} tracking-tighter truncate">
+                        <div class="text-[9px] font-black uppercase {("text-emerald-400" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("text-red-400" if "RETRASO" in item['estatus'] else "text-amber-400"))} tracking-tighter">
                             {item['estatus']}
                         </div>
                     </div>
