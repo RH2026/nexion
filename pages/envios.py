@@ -678,7 +678,7 @@ def render_envios_flow_responsive(data):
             /* GRID REPARTIDO: Tamaños fijos mínimos garantizados para evitar compresión en celular */
             .grid-envios {{
                 display: grid;
-                grid-template-columns: 70px 85px 85px 90px minmax(140px, 1.3fr) 120px 110px 110px;
+                grid-template-columns: 70px 120px 120px 120px minmax(140px, 1fr) 120px 110px 110px;
                 gap: 10px;
                 align-items: center;
                 min-width: 860px; /* Asegura que mantenga su estructura perfecta y active el scroll fluido en móviles */
