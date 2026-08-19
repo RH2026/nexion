@@ -668,13 +668,20 @@ def render_envios_flow_responsive(data):
             .list-row:hover {{ background-color: #2c3b42; border-color: rgba(56, 189, 248, 0.3); }}
             .label-mini {{ font-size: 8px; text-transform: uppercase; font-weight: 800; color: #BFBFBF; letter-spacing: 0.5px; margin-bottom: 2px; }}
             
-            /* GRID REPARTIDO: Reducido cliente y ampliados destino, fecha envío y estatus */
+            /* Contenedor con scroll horizontal para móviles sin romper proporciones */
+            .table-scroll-container {{
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }}
+
+            /* GRID REPARTIDO: Tamaños fijos mínimos garantizados para evitar compresión en celular */
             .grid-envios {{
                 display: grid;
-                grid-template-columns: 70px 85px 85px 90px 1.3fr 120px 110px 110px;
+                grid-template-columns: 70px 85px 85px 90px minmax(140px, 1.3fr) 120px 110px 110px;
                 gap: 10px;
                 align-items: center;
-                width: 100%;
+                min-width: 860px; /* Asegura que mantenga su estructura perfecta y active el scroll fluido en móviles */
                 padding: 10px 14px;
             }}
         </style>
@@ -685,60 +692,62 @@ def render_envios_flow_responsive(data):
             <div class="list-row flex items-stretch">
                 <div class="w-2 shrink-0 {("bg-emerald-500" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("bg-red-500" if "RETRASO" in item['estatus'] else "bg-amber-500"))} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
                 
-                <div class="grid-envios flex-1">
-                    
-                    <!-- FACTURA -->
-                    <div>
-                        <div class="label-mini">Factura</div>
-                        <div class="text-xs font-black text-white italic tracking-tighter">{item['factura']}</div>
-                    </div>
-
-                    <!-- RECOLECCIÓN -->
-                    <div>
-                        <div class="label-mini">Recolección</div>
-                        <div class="text-[10px] text-sky-400 font-bold uppercase truncate">{item['recomendacion']}</div>
-                    </div>
-
-                    <!-- NO GUÍA -->
-                    <div>
-                        <div class="label-mini">No. Guía</div>
-                        <div class="text-[10px] font-mono font-bold text-amber-300 truncate">{item['numero_guia'] if item['numero_guia'] else 'PENDIENTE'}</div>
-                    </div>
-                    
-                    <!-- FECHA PROGRAMACIÓN -->
-                    <div>
-                        <div class="label-mini">F. Programación</div>
-                        <div class="text-[10px] font-bold text-slate-300 truncate">{item['fecha_programacion'] if item['fecha_programacion'] else 'N/A'}</div>
-                    </div>
-                    
-                    <!-- CLIENTE -->
-                    <div class="min-w-0">
-                        <div class="label-mini">Cliente</div>
-                        <div class="text-[11px] font-semibold text-sky-200 truncate">
-                            {(item['nombre_extran'] if str(item['nombre_extran']).strip() else item['nombre_cliente'])}
+                <div class="table-scroll-container">
+                    <div class="grid-envios flex-1">
+                        
+                        <!-- FACTURA -->
+                        <div>
+                            <div class="label-mini">Factura</div>
+                            <div class="text-xs font-black text-white italic tracking-tighter">{item['factura']}</div>
                         </div>
-                    </div>
 
-                    <!-- DESTINO -->
-                    <div class="border-l border-white/5 pl-2">
-                        <div class="label-mini">Destino</div>
-                        <div class="text-[10px] font-bold text-white truncate">{item['destino']}</div>
-                    </div>
-
-                    <!-- FECHA DE ENVÍO -->
-                    <div class="border-l border-white/5 pl-2">
-                        <div class="label-mini">Fecha Envío</div>
-                        <div class="text-[10px] font-bold text-sky-400">{item['fecha_envio'] if item['fecha_envio'] and item['fecha_envio'] != 'nan' else 'SIN ENVIAR'}</div>
-                    </div>
-
-                    <!-- ESTATUS -->
-                    <div class="border-l border-white/5 pl-2">
-                        <div class="label-mini">Estatus</div>
-                        <div class="text-[9px] font-black uppercase {("text-emerald-400" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("text-red-400" if "RETRASO" in item['estatus'] else "text-amber-400"))} tracking-tighter">
-                            {item['estatus']}
+                        <!-- RECOLECCIÓN -->
+                        <div>
+                            <div class="label-mini">Recolección</div>
+                            <div class="text-[10px] text-sky-400 font-bold uppercase truncate">{item['recomendacion']}</div>
                         </div>
-                    </div>
 
+                        <!-- NO GUÍA -->
+                        <div>
+                            <div class="label-mini">No. Guía</div>
+                            <div class="text-[10px] font-mono font-bold text-amber-300 truncate">{item['numero_guia'] if item['numero_guia'] else 'PENDIENTE'}</div>
+                        </div>
+                        
+                        <!-- FECHA PROGRAMACIÓN -->
+                        <div>
+                            <div class="label-mini">F. Programación</div>
+                            <div class="text-[10px] font-bold text-slate-300 truncate">{item['fecha_programacion'] if item['fecha_programacion'] else 'N/A'}</div>
+                        </div>
+                        
+                        <!-- CLIENTE -->
+                        <div class="min-w-0">
+                            <div class="label-mini">Cliente</div>
+                            <div class="text-[11px] font-semibold text-sky-200 truncate">
+                                {(item['nombre_extran'] if str(item['nombre_extran']).strip() else item['nombre_cliente'])}
+                            </div>
+                        </div>
+
+                        <!-- DESTINO -->
+                        <div class="border-l border-white/5 pl-2">
+                            <div class="label-mini">Destino</div>
+                            <div class="text-[10px] font-bold text-white truncate">{item['destino']}</div>
+                        </div>
+
+                        <!-- FECHA DE ENVÍO -->
+                        <div class="border-l border-white/5 pl-2">
+                            <div class="label-mini">Fecha Envío</div>
+                            <div class="text-[10px] font-bold text-sky-400">{item['fecha_envio'] if item['fecha_envio'] and item['fecha_envio'] != 'nan' else 'SIN ENVIAR'}</div>
+                        </div>
+
+                        <!-- ESTATUS -->
+                        <div class="border-l border-white/5 pl-2">
+                            <div class="label-mini">Estatus</div>
+                            <div class="text-[9px] font-black uppercase {("text-emerald-400" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("text-red-400" if "RETRASO" in item['estatus'] else "text-amber-400"))} tracking-tighter">
+                                {item['estatus']}
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
             ''' for item in sorted_data])}
