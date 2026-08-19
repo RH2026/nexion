@@ -796,7 +796,7 @@ def main():
                             </div>
                         </div>
 
-                        <div class="w-full md:w-[420px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
+                        <div class="w-full md:w-[500px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
                             <div class="w-2/5 shrink-0">
                                 <div class="label-mini">Volumen</div>
                                 <div class="text-sm font-bold text-white min-h-[20px] truncate">{item['cantidad']}</div>
