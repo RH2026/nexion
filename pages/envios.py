@@ -668,10 +668,10 @@ def render_envios_flow_responsive(data):
             .list-row:hover {{ background-color: #2c3b42; border-color: rgba(56, 189, 248, 0.3); }}
             .label-mini {{ font-size: 8px; text-transform: uppercase; font-weight: 800; color: #BFBFBF; letter-spacing: 0.5px; margin-bottom: 2px; }}
             
-            /* GRID REPARTIDO: Cliente toma el mayor espacio, los demás se reparten equitativamente */
+            /* GRID REPARTIDO: Reducido cliente y ampliados destino, fecha envío y estatus */
             .grid-envios {{
                 display: grid;
-                grid-template-columns: 70px 85px 85px 90px 2fr 90px 90px 90px;
+                grid-template-columns: 70px 85px 85px 90px 1.3fr 120px 110px 110px;
                 gap: 10px;
                 align-items: center;
                 width: 100%;
