@@ -648,6 +648,9 @@ with header_zone:
 # 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (SIN FORMULARIO NI BOTONES EXTRA)
 # ==========================================
 def render_envios_flow_responsive(data):
+    # Ordenamos de más nuevo a más viejo usando el folio (factura)
+    sorted_data = sorted(data, key=lambda x: str(x['factura']), reverse=True)
+    
     html_content = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -660,9 +663,9 @@ def render_envios_flow_responsive(data):
                 font-family: 'Inter', sans-serif; 
                 background-color: #384A52; 
                 color: #e2e8f0; 
-                margin: 0;
-                padding: 5px;
-                width: 100%;
+                margin: 0; 
+                padding: 5px; 
+                width: 100%; 
             }}
             ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
             ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
@@ -672,8 +675,8 @@ def render_envios_flow_responsive(data):
                 background-color: #263238;
                 border: 1px solid rgba(255, 255, 255, 0.05);
                 transition: all 0.2s ease;
-                margin-bottom: 8px;
-                border-radius: 10px;
+                margin-bottom: 6px;
+                border-radius: 8px;
                 overflow: hidden;
                 width: 100%;
             }}
@@ -682,70 +685,55 @@ def render_envios_flow_responsive(data):
                 border-color: rgba(56, 189, 248, 0.3);
             }}
             .label-mini {{
-                font-size: 9px;
+                font-size: 8px;
                 text-transform: uppercase;
                 font-weight: 800;
                 color: #BFBFBF;
                 letter-spacing: 0.5px;
+                margin-bottom: 1px;
             }}
         </style>
     </head>
     <body>
-        <div class="w-full space-y-2">
+        <div class="w-full space-y-1">
             {"".join([f'''
             <div class="list-row flex items-stretch">
-                <div class="w-2 shrink-0 {("bg-emerald-500" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("bg-red-500" if "RETRASO" in item['estatus'] else "bg-amber-500"))} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
-                <div class="flex flex-col md:flex-row flex-1 p-3 items-start md:items-center justify-between gap-4">
+                <div class="w-1.5 shrink-0 {("bg-emerald-500" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("bg-red-500" if "RETRASO" in item['estatus'] else "bg-amber-500"))} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
+                <div class="flex flex-col md:flex-row flex-1 p-2 items-start md:items-center justify-between gap-2">
                     
-                    <div class="w-full md:w-36 shrink-0">
+                    <div class="w-full md:w-20 shrink-0">
                         <div class="label-mini">Factura</div>
-                        <div class="text-sm font-black text-white italic tracking-tighter leading-none min-h-[20px]">
-                            {item['factura']}
-                        </div>
-                        <div class="text-[11px] text-sky-400 font-bold mt-1">
-                            RECO: {item['recomendacion']}
-                        </div>
+                        <div class="text-xs font-black text-white italic tracking-tighter leading-none">{item['factura']}</div>
                     </div>
 
-                    <div class="w-full md:w-36 shrink-0">
-                        <div class="label-mini">No. Guía / Talón</div>
-                        <div class="text-xs font-mono font-bold text-amber-300 truncate min-h-[16px]">
-                            {item['numero_guia'] if item['numero_guia'] else 'PENDIENTE'}
-                        </div>
+                    <div class="w-full md:w-24 shrink-0">
+                        <div class="label-mini">Guía</div>
+                        <div class="text-[10px] font-mono font-bold text-amber-300 truncate">{item['numero_guia'] if item['numero_guia'] else 'PENDIENTE'}</div>
                     </div>
 
-                    <div class="w-full md:w-36 shrink-0">
-                        <div class="label-mini">F. Programación</div>
-                        <div class="text-xs font-bold text-slate-200 truncate min-h-[16px]">
-                            {item['fecha_programacion'] if item['fecha_programacion'] else 'N/A'}
-                        </div>
-                    </div>
-                    
-                    <div class="w-full md:flex-1">
+                    <div class="w-full md:flex-1 min-w-0">
                         <div class="label-mini">Cliente</div>
-                        <div class="text-xs font-semibold text-sky-200 truncate min-h-[16px]">
+                        <div class="text-[11px] font-semibold text-sky-200 truncate pr-2">
                             {(item['nombre_extran'] if str(item['nombre_extran']).strip() else item['nombre_cliente'])}
                         </div>
                     </div>
 
-                    <div class="w-full md:w-[200px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-6">
-                        <div class="w-full shrink-0">
-                            <div class="label-mini">Destino</div>
-                            <div class="text-sm font-bold text-white min-h-[20px] truncate">{item['destino']}</div>
-                        </div>
+                    <div class="w-full md:w-24 shrink-0 text-left md:text-right">
+                        <div class="label-mini">Destino</div>
+                        <div class="text-[10px] font-bold text-slate-200 truncate">{item['destino']}</div>
                     </div>
 
-                    <div class="w-full md:w-36 flex justify-between md:block text-right shrink-0">
-                        <div class="label-mini md:mb-1">Fecha Envío / Estatus</div>
-                        <div class="text-[10px] font-bold text-sky-400 uppercase">{item['fecha_envio'] if item['fecha_envio'] else 'SIN ENVIAR'}</div>
-                        <div class="text-[11px] font-black uppercase {("text-emerald-400" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("text-red-400" if "RETRASO" in item['estatus'] else "text-amber-400"))} tracking-tighter min-h-[16px]">
-                            {"ENVIADA EN ESPERA DE GUÍA" if item['estatus'] == "ENVIADA" else item['estatus']}
+                    <div class="w-full md:w-32 shrink-0 text-left md:text-right pl-0 md:pl-3 border-l-0 md:border-l border-white/10">
+                        <div class="label-mini">Envío / Estatus</div>
+                        <div class="text-[10px] font-bold text-sky-400">{item['fecha_envio'] if item['fecha_envio'] else '---'}</div>
+                        <div class="text-[9px] font-black uppercase {("text-emerald-400" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("text-red-400" if "RETRASO" in item['estatus'] else "text-amber-400"))} tracking-tighter">
+                            {"ENVIADA" if item['estatus'] == "ENVIADA EN ESPERA DE GUÍA" else item['estatus']}
                         </div>
                     </div>
 
                 </div>
             </div>
-            ''' for item in data])}
+            ''' for item in sorted_data])}
         </div>
     </body>
     </html>
