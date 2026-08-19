@@ -1070,7 +1070,19 @@ def main():
         cajas = cajas.replace({'': '0', '0.0': '0'})
         tarimas = tarimas.replace({'': '0', '0.0': '0'})
         
-        df_entregas['cantidad'] = cajas + " CXS / " + tarimas + " TAR"
+        # --- AQUÍ ESTÁ EL CAMBIO ---
+        tarimas_limpias = []
+        for t_val in tarimas:
+            try:
+                val = float(t_val)
+                if val.is_integer():
+                    tarimas_limpias.append(str(int(val)))
+                else:
+                    tarimas_limpias.append(str(val))
+            except ValueError:
+                tarimas_limpias.append(t_val)
+        
+        df_entregas['cantidad'] = cajas + " CJS / " + tarimas + " TARIMAS"
         df_entregas['semana'] = "OV: " + df_raw.get('OV Jypesa', pd.Series(dtype=str)).fillna('').astype(str)
         df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', pd.Series(dtype=str)).fillna('').astype(str)
         
