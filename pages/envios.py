@@ -722,9 +722,9 @@ def render_envios_flow_responsive(data):
                     </div>
                     
                     <div class="w-full md:flex-1">
-                        <div class="label-mini">Cliente / Extran</div>
+                        <div class="label-mini">Cliente</div>
                         <div class="text-xs font-semibold text-sky-200 truncate min-h-[16px]">
-                            {item['nombre_cliente']} {f"/ {item['nombre_extran']}" if item['nombre_extran'] else ""}
+                            {(item['nombre_extran'] if str(item['nombre_extran']).strip() else item['nombre_cliente'])}
                         </div>
                     </div>
 
