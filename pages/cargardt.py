@@ -856,7 +856,7 @@ def main():
     # ── ÁREA DE CARGA MULTIPLE ──
     with st.container(border=True):
         st.markdown("<h4 style='color: white; font-weight: 700; font-size: 16px; letter-spacing: 1px;'>SECURE MULTI-UPLINK</h4>", unsafe_allow_html=True)
-        st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}`, `{PEDIDOS_FILE}` and `T1, T2, T3` (XLSX)")
+        st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}`, `{PEDIDOS_FILE}` and `T1, T2, T3, TGG` (XLSX)")
 
         uploaded_files = st.file_uploader("", type=["csv", "xlsx"], accept_multiple_files=True, key="multi_uploader")
 
