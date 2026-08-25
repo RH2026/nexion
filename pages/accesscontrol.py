@@ -701,6 +701,7 @@ with header_zone:
                     ).any(axis=1)
                     res_ops = df_matriz_fresco[mask_ops].copy()
 
+            # ── BÚSQUEDA EN T1.XLSX ──
             res_t1 = pd.DataFrame()
             try:
                 df_t1_temp = pd.read_excel("T1.xlsx") 
@@ -725,6 +726,32 @@ with header_zone:
             except Exception:
                 pass
 
+            # ── BÚSQUEDA EN TGG.XLSX (NUEVO) ──
+            res_tgg = pd.DataFrame()
+            try:
+                df_tgg_temp = pd.read_excel("TGG.xlsx") 
+                df_tgg_temp.columns = df_tgg_temp.columns.str.strip().str.upper()
+                cols_tgg = [c for c in ["OBSERVACION 1", "TALON", "DESTINATARIO", "DESTINO"] if c in df_tgg_temp.columns]
+                if cols_tgg:
+                    mask_tgg = df_tgg_temp[cols_tgg].astype(str).apply(
+                        lambda x: x.str.contains(query, case=False, na=False)
+                    ).any(axis=1)
+                    match_tgg = df_tgg_temp[mask_tgg].copy()
+                    if not match_tgg.empty:
+                        match_tgg = match_tgg.rename(columns={
+                            "TALON": "NÚMERO DE GUÍA",
+                            "OBSERVACION 1": "NÚMERO DE PEDIDO",
+                            "DESTINATARIO": "NOMBRE DEL CLIENTE",
+                            "SUBTOTAL": "COSTO DE LA GUÍA",
+                            "F.DOC": "FECHA DE ENVÍO",
+                            "BULTOS": "CANTIDAD DE CAJAS"
+                        })
+                        match_tgg["FLETERA"] = "TRES GUERRAS (TGG)"
+                        res_tgg = match_tgg
+            except Exception:
+                pass
+
+            # ── CRUCE DE DATOS CON T1 ──
             if not res_ops.empty and not res_t1.empty:
                 for idx, row in res_ops.iterrows():
                     guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
@@ -737,8 +764,21 @@ with header_zone:
                             if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
                                 res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
 
+            # ── CRUCE DE DATOS CON TGG (NUEVO) ──
+            if not res_ops.empty and not res_tgg.empty:
+                for idx, row in res_ops.iterrows():
+                    guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
+                    if guia_actual in ["", "nan", "0", "None"]:
+                        pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
+                        match_en_tgg = res_tgg[res_tgg["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
+                        if not match_en_tgg.empty:
+                            res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_tgg.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
+                            res_ops.loc[idx, "FLETERA"] = match_en_tgg.iloc[0].get("FLETERA", "TRES GUERRAS (TGG)")
+                            if "COSTO DE LA GUÍA" in match_en_tgg.columns and pd.notna(match_en_tgg.iloc[0].get("COSTO DE LA GUÍA")):
+                                res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_tgg.iloc[0].get("COSTO DE LA GUÍA")
+
             res_inv = pd.DataFrame()
-            if res_ops.empty and res_t1.empty:
+            if res_ops.empty and res_t1.empty and res_tgg.empty:
                 try:
                     df_inv_temp = pd.read_csv("inventario.csv")
                     df_inv_temp.columns = df_inv_temp.columns.str.strip()
@@ -759,6 +799,10 @@ with header_zone:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION" 
                 st.session_state.resultado_busqueda = res_t1
+            elif not res_tgg.empty:  # <- NUEVO CONDICIONAL PARA MOSTRAR TGG SI NO ESTÁ EN OTRAS
+                st.session_state.busqueda_activa = True
+                st.session_state.tipo_resultado = "OPERACION" 
+                st.session_state.resultado_busqueda = res_tgg
             elif not res_inv.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "INVENTARIO"
@@ -766,7 +810,7 @@ with header_zone:
             else:
                 st.session_state.busqueda_activa = False
                 st.session_state.resultado_busqueda = None
-                st.toast("Sin resultados: No se encontró en Matriz Global ni en T1", icon="⚠️")
+                st.toast("Sin resultados: No se encontró en Matriz Global, T1 ni TGG", icon="⚠️")
 
     with c4:
         with st.popover("☰ Menú", use_container_width=True):
