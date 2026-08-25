@@ -803,7 +803,7 @@ def main():
     DASHBOARD_NAME = "Matriz_Excel_Dashboard.csv"
     CONSIGNAS_FILE = "consignas.csv" 
     PEDIDOS_FILE = "pedidos.csv" 
-    MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx"]
+    MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx", "TGG.xlsx"]  # <- Añade TGG.xlsx aquí
     TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME, CONSIGNAS_FILE, PEDIDOS_FILE] + MATRICES_EXCEL
 
     # ── HEADER VISUAL PREMIUM ──
