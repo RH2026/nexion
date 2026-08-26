@@ -279,9 +279,9 @@ def limpiar_texto(texto):
 
 # Inicialización segura de estados de menú
 if "menu_main" not in st.session_state:
-    st.session_state.menu_main = "REPORTES"
+    st.session_state.menu_main = "SEGUIMIENTO"
 if "menu_sub" not in st.session_state:
-    st.session_state.menu_sub = "ENVIOS"
+    st.session_state.menu_sub = "INCIDENCIAS"
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 if "resultado_busqueda" not in st.session_state:
