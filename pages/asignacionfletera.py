@@ -814,17 +814,7 @@ def main():
     df_fact = cargar_csv_remoto(URL_FACTURACION, TOKEN)
     df_envios = cargar_csv_remoto(URL_ENVIOS, TOKEN)
 
-    # ── RAYOS X TEMPORAL PARA DEPURAR ──
-    st.write("--- DEBUG ENVÍOS ---")
-    st.write("¿DataFrame de envíos está vacío?", df_envios.empty)
-    if not df_envios.empty:
-        st.write("Columnas en envios.csv:", df_envios.columns.tolist())
-        st.write("Primeras filas:", df_envios.head(2))
-    else:
-        st.write("El archivo envios.csv no devolvió datos o falló la descarga remota.")
-    st.write("--------------------")
-    # ────────────────────────────────────
-
+    
     if not df_fact.empty:
         df_fact.columns = df_fact.columns.str.strip()
 
@@ -839,9 +829,9 @@ def main():
         if not df_envios.empty:
             df_envios.columns = df_envios.columns.str.strip()
             
-            # Identificar columnas exactas
-            col_fac_env = next((c for c in ['Factura', 'FACTURA', 'NÚMERO DE PEDIDO', 'PEDIDO'] if c in df_envios.columns), None)
-            col_fec_env = next((c for c in ['FECHA DE ENVIO', 'FECHA_ENVIO', 'FECHA DE ENVÍO'] if c in df_envios.columns), None)
+            # Forzar la búsqueda exacta de tus columnas reales
+            col_fac_env = 'Factura' if 'Factura' in df_envios.columns else None
+            col_fec_env = 'FECHA DE ENVIO' if 'FECHA DE ENVIO' in df_envios.columns else None
             
             if col_fac_env and col_fec_env:
                 # Limpiar y estandarizar la columna de factura en envios para que coincida perfectamente
