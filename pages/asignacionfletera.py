@@ -733,6 +733,8 @@ def render_historial_almacen(data):
             st.session_state[key_estatus] = "ENVIADA" if tiene_fecha else "SIN ENVIAR"
         elif not tiene_fecha and st.session_state[key_estatus] == "ENVIADA":
             st.session_state[key_estatus] = "SIN ENVIAR"
+        elif tiene_fecha and st.session_state[key_estatus] == "SIN ENVIAR":
+            st.session_state[key_estatus] = "ENVIADA"
 
         estatus_val = st.session_state[key_estatus]
         
@@ -814,7 +816,6 @@ def main():
     df_fact = cargar_csv_remoto(URL_FACTURACION, TOKEN)
     df_envios = cargar_csv_remoto(URL_ENVIOS, TOKEN)
 
-    
     if not df_fact.empty:
         df_fact.columns = df_fact.columns.str.strip()
 
@@ -829,32 +830,28 @@ def main():
         if not df_envios.empty:
             df_envios.columns = df_envios.columns.str.strip()
             
-            # Forzar la búsqueda exacta de tus columnas reales
             col_fac_env = 'Factura' if 'Factura' in df_envios.columns else None
             col_fec_env = 'FECHA DE ENVIO' if 'FECHA DE ENVIO' in df_envios.columns else None
             
             if col_fac_env and col_fec_env:
-                # Limpiar y estandarizar la columna de factura en envios para que coincida perfectamente
                 df_envios['factura_limpia'] = df_envios[col_fac_env].fillna('').astype(str).str.split('.').str[0].str.strip()
                 df_envios['fecha_limpia'] = df_envios[col_fec_env].fillna('').astype(str).str.strip()
                 
-                # Filtrar solo las que tienen fecha real
                 validos = df_envios[
                     (df_envios['fecha_limpia'] != '') & 
                     (~df_envios['fecha_limpia'].str.lower().isin(['nan', '0', 'nat', 'none']))
                 ]
                 
-                # Crear un diccionario limpio factura -> fecha
                 mapa_fechas = dict(zip(validos['factura_limpia'], validos['fecha_limpia']))
                 
-                # Mapear directamente sobre el DataFrame procesado asegurando limpieza en la llave
                 df_proc['factura_limpia'] = df_proc['factura'].astype(str).str.split('.').str[0].str.strip()
                 df_proc['fecha_envio'] = df_proc['factura_limpia'].map(mapa_fechas).fillna('')
-                
-                # Limpiar columna temporal auxiliar
                 df_proc = df_proc.drop(columns=['factura_limpia'])
 
-        # Quedarse solo con la primera línea de cada folio (evita duplicados por partidas)
+        # Columna calculada de estatus base para poder filtrar por ella
+        df_proc['estatus_base'] = df_proc['fecha_envio'].apply(lambda x: 'ENVIADA' if str(x).strip() not in ['', 'nan', '0', 'nat', 'none'] else 'SIN ENVIAR')
+
+        # Quedarse solo con la primera línea de cada folio
         df_proc = df_proc.drop_duplicates(subset=['factura'], keep='first')
         df_proc = df_proc[df_proc['factura'] != ''].sort_values(by='factura', ascending=True, ignore_index=True)
 
@@ -880,8 +877,20 @@ def main():
             filtro_estatus = st.selectbox("FILTRAR POR ESTATUS", estatus_opts, key="filtro_estatus_almacen")
 
         df_filtrado = df_proc.copy()
+        
+        # Aplicar filtro de factura
         if filtro_factura != "TODAS":
             df_filtrado = df_filtrado[df_filtrado['factura'] == filtro_factura]
+            
+        # Aplicar filtro de estatus (¡Esto era lo que faltaba!)
+        if filtro_estatus != "TODOS":
+            # Verificamos tanto el estatus base calculado como el estatus guardado en sesion si existe
+            df_filtrado = df_filtrado[
+                df_filtrado.apply(
+                    lambda r: st.session_state.get(f"estatus_sel_{r.name}_{r['factura']}", r['estatus_base']) == filtro_estatus, 
+                    axis=1
+                )
+            ]
 
         data_completa = df_filtrado.to_dict('records')
     else:
