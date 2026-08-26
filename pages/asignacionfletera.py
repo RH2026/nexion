@@ -848,6 +848,11 @@ def main():
                 df_proc['fecha_envio'] = df_proc['factura_limpia'].map(mapa_fechas).fillna('')
                 df_proc = df_proc.drop(columns=['factura_limpia'])
 
+        # ── DEPURACIÓN DE CRUCE ──
+        if not df_envios.empty and not df_fact.empty:
+            st.write("Facturas únicas en facturación (primeras 5):", df_proc['factura'].head(5).tolist())
+            st.write("Facturas únicas en envíos (primeras 5):", validos['factura_limpia'].head(5).tolist() if 'validos' in locals() else "No hay válidos")
+            st.write("¿Hay coincidencia exacta entre ambos?:", any(f in mapa_fechas for f in df_proc['factura']))
         # Columna calculada de estatus base para poder filtrar por ella
         df_proc['estatus_base'] = df_proc['fecha_envio'].apply(lambda x: 'ENVIADA' if str(x).strip() not in ['', 'nan', '0', 'nat', 'none'] else 'SIN ENVIAR')
 
