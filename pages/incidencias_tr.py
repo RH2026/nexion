@@ -667,14 +667,15 @@ def main():
     MATRIZ_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/Matriz_Excel_Dashboard.csv"
     
     usuario_actual = str(st.session_state.get("usuario", st.session_state.get("usuario_activo", ""))).strip()
+    nombre_usuario_actual = str(st.session_state.get("nombre_completo", "")).strip().upper()
     es_admin_session = st.session_state.get("es_admin", False)
     es_administrador = es_admin_session or (usuario_actual.upper() in ["RIGOBERTO", "RIGOBERTO HERNÁNDEZ"])
     
-    # Añadimos el campo TIPO (con opción Incidencia o Tarea / Task)
+    # Se agregó la columna CREADOR y se mantiene RESPONSABLE
     COLUMNAS_INCIDENCIAS = [
-        "FOLIO", "TIPO", "USUARIO", "PRIORIDAD", "VINCULO_BUSQUEDA", 
+        "FOLIO", "TIPO", "CREADOR", "RESPONSABLE", "PRIORIDAD", "VINCULO_BUSQUEDA", 
         "CLIENTE_DESTINO", "PEDIDO_GUIA", "ID_SEGUIMIENTO", "ID_QUEJA", 
-        "RESPONSABLE", "DETALLE_INCIDENCIA", "ACCIONES", "ESTATUS"
+        "DETALLE_INCIDENCIA", "ACCIONES", "ESTATUS"
     ]
     
     @st.cache_data(ttl=600)
@@ -831,6 +832,14 @@ def main():
             with st.form("form_incidencias", clear_on_submit=False):
                 f2_c1, f2_c2 = st.columns([1, 1])
                 
+                # Lista de colaboradores del sistema para asignar tareas/incidencias
+                lista_colaboradores = [
+                    "RIGOBERTO HERNÁNDEZ", "RIGOBERTO DEL REAL", "ALEJANDRA GOMEZ", 
+                    "CYNTHIA ORNELAS", "BRENDA PIZANO", "CARLOS FIALKO", 
+                    "CLAUDIA JIMENEZ", "CARLOS VAZQUEZ", "SANDRA", 
+                    "ALEJANDRA SANCHEZ", "MARTHA CASAS", "CRISTOBAL A", "URI EL CAPI"
+                ]
+                
                 with f2_c1:
                     val_cd = info_matriz["cliente_destino"] if info_matriz["cliente_destino"] else (incidencia_existente['CLIENTE_DESTINO'] if incidencia_existente is not None else "")
                     t_cliente_destino = st.text_input("CLIENTE / DESTINO", value=val_cd)
@@ -838,8 +847,10 @@ def main():
                     val_pg = info_matriz["pedido_guia"] if info_matriz["pedido_guia"] else (incidencia_existente['PEDIDO_GUIA'] if incidencia_existente is not None else "")
                     t_pedido_guia = st.text_input("PEDIDO / GUÍA", value=val_pg)
                     
-                    val_resp = incidencia_existente['RESPONSABLE'] if incidencia_existente is not None else ""
-                    t_responsable = st.text_input("RESPONSABLE", value=val_resp)
+                    # Selector para asignar responsable del seguimiento
+                    resp_actual = incidencia_existente['RESPONSABLE'] if incidencia_existente is not None else (nombre_usuario_actual if nombre_usuario_actual else "RIGOBERTO HERNÁNDEZ")
+                    idx_resp = lista_colaboradores.index(resp_actual) if resp_actual in lista_colaboradores else 0
+                    t_responsable = st.selectbox("ASIGNAR A (RESPONSABLE SEGUIMIENTO)", lista_colaboradores, index=idx_resp)
                     
                 with f2_c2:
                     val_id_seg_default = incidencia_existente['ID_SEGUIMIENTO'] if incidencia_existente is not None else t_folio_input
@@ -869,17 +880,20 @@ def main():
                     valor_busqueda = n_pedido if n_pedido else (incidencia_existente.get('VINCULO_BUSQUEDA', '') if incidencia_existente is not None else "")
                     busqueda_final = str(valor_busqueda).upper() if valor_busqueda is not None else ""
                     
+                    # Si es edición mantiene el creador original, si es nuevo toma el nombre actual del usuario logueado
+                    creador_final = incidencia_existente.get('CREADOR', '') if incidencia_existente is not None and str(incidencia_existente.get('CREADOR', '')).strip() != "" else (nombre_usuario_actual if nombre_usuario_actual else usuario_actual.upper())
+
                     nueva_data = {
                         "FOLIO": folio_final,
                         "TIPO": t_tipo,
-                        "USUARIO": st.session_state.get('nombre_completo', 'RIGOBERTO HERNÁNDEZ'),
+                        "CREADOR": creador_final,
+                        "RESPONSABLE": t_responsable,
                         "PRIORIDAD": t_prior,
                         "VINCULO_BUSQUEDA": busqueda_final, 
                         "CLIENTE_DESTINO": str(t_cliente_destino).upper(),
                         "PEDIDO_GUIA": str(t_pedido_guia).upper(),
                         "ID_SEGUIMIENTO": str(t_id_seguimiento).upper(),
                         "ID_QUEJA": str(t_id_queja).upper(),
-                        "RESPONSABLE": str(t_responsable).upper(),
                         "DETALLE_INCIDENCIA": t_detalle,
                         "ACCIONES": t_acciones,
                         "ESTATUS": t_estatus
@@ -893,11 +907,11 @@ def main():
                         
                     if guardar_en_github(df_final):
                         st.session_state.df_incidencias = df_final
-                        st.success("✅ ¡Guardado con éxito, amor!")
+                        st.success("✅ ¡Guardado y asignado con éxito, amor!")
                         time.sleep(1)
                         st.rerun()
     
-    # ── 2. MONITOR DE REGISTROS (GRID PROFESIONAL) ──
+    # ── 2. MONITOR DE REGISTROS (GRID PROFESIONAL - ORDENADOS DE MÁS NUEVO A MÁS VIEJO) ──
     st.markdown("""
         <style>
         .card-hover {
@@ -921,7 +935,9 @@ def main():
     if df_master.empty:
         st.info("No hay registros guardados.")
     else:
-        for _, row in df_master.iterrows():
+        df_master_ordenado = df_master.iloc[::-1]
+
+        for _, row in df_master_ordenado.iterrows():
             if not str(row.get("FOLIO", "")).strip(): continue
             
             color_p = prioridad_colores.get(row.get("PRIORIDAD", "Baja"), "#94a3b8")
@@ -929,10 +945,9 @@ def main():
             color_e = estatus_colores.get(f_est, "#64748b")
             t_reg = row.get('TIPO', 'Incidencia')
             
-            # Etiqueta visual para distinguir si es Tarea o Incidencia
             badge_tipo = f"<span style='background: #38bdf822; color: #38bdf8; padding: 1px 5px; border-radius: 3px; font-weight: bold; font-size: 0.65em; margin-right: 4px;'>{t_reg.upper()}</span>"
             
-            st.markdown(f"""<div class="card-hover" style="border-left-color: {color_p}; padding: 12px; margin-bottom: 10px; background: #262e33; border-radius: 5px;"><div style="display: grid; grid-template-columns: 0.9fr 1.5fr 1.2fr 2fr 1fr; gap: 10px; align-items: center;"><div><div style="font-size: 0.65em; color: #888;">FOLIO / TIPO</div><div style="color: {color_p}; font-weight: bold; font-size: 1em;">{row.get('FOLIO', 'REG-???')}</div>{badge_tipo}<span style="background: {color_e}33; color: {color_e}; padding: 1px 4px; border-radius: 3px; font-weight: bold; font-size: 0.7em;">{f_est}</span></div><div><div style="font-size: 0.65em; color: #888;">CLIENTE / PEDIDO</div><div style="color: #fff; font-size: 0.9em; font-weight: bold;">{row.get('CLIENTE_DESTINO', 'N/A')}</div><div style="font-size: 0.8em; color: #bbb;">📦 {row.get('PEDIDO_GUIA', 'N/A')}</div></div><div><div style="font-size: 0.65em; color: #888;">ID SEGUIMIENTO / REF</div><div style="font-size: 0.85em; color: #eee;">{row.get('ID_SEGUIMIENTO', 'N/A')}</div><div style="font-size: 0.85em; color: #eee;">{row.get('ID_QUEJA', 'N/A')}</div></div><div><div style="font-size: 0.65em; color: #888;">DETALLE / ACCIONES</div><div style="font-size: 0.85em; color: #eee;">{row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div><div style="font-size: 0.8em; color: #38bdf8;"><i>{row.get('ACCIONES', '')}</i></div></div><div style="text-align: right;"><div style="font-size: 0.65em; color: #888;">RESPONSABLE / REG</div><div style="color: #fff; font-size: 0.85em;">👤 {row.get('RESPONSABLE', 'N/A')}</div><div style="font-size: 0.7em; color: #38bdf8;">📝 {row.get('USUARIO', 'N/A')}</div></div></div></div>""", unsafe_allow_html=True)  
+            st.markdown(f"""<div class="card-hover" style="border-left-color: {color_p}; padding: 12px; margin-bottom: 10px; background: #262e33; border-radius: 5px;"><div style="display: grid; grid-template-columns: 0.9fr 1.5fr 1.2fr 2fr 1.2fr; gap: 10px; align-items: center;"><div><div style="font-size: 0.65em; color: #888;">FOLIO / TIPO</div><div style="color: {color_p}; font-weight: bold; font-size: 1em;">{row.get('FOLIO', 'REG-???')}</div>{badge_tipo}<span style="background: {color_e}33; color: {color_e}; padding: 1px 4px; border-radius: 3px; font-weight: bold; font-size: 0.7em;">{f_est}</span></div><div><div style="font-size: 0.65em; color: #888;">CLIENTE / PEDIDO</div><div style="color: #fff; font-size: 0.9em; font-weight: bold;">{row.get('CLIENTE_DESTINO', 'N/A')}</div><div style="font-size: 0.8em; color: #bbb;">📦 {row.get('PEDIDO_GUIA', 'N/A')}</div></div><div><div style="font-size: 0.65em; color: #888;">ID SEGUIMIENTO / REF</div><div style="font-size: 0.85em; color: #eee;">{row.get('ID_SEGUIMIENTO', 'N/A')}</div><div style="font-size: 0.85em; color: #eee;">{row.get('ID_QUEJA', 'N/A')}</div></div><div><div style="font-size: 0.65em; color: #888;">DETALLE / ACCIONES</div><div style="font-size: 0.85em; color: #eee;">{row.get('DETALLE_INCIDENCIA', 'Sin detalle...')}</div><div style="font-size: 0.8em; color: #38bdf8;"><i>{row.get('ACCIONES', '')}</i></div></div><div style="text-align: right;"><div style="font-size: 0.65em; color: #888;">CREADOR / ASIGNADO A</div><div style="color: #fff; font-size: 0.8em; font-weight: bold;">🎯 {row.get('RESPONSABLE', 'N/A')}</div><div style="font-size: 0.7em; color: #38bdf8;">✍️ {row.get('CREADOR', row.get('USUARIO', 'N/A'))}</div></div></div></div>""", unsafe_allow_html=True)  
     
     # ── 3. EDITOR DE AVANZADO (EXCLUSIVO PARA ADMIN) ────────────────────────────────────
     if es_administrador:
