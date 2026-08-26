@@ -822,30 +822,36 @@ def main():
         df_proc['nombre_extran'] = df_fact.get('Nombre_Extran', df_fact.get('NOMBRE_EXTRAN', pd.Series(dtype=str))).fillna('').astype(str)
         df_proc['transporte'] = df_fact.get('Transporte', df_fact.get('TRANSPORTE', df_fact.get('FLETERA', pd.Series(dtype=str)))).fillna('').astype(str).str.strip()
 
-        # ── CRUCE DE INFORMACIÓN CON envios.csv (SOLO PARA LA FECHA DE ENVÍO) ──
-        mapa_fechas_envio = {}
+        # ── CRUCE DE INFORMACIÓN VECTORIZADO CON envios.csv ──
+        df_proc['fecha_envio'] = ''
+        
         if not df_envios.empty:
             df_envios.columns = df_envios.columns.str.strip()
-            col_fac_env = None
-            for c in ['Factura', 'FACTURA', 'NÚMERO DE PEDIDO', 'PEDIDO']:
-                if c in df_envios.columns:
-                    col_fac_env = c
-                    break
             
-            col_fec_env = None
-            for c in ['FECHA DE ENVIO', 'FECHA_ENVIO', 'FECHA DE ENVÍO']:
-                if c in df_envios.columns:
-                    col_fec_env = c
-                    break
-
+            # Identificar columnas exactas
+            col_fac_env = next((c for c in ['Factura', 'FACTURA', 'NÚMERO DE PEDIDO', 'PEDIDO'] if c in df_envios.columns), None)
+            col_fec_env = next((c for c in ['FECHA DE ENVIO', 'FECHA_ENVIO', 'FECHA DE ENVÍO'] if c in df_envios.columns), None)
+            
             if col_fac_env and col_fec_env:
-                for _, row in df_envios.iterrows():
-                    f_val = str(row.get(col_fac_env, '')).strip()
-                    fe_val = str(row.get(col_fec_env, '')).strip()
-                    if f_val and fe_val and fe_val.lower() not in ['', 'nan', '0', 'nat', 'none']:
-                        mapa_fechas_envio[f_val] = fe_val
-
-        df_proc['fecha_envio'] = df_proc['factura'].map(mapa_fechas_envio).fillna('')
+                # Limpiar y estandarizar la columna de factura en envios para que coincida perfectamente
+                df_envios['factura_limpia'] = df_envios[col_fac_env].fillna('').astype(str).str.split('.').str[0].str.strip()
+                df_envios['fecha_limpia'] = df_envios[col_fec_env].fillna('').astype(str).str.strip()
+                
+                # Filtrar solo las que tienen fecha real
+                validos = df_envios[
+                    (df_envios['fecha_limpia'] != '') & 
+                    (~df_envios['fecha_limpia'].str.lower().isin(['nan', '0', 'nat', 'none']))
+                ]
+                
+                # Crear un diccionario limpio factura -> fecha
+                mapa_fechas = dict(zip(validos['factura_limpia'], validos['fecha_limpia']))
+                
+                # Mapear directamente sobre el DataFrame procesado asegurando limpieza en la llave
+                df_proc['factura_limpia'] = df_proc['factura'].astype(str).str.split('.').str[0].str.strip()
+                df_proc['fecha_envio'] = df_proc['factura_limpia'].map(mapa_fechas).fillna('')
+                
+                # Limpiar columna temporal auxiliar
+                df_proc = df_proc.drop(columns=['factura_limpia'])
 
         # Quedarse solo con la primera línea de cada folio (evita duplicados por partidas)
         df_proc = df_proc.drop_duplicates(subset=['factura'], keep='first')
