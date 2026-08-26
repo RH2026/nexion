@@ -820,11 +820,11 @@ def main():
         df_fact.columns = df_fact.columns.str.strip()
 
         df_proc = pd.DataFrame()
-        df_proc['factura'] = df_fact.get('Factura', df_fact.get('FACTURA', pd.Series(dtype=str))).fillna('').astype(str).str.strip()
+        df_proc['factura'] = df_fact.get('Factura', df_fact.get('FACTURA', pd.Series(dtype=str))).fillna('').astype(str).str.split('.').str[0].str.strip()
         df_proc['nombre_extran'] = df_fact.get('Nombre_Extran', df_fact.get('NOMBRE_EXTRAN', pd.Series(dtype=str))).fillna('').astype(str)
         df_proc['transporte'] = df_fact.get('Transporte', df_fact.get('TRANSPORTE', df_fact.get('FLETERA', pd.Series(dtype=str)))).fillna('').astype(str).str.strip()
 
-        # ── CRUCE DE INFORMACIÓN VECTORIZADO CON envios.csv ──
+        # ── CRUCE RELACIONAL INDependiente de orden CON envios.csv ──
         df_proc['fecha_envio'] = ''
         
         if not df_envios.empty:
@@ -834,25 +834,39 @@ def main():
             col_fec_env = 'FECHA DE ENVIO' if 'FECHA DE ENVIO' in df_envios.columns else None
             
             if col_fac_env and col_fec_env:
-                df_envios['factura_limpia'] = df_envios[col_fac_env].fillna('').astype(str).str.split('.').str[0].str.strip()
-                df_envios['fecha_limpia'] = df_envios[col_fec_env].fillna('').astype(str).str.strip()
+                # Preparamos una copia limpia de envíos para cruzar
+                df_env_limpio = df_envios[[col_fac_env, col_fec_env]].copy()
+                df_env_limpio['factura_limpia'] = df_env_limpio[col_fac_env].fillna('').astype(str).str.split('.').str[0].str.strip()
+                df_env_limpio['fecha_limpia'] = df_env_limpio[col_fec_env].fillna('').astype(str).str.strip()
                 
-                validos = df_envios[
-                    (df_envios['fecha_limpia'] != '') & 
-                    (~df_envios['fecha_limpia'].str.lower().isin(['nan', '0', 'nat', 'none']))
-                ]
+                # Nos quedamos con la primera aparición de cada factura en envíos por si hay duplicados
+                df_env_limpio = df_env_limpio.drop_duplicates(subset=['factura_limpia'], keep='first')
                 
-                mapa_fechas = dict(zip(validos['factura_limpia'], validos['fecha_limpia']))
+                # Limpiamos la llave en df_proc
+                df_proc['factura_limpia'] = df_proc['factura']
                 
-                df_proc['factura_limpia'] = df_proc['factura'].astype(str).str.split('.').str[0].str.strip()
-                df_proc['fecha_envio'] = df_proc['factura_limpia'].map(mapa_fechas).fillna('')
-                df_proc = df_proc.drop(columns=['factura_limpia'])
+                # Hacemos un merge izquierdo para traer la fecha sin importar el orden
+                df_proc = df_proc.merge(
+                    df_env_limpio[['factura_limpia', 'fecha_limpia']], 
+                    on='factura_limpia', 
+                    how='left'
+                )
+                
+                # Asignamos la fecha encontrada y limpiamos columnas temporales
+                df_proc['fecha_envio'] = df_proc['fecha_limpia'].fillna('')
+                df_proc = df_proc.drop(columns=['factura_limpia', 'fecha_limpia'])
+                
+                # Limpiar valores basura o nulos en la fecha resultante
+                df_proc.loc[df_proc['fecha_envio'].str.lower().isin(['', 'nan', '0', 'nat', 'none']), 'fecha_envio'] = ''
 
-        # ── DEPURACIÓN DE CRUCE ──
-        if not df_envios.empty and not df_fact.empty:
-            st.write("Facturas únicas en facturación (primeras 5):", df_proc['factura'].head(5).tolist())
-            st.write("Facturas únicas en envíos (primeras 5):", validos['factura_limpia'].head(5).tolist() if 'validos' in locals() else "No hay válidos")
-            st.write("¿Hay coincidencia exacta entre ambos?:", any(f in mapa_fechas for f in df_proc['factura']))
+        # Columna calculada de estatus base
+        df_proc['estatus_base'] = df_proc['fecha_envio'].apply(lambda x: 'ENVIADA' if str(x).strip() not in ['', 'nan', '0', 'nat', 'none'] else 'SIN ENVIAR')
+
+        # Quedarse solo con la primera línea de cada folio
+        df_proc = df_proc.drop_duplicates(subset=['factura'], keep='first')
+        df_proc = df_proc[df_proc['factura'] != ''].sort_values(by='factura', ascending=True, ignore_index=True)
+
+        
         # Columna calculada de estatus base para poder filtrar por ella
         df_proc['estatus_base'] = df_proc['fecha_envio'].apply(lambda x: 'ENVIADA' if str(x).strip() not in ['', 'nan', '0', 'nat', 'none'] else 'SIN ENVIAR')
 
