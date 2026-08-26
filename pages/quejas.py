@@ -18,7 +18,7 @@ import streamlit as st
 import pytz
 from auth import exigir_autenticacion
 
-exigir_autenticacion("envios")
+exigir_autenticacion("quejas")
 
 
 
@@ -235,7 +235,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("dashboard.py")
         st.stop()
 
-verificar_permiso_pagina("SEGUIMIENTO", "ALERTAS")
+verificar_permiso_pagina("SEGUIMIENTO", "QUEJAS")
 
 
 # ==========================================
