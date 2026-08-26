@@ -814,6 +814,17 @@ def main():
     df_fact = cargar_csv_remoto(URL_FACTURACION, TOKEN)
     df_envios = cargar_csv_remoto(URL_ENVIOS, TOKEN)
 
+    # ── RAYOS X TEMPORAL PARA DEPURAR ──
+    st.write("--- DEBUG ENVÍOS ---")
+    st.write("¿DataFrame de envíos está vacío?", df_envios.empty)
+    if not df_envios.empty:
+        st.write("Columnas en envios.csv:", df_envios.columns.tolist())
+        st.write("Primeras filas:", df_envios.head(2))
+    else:
+        st.write("El archivo envios.csv no devolvió datos o falló la descarga remota.")
+    st.write("--------------------")
+    # ────────────────────────────────────
+
     if not df_fact.empty:
         df_fact.columns = df_fact.columns.str.strip()
 
