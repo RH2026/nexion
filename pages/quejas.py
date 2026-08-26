@@ -662,7 +662,8 @@ def main():
     
     # Validamos si el usuario actual es administrador (Rigoberto u otro rol admin según tu lógica)
     usuario_actual = str(st.session_state.get("usuario", st.session_state.get("usuario_activo", ""))).strip()
-    es_administrador = es_admin or (usuario_actual in ["Rigoberto", "Rigoberto Hernández"])
+    es_admin_session = st.session_state.get("es_admin", False)
+    es_administrador = es_admin_session or (usuario_actual.upper() in ["RIGOBERTO", "RIGOBERTO HERNÁNDEZ"])
     
     # Actualizamos las columnas con los nombres correctos que me pediste amor
     COLUMNAS_INCIDENCIAS = [
