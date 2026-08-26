@@ -18,7 +18,7 @@ PAGINAS = {
     "facturacion": "pages/facturacion_af.py",
     "main": "pages/main.py",
     "cargardt": "pages/cargardt.py",
-    "Incidencias": "pages/incidencias_tr.py",
+    "incidencias": "pages/incidencias_tr.py",
 }
 
 # ============================================================
