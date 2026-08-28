@@ -963,50 +963,51 @@ def main():
         registro = pd.Series(dtype=object)    
 
         if not df_facturacion.empty:
-            df_facturacion.columns = [str(c).upper().strip() for c in df_facturacion.columns]
-            
-            col_factura = "FACTURA" if "FACTURA" in df_facturacion.columns else df_facturacion.columns[0]
-            col_cliente_num = "CLIENTE" if "CLIENTE" in df_facturacion.columns else None
-            col_nombre_hotel = "NOMBRE_EXTRAN" if "NOMBRE_EXTRAN" in df_facturacion.columns else None
+        df_facturacion.columns = [str(c).upper().strip() for c in df_facturacion.columns]
+        
+        # Búsqueda dinámica y segura de columnas clave
+        col_factura = next((c for c in ["FACTURA", "FOLIO"] if c in df_facturacion.columns), df_facturacion.columns[0])
+        col_cliente_num = next((c for c in ["NO CLIENTE", "CLIENTE", "NUMERO_CLIENTE"] if c in df_facturacion.columns), None)
+        col_nombre_hotel = next((c for c in ["NOMBRE_EXTRAN", "NOMBRE", "CLIENTE_NOMBRE"] if c in df_facturacion.columns), None)
 
-            # Forzar conversión limpia a string evitando .0 en números de cliente o facturas
-            df_facturacion[col_factura] = df_facturacion[col_factura].astype(str).str.replace(r'\.0$', '', regex=True)
-            if col_cliente_num:
-                df_facturacion[col_cliente_num] = df_facturacion[col_cliente_num].astype(str).str.replace(r'\.0$', '', regex=True)
+        # Forzar conversión limpia a string evitando .0 en números de cliente o facturas
+        df_facturacion[col_factura] = df_facturacion[col_factura].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+        if col_cliente_num:
+            df_facturacion[col_cliente_num] = df_facturacion[col_cliente_num].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
 
-            top_col1, top_col2, top_col3, top_col4 = st.columns(4)
-            
-            with top_col1:
-                fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now(), key="tg_fecha_rec")
-            fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
+        top_col1, top_col2, top_col3, top_col4 = st.columns(4)
+        
+        with top_col1:
+            fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now(), key="tg_fecha_rec")
+        fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
 
-            with top_col2:
-                criterio_busqueda = st.selectbox("🔍 Buscar por:", ["Folio de Factura", "Número de Cliente"], key="tg_criterio_busq")
+        with top_col2:
+            criterio_busqueda = st.selectbox("🔍 Buscar por:", ["Folio de Factura", "Número de Cliente"], key="tg_criterio_busq")
 
-            with top_col3:
-                if criterio_busqueda == "Folio de Factura":
-                    facturas_disponibles = df_facturacion[col_factura].dropna().unique().tolist()
-                    num_factura = st.selectbox("Selecciona Factura", facturas_disponibles, key="tg_sel_fact")
-                    if num_factura:
-                        match_df = df_facturacion[df_facturacion[col_factura] == str(num_factura)]
-                        if not match_df.empty:
-                            registro = match_df.iloc[0]
+        with top_col3:
+            if criterio_busqueda == "Folio de Factura":
+                facturas_disponibles = sorted(df_facturacion[col_factura].dropna().unique().tolist())
+                num_factura = st.selectbox("Selecciona Factura", facturas_disponibles, key="tg_sel_fact")
+                if num_factura:
+                    match_df = df_facturacion[df_facturacion[col_factura] == str(num_factura)]
+                    if not match_df.empty:
+                        registro = match_df.iloc[0]
+            else:
+                if col_cliente_num:
+                    clientes_disponibles = sorted(df_facturacion[col_cliente_num].dropna().unique().tolist())
+                    cliente_elegido = st.selectbox("Selecciona No. Cliente", clientes_disponibles, key="tg_sel_cte")
+                    num_factura = st.text_input("✍️ Folio Nuevo (Asignar)", value="S/F", key="tg_txt_fact_nuevo")
+                    
+                    if cliente_elegido:
+                        match_cte = df_facturacion[df_facturacion[col_cliente_num] == str(cliente_elegido)]
+                        if not match_cte.empty:
+                            registro = match_cte.iloc[0]
                 else:
-                    if col_cliente_num:
-                        clientes_disponibles = sorted(df_facturacion[col_cliente_num].dropna().unique().tolist())
-                        cliente_elegido = st.selectbox("Selecciona No. Cliente", clientes_disponibles, key="tg_sel_cte")
-                        num_factura = st.text_input("✍️ Folio Nuevo (Asignar)", value="S/F", key="tg_txt_fact_nuevo")
-                        
-                        if cliente_elegido:
-                            match_cte = df_facturacion[df_facturacion[col_cliente_num] == str(cliente_elegido)]
-                            if not match_cte.empty:
-                                registro = match_cte.iloc[0]
-                    else:
-                        st.warning("No se encontró la columna CLIENTE en la matriz.")
-                        num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
+                    st.warning("No se encontró la columna de Número de Cliente en la matriz.")
+                    num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
 
-            with top_col4:
-                tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
+        with top_col4:
+            tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
 
             # Extracción segura de valores para evitar errores de tipo
             def_extran = str(registro.get(col_nombre_hotel, "")) if not registro.empty and col_nombre_hotel and pd.notna(registro.get(col_nombre_hotel)) else ""
