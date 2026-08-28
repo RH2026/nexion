@@ -292,12 +292,12 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
 
 def generar_etiquetas_nexion(df_datos):
     output = io.BytesIO()
-    # Usar pulgadas exactas (3 x 2 pulgadas = 7.62 x 5.08 cm) que es el estándar nativo de la Zebra
-    w_rec = 3.0 * inch
-    h_rec = 2.0 * inch
+    # Medidas exactas estrictas en centímetros solicitadas (7.62 cm ancho x 5.08 cm alto)
+    w_rec = 7.62 * cm
+    h_rec = 5.08 * cm
     c = canvas.Canvas(output, pagesize=(w_rec, h_rec))
     
-    margen_h = 0.25 * inch
+    margen_h = 0.3 * cm
     w_util = w_rec - (2 * margen_h)
     x_centro = w_rec / 2
 
@@ -321,48 +321,48 @@ def generar_etiquetas_nexion(df_datos):
         for i in range(iteraciones):
             c.setStrokeColorRGB(0, 0, 0)
 
-            # --- CABECERA ---
+            # 1. Cabecera superior pegada al borde superior de los 5.08 cm
             c.setFont("Helvetica-Bold", 6.0)
-            c.drawCentredString(x_centro, h_rec - 0.18 * inch, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
+            c.drawCentredString(x_centro, h_rec - 0.35 * cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
             
             c.setFont("Helvetica", 4.5)
             info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL"
-            dibujar_texto_bloque_pro(c, info_contacto, x_centro, h_rec - 0.35 * inch, w_util, "Helvetica", 4.5, 0.15 * inch, max_lineas=1)
+            dibujar_texto_bloque_pro(c, info_contacto, x_centro, h_rec - 0.7 * cm, w_util, "Helvetica", 4.5, 0.2 * cm, max_lineas=1)
             
             c.setLineWidth(0.3)
             c.setStrokeColorRGB(0.5, 0.5, 0.5)
-            c.line(margen_h, h_rec - 0.42 * inch, w_rec - margen_h, h_rec - 0.42 * inch)
+            c.line(margen_h, h_rec - 0.85 * cm, w_rec - margen_h, h_rec - 0.85 * cm)
 
-            # --- NOMBRE DEL CLIENTE ---
-            y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_centro, h_rec - 0.72 * inch, w_util, "Helvetica-Bold", 12.0, 0.32 * inch, max_lineas=2)
+            # 2. Nombre del cliente (ej. GAMMA CD JUAREZ) centrado en la zona superior-media
+            y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_centro, h_rec - 1.45 * cm, w_util, "Helvetica-Bold", 12.0, 0.45 * cm, max_lineas=2)
             
-            # --- DIRECCIÓN ---
-            y_inicio_direccion = y_termino_nombre - 0.12 * inch
-            if y_inicio_direccion > 1.15 * inch: y_inicio_direccion = 1.15 * inch
-            if y_inicio_direccion < 0.85 * inch: y_inicio_direccion = 0.85 * inch
-            dibujar_texto_bloque_pro(c, direccion_final, x_centro, y_inicio_direccion, w_util, "Helvetica-Bold", 7.5, 0.22 * inch, max_lineas=3)
+            # 3. Dirección distribuida exactamente en el área central
+            y_inicio_direccion = y_termino_nombre - 0.25 * cm
+            if y_inicio_direccion > 2.7 * cm: y_inicio_direccion = 2.7 * cm
+            if y_inicio_direccion < 2.1 * cm: y_inicio_direccion = 2.1 * cm
+            dibujar_texto_bloque_pro(c, direccion_final, x_centro, y_inicio_direccion, w_util, "Helvetica-Bold", 7.5, 0.28 * cm, max_lineas=3)
 
-            # --- SECCIÓN INFERIOR (PIE DE PÁGINA / MÉTRICAS) ---
+            # 4. Sección de pie de página fija en la franja inferior exacta
             c.setLineWidth(0.5)
             c.setStrokeColorRGB(0, 0, 0)
-            y_linea_pie = 0.42 * inch
+            y_linea_pie = 1.05 * cm
             c.line(margen_h, y_linea_pie, w_rec - margen_h, y_linea_pie)
             
-            x_col1 = margen_h + 0.05 * inch          
+            x_col1 = margen_h + 0.1 * cm          
             x_col2 = w_rec / 2                 
-            x_col3 = w_rec - margen_h - 0.9 * inch 
+            x_col3 = w_rec - margen_h - 1.8 * cm 
 
             c.setFont("Helvetica-Bold", 5.5)
-            c.drawString(x_col1, y_linea_pie - 0.12 * inch, "FACTURA")
-            c.drawCentredString(x_col2, y_linea_pie - 0.12 * inch, "CAJAS")
-            c.drawString(x_col3, y_linea_pie - 0.12 * inch, "TRANSPORTE")
+            c.drawString(x_col1, y_linea_pie - 0.3 * cm, "FACTURA")
+            c.drawCentredString(x_col2, y_linea_pie - 0.3 * cm, "CAJAS")
+            c.drawString(x_col3, y_linea_pie - 0.3 * cm, "TRANSPORTE")
             
-            c.setFont("Helvetica-Bold", 7.5)
-            c.drawString(x_col1, y_linea_pie - 0.32 * inch, factura_val[:12])
-            c.drawCentredString(x_col2, y_linea_pie - 0.32 * inch, f"{i + 1} / {cantidad_real}")
+            c.setFont("Helvetica-Bold", 8.0)
+            c.drawString(x_col1, y_linea_pie - 0.75 * cm, factura_val[:12])
+            c.drawCentredString(x_col2, y_linea_pie - 0.75 * cm, f"{i + 1} / {cantidad_real}")
             
-            c.setFont("Helvetica-Bold", 6.5)
-            c.drawString(x_col3, y_linea_pie - 0.32 * inch, transporte_final[:12])
+            c.setFont("Helvetica-Bold", 7.0)
+            c.drawString(x_col3, y_linea_pie - 0.75 * cm, transporte_final[:13])
             
             c.showPage()
 
