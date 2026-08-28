@@ -269,6 +269,26 @@ div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
     margin-bottom: 10px;
 }}
 
+/* --- FORZAR ESTILO EN BOTONES DE FORMULARIO (ST.FORM_SUBMIT_BUTTON) --- */
+div.stFormSubmitButton > button {{
+    background-color: {vars_css['card']} !important;
+    color: {vars_css['text']} !important;
+    border: 1px solid {vars_css['border']} !important;
+    border-radius: 4px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    font-size: 10px !important;
+    height: 32px !important;
+    width: 100% !important;
+    transition: all 0.3s ease !important;
+}}
+
+div.stFormSubmitButton > button:hover {{
+    background-color: #00A3A3 !important;
+    color: #ffffff !important;
+    border-color: #00A3A3 !important;
+}}
+
 </style>
 """,
     unsafe_allow_html=True,
