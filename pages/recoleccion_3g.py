@@ -937,27 +937,11 @@ def main():
     # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
     with tab1:
         
-        @st.cache_data(ttl=300)
-        def obtener_logo_tresguerras():
-            try:
-                repo = "RH2026/nexion"
-                filename = "logo_3G.png"
-                branch = "main"
-                url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
-                token = st.secrets["GITHUB_TOKEN"]
-                headers = {"Authorization": f"token {token}"}
-                response = requests.get(url, headers=headers)
-                if response.status_code == 200:
-                    return BytesIO(response.content)
-                return None
-            except Exception:
-                return None
-
         @st.cache_data(ttl=60)
         def cargar_matriz_facturacion_completa():
             try:
                 repo = "RH2026/nexion"
-                filename = "clientes.csv"  # <-- APUNTA CORRECTAMENTE A CLIENTES.CSV
+                filename = "clientes.csv"  # <-- Apunta directo a clientes.csv
                 branch = "main"
                 url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
                 token = st.secrets["GITHUB_TOKEN"]
@@ -966,24 +950,22 @@ def main():
                 response = requests.get(url, headers=headers)
                 if response.status_code == 200:
                     df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
-                    # Limpieza absoluta de nombres de columnas (mayúsculas y sin espacios)
                     df.columns = [str(c).upper().strip() for c in df.columns]
                     return df
                 else:
                     st.error(f"Error al descargar {filename} de GitHub (Código {response.status_code}).")
                     return pd.DataFrame()
             except Exception as e:
-                st.error(f"No se pudo cargar la matriz de facturación: {e}")
+                st.error(f"No se pudo cargar la matriz de clientes: {e}")
                 return pd.DataFrame()
 
         df_facturacion = cargar_matriz_facturacion_completa()
         registro = pd.Series()    
 
         if not df_facturacion.empty:
-            # Asegurar columnas clave en mayúsculas y limpias de espacios
             df_facturacion.columns = [str(c).upper().strip() for c in df_facturacion.columns]
             
-            # Columnas exactas solicitadas
+            # Mapeo de columnas directas de clientes.csv
             col_factura = "FACTURA" if "FACTURA" in df_facturacion.columns else df_facturacion.columns[0]
             col_cliente_num = "CLIENTE" if "CLIENTE" in df_facturacion.columns else None
             col_nombre_hotel = "NOMBRE_EXTRAN" if "NOMBRE_EXTRAN" in df_facturacion.columns else None
@@ -992,7 +974,7 @@ def main():
             if col_cliente_num:
                 df_facturacion[col_cliente_num] = df_facturacion[col_cliente_num].astype(str)
 
-            # --- CONTROLES DE BÚSQUEDA ---
+            # --- CONTROLES DE BÚSQUEDA DIRECTOS ---
             top_col1, top_col2, top_col3, top_col4 = st.columns(4)
             
             with top_col1:
@@ -1009,7 +991,7 @@ def main():
                     if num_factura in facturas_disponibles:
                         match_df = df_facturacion[df_facturacion[col_factura] == str(num_factura)]
                         if not match_df.empty:
-                            registro = match_df.iloc[0]
+                            registro = match_df.iloc[0]  # Registro único directo
                 else:
                     if col_cliente_num:
                         clientes_disponibles = sorted(df_facturacion[col_cliente_num].dropna().unique().tolist())
@@ -1019,7 +1001,7 @@ def main():
                         if cliente_elegido:
                             match_cte = df_facturacion[df_facturacion[col_cliente_num] == str(cliente_elegido)]
                             if not match_cte.empty:
-                                registro = match_cte.iloc[0]
+                                registro = match_cte.iloc[0]  # Registro único directo del cliente
                     else:
                         st.warning("No se encontró la columna CLIENTE en la matriz.")
                         num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
@@ -1027,7 +1009,7 @@ def main():
             with top_col4:
                 tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
 
-            # Mapeo: Extraemos estrictamente el nombre del hotel de NOMBRE_EXTRAN para el input
+            # Extracción limpia del nombre del hotel desde NOMBRE_EXTRAN
             def_extran = str(registro.get(col_nombre_hotel, "")) if not registro.empty and col_nombre_hotel and pd.notna(registro.get(col_nombre_hotel, "")) else ""
             def_dom = str(registro.get("DOMICILIO", registro.get("CALLE", ""))) if not registro.empty else ""
             def_col = str(registro.get("COLONIA", "")) if not registro.empty and pd.notna(registro.get("COLONIA", "")) else ""
