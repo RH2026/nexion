@@ -937,26 +937,26 @@ def main():
 
         # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
         @st.cache_data(ttl=60)
-            def cargar_matriz_facturacion_completa():
-                try:
-                    repo = "RH2026/nexion"
-                    filename = "facturacion.csv"
-                    branch = "main"
-                    url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
-                    token = st.secrets["GITHUB_TOKEN"]
-                    headers = {"Authorization": f"token {token}"}
-                    
-                    response = requests.get(url, headers=headers)
-                    if response.status_code == 200:
-                        df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
-                        df.columns = df.columns.astype(str).str.strip()
-                        return df
-                    else:
-                        st.error(f"Error al descargar {filename} de GitHub (Código {response.status_code}).")
-                        return pd.DataFrame()
-                except Exception as e:
-                    st.error(f"No se pudo cargar la matriz de facturación: {e}")
+        def cargar_matriz_facturacion_completa():
+            try:
+                repo = "RH2026/nexion"
+                filename = "facturacion.csv"
+                branch = "main"
+                url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                token = st.secrets["GITHUB_TOKEN"]
+                headers = {"Authorization": f"token {token}"}
+                
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                    df.columns = df.columns.astype(str).str.strip()
+                    return df
+                else:
+                    st.error(f"Error al descargar {filename} de GitHub (Código {response.status_code}).")
                     return pd.DataFrame()
+            except Exception as e:
+                st.error(f"No se pudo cargar la matriz de facturación: {e}")
+                return pd.DataFrame()
 
         @st.cache_data(ttl=300)
         def obtener_logo_tresguerras():
