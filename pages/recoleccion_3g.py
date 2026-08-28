@@ -941,7 +941,7 @@ def main():
         def cargar_matriz_facturacion_completa():
             try:
                 repo = "RH2026/nexion"
-                filename = "clientes.csv"  # <-- Apunta directo a clientes.csv
+                filename = "clientes.csv"
                 branch = "main"
                 url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
                 token = st.secrets["GITHUB_TOKEN"]
@@ -958,19 +958,16 @@ def main():
             except Exception as e:
                 st.error(f"No se pudo cargar la matriz de clientes: {e}")
                 return pd.DataFrame()
-
+    
         df_facturacion = cargar_matriz_facturacion_completa()
-        registro = pd.Series(dtype=object)    
-
+    
         if not df_facturacion.empty:
             df_facturacion.columns = [str(c).upper().strip() for c in df_facturacion.columns]
             
-            # Búsqueda dinámica y segura de columnas clave
             col_factura = next((c for c in ["FACTURA", "FOLIO"] if c in df_facturacion.columns), df_facturacion.columns[0])
             col_cliente_num = next((c for c in ["NO CLIENTE", "CLIENTE", "NUMERO_CLIENTE"] if c in df_facturacion.columns), None)
             col_nombre_hotel = next((c for c in ["NOMBRE_EXTRAN", "NOMBRE", "CLIENTE_NOMBRE"] if c in df_facturacion.columns), None)
     
-            # Forzar conversión limpia a string evitando .0 en números de cliente o facturas
             df_facturacion[col_factura] = df_facturacion[col_factura].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
             if col_cliente_num:
                 df_facturacion[col_cliente_num] = df_facturacion[col_cliente_num].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
@@ -983,6 +980,9 @@ def main():
     
             with top_col2:
                 criterio_busqueda = st.selectbox("🔍 Buscar por:", ["Folio de Factura", "Número de Cliente"], key="tg_criterio_busq")
+    
+            registro = pd.Series(dtype=object)
+            num_factura = "S/F"
     
             with top_col3:
                 if criterio_busqueda == "Folio de Factura":
@@ -1008,8 +1008,8 @@ def main():
     
             with top_col4:
                 tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
-
-            # Extracción segura de valores para evitar errores de tipo
+    
+            # Extracción segura de valores predeterminados basados en la selección actual
             def_extran = str(registro.get(col_nombre_hotel, "")) if not registro.empty and col_nombre_hotel and pd.notna(registro.get(col_nombre_hotel)) else ""
             def_dom = str(registro.get("DOMICILIO", registro.get("CALLE", ""))) if not registro.empty and pd.notna(registro.get("DOMICILIO", registro.get("CALLE", ""))) else ""
             def_col = str(registro.get("COLONIA", "")) if not registro.empty and pd.notna(registro.get("COLONIA", "")) else ""
@@ -1017,44 +1017,44 @@ def main():
             def_cp = str(registro.get("CP", "")) if not registro.empty and pd.notna(registro.get("CP", "")) else ""
             def_cp = def_cp.replace('.0', '') if def_cp else ""
             def_est = str(registro.get("ESTADO", "")) if not registro.empty and pd.notna(registro.get("ESTADO", "")) else ""
-
+    
             tel_val = ""
             if not registro.empty:
                 for col_p in ["TELEFONO", "TEL", "TELÉFONO"]:
                     if col_p in registro and pd.notna(registro[col_p]):
                         tel_val = str(registro[col_p]).replace('.0', '').strip()
                         break
-
+    
             st.markdown("---")
-
+    
             def titulo_seccion(texto, color_fondo="#b71c1c"):
                 st.markdown(f"""
                     <div style="background-color: {color_fondo}; padding: 8px; border-radius: 4px; text-align: center; color: white; font-weight: bold; font-size: 15px; margin-bottom: 10px;">
                         {texto}
                     </div>
                 """, unsafe_allow_html=True)
-
+    
             col1, col2 = st.columns(2)
-
+    
             with col1:
                 titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#e65100")
-                rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran, key=f"rem_cli_{num_factura}")
-                rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom, key=f"rem_call_{num_factura}")
+                rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran, key="rem_cli_val")
+                rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom, key="rem_call_val")
                 rc1, rc2 = st.columns(2)
                 with rc1:
-                    rem_colonia = st.text_input("Colonia (Remitente)", value=def_col, key=f"rem_col_{num_factura}")
+                    rem_colonia = st.text_input("Colonia (Remitente)", value=def_col, key="rem_col_val")
                 with rc2:
-                    rem_cp = st.text_input("CP (Remitente)", value=def_cp, key=f"rem_cp_{num_factura}")
+                    rem_cp = st.text_input("CP (Remitente)", value=def_cp, key="rem_cp_val")
                 rc3, rc4 = st.columns(2)
                 with rc3:
-                    rem_cui = st.text_input("Ciudad / Municipio", value=def_cui, key=f"rem_cui_{num_factura}")
+                    rem_cui = st.text_input("Ciudad / Municipio", value=def_cui, key="rem_cui_val")
                 with rc4:
-                    rem_estado = st.text_input("Estado", value=def_est, key=f"rem_est_{num_factura}")
+                    rem_estado = st.text_input("Estado", value=def_est, key="rem_est_val")
                 rc5, rc6 = st.columns(2)
                 with rc5:
-                    rem_contacto = st.text_input("Persona que entrega", value="", key=f"rem_cont_{num_factura}")
+                    rem_contacto = st.text_input("Persona que entrega", value="", key="rem_cont_val")
                 with rc6:
-                    rem_tel = st.text_input("Teléfono Remitente", value=tel_val, key=f"rem_tel_{num_factura}")
+                    rem_tel = st.text_input("Teléfono Remitente", value=tel_val, key="rem_tel_val")
 
             with col2:
                 titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#4B6B94")
