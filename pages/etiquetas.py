@@ -12,6 +12,7 @@ from reportlab.pdfgen import canvas
 import pandas as pd
 import streamlit as st
 from auth import exigir_autenticacion
+from reportlab.lib.units import inch
 
 exigir_autenticacion("etiquetas")
 
