@@ -278,7 +278,7 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
     lineas = simpleSplit(texto, fuente, tamano_max, ancho_max)
     
     tamano_actual = tamano_max
-    while len(lineas) > max_lineas and tamano_actual > 7:
+    while len(lineas) > max_lineas and tamano_actual > 5:
         tamano_actual -= 0.5
         lineas = simpleSplit(texto, fuente, tamano_actual, ancho_max)
     
@@ -291,10 +291,10 @@ def dibujar_texto_bloque_pro(c, texto, x_centro, y_inicio, ancho_max, fuente, ta
 
 def generar_etiquetas_nexion(df_datos):
     output = io.BytesIO()
-    w_rec, h_rec = 10.5 * cm, 7.5 * cm
+    w_rec, h_rec = 7.62 * cm, 5.08 * cm  # MEDIDAS ACTUALIZADAS: 7.62 x 5.08 cm
     c = canvas.Canvas(output, pagesize=(w_rec, h_rec))
     
-    margen_h = 0.8 * cm
+    margen_h = 0.4 * cm
     w_util = w_rec - (2 * margen_h)
     x_centro = w_rec / 2
 
@@ -322,42 +322,42 @@ def generar_etiquetas_nexion(df_datos):
             c.setDash([])
             c.setStrokeColorRGB(0, 0, 0)
 
-            c.setFont("Helvetica-Bold", 7)
-            c.drawCentredString(x_centro, h_rec - 0.3*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
-            c.setFont("Helvetica", 5.5)
-            info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México Tel.. 0152 (33) 35402939"
-            dibujar_texto_bloque_pro(c, info_contacto, x_centro, h_rec - 0.7*cm, w_util, "Helvetica", 5.5, 0.25*cm, max_lineas=1)
+            c.setFont("Helvetica-Bold", 5.5)
+            c.drawCentredString(x_centro, h_rec - 0.25*cm, "JABONES Y PRODUCTOS ESPECIALIZADOS, SA DE CV")
+            c.setFont("Helvetica", 4.5)
+            info_contacto = "Privada del Gallo No. 1525 Col. La Aurora C.P. 44460 Guadalajara, JAL México"
+            dibujar_texto_bloque_pro(c, info_contacto, x_centro, h_rec - 0.55*cm, w_util, "Helvetica", 4.5, 0.2*cm, max_lineas=1)
             
             c.setLineWidth(0.3)
             c.setStrokeColorRGB(0.7, 0.7, 0.7)
-            c.line(margen_h, h_rec - 0.95*cm, w_rec - margen_h, h_rec - 0.95*cm)
+            c.line(margen_h, h_rec - 0.75*cm, w_rec - margen_h, h_rec - 0.75*cm)
             c.setStrokeColorRGB(0, 0, 0)
 
-            y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_centro, h_rec - 1.8*cm, w_util, "Helvetica-Bold", 22, 0.65*cm, max_lineas=3)
+            y_termino_nombre = dibujar_texto_bloque_pro(c, nombre_final, x_centro, h_rec - 1.35*cm, w_util, "Helvetica-Bold", 14, 0.45*cm, max_lineas=3)
             
-            y_inicio_direccion = y_termino_nombre - 0.5*cm
-            if y_inicio_direccion > 4.3*cm: y_inicio_direccion = 4.3*cm
-            if y_inicio_direccion < 2.9*cm: y_inicio_direccion = 2.9*cm
-            dibujar_texto_bloque_pro(c, direccion_final, x_centro, y_inicio_direccion, w_util, "Helvetica-Bold", 12.0, 0.45*cm, max_lineas=3)
+            y_inicio_direccion = y_termino_nombre - 0.3*cm
+            if y_inicio_direccion > 2.8*cm: y_inicio_direccion = 2.8*cm
+            if y_inicio_direccion < 2.0*cm: y_inicio_direccion = 2.0*cm
+            dibujar_texto_bloque_pro(c, direccion_final, x_centro, y_inicio_direccion, w_util, "Helvetica-Bold", 8.5, 0.3*cm, max_lineas=3)
 
-            c.setLineWidth(0.6)
-            y_linea_pie = 1.4*cm
+            c.setLineWidth(0.5)
+            y_linea_pie = 1.0*cm
             c.line(margen_h, y_linea_pie, w_rec - margen_h, y_linea_pie)
             
-            x_col1 = margen_h + 0.1*cm         
-            x_col2 = 5.25 * cm                 
-            x_col3 = w_rec - margen_h - 2.8*cm 
+            x_col1 = margen_h + 0.05*cm          
+            x_col2 = w_rec / 2                 
+            x_col3 = w_rec - margen_h - 1.8*cm 
 
-            c.setFont("Helvetica-Bold", 8)
-            c.drawString(x_col1, y_linea_pie - 0.4*cm, "FACTURA")
-            c.drawCentredString(x_col2, y_linea_pie - 0.4*cm, "CAJAS")
-            c.drawString(x_col3, y_linea_pie - 0.4*cm, "TRANSPORTE")
+            c.setFont("Helvetica-Bold", 6.5)
+            c.drawString(x_col1, y_linea_pie - 0.3*cm, "FACTURA")
+            c.drawCentredString(x_col2, y_linea_pie - 0.3*cm, "CAJAS")
+            c.drawString(x_col3, y_linea_pie - 0.3*cm, "TRANSPORTE")
             
-            c.setFont("Helvetica-Bold", 11)
-            c.drawString(x_col1, y_linea_pie - 1.0*cm, factura_val)
-            c.drawCentredString(x_col2, y_linea_pie - 1.0*cm, f"{i + 1} / {cantidad_real}")
-            c.setFont("Helvetica-Bold", 9.5)
-            c.drawString(x_col3, y_linea_pie - 1.0*cm, transporte_final[:16])
+            c.setFont("Helvetica-Bold", 8.5)
+            c.drawString(x_col1, y_linea_pie - 0.75*cm, factura_val[:12])
+            c.drawCentredString(x_col2, y_linea_pie - 0.75*cm, f"{i + 1} / {cantidad_real}")
+            c.setFont("Helvetica-Bold", 7.5)
+            c.drawString(x_col3, y_linea_pie - 0.75*cm, transporte_final[:13])
             
             c.showPage()
 
@@ -476,23 +476,20 @@ with header_zone:
             except Exception:
                 pass
 
-            # 3. CRUCE DE INFORMACIÓN (Si está en Matriz Global pero le falta la guía, se la inyectamos desde T1)
+            # 3. CRUCE DE INFORMACIÓN
             if not res_ops.empty and not res_t1.empty:
                 for idx, row in res_ops.iterrows():
                     guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
                     if guia_actual in ["", "nan", "0", "None"]:
                         pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        # Buscamos coincidencia en T1 por número de pedido/factura
                         match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
                         if not match_en_t1.empty:
-                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
                             res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
                             res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
                             if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
                                 res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
 
-            # 4. Búsqueda en Inventario (Por si acaso se busca un SKU/Código)
+            # 4. Búsqueda en Inventario
             res_inv = pd.DataFrame()
             if res_ops.empty and res_t1.empty:
                 try:
