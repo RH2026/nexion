@@ -936,14 +936,11 @@ def main():
     tab1, tab2, tab3 = st.tabs(["Formato Solicitud", "Render de Estatus", "Edición y Actualización"])
 
     # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
-    # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
-    with tab1:
-        @st.cache_data(ttl=60)
+    @st.cache_data(ttl=60)
         def cargar_matriz_facturacion_completa():
             try:
                 repo = "RH2026/nexion"
-                # Actualizado a facturacion.xlsx como solicitaste
-                filename = "facturacion.csv" 
+                filename = "facturacion.csv"
                 branch = "main"
                 url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
                 token = st.secrets["GITHUB_TOKEN"]
@@ -951,18 +948,11 @@ def main():
                 
                 response = requests.get(url, headers=headers)
                 if response.status_code == 200:
-                    # Si es excel usamos BytesIO
-                    df = pd.read_excel(BytesIO(response.content))
+                    df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
                     df.columns = df.columns.astype(str).str.strip()
                     return df
                 else:
-                    # Fallback por si acaso estuviera en CSV
-                    url_csv = f"https://raw.githubusercontent.com/{repo}/{branch}/facturacion_moreno.csv"
-                    resp_csv = requests.get(url_csv, headers=headers)
-                    if resp_csv.status_code == 200:
-                        df = pd.read_csv(BytesIO(resp_csv.content), encoding="utf-8-sig")
-                        df.columns = df.columns.astype(str).str.strip()
-                        return df
+                    st.error(f"Error al descargar {filename} de GitHub (Código {response.status_code}).")
                     return pd.DataFrame()
             except Exception as e:
                 st.error(f"No se pudo cargar la matriz de facturación: {e}")
