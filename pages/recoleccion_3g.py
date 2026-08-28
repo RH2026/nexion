@@ -22,7 +22,7 @@ import math
 # AUTENTICACIÓN
 # ============================================================
 
-exigir_autenticacion("RECOLECCION 3G")
+exigir_autenticacion("recoleccion_3g")
 
 
 # 1. CONFIGURACIÓN DE PÁGINA
