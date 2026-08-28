@@ -42,6 +42,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
+from utils.auth import exigir_autenticacion  # O la ruta donde la tengas guardada
 
 # ============================================================
 # AUTENTICACIÓN
