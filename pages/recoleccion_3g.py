@@ -1,22 +1,47 @@
 import base64
-from datetime import datetime
+import calendar
+from datetime import date, datetime, timedelta
 import io
+from io import BytesIO, StringIO
+import json
+import math
+import os
+import random
 import re
 import time
 import unicodedata
 import zipfile
-import calendar
-import requests
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.utils import ImageReader
-from reportlab.pdfgen import canvas
+
+import altair as alt
+from fpdf import FPDF
+from github import Github
+import google.generativeai as genai
+import numpy as np
 import pandas as pd
+
+# CAMBIO 1: Pillow con alias para no chocar con ReportLab
+from PIL import Image as PILImage, ImageDraw, ImageFont
+
+import plotly.express as px
+import plotly.graph_objects as go
 from pypdf import PdfReader, PdfWriter
+import pytz
 import qrcode
-import streamlit.components.v1 as components
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.lib.utils import ImageReader, simpleSplit
+from reportlab.pdfgen import canvas
+
+# CAMBIO 2: Importamos platypus completo para usar platypus.Image sin perder ningún elemento
+import reportlab.platypus as platypus
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, Image
+
+
+import requests
 import streamlit as st
-from auth import exigir_autenticacion
-import math
+import streamlit.components.v1 as components
 
 # ============================================================
 # AUTENTICACIÓN
