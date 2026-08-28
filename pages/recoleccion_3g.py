@@ -253,6 +253,22 @@ div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
     border-top: 1px solid {vars_css['border']} !important; 
     z-index: 999999 !important; 
 }}
+
+/* --- TARJETAS DE KPI ESTILO WAR ROOM --- */
+.base-card-alerta {{
+    background-color: #2B343B;
+    border: 1px solid #4B5D67;
+    border-left: 5px solid #38bdf8;
+    padding: 16px 20px;
+    border-radius: 6px;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    color: white;
+    box-sizing: border-box;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    margin-bottom: 10px;
+}}
+
 </style>
 """,
     unsafe_allow_html=True,
@@ -1450,42 +1466,43 @@ def main():
             total_envios = len(df_estatus)
             filtrados_n = len(df_render)
             
-            # Conteo dinámico si existen las columnas clave
             pendientes_n = len(df_estatus[df_estatus["ESTATUS"].str.upper().str.contains("PENDIENTE|PROCESO", na=False)]) if "ESTATUS" in df_estatus.columns else 0
             entregados_n = len(df_estatus[df_estatus["ESTATUS"].str.upper().str.contains("ENTREGADO", na=False)]) if "ESTATUS" in df_estatus.columns else 0
             peso_total_val = df_estatus["PESO_TOTAL"].sum() if "PESO_TOTAL" in df_estatus.columns else 0.0
 
             kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
-            kpi1.markdown(f"""
-                <div class='base-card-alerta' style='border-left-color: #38bdf8;'>
-                    <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>TOTAL REGISTROS</div>
-                    <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{total_envios} <span style='font-size: 10px; color: #38bdf8; opacity: 0.7;'>FOLIOS</span></div>
-                </div>
-            """, unsafe_allow_html=True)
+            with kpi1:
+                st.markdown(f"""
+                    <div class='base-card-alerta' style='border-left-color: #38bdf8;'>
+                        <div style='color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;'>TOTAL REGISTROS</div>
+                        <div style='color: white; font-size: 22px; font-weight: 800; line-height: 1.2; margin-top: 4px;'>{total_envios} <span style='font-size: 10px; color: #38bdf8; font-weight: 700; text-transform: uppercase;'>FOLIOS</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
 
-            kpi2.markdown(f"""
-                <div class='base-card-alerta' style='border-left-color: #FDE047;'>
-                    <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>PENDIENTES</div>
-                    <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{pendientes_n} <span style='font-size: 10px; color: #FDE047; opacity: 0.7;'>ACTIVOS</span></div>
-                </div>
-            """, unsafe_allow_html=True)
+            with kpi2:
+                st.markdown(f"""
+                    <div class='base-card-alerta' style='border-left-color: #FDE047;'>
+                        <div style='color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;'>PENDIENTES</div>
+                        <div style='color: white; font-size: 22px; font-weight: 800; line-height: 1.2; margin-top: 4px;'>{pendientes_n} <span style='font-size: 10px; color: #FDE047; font-weight: 700; text-transform: uppercase;'>ACTIVOS</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
 
-            kpi3.markdown(f"""
-                <div class='base-card-alerta' style='border-left-color: #00FFAA;'>
-                    <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>ENTREGADOS</div>
-                    <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{entregados_n} <span style='font-size: 10px; color: #00FFAA; opacity: 0.7;'>COMPLETOS</span></div>
-                </div>
-            """, unsafe_allow_html=True)
+            with kpi3:
+                st.markdown(f"""
+                    <div class='base-card-alerta' style='border-left-color: #00FFAA;'>
+                        <div style='color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;'>ENTREGADOS</div>
+                        <div style='color: white; font-size: 22px; font-weight: 800; line-height: 1.2; margin-top: 4px;'>{entregados_n} <span style='font-size: 10px; color: #00FFAA; font-weight: 700; text-transform: uppercase;'>COMPLETOS</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
 
-            kpi4.markdown(f"""
-                <div class='base-card-alerta' style='border-left-color: #F97316;'>
-                    <div style='color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 800; letter-spacing: 1px;'>PESO ACUMULADO</div>
-                    <div style='color: white; font-size: 26px; font-weight: 800; line-height: 1;'>{peso_total_val:,.1f} <span style='font-size: 10px; color: #F97316; opacity: 0.7;'>KG</span></div>
-                </div>
-            """, unsafe_allow_html=True)
-
-            st.divider()
+            with kpi4:
+                st.markdown(f"""
+                    <div class='base-card-alerta' style='border-left-color: #F97316;'>
+                        <div style='color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;'>PESO ACUMULADO</div>
+                        <div style='color: white; font-size: 22px; font-weight: 800; line-height: 1.2; margin-top: 4px;'>{peso_total_val:,.1f} <span style='font-size: 10px; color: #F97316; font-weight: 700; text-transform: uppercase;'>KG</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
 
             # 4. PANEL DE VISUALIZACIÓN ESTILO WAR ROOM PARA EL RENDER
             st.markdown(f"<p style='font-size:11px; font-weight:700; letter-spacing:8px; color:#FFFFFF; text-transform:uppercase; text-align:center; margin-bottom:20px;'>DETALLE OPERATIVO DE GITHUB</p>", unsafe_allow_html=True)
