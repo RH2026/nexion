@@ -937,28 +937,6 @@ def main():
     # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
     with tab1:
         
-        @st.cache_data(ttl=60)
-        def cargar_matriz_facturacion_completa():
-            try:
-                repo = "RH2026/nexion"
-                filename = "facturacion.csv"
-                branch = "main"
-                url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
-                token = st.secrets["GITHUB_TOKEN"]
-                headers = {"Authorization": f"token {token}"}
-                
-                response = requests.get(url, headers=headers)
-                if response.status_code == 200:
-                    df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
-                    df.columns = df.columns.astype(str).str.strip()
-                    return df
-                else:
-                    st.error(f"Error al descargar {filename} de GitHub (Código {response.status_code}).")
-                    return pd.DataFrame()
-            except Exception as e:
-                st.error(f"No se pudo cargar la matriz de facturación: {e}")
-                return pd.DataFrame()
-
         @st.cache_data(ttl=300)
         def obtener_logo_tresguerras():
             try:
@@ -975,14 +953,33 @@ def main():
             except Exception:
                 return None
 
+        @st.cache_data(ttl=60)
+        def cargar_matriz_facturacion_completa():
+            try:
+                repo = "RH2026/nexion"
+                filename = "facturacion.csv"
+                branch = "main"
+                url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                token = st.secrets["GITHUB_TOKEN"]
+                headers = {"Authorization": f"token {token}"}
+                
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                    # Limpieza absoluta de nombres de columnas (mayúsculas y sin espacios)
+                    df.columns = [str(c).upper().strip() for c in df.columns]
+                    return df
+                else:
+                    st.error(f"Error al descargar {filename} de GitHub (Código {response.status_code}).")
+                    return pd.DataFrame()
+            except Exception as e:
+                st.error(f"No se pudo cargar la matriz de facturación: {e}")
+                return pd.DataFrame()
+
         df_facturacion = cargar_matriz_facturacion_completa()
         registro = pd.Series()    
-    
 
         if not df_facturacion.empty:
-            # Asegurar columnas clave en mayúsculas
-            df_facturacion.columns = [str(c).upper().strip() for c in df_facturacion.columns]
-            
             # Identificar nombres de columnas flexibles
             col_factura = next((c for c in ["FACTURA", "FOLIO", "NOTA"] if c in df_facturacion.columns), df_facturacion.columns[0])
             col_cliente = next((c for c in ["CLIENTE", "NOMBRE_EXTRAN", "EXTRAN", "RAZON_SOCIAL"] if c in df_facturacion.columns), None)
@@ -997,7 +994,6 @@ def main():
             fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
 
             with top_col2:
-                # Selector del criterio de búsqueda
                 criterio_busqueda = st.selectbox("🔍 Buscar por:", ["Folio de Factura", "Nombre de Cliente"], key="tg_criterio_busq")
 
             with top_col3:
@@ -1009,7 +1005,6 @@ def main():
                         if not match_df.empty:
                             registro = match_df.iloc[0]
                 else:
-                    # Búsqueda por Cliente trayendo historial previo (ej. Enero 2026)
                     if col_cliente:
                         clientes_disponibles = sorted(df_facturacion[col_cliente].dropna().unique().tolist())
                         cliente_elegido = st.selectbox("Selecciona Cliente", clientes_disponibles, key="tg_sel_cte")
@@ -1018,7 +1013,6 @@ def main():
                         if cliente_elegido:
                             match_cte = df_facturacion[df_facturacion[col_cliente] == cliente_elegido]
                             if not match_cte.empty:
-                                # Toma el registro más reciente o el primero disponible de su historial (ej. enero 2026)
                                 registro = match_cte.iloc[0]
                     else:
                         st.warning("No se encontró la columna de cliente en la matriz.")
@@ -1139,7 +1133,6 @@ def main():
             total_peso_calc = sum(l["peso"] * l["cantidad"] for l in st.session_state.lineas_embarque)
             st.info(f"⚖️ **Peso Total Calculado:** {total_peso_calc:,.2f} KG")
 
-            # [El resto de la lógica de generación de PDF se mantiene intacta...]
             def generar_pdf_tresguerras_oficial():
                 buffer = BytesIO()
                 doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=15, leftMargin=15, topMargin=15, bottomMargin=15)
@@ -1253,8 +1246,8 @@ def main():
                     ("TEXTCOLOR", (0,2), (0,2), colors.white),
                     ("BACKGROUND", (1,2), (2,2), colors.HexColor("#ffffff")),
                     ("BACKGROUND", (0,3), (2,3), colors.HexColor("#fff59d")),
-                    ("BACKGROUND", (0,4), (0,4), colors.HexColor("#b71c1c")),
-                    ("TEXTCOLOR", (0,4), (0,4), colors.white),
+                    ("BACKGROUND", (0,4), (2,4), colors.HexColor("#b71c1c")),
+                    ("TEXTCOLOR", (0,4), (2,4), colors.white),
                     ("BACKGROUND", (1,4), (2,4), colors.HexColor("#fff59d")),
                     ("GRID", (0,0), (-1,-1), 0.5, colors.black),
                     ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
