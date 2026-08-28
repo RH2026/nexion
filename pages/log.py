@@ -47,6 +47,7 @@ DESTINOS_VALIDOS = {
     "main": "pages/main.py",
     "cargardt": "pages/cargardt.py",
     "incidencias": "pages/incidencias_tr.py",
+    "RECOLECCIONES 3G": "pages/recolecciones_3g.py",
 }
 
 
