@@ -939,10 +939,11 @@ def main():
     # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
     with tab1:
         @st.cache_data(ttl=60)
-        def cargar_csv_github():
+        def cargar_matriz_facturacion_completa():
             try:
                 repo = "RH2026/nexion"
-                filename = "facturacion_moreno.csv"
+                # Actualizado a facturacion.xlsx como solicitaste
+                filename = "facturacion.xlsx" 
                 branch = "main"
                 url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
                 token = st.secrets["GITHUB_TOKEN"]
@@ -950,14 +951,21 @@ def main():
                 
                 response = requests.get(url, headers=headers)
                 if response.status_code == 200:
-                    df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                    # Si es excel usamos BytesIO
+                    df = pd.read_excel(BytesIO(response.content))
                     df.columns = df.columns.astype(str).str.strip()
                     return df
                 else:
-                    st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
+                    # Fallback por si acaso estuviera en CSV
+                    url_csv = f"https://raw.githubusercontent.com/{repo}/{branch}/facturacion_moreno.csv"
+                    resp_csv = requests.get(url_csv, headers=headers)
+                    if resp_csv.status_code == 200:
+                        df = pd.read_csv(BytesIO(resp_csv.content), encoding="utf-8-sig")
+                        df.columns = df.columns.astype(str).str.strip()
+                        return df
                     return pd.DataFrame()
             except Exception as e:
-                st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
+                st.error(f"No se pudo cargar la matriz de facturación: {e}")
                 return pd.DataFrame()
 
         @st.cache_data(ttl=300)
@@ -976,13 +984,20 @@ def main():
             except Exception:
                 return None
 
-        df_facturacion = cargar_csv_github()
+        df_facturacion = cargar_matriz_facturacion_completa()
+        registro = pd.Series()
 
         if not df_facturacion.empty:
-            df_facturacion["Factura"] = df_facturacion["Factura"].astype(str)
-            facturas_disponibles = df_facturacion["Factura"].unique()
-                        
-            # --- 4 CONTROLES PRINCIPALES EN UNA SOLA FILA ---
+            # Asegurar columnas clave en mayúsculas
+            df_facturacion.columns = [str(c).upper().strip() for c in df_facturacion.columns]
+            
+            # Identificar nombres de columnas flexibles
+            col_factura = next((c for c in ["FACTURA", "FOLIO", "NOTA"] if c in df_facturacion.columns), df_facturacion.columns[0])
+            col_cliente = next((c for c in ["CLIENTE", "NOMBRE_EXTRAN", "EXTRAN", "RAZON_SOCIAL"] if c in df_facturacion.columns), None)
+
+            df_facturacion[col_factura] = df_facturacion[col_factura].astype(str)
+
+            # --- CONTROLES DE BÚSQUEDA FLEXIBLE ---
             top_col1, top_col2, top_col3, top_col4 = st.columns(4)
             
             with top_col1:
@@ -990,30 +1005,48 @@ def main():
             fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
 
             with top_col2:
-                modo_busqueda = st.selectbox("🔍 Método de Selección", ["Seleccionar de la lista", "Escribir folio manual"], key="tg_modo_busq")
+                # Selector del criterio de búsqueda
+                criterio_busqueda = st.selectbox("🔍 Buscar por:", ["Folio de Factura", "Nombre de Cliente"], key="tg_criterio_busq")
 
             with top_col3:
-                if modo_busqueda == "Seleccionar de la lista":
-                    num_factura = st.selectbox("Folio / Factura", facturas_disponibles, key="tg_sel_fact")
-                    registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura in facturas_disponibles else pd.Series()
+                if criterio_busqueda == "Folio de Factura":
+                    facturas_disponibles = df_facturacion[col_factura].unique()
+                    num_factura = st.selectbox("Selecciona Folio", facturas_disponibles, key="tg_sel_fact")
+                    if num_factura in facturas_disponibles:
+                        match_df = df_facturacion[df_facturacion[col_factura] == str(num_factura)]
+                        if not match_df.empty:
+                            registro = match_df.iloc[0]
                 else:
-                    num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
-                    registro = df_facturacion[df_facturacion["Factura"] == str(num_factura)].iloc[0] if num_factura and str(num_factura) in df_facturacion["Factura"].values else pd.Series()
+                    # Búsqueda por Cliente trayendo historial previo (ej. Enero 2026)
+                    if col_cliente:
+                        clientes_disponibles = sorted(df_facturacion[col_cliente].dropna().unique().tolist())
+                        cliente_elegido = st.selectbox("Selecciona Cliente", clientes_disponibles, key="tg_sel_cte")
+                        num_factura = st.text_input("✍️ Folio Nuevo (Asignar)", value="S/F", key="tg_txt_fact_nuevo")
+                        
+                        if cliente_elegido:
+                            match_cte = df_facturacion[df_facturacion[col_cliente] == cliente_elegido]
+                            if not match_cte.empty:
+                                # Toma el registro más reciente o el primero disponible de su historial (ej. enero 2026)
+                                registro = match_cte.iloc[0]
+                    else:
+                        st.warning("No se encontró la columna de cliente en la matriz.")
+                        num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
 
             with top_col4:
                 tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
 
-            def_extran = str(registro.get("Nombre_Extran", "")) if not registro.empty and pd.notna(registro.get("Nombre_Extran", "")) else ""
+            # Mapeo seguro de campos extraídos de la matriz
+            def_extran = str(registro.get(col_cliente, "")) if not registro.empty and col_cliente and pd.notna(registro.get(col_cliente, "")) else ""
             def_rfc = str(registro.get("RFC", "")) if not registro.empty and pd.notna(registro.get("RFC", "")) else ""
-            def_dom = str(registro.get("Domicilio", "")) if not registro.empty and pd.notna(registro.get("Domicilio", "")) else ""
-            def_col = str(registro.get("Colonia", "")) if not registro.empty and pd.notna(registro.get("Colonia", "")) else ""
-            def_cui = str(registro.get("Cuidad", "")) if not registro.empty and pd.notna(registro.get("Cuidad", "")) else ""
+            def_dom = str(registro.get("DOMICILIO", registro.get("CALLE", ""))) if not registro.empty else ""
+            def_col = str(registro.get("COLONIA", "")) if not registro.empty and pd.notna(registro.get("COLONIA", "")) else ""
+            def_cui = str(registro.get("CUIDAD", registro.get("CIUDAD", ""))) if not registro.empty else ""
             def_cp = str(registro.get("CP", "")) if not registro.empty and pd.notna(registro.get("CP", "")) else ""
-            def_est = str(registro.get("Estado", "")) if not registro.empty and pd.notna(registro.get("Estado", "")) else ""
+            def_est = str(registro.get("ESTADO", "")) if not registro.empty and pd.notna(registro.get("ESTADO", "")) else ""
 
             tel_val = ""
             if not registro.empty:
-                for col_p in ["TELEFONO", "Telefono", "telefono", "TEL", "Teléfono"]:
+                for col_p in ["TELEFONO", "TEL", "TELÉFONO"]:
                     if col_p in registro and pd.notna(registro[col_p]):
                         tel_val = str(registro[col_p]).strip()
                         break
@@ -1031,7 +1064,6 @@ def main():
 
             with col1:
                 titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#e65100")
-                # Usamos una KEY basada en el folio actual para forzar a Streamlit a actualizar los valores al cambiar de factura
                 rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran, key=f"rem_cli_{num_factura}")
                 rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom, key=f"rem_call_{num_factura}")
                 rc1, rc2 = st.columns(2)
@@ -1115,7 +1147,7 @@ def main():
             total_peso_calc = sum(l["peso"] * l["cantidad"] for l in st.session_state.lineas_embarque)
             st.info(f"⚖️ **Peso Total Calculado:** {total_peso_calc:,.2f} KG")
 
-            # --- FUNCIÓN PDF REPORTLAB (ESTILO OFICIAL TRESGUERRAS) ---
+            # [El resto de la lógica de generación de PDF se mantiene intacta...]
             def generar_pdf_tresguerras_oficial():
                 buffer = BytesIO()
                 doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=15, leftMargin=15, topMargin=15, bottomMargin=15)
@@ -1128,7 +1160,6 @@ def main():
                 cell_normal = ParagraphStyle("CN", fontName="Helvetica", fontSize=6, leading=7.5)
                 cell_center = ParagraphStyle("CC", fontName="Helvetica", fontSize=6, leading=7.5, alignment=1)
 
-                # 1. ENCABEZADO SUPERIOR
                 logo_io = obtener_logo_tresguerras()
                 logo_elem = Image(logo_io, width=85, height=22) if logo_io else Paragraph("<b>TRESGUERRAS</b>", cell_center)
                 
@@ -1153,7 +1184,6 @@ def main():
                 story.append(header_table)
                 story.append(Spacer(1, 2))
 
-                # 2. FECHAS RECOLECCIÓN / RECEPCIÓN
                 fechas_table = Table([
                     [Paragraph("<b>FECHA DE RECOLECCION:</b>", cell_bold), Paragraph(fecha_rec_str, cell_center), Paragraph("<b>FECHA SOLICITUD</b>", cell_bold), Paragraph(fecha_actual, cell_center)],
                     [Paragraph("<b>FECHA DE RECEPCION:</b>", cell_bold), "", Paragraph("<b>FOLIO</b>", cell_bold), ""]
@@ -1171,7 +1201,6 @@ def main():
                 story.append(fechas_table)
                 story.append(Spacer(1, 2))
 
-                # 3. REMITENTE Y DESTINATARIO
                 rem_data = [
                     [Paragraph("REMITENTE - RECOLECCION", th_style), ""],
                     [Paragraph("CLIENTE:", cell_bold), Paragraph(rem_cliente, cell_bold)],
@@ -1212,7 +1241,6 @@ def main():
                 story.append(t_top)
                 story.append(Spacer(1, 2))
 
-                # 4. SECCIÓN FACTURAR A
                 fac_data = [
                     [Paragraph("<b>FACTURAR A:</b>", th_style), "", ""],
                     [Paragraph(fac_cliente, cell_center), "", ""],
@@ -1244,7 +1272,6 @@ def main():
                 story.append(t_fac)
                 story.append(Spacer(1, 2))
 
-                # 5. TABLA DE EMBARQUE / CONTENIDO DINÁMICA
                 emb_headers = ["Cantidad", "TIPO DE BULTOS", "DESCRIPCION", "DIAMETRO", "ALTO", "CUBICAJE (m3)", "PESO (KG)"]
                 emb_data = [
                     [Paragraph("<b>INFORMACION DE EMBARQUE</b>", th_style), "", "", Paragraph("<b>DIMENSIONES (mts)</b>", th_style), "", Paragraph("<b>VOLUMEN</b>", th_style), Paragraph("<b>PESO POR BULTO</b>", th_style)],
@@ -1285,7 +1312,6 @@ def main():
                 story.append(t_emb)
                 story.append(Spacer(1, 2))
 
-                # 6. BLOQUE MEDIO
                 th_red = ParagraphStyle("THR", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
                 th_green = ParagraphStyle("THG", fontName="Helvetica-Bold", fontSize=6, leading=7, textColor=colors.white, alignment=1)
 
@@ -1373,7 +1399,6 @@ def main():
                 story.append(t_mid)
                 story.append(Spacer(1, 2))
 
-                # 7. BLOQUE FINAL
                 t_final_block = Table([
                     [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_style), Paragraph("<b>OBSERVACIONES</b>", th_style)],
                     [
@@ -1412,7 +1437,7 @@ def main():
             with col_gen1:
                 if st.button("Generar Orden de Recolección (Tresguerras Oficial)", use_container_width=True, key="btn_gen_pdf_tg"):
                     pdf_buf = generar_pdf_tresguerras_oficial()
-                    st.success("¡Formato de Tresguerras generado correctamente con los 4 controles en línea!")
+                    st.success("¡Formato de Tresguerras generado correctamente!")
                     st.download_button(
                         label="📥 Descargar PDF Tresguerras Oficial",
                         data=pdf_buf,
@@ -1442,7 +1467,7 @@ def main():
                     if guardar_estatus_github(df_final, f"Registro de folio {num_factura}"):
                         st.success(f"¡Folio {num_factura} guardado/actualizado exitosamente en GitHub!")
         else:
-            st.warning("No se encontraron datos en el CSV de GitHub.")
+            st.warning("No se encontraron datos en la matriz de facturación.")
 
     # --- TAB 2: RENDER DE ESTATUS ---
     # --- TAB 2: RENDER DE ESTATUS (NIVEL WAR ROOM) ---
