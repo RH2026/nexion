@@ -960,21 +960,20 @@ def main():
                 return pd.DataFrame()
 
         df_facturacion = cargar_matriz_facturacion_completa()
-        registro = pd.Series()    
+        registro = pd.Series(dtype=object)    
 
         if not df_facturacion.empty:
             df_facturacion.columns = [str(c).upper().strip() for c in df_facturacion.columns]
             
-            # Mapeo de columnas directas de clientes.csv
             col_factura = "FACTURA" if "FACTURA" in df_facturacion.columns else df_facturacion.columns[0]
             col_cliente_num = "CLIENTE" if "CLIENTE" in df_facturacion.columns else None
             col_nombre_hotel = "NOMBRE_EXTRAN" if "NOMBRE_EXTRAN" in df_facturacion.columns else None
 
-            df_facturacion[col_factura] = df_facturacion[col_factura].astype(str)
+            # Forzar conversión limpia a string evitando .0 en números de cliente o facturas
+            df_facturacion[col_factura] = df_facturacion[col_factura].astype(str).str.replace(r'\.0$', '', regex=True)
             if col_cliente_num:
-                df_facturacion[col_cliente_num] = df_facturacion[col_cliente_num].astype(str)
+                df_facturacion[col_cliente_num] = df_facturacion[col_cliente_num].astype(str).str.replace(r'\.0$', '', regex=True)
 
-            # --- CONTROLES DE BÚSQUEDA DIRECTOS ---
             top_col1, top_col2, top_col3, top_col4 = st.columns(4)
             
             with top_col1:
@@ -986,12 +985,12 @@ def main():
 
             with top_col3:
                 if criterio_busqueda == "Folio de Factura":
-                    facturas_disponibles = df_facturacion[col_factura].unique()
+                    facturas_disponibles = df_facturacion[col_factura].dropna().unique().tolist()
                     num_factura = st.selectbox("Selecciona Factura", facturas_disponibles, key="tg_sel_fact")
-                    if num_factura in facturas_disponibles:
+                    if num_factura:
                         match_df = df_facturacion[df_facturacion[col_factura] == str(num_factura)]
                         if not match_df.empty:
-                            registro = match_df.iloc[0]  # Registro único directo
+                            registro = match_df.iloc[0]
                 else:
                     if col_cliente_num:
                         clientes_disponibles = sorted(df_facturacion[col_cliente_num].dropna().unique().tolist())
@@ -1001,7 +1000,7 @@ def main():
                         if cliente_elegido:
                             match_cte = df_facturacion[df_facturacion[col_cliente_num] == str(cliente_elegido)]
                             if not match_cte.empty:
-                                registro = match_cte.iloc[0]  # Registro único directo del cliente
+                                registro = match_cte.iloc[0]
                     else:
                         st.warning("No se encontró la columna CLIENTE en la matriz.")
                         num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
@@ -1009,19 +1008,20 @@ def main():
             with top_col4:
                 tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
 
-            # Extracción limpia del nombre del hotel desde NOMBRE_EXTRAN
-            def_extran = str(registro.get(col_nombre_hotel, "")) if not registro.empty and col_nombre_hotel and pd.notna(registro.get(col_nombre_hotel, "")) else ""
-            def_dom = str(registro.get("DOMICILIO", registro.get("CALLE", ""))) if not registro.empty else ""
+            # Extracción segura de valores para evitar errores de tipo
+            def_extran = str(registro.get(col_nombre_hotel, "")) if not registro.empty and col_nombre_hotel and pd.notna(registro.get(col_nombre_hotel)) else ""
+            def_dom = str(registro.get("DOMICILIO", registro.get("CALLE", ""))) if not registro.empty and pd.notna(registro.get("DOMICILIO", registro.get("CALLE", ""))) else ""
             def_col = str(registro.get("COLONIA", "")) if not registro.empty and pd.notna(registro.get("COLONIA", "")) else ""
-            def_cui = str(registro.get("CUIDAD", registro.get("CIUDAD", ""))) if not registro.empty else ""
+            def_cui = str(registro.get("CUIDAD", registro.get("CIUDAD", ""))) if not registro.empty and pd.notna(registro.get("CUIDAD", registro.get("CIUDAD", ""))) else ""
             def_cp = str(registro.get("CP", "")) if not registro.empty and pd.notna(registro.get("CP", "")) else ""
+            def_cp = def_cp.replace('.0', '') if def_cp else ""
             def_est = str(registro.get("ESTADO", "")) if not registro.empty and pd.notna(registro.get("ESTADO", "")) else ""
 
             tel_val = ""
             if not registro.empty:
                 for col_p in ["TELEFONO", "TEL", "TELÉFONO"]:
                     if col_p in registro and pd.notna(registro[col_p]):
-                        tel_val = str(registro[col_p]).strip()
+                        tel_val = str(registro[col_p]).replace('.0', '').strip()
                         break
 
             st.markdown("---")
