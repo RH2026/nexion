@@ -936,6 +936,140 @@ def main():
     tab1, tab2, tab3 = st.tabs(["Formato Solicitud", "Render de Estatus", "Edición y Actualización"])
 
     # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
+    # ==========================================
+# 5. INTERFAZ PRINCIPAL CON SISTEMA DE TABS
+# ==========================================
+def main():    
+    if "animacion_cargada" not in st.session_state:
+        time.sleep(0.08)
+        st.session_state.animacion_cargada = True
+    
+    st.markdown("""
+    <style>
+        /* 2. Estilo corporativo para los botones personalizados */
+        div.stButton > button,
+        div.stButton > button:link,
+        div.stButton > button:visited {
+            background-color: #2B343B !important; 
+            color: #FFFFFF !important;            
+            border: 1px solid #2B343B !important; 
+            border-radius: 5px !important;
+            transition: all 0.3s ease !important;
+            width: 100% !important;
+            box-shadow: none !important;
+        }
+        
+        div.stButton > button:hover,
+        div.stButton > button:focus {
+            background-color: #00A3A3 !important; 
+            color: #FFFFFF !important;            
+            border-color: #00A3A3 !important;
+            box-shadow: none !important;
+        }
+        
+        div.stButton > button:active {
+            background-color: #00A3A3 !important;
+            border-color: #00A3A3 !important;
+            color: #FFFFFF !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+    
+    # --- FUNCIONES DE GITHUB PARA EL CONTROL DE ESTATUS Y EDICIÓN ---
+    GITHUB_REPO = "RH2026/nexion"
+    GITHUB_FILE = "recolecciones_estatus.csv"
+    BRANCH = "main"
+
+    def cargar_estatus_github():
+        try:
+            url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{BRANCH}/{GITHUB_FILE}"
+            token = st.secrets["GITHUB_TOKEN"]
+            headers = {"Authorization": f"token {token}"}
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                df.columns = df.columns.astype(str).str.strip()
+                return df
+            else:
+                return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones"])
+        except Exception:
+            return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones"])
+
+    def guardar_estatus_github(df_nuevo, mensaje="Actualizar estatus de recolecciones"):
+        try:
+            token = st.secrets["GITHUB_TOKEN"]
+            url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
+            headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+            
+            response_get = requests.get(url, headers=headers)
+            sha = response_get.json().get("sha") if response_get.status_code == 200 else None
+
+            csv_buffer = df_nuevo.to_csv(index=False, encoding="utf-8-sig")
+            content_encoded = base64.b64encode(csv_buffer.encode("utf-8")).decode("utf-8")
+
+            payload = {
+                "message": mensaje,
+                "content": content_encoded,
+                "branch": BRANCH
+            }
+            if sha:
+                payload["sha"] = sha
+
+            response_put = requests.put(url, headers=headers, json=payload)
+            if response_put.status_code in [200, 201]:
+                return True
+            else:
+                st.error(f"Error al guardar en GitHub: {response_put.status_code} - {response_put.text}")
+                return False
+        except Exception as e:
+            st.error(f"No se pudo guardar en GitHub: {e}")
+            return False
+
+    # --- DEFINICIÓN DE TABS ---
+    tab1, tab2, tab3 = st.tabs(["Formato Solicitud", "Render de Estatus", "Edición y Actualización"])
+
+    # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
+    with tab1:
+        @st.cache_data(ttl=60)
+        def cargar_matriz_facturacion_completa():
+            try:
+                repo = "RH2026/nexion"
+                filename = "facturacion.csv"
+                branch = "main"
+                url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                token = st.secrets["GITHUB_TOKEN"]
+                headers = {"Authorization": f"token {token}"}
+                
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+                    df.columns = df.columns.astype(str).str.strip()
+                    return df
+                else:
+                    st.error(f"Error al descargar {filename} de GitHub (Código {response.status_code}).")
+                    return pd.DataFrame()
+            except Exception as e:
+                st.error(f"No se pudo cargar la matriz de facturación: {e}")
+                return pd.DataFrame()
+
+        @st.cache_data(ttl=300)
+        def obtener_logo_tresguerras():
+            try:
+                repo = "RH2026/nexion"
+                filename = "logo_3G.png"
+                branch = "main"
+                url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
+                token = st.secrets["GITHUB_TOKEN"]
+                headers = {"Authorization": f"token {token}"}
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    return BytesIO(response.content)
+                return None
+            except Exception:
+                return None
+
+        df_facturacion = cargar_matriz_facturacion_completa()
+        registro = pd.Series()
     @st.cache_data(ttl=60)
     def cargar_matriz_facturacion_completa():
         try:
