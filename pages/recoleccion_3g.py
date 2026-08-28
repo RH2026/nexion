@@ -943,7 +943,7 @@ def main():
             try:
                 repo = "RH2026/nexion"
                 # Actualizado a facturacion.xlsx como solicitaste
-                filename = "facturacion.xlsx" 
+                filename = "facturacion.csv" 
                 branch = "main"
                 url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
                 token = st.secrets["GITHUB_TOKEN"]
