@@ -1447,7 +1447,6 @@ def main():
     # --- TAB 2: RENDER DE ESTATUS ---
     # --- TAB 2: RENDER DE ESTATUS (NIVEL WAR ROOM) ---
     with tab2:
-        st.markdown(f"<div style='margin-bottom:20px; text-align:center;'><span style='color:#38bdf8; font-size:12px; font-weight:800; letter-spacing:4px; text-transform:uppercase;'>TABLERO GENERAL DE RENDER Y ESTATUS</span></div>", unsafe_allow_html=True)
         
         df_estatus = cargar_estatus_github()
 
@@ -1629,7 +1628,7 @@ def main():
 
     # --- TAB 3: EDICIÓN Y ACTUALIZACIÓN ---
     with tab3:
-        st.markdown("### ✏️ Gestión, Cambios y Actualización de Estatus")
+        st.markdown("")
         df_estatus_edit = cargar_estatus_github()
 
         if not df_estatus_edit.empty:
@@ -1652,7 +1651,7 @@ def main():
                     nuevo_proveedor = st.text_input("Proveedor Remitente", value=str(fila_actual.get("Proveedor", "")))
                     nuevo_peso = st.number_input("Peso Total (KG)", value=float(fila_actual.get("Peso_Total", 0.0)))
 
-                    btn_guardar_cambios = st.form_submit_button("💾 Guardar Cambios en GitHub")
+                    btn_guardar_cambios = st.form_submit_button(":MATERIAL/SAVE: GUARDAR CAMBIOS")
 
                     if btn_guardar_cambios:
                         idx_match = df_estatus_edit[df_estatus_edit["Folio"].astype(str) == str(folio_a_editar)].index
