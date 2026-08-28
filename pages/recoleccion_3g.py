@@ -352,7 +352,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         st.stop()
 
 # Blindaje de Módulo DASHBOARD
-verificar_permiso_pagina("FORMATOS" "RECOLECCIONES 3G")
+verificar_permiso_pagina("FORMATOS" "RECOLECCION 3G")
 
 
 # ==========================================
