@@ -803,7 +803,7 @@ def main():
                             </div>
                             <div class="w-3/5 shrink-0">
                                 <div class="label-mini">Cita</div>
-                                <div class="text-sm font-mono font-bold min-h-[20px] truncate {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-yellow-400"}">
+                                <div class="text-sm font-mono font-bold min-h-[20px] truncate {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-amber-300"}">
                                     {item['cita']}
                                 </div>
                             </div>
