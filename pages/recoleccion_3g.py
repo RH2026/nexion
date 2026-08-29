@@ -988,8 +988,8 @@ def main():
             if col_cliente_num:
                 df_facturacion[col_cliente_num] = df_facturacion[col_cliente_num].astype(str)
 
-            # --- CONTROLES DE BÚSQUEDA (EXCLUSIVO NÚMERO DE CLIENTE) ---
-            top_col1, top_col2, top_col3 = st.columns(3)
+            # --- CONTROLES DE BÚSQUEDA (EXCLUSIVO NÚMERO DE CLIENTE EN 4 COLUMNAS) ---
+            top_col1, top_col2, top_col3, top_col4 = st.columns(4)
             
             with top_col1:
                 fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now(), key="tg_fecha_rec")
@@ -1009,6 +1009,8 @@ def main():
 
             with top_col3:
                 num_factura = st.text_input("✍️ Folio / Referencia", value="S/F", key="tg_txt_fact_nuevo")
+
+            with top_col4:
                 tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
 
             # Mapeo seguro de datos desde el registro seleccionado
