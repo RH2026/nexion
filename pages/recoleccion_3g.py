@@ -935,6 +935,7 @@ def main():
     # --- DEFINICIÓN DE TABS ---
     tab1, tab2, tab3 = st.tabs(["Formato Solicitud", "Render de Estatus", "Edición y Actualización"])
     # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
+    # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
     with tab1:
         
         @st.cache_data(ttl=300)
@@ -998,7 +999,6 @@ def main():
                 if col_cliente_num:
                     clientes_disponibles = sorted(df_facturacion[col_cliente_num].dropna().unique().tolist())
                     cliente_elegido = st.selectbox("Selecciona No. Cliente", clientes_disponibles, key="tg_sel_cte")
-                    num_factura = st.text_input("✍️ Folio Nuevo (Asignar)", value="S/F", key="tg_txt_fact_nuevo")
                     
                     if cliente_elegido:
                         match_cte = df_facturacion[df_facturacion[col_cliente_num] == str(cliente_elegido)]
@@ -1006,16 +1006,16 @@ def main():
                             registro = match_cte.iloc[0]
                 else:
                     st.warning("No se encontró la columna CLIENTE en la matriz.")
-                    num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
 
             with top_col3:
+                num_factura = st.text_input("✍️ Folio / Referencia", value="S/F", key="tg_txt_fact_nuevo")
                 tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
 
-            # Mapeo: Extraemos estrictamente el nombre del hotel de NOMBRE_EXTRAN para el input
+            # Mapeo seguro de datos desde el registro seleccionado
             def_extran = str(registro.get(col_nombre_hotel, "")) if not registro.empty and col_nombre_hotel and pd.notna(registro.get(col_nombre_hotel, "")) else ""
-            def_dom = str(registro.get("DOMICILIO", registro.get("CALLE", ""))) if not registro.empty else ""
+            def_dom = str(registro.get("DOMICILIO", registro.get("CALLE", ""))) if not registro.empty and pd.notna(registro.get("DOMICILIO", registro.get("CALLE", ""))) else ""
             def_col = str(registro.get("COLONIA", "")) if not registro.empty and pd.notna(registro.get("COLONIA", "")) else ""
-            def_cui = str(registro.get("CUIDAD", registro.get("CIUDAD", ""))) if not registro.empty else ""
+            def_cui = str(registro.get("CUIDAD", registro.get("CIUDAD", ""))) if not registro.empty and pd.notna(registro.get("CUIDAD", registro.get("CIUDAD", ""))) else ""
             def_cp = str(registro.get("CP", "")) if not registro.empty and pd.notna(registro.get("CP", "")) else ""
             def_est = str(registro.get("ESTADO", "")) if not registro.empty and pd.notna(registro.get("ESTADO", "")) else ""
 
@@ -1039,48 +1039,48 @@ def main():
 
             with col1:
                 titulo_seccion("REMITENTE - RECOLECCIÓN (PROVEEDOR)", color_fondo="#e65100")
-                rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran, key=f"rem_cli_{num_factura}")
-                rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom, key=f"rem_call_{num_factura}")
+                rem_cliente = st.text_input("Comercializadora / Proveedor", value=def_extran, key=f"rem_cli_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
+                rem_calle = st.text_input("Calle y Número (Remitente)", value=def_dom, key=f"rem_call_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 rc1, rc2 = st.columns(2)
                 with rc1:
-                    rem_colonia = st.text_input("Colonia (Remitente)", value=def_col, key=f"rem_col_{num_factura}")
+                    rem_colonia = st.text_input("Colonia (Remitente)", value=def_col, key=f"rem_col_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 with rc2:
-                    rem_cp = st.text_input("CP (Remitente)", value=def_cp, key=f"rem_cp_{num_factura}")
+                    rem_cp = st.text_input("CP (Remitente)", value=def_cp, key=f"rem_cp_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 rc3, rc4 = st.columns(2)
                 with rc3:
-                    rem_cui = st.text_input("Ciudad / Municipio", value=def_cui, key=f"rem_cui_{num_factura}")
+                    rem_cui = st.text_input("Ciudad / Municipio", value=def_cui, key=f"rem_cui_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 with rc4:
-                    rem_estado = st.text_input("Estado", value=def_est, key=f"rem_est_{num_factura}")
+                    rem_estado = st.text_input("Estado", value=def_est, key=f"rem_est_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 rc5, rc6 = st.columns(2)
                 with rc5:
-                    rem_contacto = st.text_input("Persona que entrega", value="", key=f"rem_cont_{num_factura}")
+                    rem_contacto = st.text_input("Persona que entrega", value="", key=f"rem_cont_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 with rc6:
-                    rem_tel = st.text_input("Teléfono Remitente", value=tel_val, key=f"rem_tel_{num_factura}")
+                    rem_tel = st.text_input("Teléfono Remitente", value=tel_val, key=f"rem_tel_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
 
             with col2:
                 titulo_seccion("DESTINATARIO - ENTREGA (JYPESA)", color_fondo="#4B6B94")
-                dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados", key=f"dest_cli_{num_factura}")
-                dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155", key=f"dest_call_{num_factura}")
+                dest_cliente = st.text_input("Cliente Destino", value="Jabones y productos Especializados", key=f"dest_cli_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
+                dest_calle = st.text_input("Calle Destino", value="C. Cernícalo 155", key=f"dest_call_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 dc1, dc2 = st.columns(2)
                 with dc1:
-                    dest_colonia = st.text_input("Colonia Destino", value="La Aurora", key=f"dest_col_{num_factura}")
+                    dest_colonia = st.text_input("Colonia Destino", value="La Aurora", key=f"dest_col_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 with dc2:
-                    dest_cp = st.text_input("CP Destino", value="44460", key=f"dest_cp_{num_factura}")
+                    dest_cp = st.text_input("CP Destino", value="44460", key=f"dest_cp_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 dc3, dc4 = st.columns(2)
                 with dc3:
-                    dest_cui = st.text_input("Ciudad Destino", value="Guadalajara", key=f"dest_cui_{num_factura}")
+                    dest_cui = st.text_input("Ciudad Destino", value="Guadalajara", key=f"dest_cui_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 with dc4:
-                    dest_estado = st.text_input("Estado Destino", value="Jalisco", key=f"dest_est_{num_factura}")
+                    dest_estado = st.text_input("Estado Destino", value="Jalisco", key=f"dest_est_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 dc5, dc6 = st.columns(2)
                 with dc5:
-                    dest_contacto = st.text_input("Persona que recibe", value="Jazmin Castillo", key=f"dest_cont_{num_factura}")
+                    dest_contacto = st.text_input("Persona que recibe", value="Jazmin Castillo", key=f"dest_cont_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
                 with dc6:
-                    dest_tel = st.text_input("Teléfono Destino", value="33 3540 2939 Ext.123", key=f"dest_tel_{num_factura}")
+                    dest_tel = st.text_input("Teléfono Destino", value="33 3540 2939 Ext.123", key=f"dest_tel_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
 
             titulo_seccion("FACTURAR A (DATOS FISCALES JYPESA)", color_fondo="#37474f")
-            fac_cliente = st.text_input("Facturar a Nombre de", value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV", key=f"fac_cli_{num_factura}")
-            fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México", key=f"fac_dom_{num_factura}")
-            fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35", key=f"fac_rfc_{num_factura}")
+            fac_cliente = st.text_input("Facturar a Nombre de", value="JABONES Y PRODUCTOS ESPECIALIZADOS SA DE CV", key=f"fac_cli_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
+            fac_domicilio = st.text_input("Domicilio Fiscal", value="Privada del Gallo No. 1525, Col. La Aurora C.P. 44460 Guadalajara, JAL México", key=f"fac_dom_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
+            fac_rfc = st.text_input("RFC Facturación", value="JPE830408B35", key=f"fac_rfc_{cliente_elegido if 'cliente_elegido' in locals() else 'gen'}")
 
             # --- SECCIÓN DINÁMICA DE EMBARQUE ---
             st.markdown("---")
