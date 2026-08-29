@@ -957,7 +957,7 @@ def main():
         def cargar_matriz_facturacion_completa():
             try:
                 repo = "RH2026/nexion"
-                filename = "clientes.csv"  # <-- APUNTA CORRECTAMENTE A CLIENTES.CSV
+                filename = "clientes.csv"
                 branch = "main"
                 url = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}"
                 token = st.secrets["GITHUB_TOKEN"]
@@ -966,7 +966,6 @@ def main():
                 response = requests.get(url, headers=headers)
                 if response.status_code == 200:
                     df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
-                    # Limpieza absoluta de nombres de columnas (mayúsculas y sin espacios)
                     df.columns = [str(c).upper().strip() for c in df.columns]
                     return df
                 else:
@@ -980,51 +979,36 @@ def main():
         registro = pd.Series()    
 
         if not df_facturacion.empty:
-            # Asegurar columnas clave en mayúsculas y limpias de espacios
             df_facturacion.columns = [str(c).upper().strip() for c in df_facturacion.columns]
             
-            # Columnas exactas solicitadas
-            col_factura = "FACTURA" if "FACTURA" in df_facturacion.columns else df_facturacion.columns[0]
             col_cliente_num = "CLIENTE" if "CLIENTE" in df_facturacion.columns else None
             col_nombre_hotel = "NOMBRE_EXTRAN" if "NOMBRE_EXTRAN" in df_facturacion.columns else None
 
-            df_facturacion[col_factura] = df_facturacion[col_factura].astype(str)
             if col_cliente_num:
                 df_facturacion[col_cliente_num] = df_facturacion[col_cliente_num].astype(str)
 
-            # --- CONTROLES DE BÚSQUEDA ---
-            top_col1, top_col2, top_col3, top_col4 = st.columns(4)
+            # --- CONTROLES DE BÚSQUEDA (EXCLUSIVO NÚMERO DE CLIENTE) ---
+            top_col1, top_col2, top_col3 = st.columns(3)
             
             with top_col1:
                 fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now(), key="tg_fecha_rec")
             fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
 
             with top_col2:
-                criterio_busqueda = st.selectbox("🔍 Buscar por:", ["Folio de Factura", "Número de Cliente"], key="tg_criterio_busq")
+                if col_cliente_num:
+                    clientes_disponibles = sorted(df_facturacion[col_cliente_num].dropna().unique().tolist())
+                    cliente_elegido = st.selectbox("Selecciona No. Cliente", clientes_disponibles, key="tg_sel_cte")
+                    num_factura = st.text_input("✍️ Folio Nuevo (Asignar)", value="S/F", key="tg_txt_fact_nuevo")
+                    
+                    if cliente_elegido:
+                        match_cte = df_facturacion[df_facturacion[col_cliente_num] == str(cliente_elegido)]
+                        if not match_cte.empty:
+                            registro = match_cte.iloc[0]
+                else:
+                    st.warning("No se encontró la columna CLIENTE en la matriz.")
+                    num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
 
             with top_col3:
-                if criterio_busqueda == "Folio de Factura":
-                    facturas_disponibles = df_facturacion[col_factura].unique()
-                    num_factura = st.selectbox("Selecciona Factura", facturas_disponibles, key="tg_sel_fact")
-                    if num_factura in facturas_disponibles:
-                        match_df = df_facturacion[df_facturacion[col_factura] == str(num_factura)]
-                        if not match_df.empty:
-                            registro = match_df.iloc[0]
-                else:
-                    if col_cliente_num:
-                        clientes_disponibles = sorted(df_facturacion[col_cliente_num].dropna().unique().tolist())
-                        cliente_elegido = st.selectbox("Selecciona No. Cliente", clientes_disponibles, key="tg_sel_cte")
-                        num_factura = st.text_input("✍️ Folio Nuevo (Asignar)", value="S/F", key="tg_txt_fact_nuevo")
-                        
-                        if cliente_elegido:
-                            match_cte = df_facturacion[df_facturacion[col_cliente_num] == str(cliente_elegido)]
-                            if not match_cte.empty:
-                                registro = match_cte.iloc[0]
-                    else:
-                        st.warning("No se encontró la columna CLIENTE en la matriz.")
-                        num_factura = st.text_input("✍️ Ingresa Folio Manual", key="tg_txt_fact")
-
-            with top_col4:
                 tipo_pago_tg = st.selectbox("💳 Condición de Pago", ["POR COBRAR (DESTINO)", "PAGADO (ORIGEN)", "CRÉDITO"], key="tg_tipo_pago")
 
             # Mapeo: Extraemos estrictamente el nombre del hotel de NOMBRE_EXTRAN para el input
