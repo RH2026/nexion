@@ -1,7 +1,7 @@
-Folio,Fecha_Recoleccion,Cliente,Proveedor,Peso_Total,Estatus,Observaciones
-237147.0,31/07/2026,Jabones y productos Especializados,HOTEL HB,15.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras
-696.0,19/08/2026,Jabones y productos Especializados,,500.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras
-242402.0,24/08/2026,Jabones y productos Especializados,INSUMOS DEL NORTE,200.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras
-,24/08/2026,Jabones y productos Especializados,,20.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras
-,24/08/2026,Jabones y productos Especializados,,160.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras
-,24/08/2026,Jabones y productos Especializados,EXPO ABASTUR ,160.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras
+Folio,Fecha_Recoleccion,Cliente,Proveedor,Peso_Total,Estatus,Observaciones,Solicitante,Numero de Guia, Costo de la Guia
+237147.0,31/07/2026,Jabones y productos Especializados,HOTEL HB,15.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras,,
+696.0,19/08/2026,Jabones y productos Especializados,,500.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras,,
+242402.0,24/08/2026,Jabones y productos Especializados,INSUMOS DEL NORTE,200.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras,,
+,24/08/2026,Jabones y productos Especializados,,20.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras,,
+,24/08/2026,Jabones y productos Especializados,,160.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras,,
+,24/08/2026,Jabones y productos Especializados,EXPO ABASTUR ,160.0,PENDIENTE DE RECOLECCION,Creado desde solicitud Tresguerras,,
