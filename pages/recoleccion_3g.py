@@ -1432,7 +1432,10 @@ def main():
                         "Proveedor": str(rem_cliente),
                         "Peso_Total": float(total_peso_calc),
                         "Estatus": "PENDIENTE DE RECOLECCION",
-                        "Observaciones": "Creado desde solicitud Tresguerras"
+                        "Observaciones": "Creado desde solicitud Tresguerras",
+                        "Solicitante": "RIGOBERTO HERNANDEZ",
+                        "Numero de Guia": "",
+                        "Costo de la Guia": 0.0
                     }])
                     if not df_estatus_actual.empty and str(num_factura) in df_estatus_actual["Folio"].values:
                         df_estatus_actual.loc[df_estatus_actual["Folio"] == str(num_factura), ["Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total"]] = [fecha_rec_str, str(dest_cliente), str(rem_cliente), float(total_peso_calc)]
@@ -1645,12 +1648,20 @@ def main():
                     nuevo_estatus = st.selectbox(
                         "Estatus de la Recolección", 
                         ["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"],
-                        index=["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"].index(fila_actual["Estatus"]) if fila_actual["Estatus"] in ["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"] else 0
+                        index=["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"].index(fila_actual.get("Estatus", "PENDIENTE DE RECOLECCION")) if fila_actual.get("Estatus", "PENDIENTE DE RECOLECCION") in ["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"] else 0
                     )
-                    nueva_obs = st.text_area("Observaciones / Notas de Entrega", value=str(fila_actual.get("Observaciones", "")))
+                    
+                    col_e1, col_e2 = st.columns(2)
+                    with col_e1:
+                        nuevo_solicitante = st.text_input("Solicitante", value=str(fila_actual.get("Solicitante", "")))
+                        nuevo_num_guia = st.text_input("Número de Guía", value=str(fila_actual.get("Numero de Guia", "")))
+                    with col_e2:
+                        nuevo_costo_guia = st.number_input("Costo de la Guía", value=float(fila_actual.get("Costo de la Guia", 0.0)))
+                        nuevo_peso = st.number_input("Peso Total (KG)", value=float(fila_actual.get("Peso_Total", 0.0)))
+
                     nuevo_cliente = st.text_input("Cliente Destino", value=str(fila_actual.get("Cliente", "")))
                     nuevo_proveedor = st.text_input("Proveedor Remitente", value=str(fila_actual.get("Proveedor", "")))
-                    nuevo_peso = st.number_input("Peso Total (KG)", value=float(fila_actual.get("Peso_Total", 0.0)))
+                    nueva_obs = st.text_area("Observaciones / Notas de Entrega", value=str(fila_actual.get("Observaciones", "")))
 
                     btn_guardar_cambios = st.form_submit_button("💾 GUARDAR CAMBIOS")
 
@@ -1661,8 +1672,11 @@ def main():
                         df_estatus_edit.loc[idx_match, "Cliente"] = nuevo_cliente
                         df_estatus_edit.loc[idx_match, "Proveedor"] = nuevo_proveedor
                         df_estatus_edit.loc[idx_match, "Peso_Total"] = nuevo_peso
+                        df_estatus_edit.loc[idx_match, "Solicitante"] = nuevo_solicitante
+                        df_estatus_edit.loc[idx_match, "Numero de Guia"] = nuevo_num_guia
+                        df_estatus_edit.loc[idx_match, "Costo de la Guia"] = nuevo_costo_guia
 
-                        if guardar_estatus_github(df_estatus_edit, f"Actualización de estatus para folio {folio_a_editar}"):
+                        if guardar_estatus_github(df_estatus_edit, f"Actualización de estatus y datos para folio {folio_a_editar}"):
                             st.success(f"¡Cambios guardados correctamente en GitHub para el folio {folio_a_editar}!")
                             st.rerun()
         else:
