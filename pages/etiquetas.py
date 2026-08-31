@@ -11,6 +11,7 @@ from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfgen import canvas
 import pandas as pd
 import streamlit as st
+import pypdf
 from auth import exigir_autenticacion
 
 exigir_autenticacion("etiquetas")
@@ -365,6 +366,30 @@ def generar_etiquetas_nexion(df_datos):
     return output.getvalue()
 
 
+def recortar_etiquetas_amazon_pdf(file_bytes):
+    try:
+        reader = pypdf.PdfReader(BytesIO(file_bytes))
+        writer = pypdf.PdfWriter()
+
+        for page in reader.pages:
+            mediabox = page.mediabox
+            width = float(mediabox.width)
+            height = float(mediabox.height)
+            
+            # Recorte exacto al cuarto superior izquierdo (proporcional a 10.5 x 7.5 cm)
+            page.mediabox.lower_left = (0, height / 2)
+            page.mediabox.upper_right = (width / 2, height)
+            
+            writer.add_page(page)
+
+        output_pdf = io.BytesIO()
+        writer.write(output_pdf)
+        return output_pdf.getvalue()
+    except Exception as e:
+        st.error(f"Error procesando el PDF de Amazon: {e}")
+        return None
+
+
 # Inicialización segura de estados de menú
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "CENTRO DE DATOS"
@@ -480,19 +505,16 @@ with header_zone:
             if not res_ops.empty and not res_t1.empty:
                 for idx, row in res_ops.iterrows():
                     guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
                     if guia_actual in ["", "nan", "0", "None"]:
                         pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        # Buscamos coincidencia en T1 por número de pedido/factura
                         match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
                         if not match_en_t1.empty:
-                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
                             res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
                             res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
                             if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
                                 res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
 
-            # 4. Búsqueda en Inventario (Por si acaso se busca un SKU/Código)
+            # 4. Búsqueda en Inventario
             res_inv = pd.DataFrame()
             if res_ops.empty and res_t1.empty:
                 try:
@@ -507,7 +529,6 @@ with header_zone:
                 except Exception:
                     pass
 
-            # Asignación final de resultados
             if not res_ops.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
@@ -733,10 +754,11 @@ with header_zone:
 # 5. INTERFAZ PRINCIPAL (PESTAÑAS DE ETIQUETAS)
 # ==========================================
 def main():    
-    tab1, tab2, tab3 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
         "CARGAR POR EXCEL (Lote)", 
         "BASE DE DATOS GITHUB", 
-        "CAPTURA MANUAL"
+        "CAPTURA MANUAL",
+        "ETIQUETAS AMAZON (PDF)"
     ])
     
     with tab1:
@@ -841,7 +863,7 @@ def main():
 
         with col_m2:
             manual_direccion = st.text_area("DIRECCIÓN COMPLETA DE DESTINO", value="Av. Principal #123, Col. Centro, C.P. 44100, Guadalajara, Jal.", height=107, key="man_direccion")
-            manual_transporte = st.text_input("TRANSPORTE / PAQUETERÍA", value="TRES GUERRAS", key="man_transporte")
+            manual_transporte = st.text_input("TRANSPORTE / Paquetería", value="TRES GUERRAS", key="man_transporte")
 
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Generar Etiqueta Manual", use_container_width=True, key="btn_gen_manual_libre"):
@@ -868,6 +890,34 @@ def main():
                             mime="application/pdf",
                             use_container_width=True,
                             key="dl_manual_libre"
+                        )
+
+    with tab4:
+        st.subheader("📦 Ajustador y Recortador de Etiquetas Amazon (Tamaño Carta a ZM400)")
+        st.markdown("""
+            <div style="background-color: #263243; padding: 12px 15px; border-radius: 6px; color: #ffffff; font-size: 13px; margin-bottom: 20px; border-left: 4px solid #00D4FF;">
+                Sube tu PDF original de Amazon tamaño carta. El sistema recortará de forma automática el área exacta de las etiquetas para que puedas imprimirlas en tu Zebra ZM400 en <b>Tamaño Real</b> sin reducciones ni deformaciones.
+            </div>
+        """, unsafe_allow_html=True)
+
+        archivo_amazon = st.file_uploader("Sube el PDF de etiquetas Amazon (Tamaño Carta)", type=["pdf"], key="uploader_pdf_amazon")
+
+        if archivo_amazon:
+            bytes_pdf = archivo_amazon.read()
+            st.info(f"Archivo cargado correctamente ({len(bytes_pdf)} bytes). Listo para procesar.")
+
+            if st.button("Recortar y Preparar para Zebra", use_container_width=True, key="btn_procesar_amazon"):
+                with st.spinner("Procesando y recortando coordenadas del PDF..."):
+                    pdf_recortado_bytes = recortar_etiquetas_amazon_pdf(bytes_pdf)
+                    if pdf_recortado_bytes:
+                        st.success("¡Etiquetas ajustadas y listas para la ZM400!")
+                        st.download_button(
+                            label="📥 Descargar PDF Recortado para Impresión",
+                            data=pdf_recortado_bytes,
+                            file_name="etiquetas_amazon_zm400_listas.pdf",
+                            mime="application/pdf",
+                            use_container_width=True,
+                            key="dl_amazon_recortado"
                         )
 
 if __name__ == "__main__":
