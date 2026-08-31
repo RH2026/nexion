@@ -376,9 +376,19 @@ def recortar_etiquetas_amazon_pdf(file_bytes):
             width = float(mediabox.width)
             height = float(mediabox.height)
             
-            # Recorte exacto al cuarto superior izquierdo (proporcional a 10.5 x 7.5 cm)
-            page.mediabox.lower_left = (0, height / 2)
-            page.mediabox.upper_right = (width / 2, height)
+            # --- CALIBRACIÓN DE CORTES PARA AMAZON ---
+            # Una hoja carta mide 612 x 792 puntos.
+            # El cuadrante superior izquierdo original era: x: 0 a 306, y: 396 a 792.
+            # Para cortar MÁS de arriba y de abajo (acercando el encuadre a la etiqueta):
+            # Recortamos los márgenes laterales (izq/der) y ajustamos el alto (abajo/arriba).
+            
+            left = 30       # Margen izquierdo (para quitar el espacio blanco del borde)
+            right = 290     # Ancho del corte horizontal
+            bottom = 440    # Sube el corte inferior (para eliminar el espacio en blanco de abajo que dice "NO CUBRAS ESTA ETIQUETAS")
+            top = 770       # Baja un poco el corte superior (para eliminar el margen de arriba)
+            
+            page.mediabox.lower_left = (left, bottom)
+            page.mediabox.upper_right = (right, top)
             
             writer.add_page(page)
 
