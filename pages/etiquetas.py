@@ -382,7 +382,7 @@ def recortar_etiquetas_amazon_pdf(file_bytes):
             
             left = 30       # Margen izquierdo
             right = 310     # Ancho del cuadro de la etiqueta
-            bottom = 820    # Bajamos el corte inferior para eliminar el blanco de abajo pero conservar "NO CUBRAS ESTA ETIQUETA"
+            bottom = 620    # Bajamos el corte inferior para eliminar el blanco de abajo pero conservar "NO CUBRAS ESTA ETIQUETA"
             top = 792       # Subimos al tope máximo superior para que no corte el título de Amazon
             
             page.mediabox.lower_left = (left, bottom)
