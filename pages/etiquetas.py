@@ -380,7 +380,7 @@ def recortar_etiquetas_amazon_pdf(file_bytes):
             # Hoja carta: 612 x 792 puntos.
             # Cuadrante superior izquierdo base: x: 0 a 306, y: 396 a 792.
             
-            left = 30       # Margen izquierdo
+            left = 28       # Margen izquierdo
             right = 310     # Ancho del cuadro de la etiqueta
             bottom = 550    # Bajamos el corte inferior para eliminar el blanco de abajo pero conservar "NO CUBRAS ESTA ETIQUETA"
             top = 798       # Subimos al tope máximo superior para que no corte el título de Amazon
