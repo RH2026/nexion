@@ -742,17 +742,21 @@ def main():
         return y_actual 
     
     def generar_etiquetas_limpias(reg_datos, total_etqs, factura_val, transporte_val):
-        output = io.BytesIO()
-        c = canvas.Canvas(output, pagesize=letter)
-        width_carta, height_carta = letter
-        
-        w_rec, h_rec = 10.5 * cm, 7.5 * cm
-        x_offset, y_offset = 0.3 * cm, height_carta - h_rec - 0.3 * cm
-        
-        nombre_crudo = reg_datos.get('NOMBRE DEL HOTEL', 'SIN NOMBRE')
-        nombre_final = limpiar_parentesis(nombre_crudo)
-        direccion_final = reg_datos.get('DESTINO', 'DIRECCIÓN NO DISPONIBLE')
-        transporte_final = str(transporte_val if transporte_val else 'TRES GUERRAS')
+    output = io.BytesIO()
+    
+    # 1. Establecemos las medidas exactas de tu etiqueta térmica
+    w_rec, h_rec = 10.40 * cm, 8.08 * cm
+    
+    # 2. Configuramos el canvas directamente con ese tamaño (adiós a la hoja carta)
+    c = canvas.Canvas(output, pagesize=(w_rec, h_rec))
+    
+    # 3. Anulamos los márgenes de carta para que comience limpio en la esquina (0,0)
+    x_offset, y_offset = 0.0 * cm, 0.0 * cm
+    
+    nombre_crudo = reg_datos.get('NOMBRE DEL HOTEL', 'SIN NOMBRE')
+    nombre_final = limpiar_parentesis(nombre_crudo)
+    direccion_final = reg_datos.get('DESTINO', 'DIRECCIÓN NO DISPONIBLE')
+    transporte_final = str(transporte_val if transporte_val else 'TRES GUERRAS')
     
         for i in range(total_etqs):
             c.setDash(1, 2)
