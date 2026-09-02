@@ -654,6 +654,7 @@ with header_zone:
                             else:
                                 st.rerun()
         
+        
             if permisos.get("FINANZAS", False):
                 with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
                     opciones_fin_posibles = ["WALLET", "CAJA CHICA", "GASTOS"]
