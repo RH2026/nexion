@@ -20,8 +20,6 @@ from auth import exigir_autenticacion
 
 exigir_autenticacion("envios")
 
-
-
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
     page_title="JYPESA | Logistics",
@@ -645,10 +643,9 @@ with header_zone:
 
 
 # ==========================================
-# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (SIN FORMULARIO NI BOTONES EXTRA)
+# 5. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (CON FILTROS Y DESCARGA SIN GUÍA)
 # ==========================================
 def render_envios_flow_responsive(data):
-    # Ordenamos de más nuevo a más viejo por factura
     sorted_data = sorted(data, key=lambda x: str(x['factura']), reverse=True)
     
     html_content = f"""
@@ -668,20 +665,18 @@ def render_envios_flow_responsive(data):
             .list-row:hover {{ background-color: #2c3b42; border-color: rgba(56, 189, 248, 0.3); }}
             .label-mini {{ font-size: 8px; text-transform: uppercase; font-weight: 800; color: #BFBFBF; letter-spacing: 0.5px; margin-bottom: 2px; }}
             
-            /* Contenedor con scroll horizontal para móviles sin romper proporciones */
             .table-scroll-container {{
                 width: 100%;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
             }}
 
-            /* GRID REPARTIDO: Tamaños fijos mínimos garantizados para evitar compresión en celular */
             .grid-envios {{
                 display: grid;
                 grid-template-columns: 70px 160px 140px 140px minmax(140px, 1fr) 160px 140px 140px;
                 gap: 10px;
                 align-items: center;
-                min-width: 860px; /* Asegura que mantenga su estructura perfecta y active el scroll fluido en móviles */
+                min-width: 860px;
                 padding: 10px 14px;
             }}
         </style>
@@ -791,7 +786,7 @@ def main():
     else:
         modo_edicion = False
 
-    # ── BOTÓN DE ACTUALIZACIÓN RÁPIDA ────────────────────────
+    # ── TÍTULO Y BOTÓN DE ACTUALIZACIÓN ────────────────────────
     col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
     with col_titulo:
         st.markdown("""
@@ -804,7 +799,6 @@ def main():
     with col_btn_refrescar:
         if st.button("ACTUALIZAR DATOS", key="btn_refrescar_datos_envios", use_container_width=True):
             st.cache_data.clear()
-            # Incrementamos la versión del editor para forzar su reinicio con datos frescos
             st.session_state["editor_version"] = st.session_state.get("editor_version", 1) + 1
             st.session_state.pop("df_envios_cache_v", None)
             st.rerun()
@@ -813,7 +807,6 @@ def main():
     REPO_NAME = "RH2026/nexion"
     FILE_PATH = "envios.csv"
     
-    # Timestamp único para evitar caché agresiva en requests
     current_t = int(time.time() * 1000)
     CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}?_t={current_t}"
 
@@ -894,7 +887,6 @@ def main():
                 unsafe_allow_html=True,
             )
 
-            # Llave dinámica para que el editor se obligue a refrescar al compilar o actualizar
             editor_key = f"editor_envios_admin_session_{st.session_state.get('editor_version', 1)}"
 
             df_editado = st.data_editor(
@@ -1013,7 +1005,6 @@ def main():
         ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
         hoy_gdl = ahora_gdl.date()
         
-        # ── BLOQUE DE LÓGICA CORREGIDO: HERENCIA DE FECHA SI HAY GUÍA ──
         valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
         
         estatus_calculado = []
@@ -1025,7 +1016,6 @@ def main():
             tiene_g = g_str and g_str.lower() not in valores_nulos_fecha
             tiene_fe = fe_str.lower() not in valores_nulos_fecha
             
-            # Si tiene guía pero no tiene fecha de envío, heredamos la fecha de programación para mantener la congruencia
             if tiene_g and not tiene_fe and fp_str and fp_str.lower() not in valores_nulos_fecha:
                 fe_str = fp_str
                 tiene_fe = True
@@ -1033,7 +1023,6 @@ def main():
             dt_prog = pd.to_datetime(fp_str, dayfirst=True, errors='coerce')
             dt_env = pd.to_datetime(fe_str, dayfirst=True, errors='coerce')
             
-            # Definir límite de tiempo si hay fecha de programación
             tarde = False
             if pd.notna(dt_prog):
                 limite_24h = dt_prog + timedelta(hours=24)
@@ -1046,7 +1035,6 @@ def main():
             else:
                 fecha_prog_date = None
 
-            # APLICACIÓN DE TUS REGLAS:
             if tiene_g and tiene_fe:
                 estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
             elif not tiene_g and tiene_fe:
@@ -1063,7 +1051,7 @@ def main():
         df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
         df_envios = df_envios.sort_values(by='factura', ascending=True, ignore_index=True)
 
-        # ── BÚNKER DE FILTROS TÁCTICOS (SIN FORMULARIO NI BOTONES) ──
+        # ── BÚNKER DE FILTROS TÁCTICOS ──
         f1, f2, f3, f4, f5 = st.columns(5)
 
         with f1:
@@ -1100,6 +1088,37 @@ def main():
 
         if filtro_estatus != "TODOS":
             df_filtrado = df_filtrado[df_filtrado['estatus'] == filtro_estatus]
+
+        # ── BLOQUE EXCLUSIVO PARA RIGOBERTO: FILTRO Y DESCARGA SIN GUÍA ──
+        if es_admin:
+            st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+            col_switch_sin_guia, col_btn_descarga = st.columns([2.5, 1.5], vertical_alignment="center")
+            
+            with col_switch_sin_guia:
+                solo_sin_guia = st.toggle("🔍 Filtrar únicamente registros pendientes sin número de guía", value=False, key="toggle_solo_sin_guia_admin")
+            
+            if solo_sin_guia:
+                # Filtrar aquellos donde numero_guia esté vacío, sea 0, nan, o 'PENDIENTE'
+                mask_sin_guia = df_filtrado['numero_guia'].astype(str).str.strip().isin(['', 'nan', '0', '0.0', 'PENDIENTE'])
+                df_filtrado = df_filtrado[mask_sin_guia]
+
+            with col_btn_descarga:
+                # Preparamos el Excel limpio con los datos filtrados actuales
+                df_excel_export = df_filtrado.drop(columns=['dt_prog_parsed', 'dt_envio_parsed'], errors='ignore')
+                
+                output_buffer = io.BytesIO()
+                with pd.ExcelWriter(output_buffer, engine='xlsxwriter') as writer:
+                    df_excel_export.to_excel(writer, index=False, sheet_name='Envios_Seguimiento')
+                excel_data = output_buffer.getvalue()
+
+                st.download_button(
+                    label="📥 Descargar Reporte en Excel",
+                    data=excel_data,
+                    file_name=f"seguimiento_envios_sin_guia_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                    key="btn_download_excel_sin_guia"
+                )
 
         data_completa = df_filtrado.to_dict('records')
     else:
