@@ -8020,11 +8020,6 @@ else:
                 # --- CONFIGURACIÓN OPTIMIZADA Y VELOZ PARA GITHUB ---
                 @st.cache_data(ttl=10)
                 def cargar_csv_github():
-                    """
-                    Descarga el CSV directamente usando la API de Contenidos de GitHub con autenticación,
-                    garantizando que la información esté fresca al instante (TTL de 10 segundos) 
-                    y evitando los retrasos de la caché raw.
-                    """
                     try:
                         repo = "RH2026/nexion"
                         filename = "facturacion.csv"
@@ -8040,26 +8035,38 @@ else:
                         
                         response = requests.get(url, headers=headers)
                         
+                        # DIAGNÓSTICO 1: Ver qué código de estado HTTP regresa GitHub
+                        st.write(f"🔍 DEBUG - Status Code GitHub API: {response.status_code}")
+                        
                         if response.status_code == 200:
                             file_info = response.json()
-                            content_decoded = base64.b64decode(file_info["content"]).decode("utf-8-sig")
-                            df = pd.read_csv(BytesIO(content_decoded.encode("utf-8")), encoding="utf-8-sig")
-                            df.columns = df.columns.astype(str).str.strip()
-                            return df
-                        else:
-                            # Fallback rápido a la URL raw si la API llegara a fallar por cuota
-                            url_raw = f"https://raw.githubusercontent.com/{repo}/{branch}/{filename}?t={int(time.time())}"
-                            resp_raw = requests.get(url_raw, headers={"Authorization": f"token {token}"})
-                            if resp_raw.status_code == 200:
-                                df = pd.read_csv(BytesIO(resp_raw.content), encoding="utf-8-sig")
+                            
+                            # DIAGNÓSTICO 2: Ver las llaves del JSON que regresa la API
+                            st.write("🔍 DEBUG - Llaves del JSON recibido:", list(file_info.keys()))
+                            
+                            if "content" in file_info:
+                                raw_content_base64 = file_info["content"].replace("\n", "")
+                                content_decoded = base64.b64decode(raw_content_base64).decode("utf-8-sig")
+                                
+                                # DIAGNÓSTICO 3: Mostrar los primeros 300 caracteres del texto decodificado
+                                st.text(f"🔍 DEBUG - Primeros 300 caracteres decodificados:\n{content_decoded[:300]}")
+                                
+                                if not content_decoded.strip():
+                                    st.error("⚠️ El contenido decodificado del archivo está completamente vacío.")
+                                    return pd.DataFrame()
+                                    
+                                df = pd.read_csv(BytesIO(content_decoded.encode("utf-8")), encoding="utf-8-sig")
                                 df.columns = df.columns.astype(str).str.strip()
                                 return df
-                            
-                            st.error(f"Error al descargar de GitHub (Código {response.status_code}).")
+                            else:
+                                st.error("⚠️ El JSON de GitHub no contiene la llave 'content'.")
+                                return pd.DataFrame()
+                        else:
+                            st.error(f"⚠️ Error en la API de GitHub. Respuesta completa: {response.text}")
                             return pd.DataFrame()
                             
                     except Exception as e:
-                        st.error(f"No se pudo cargar el archivo CSV desde GitHub: {e}")
+                        st.error(f"❌ Excepción capturada al cargar CSV: {e}")
                         return pd.DataFrame()
                 
                 
