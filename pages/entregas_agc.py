@@ -1133,7 +1133,19 @@ def main():
         estatus_raw = df_raw.get('ESTATUS', pd.Series(['PENDIENTE']*num_rows)).fillna('PENDIENTE').astype(str).str.upper().str.strip()
         df_entregas['estatus'] = estatus_raw.replace('NAN', 'PENDIENTE').values
         
-        tipo_raw = df_raw.get('Unidad', pd.Series(['']*num_rows)).fillna('').astype(str).str.upper().str.strip()
+        # Detección flexible de la columna de tipo de unidad
+        col_unidad_encontrada = ''
+        for col in df_raw.columns:
+            col_upper = col.upper().strip()
+            if 'UNIDAD' in col_upper or col_upper == 'TIPO':
+                col_unidad_encontrada = col
+                break
+        
+        if col_unidad_encontrada:
+            tipo_raw = df_raw.get(col_unidad_encontrada, pd.Series(['']*num_rows)).fillna('').astype(str).str.upper().str.strip()
+        else:
+            tipo_raw = pd.Series(['CAMION']*num_rows) # Valor por defecto si no lo halla
+            
         df_entregas['tipo'] = tipo_raw.str.replace('Ó', 'O').values
         
         df_entregas = df_entregas.replace(r'(?i)^nan$', '', regex=True)
