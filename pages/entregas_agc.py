@@ -917,7 +917,6 @@ def main():
                         eventos_map[f_key][h_clean] = []
                     
                     oc_txt = str(item.get('oc', ''))
-                    tipo_unidad = str(item.get('tipo', ''))
                     producto_txt = str(item.get('producto', ''))
                     
                     tarima_val = str(item.get('tarimas_num', '0'))
@@ -929,8 +928,8 @@ def main():
                         except:
                             tarima_val = "0"
                     
-                    # Formato limpio para el calendario: OC, Tipo Unidad, Tarimas y Producto
-                    detalle_html = f"<div class='mb-1 font-bold text-amber-300'>{oc_txt} | {tipo_unidad} | {tarima_val} Tarimas</div><div class='text-xs text-slate-200 font-semibold'>{producto_txt}</div>"
+                    # Formato limpio para el calendario: solo Orden, Tarimas y Producto (sin unidad)
+                    detalle_html = f"<div class='mb-1 font-bold text-amber-300'>{oc_txt} | {tarima_val} Tarimas</div><div class='text-xs text-slate-200 font-semibold'>{producto_txt}</div>"
                     eventos_map[f_key][h_clean].append(detalle_html)
             except:
                 pass
