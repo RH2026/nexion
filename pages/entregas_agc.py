@@ -1112,6 +1112,22 @@ def main():
                 citas_combinadas.append(f"{c} - {h}")
                 
         df_entregas['cita'] = citas_combinadas
+
+        # ── ORDENAMIENTO POR FECHA DE CITA ──
+        def parse_fecha_cita(val):
+            val_str = str(val).upper().strip()
+            if "PENDIENTE" in val_str or not val_str or val_str in ['NAN', '0', '-']:
+                return datetime(9999, 12, 31)
+            try:
+                fecha_parte = val_str.split(" - ")[0].strip()
+                formato = "%d/%m/%Y" if len(fecha_parte.split('/')[-1]) == 4 else "%d/%m/%m"
+                return datetime.strptime(fecha_parte, formato)
+            except:
+                return datetime(9999, 12, 31)
+
+        df_entregas['_temp_dt'] = df_entregas['cita'].apply(parse_fecha_cita)
+        df_entregas = df_entregas.sort_values(by='_temp_dt', ascending=True).drop(columns=['_temp_dt']).reset_index(drop=True)
+        # ────────────────────────────────────
         
         estatus_raw = df_raw.get('ESTATUS', pd.Series(['PENDIENTE']*num_rows)).fillna('PENDIENTE').astype(str).str.upper().str.strip()
         df_entregas['estatus'] = estatus_raw.replace('NAN', 'PENDIENTE').values
