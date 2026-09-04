@@ -1068,6 +1068,7 @@ def main():
                     st.rerun()
             st.markdown("---")
 
+        # Construcción completa y segura de df_entregas antes de ordenar
         num_rows = len(df_raw)
         df_entregas = pd.DataFrame(index=range(num_rows))
         
@@ -1116,6 +1117,26 @@ def main():
                 
         df_entregas['cita'] = citas_combinadas
 
+        # Asignar estatus y tipo ANTES de ordenar para mantener la congruencia de filas
+        estatus_raw = df_raw.get('ESTATUS', pd.Series(['PENDIENTE']*num_rows)).fillna('PENDIENTE').astype(str).str.upper().str.strip()
+        df_entregas['estatus'] = estatus_raw.replace('NAN', 'PENDIENTE').values
+        
+        col_unidad_encontrada = ''
+        for col in df_raw.columns:
+            col_upper = col.upper().strip()
+            if 'UNIDAD' in col_upper or col_upper == 'TIPO':
+                col_unidad_encontrada = col
+                break
+        
+        if col_unidad_encontrada:
+            tipo_raw = df_raw.get(col_unidad_encontrada, pd.Series(['']*num_rows)).fillna('').astype(str).str.upper().str.strip()
+        else:
+            tipo_raw = pd.Series(['CAMION']*num_rows)
+            
+        df_entregas['tipo'] = tipo_raw.str.replace('Ó', 'O').values
+        df_entregas = df_entregas.replace(r'(?i)^nan$', '', regex=True)
+
+        # ── ORDENAMIENTO POR FECHA DE CITA (AHORA SÍ CON TODO INTEGRADO) ──
         def parse_fecha_cita(val):
             val_str = str(val).upper().strip()
             if "PENDIENTE" in val_str or not val_str or val_str in ['NAN', '0', '-']:
@@ -1129,26 +1150,7 @@ def main():
 
         df_entregas['_temp_dt'] = df_entregas['cita'].apply(parse_fecha_cita)
         df_entregas = df_entregas.sort_values(by='_temp_dt', ascending=True).drop(columns=['_temp_dt']).reset_index(drop=True)
-        
-        estatus_raw = df_raw.get('ESTATUS', pd.Series(['PENDIENTE']*num_rows)).fillna('PENDIENTE').astype(str).str.upper().str.strip()
-        df_entregas['estatus'] = estatus_raw.replace('NAN', 'PENDIENTE').values
-        
-        # Detección flexible de la columna de tipo de unidad
-        col_unidad_encontrada = ''
-        for col in df_raw.columns:
-            col_upper = col.upper().strip()
-            if 'UNIDAD' in col_upper or col_upper == 'TIPO':
-                col_unidad_encontrada = col
-                break
-        
-        if col_unidad_encontrada:
-            tipo_raw = df_raw.get(col_unidad_encontrada, pd.Series(['']*num_rows)).fillna('').astype(str).str.upper().str.strip()
-        else:
-            tipo_raw = pd.Series(['CAMION']*num_rows) # Valor por defecto si no lo halla
-            
-        df_entregas['tipo'] = tipo_raw.str.replace('Ó', 'O').values
-        
-        df_entregas = df_entregas.replace(r'(?i)^nan$', '', regex=True)
+        # ─────────────────────────────────────────────────────────────────
         
         data_completa = df_entregas.to_dict('records')
         data_pendientes = [item for item in data_completa if item['estatus'] != 'ENTREGADA']
