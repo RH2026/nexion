@@ -141,7 +141,7 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
     font-size: 9px; 
     letter-spacing: 2px; 
     border-top: 1px solid {vars_css['border']} !important; 
-    z-index: 999999 !important; 
+    z-index: 99999 <important; 
 }}
 </style>
 """,
@@ -233,7 +233,6 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("dashboard.py")
         st.stop()
 
-# Blindaje de Módulo ENTREGAS y Submenú AGC
 verificar_permiso_pagina("ENTREGAS", "AGC")
 
 
@@ -276,7 +275,6 @@ def limpiar_texto(texto):
     return " ".join(texto.split())
 
 
-# Inicialización segura de estados de menú
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "ENTREGAS"
 if "menu_sub" not in st.session_state:
@@ -786,12 +784,8 @@ def main():
                             </div>
                         </div>
 
-                        <div class="w-full md:w-[560px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
-                            <div class="w-2/5 shrink-0">
-                                <div class="label-mini">Volumen</div>
-                                <div class="text-sm font-bold text-white min-h-[20px] truncate">{item['cantidad']}</div>
-                            </div>
-                            <div class="w-3/5 shrink-0">
+                        <div class="w-full md:w-[420px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
+                            <div class="w-full shrink-0">
                                 <div class="label-mini">Cita</div>
                                 <div class="text-sm font-mono font-bold min-h-[20px] truncate {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-amber-300"}">
                                     {item['cita']}
@@ -854,8 +848,8 @@ def main():
         pdf.drawString(40, y, "FECHA / CITA")
         pdf.drawString(140, y, "OC / PEDIDO")
         pdf.drawString(240, y, "TIPO UNIDAD")
-        pdf.drawString(330, y, "VOLUMEN")
-        pdf.drawString(430, y, "PRODUCTO")
+        pdf.drawString(330, y, "TARIMAS")
+        pdf.drawString(410, y, "PRODUCTO")
         
         y -= 8
         pdf.setStrokeColorRGB(0.7, 0.7, 0.7)
@@ -871,8 +865,8 @@ def main():
             pdf.drawString(40, y, str(item.get('cita', ''))[:22])
             pdf.drawString(140, y, str(item.get('oc', ''))[:18])
             pdf.drawString(240, y, str(item.get('tipo', ''))[:15])
-            pdf.drawString(330, y, str(item.get('cantidad', ''))[:20])
-            pdf.drawString(430, y, str(item.get('producto', ''))[:25])
+            pdf.drawString(330, y, str(item.get('tarimas_num', '0'))[:10])
+            pdf.drawString(410, y, str(item.get('producto', ''))[:30])
             y -= 18
 
         if not citas_filtradas:
@@ -917,6 +911,9 @@ def main():
                         eventos_map[f_key][h_clean] = []
                     
                     oc_txt = str(item.get('oc', ''))
+                    tipo_unidad = str(item.get('tipo', ''))
+                    producto_txt = str(item.get('producto', ''))
+                    
                     tarima_val = str(item.get('tarimas_num', '0'))
                     if not tarima_val or tarima_val in ['0', 'nan', '0.0']:
                         try:
@@ -926,7 +923,9 @@ def main():
                         except:
                             tarima_val = "0"
                     
-                    eventos_map[f_key][h_clean].append(f"{oc_txt}, {tarima_val}Tarimas")
+                    # Formato limpio para el calendario: OC, Tipo Unidad, Tarimas y Producto
+                    detalle_html = f"<div class='mb-1 font-bold text-amber-300'>{oc_txt} | {tipo_unidad} | {tarima_val} Tarimas</div><div class='text-xs text-slate-200 font-semibold'>{producto_txt}</div>"
+                    eventos_map[f_key][h_clean].append(detalle_html)
             except:
                 pass
 
@@ -945,7 +944,7 @@ def main():
                 contenido_celda = "—"
                 if f_key in eventos_map and h in eventos_map[f_key]:
                     items_hora = eventos_map[f_key][h]
-                    contenido_celda = "<br>".join([f"<div class='mb-1 font-semibold text-white'>{it}</div>" for it in items_hora])
+                    contenido_celda = "<hr style='border-color:rgba(255,255,255,0.1); margin:4px 0;'>".join(items_hora)
                 
                 filas_html += f"<td class='p-3 text-center text-xs border-b border-white/5 bg-[#1a2327] align-top'>{contenido_celda}</td>"
             filas_html += "</tr>"
@@ -1064,7 +1063,6 @@ def main():
                     st.rerun()
             st.markdown("---")
 
-        # Construcción segura de df_entregas con longitud garantizada
         num_rows = len(df_raw)
         df_entregas = pd.DataFrame(index=range(num_rows))
         
@@ -1113,7 +1111,6 @@ def main():
                 
         df_entregas['cita'] = citas_combinadas
 
-        # ── ORDENAMIENTO POR FECHA DE CITA ──
         def parse_fecha_cita(val):
             val_str = str(val).upper().strip()
             if "PENDIENTE" in val_str or not val_str or val_str in ['NAN', '0', '-']:
@@ -1127,7 +1124,6 @@ def main():
 
         df_entregas['_temp_dt'] = df_entregas['cita'].apply(parse_fecha_cita)
         df_entregas = df_entregas.sort_values(by='_temp_dt', ascending=True).drop(columns=['_temp_dt']).reset_index(drop=True)
-        # ────────────────────────────────────
         
         estatus_raw = df_raw.get('ESTATUS', pd.Series(['PENDIENTE']*num_rows)).fillna('PENDIENTE').astype(str).str.upper().str.strip()
         df_entregas['estatus'] = estatus_raw.replace('NAN', 'PENDIENTE').values
