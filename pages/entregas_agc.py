@@ -785,10 +785,16 @@ def main():
                         </div>
 
                         <div class="w-full md:w-[420px] shrink-0 flex gap-4 py-2 md:py-0 border-y md:border-y-0 md:border-x border-white/5 md:px-8">
-                            <div class="w-full shrink-0">
+                            <div class="w-3/5 shrink-0">
                                 <div class="label-mini">Cita</div>
                                 <div class="text-sm font-mono font-bold min-h-[20px] truncate {"text-slate-500" if "PENDIENTE" in str(item['cita']).upper() else "text-amber-300"}">
                                     {item['cita']}
+                                </div>
+                            </div>
+                            <div class="w-2/5 shrink-0">
+                                <div class="label-mini">Tarimas</div>
+                                <div class="text-sm font-bold text-white min-h-[20px] truncate">
+                                    {item['tarimas_num']} Tarimas
                                 </div>
                             </div>
                         </div>
