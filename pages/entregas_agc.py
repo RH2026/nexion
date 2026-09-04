@@ -851,11 +851,12 @@ def main():
         y = height - 120
         pdf.setFillColorRGB(0.1, 0.1, 0.1)
         pdf.setFont("Helvetica-Bold", 9)
+        # Encabezados con posiciones más holgadas
         pdf.drawString(40, y, "FECHA / CITA")
-        pdf.drawString(140, y, "OC / PEDIDO")
-        pdf.drawString(240, y, "TIPO UNIDAD")
+        pdf.drawString(160, y, "OC / PEDIDO")
+        pdf.drawString(250, y, "UNIDAD")
         pdf.drawString(330, y, "TARIMAS")
-        pdf.drawString(410, y, "PRODUCTO")
+        pdf.drawString(400, y, "PRODUCTO")
         
         y -= 8
         pdf.setStrokeColorRGB(0.7, 0.7, 0.7)
@@ -868,11 +869,12 @@ def main():
                 pdf.showPage()
                 y = height - 50
             
-            pdf.drawString(40, y, str(item.get('cita', ''))[:22])
-            pdf.drawString(140, y, str(item.get('oc', ''))[:18])
-            pdf.drawString(240, y, str(item.get('tipo', ''))[:15])
-            pdf.drawString(330, y, str(item.get('tarimas_num', '0'))[:10])
-            pdf.drawString(410, y, str(item.get('producto', ''))[:30])
+            # Ampliamos los caracteres mostrados para que no se corte la hora
+            pdf.drawString(40, y, str(item.get('cita', ''))[:30])
+            pdf.drawString(160, y, str(item.get('oc', ''))[:15])
+            pdf.drawString(250, y, str(item.get('tipo', ''))[:12])
+            pdf.drawString(330, y, str(item.get('tarimas_num', '0'))[:8] + " Tarimas")
+            pdf.drawString(400, y, str(item.get('producto', ''))[:25])
             y -= 18
 
         if not citas_filtradas:
