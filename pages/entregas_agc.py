@@ -1,5 +1,5 @@
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 import re
 import time
@@ -355,7 +355,6 @@ with header_zone:
             except Exception:
                 df_matriz_fresco = cargar_datos_dashboard()
 
-            # 1. Búsqueda en Matriz Principal (Global)
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
                 cols_op = [
@@ -372,7 +371,6 @@ with header_zone:
                     ).any(axis=1)
                     res_ops = df_matriz_fresco[mask_ops].copy()
 
-            # 2. Búsqueda en Archivo T1.xlsx
             res_t1 = pd.DataFrame()
             try:
                 df_t1_temp = pd.read_excel("T1.xlsx") 
@@ -400,23 +398,18 @@ with header_zone:
             except Exception:
                 pass
 
-            # 3. CRUCE DE INFORMACIÓN (Si está en Matriz Global pero le falta la guía, se la inyectamos desde T1)
             if not res_ops.empty and not res_t1.empty:
                 for idx, row in res_ops.iterrows():
                     guia_actual = str(row.get("NÚMERO DE GUÍA", "")).strip()
-                    # Si en la matriz global la guía está vacía, NaN o ceros, la buscamos en T1
                     if guia_actual in ["", "nan", "0", "None"]:
                         pedido_global = str(row.get("NÚMERO DE PEDIDO", "")).strip()
-                        # Buscamos coincidencia en T1 por número de pedido/factura
                         match_en_t1 = res_t1[res_t1["NÚMERO DE PEDIDO"].astype(str).str.strip() == pedido_global]
                         if not match_en_t1.empty:
-                            # Tomamos la guía y los datos clave de T1 y se los asignamos al registro de la matriz global
                             res_ops.loc[idx, "NÚMERO DE GUÍA"] = match_en_t1.iloc[0].get("NÚMERO DE GUÍA", guia_actual)
                             res_ops.loc[idx, "FLETERA"] = match_en_t1.iloc[0].get("FLETERA", "TRES GUERRAS")
                             if "COSTO DE LA GUÍA" in match_en_t1.columns and pd.notna(match_en_t1.iloc[0].get("COSTO DE LA GUÍA")):
                                 res_ops.loc[idx, "COSTO DE LA GUÍA"] = match_en_t1.iloc[0].get("COSTO DE LA GUÍA")
 
-            # 4. Búsqueda en Inventario (Por si acaso se busca un SKU/Código)
             res_inv = pd.DataFrame()
             if res_ops.empty and res_t1.empty:
                 try:
@@ -431,7 +424,6 @@ with header_zone:
                 except Exception:
                     pass
 
-            # Asignación final de resultados
             if not res_ops.empty:
                 st.session_state.busqueda_activa = True
                 st.session_state.tipo_resultado = "OPERACION"
@@ -465,7 +457,6 @@ with header_zone:
                 unsafe_allow_html=True,
             )
         
-            # MÓDULOS Y SUBMENÚS CONDICIONADOS POR PERMISOS DE GITHUB
             if permisos.get("DASHBOARD", False):
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     st.session_state.menu_main = "DASHBOARD"
@@ -585,7 +576,6 @@ with header_zone:
                     del st.session_state[key]
                 st.rerun()
 
-    # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA ──────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
@@ -691,8 +681,8 @@ def main():
     if 'tipo_vista_agc' not in st.session_state:
         st.session_state.tipo_vista_agc = 'ENTREGAS'
 
-    if 'mes_calendario' not in st.session_state:
-        st.session_state.mes_calendario = datetime.now().month
+    if 'fecha_calendario_ref' not in st.session_state:
+        st.session_state.fecha_calendario_ref = datetime.now()
 
     col_btn1, col_btn2 = st.columns(2)
 
@@ -893,57 +883,72 @@ def main():
         buffer.seek(0)
         return buffer.getvalue()
 
-    def render_calendario_visual(data_completa, mes_num, anio=2026):
-        meses_nombres = {
-            1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO",
-            7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"
-        }
-        nombre_mes = meses_nombres.get(mes_num, "MES")
-        
-        eventos_dias = {}
+    def render_calendario_semanal_por_horas(data_completa, fecha_ref):
+        # Encontrar el lunes de la semana actual de la fecha de referencia
+        lunes = fecha_ref - timedelta(days=fecha_ref.weekday())
+        dias_semana = [lunes + timedelta(days=i) for i in range(7)] # Lunes a Domingo
+
+        # Mapear eventos por fecha (YYYY-MM-DD) y hora normalizada
+        eventos_map = {}
         for item in data_completa:
             if item.get('estatus') == 'ENTREGADA':
                 continue
             try:
-                fecha_str = str(item['cita']).split(" - ")[0].strip()
-                dt = datetime.strptime(fecha_str, "%d/%m/%m" if len(fecha_str.split('/')[2])==2 else "%d/%m/%Y")
-                if dt.month == mes_num and dt.year == anio:
-                    if dt.day not in eventos_dias: 
-                        eventos_dias[dt.day] = []
-                    eventos_dias[dt.day].append({"tipo": item['tipo'], "oc": item['oc'], "estatus": item['estatus']})
+                cita_raw = str(item['cita'])
+                partes = [p.strip() for p in cita_raw.split("-")]
+                if len(partes) >= 2:
+                    fecha_str = partes[0]
+                    hora_str = partes[1].upper()
+                    
+                    dt_cita = datetime.strptime(fecha_str, "%d/%m/%Y" if len(fecha_str.split('/')[-1])==4 else "%d/%m/%m")
+                    f_key = dt_cita.strftime("%Y-%m-%d")
+                    
+                    # Normalizar hora a formato HH:00 o mantener estricto
+                    h_clean = "08:00"
+                    if "11" in hora_str:
+                        h_clean = "11:00"
+                    elif "15" in hora_str or "03" in hora_str:
+                        h_clean = "15:00"
+                    elif ":" in hora_str:
+                        h_clean = hora_str[:5]
+                    else:
+                        h_clean = "08:00"
+
+                    if f_key not in eventos_map:
+                        eventos_map[f_key] = {}
+                    if h_clean not in eventos_map[f_key]:
+                        eventos_map[f_key][h_clean] = []
+                    
+                    # Extraer unidades/tarimas de cantidad o producto de forma limpia
+                    cant_txt = str(item.get('cantidad', '0'))
+                    eventos_map[f_key][h_clean].append(f"{item.get('oc','')}, {cant_txt}")
             except:
-                pass 
+                pass
 
-        cal = calendar.Calendar(firstweekday=6) 
-        semanas_mes = cal.monthdayscalendar(anio, mes_num)
+        horas_fijas = ["08:00", "11:00", "15:00"]
 
-        grid_html = ""
-        for semana in semanas_mes:
-            for dia in semana:
-                if dia == 0:
-                    grid_html += '<div class="bg-[#2a373d]/40 min-h-[115px] p-1 border border-white/5"></div>'
-                else:
-                    eventos_del_dia_html = ""
-                    if dia in eventos_dias:
-                        for ev in eventos_dias[dia]:
-                            bg_badge = "bg-sky-600/90 border-sky-400" if ev['tipo'] == "CAMION" else "bg-emerald-700/90 border-emerald-500"
-                            texto_badge = f"{ev['tipo']} - {ev['oc']}"
-                            
-                            eventos_del_dia_html += f'''
-                            <div class="text-[10px] font-bold text-white px-1.5 py-0.5 rounded border mb-1 truncate tracking-tight {bg_badge}">
-                                {texto_badge}
-                            </div>
-                            '''
+        # Encabezados de días
+        nombres_dias_es = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
+        columnas_html = "<th class='p-3 text-left text-xs font-black uppercase text-slate-400 border-b border-white/10 bg-[#212c31] sticky left-0 z-10'>Hora</th>"
+        for i, d in enumerate(dias_semana):
+            label_d = f"{d.strftime('%d')}-{nombres_dias_es[i]}"
+            columnas_html += f"<th class='p-3 text-center text-xs font-black uppercase text-slate-300 border-b border-white/10 bg-[#212c31]'>{label_d}</th>"
 
-                    grid_html += f'''
-                    <div class="bg-[#263238] min-h-[115px] p-2 border border-white/5 flex flex-col justify-between hover:bg-[#2c3b42] transition-colors">
-                        <span class="text-xs font-black text-slate-400 text-left">{dia}</span>
-                        <div class="overflow-y-auto max-h-[85px] space-y-1 mt-1 pr-0.5">
-                            {eventos_del_dia_html}
-                        </div>
-                    </div>
-                    '''
+        filas_html = ""
+        for h in horas_fijas:
+            filas_html += f"<tr><td class='p-3 font-mono font-bold text-xs text-sky-400 border-b border-white/5 bg-[#263238] sticky left-0'>{h}</td>"
+            for d in dias_semana:
+                f_key = d.strftime("%Y-%m-%d")
+                contenido_celda = "—"
+                if f_key in eventos_map and h in eventos_map[f_key]:
+                    items_hora = eventos_map[f_key][h]
+                    contenido_celda = "<br>".join([f"<div class='mb-1 font-semibold text-white'>{it}</div>" for it in items_hora])
+                
+                filas_html += f"<td class='p-3 text-center text-xs border-b border-white/5 bg-[#1a2327] align-top'>{contenido_celda}</td>"
+            filas_html += "</tr>"
 
+        mes_nombre = dias_semana[0].strftime("%B").upper()
+        
         html_calendario = f"""
         <!DOCTYPE html>
         <html lang="es">
@@ -953,32 +958,30 @@ def main():
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
             <style>
                 body {{ font-family: 'Inter', sans-serif; background-color: #384A52; color: #e2e8f0; margin:0; padding:0; width: 100%; }}
-                ::-webkit-scrollbar {{ width: 4px; }}
+                ::-webkit-scrollbar {{ width: 4px; height: 4px; }}
                 ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.2); border-radius: 4px; }}
             </style>
         </head>
         <body class="p-0">
             <div class="w-full bg-[#1e272c] rounded-xl border border-white/10 shadow-2xl overflow-hidden">
                 <div class="bg-[#263238] px-6 py-4 border-b border-white/10 flex justify-between items-center">
-                    <h2 class="text-xl font-black text-white tracking-widest italic">{nombre_mes} <span style="color: #34D399;" class="font-light">{anio}</span></h2>
-                    <div class="flex items-center gap-4 text-xs font-semibold">
-                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-sky-600 rounded"></div>CAMION</div>
-                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-emerald-700 rounded"></div>TRAILER</div>
-                    </div>
+                    <h2 class="text-xl font-black text-white tracking-widest italic">SEMANA ACTIVA <span style="color: #34D399;" class="font-light">({dias_semana[0].strftime('%d/%m/%Y')} al {dias_semana[-1].strftime('%d/%m/%Y')})</span></h2>
                 </div>
-                
-                <div class="grid grid-cols-7 bg-[#212c31] text-center py-2 text-xs font-black text-slate-400 tracking-wider uppercase border-b border-white/5">
-                    <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
-                </div>
-                
-                <div class="grid grid-cols-7 bg-[#1a2327]">
-                    {grid_html}
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr>{columnas_html}</tr>
+                        </thead>
+                        <tbody>
+                            {filas_html}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </body>
         </html>
         """
-        return components.html(html_calendario, height=750, scrolling=True)
+        return components.html(html_calendario, height=550, scrolling=True)
 
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
@@ -1070,7 +1073,7 @@ def main():
         cajas = cajas.replace({'': '0', '0.0': '0'})
         tarimas = tarimas.replace({'': '0', '0.0': '0'})
         
-        # --- AQUÍ ESTÁ EL CAMBIO ---
+        # NOTA: Mantenemos el renderizado de cajas limpio tal como lo solicitaste previamente
         tarimas_limpias = []
         for t_val in tarimas:
             try:
@@ -1122,33 +1125,21 @@ def main():
     if st.session_state.tipo_vista_agc == 'ENTREGAS':
         render_logistica_flow_responsive(data_pendientes)
     elif st.session_state.tipo_vista_agc == 'CALENDARIO':
-        col_mes_sel, col_btn_pdf = st.columns([3, 3])
+        col_nav1, col_nav2, col_btn_pdf = st.columns([1, 1, 4])
         
-        with col_mes_sel:
-            opciones_meses = {
-                "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6,
-                "JULIO": 7, "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
-            }
-            
-            if st.session_state.mes_calendario not in opciones_meses.values():
-                st.session_state.mes_calendario = datetime.now().month
-
-            nombre_mes_actual = [k for k, v in opciones_meses.items() if v == st.session_state.mes_calendario][0]
-            
-            mes_seleccionado = st.selectbox(
-                "SELECCIONAR MES A VISUALIZAR", 
-                list(opciones_meses.keys()),
-                index=list(opciones_meses.keys()).index(nombre_mes_actual)
-            )
-            
-            if opciones_meses[mes_seleccionado] != st.session_state.mes_calendario:
-                st.session_state.mes_calendario = opciones_meses[mes_seleccionado]
+        with col_nav1:
+            if st.button("◀ SEMANA ANTERIOR", use_container_width=True):
+                st.session_state.fecha_calendario_ref -= timedelta(days=7)
+                st.rerun()
+        with col_nav2:
+            if st.button("SEMANA SIGUIENTE ▶", use_container_width=True):
+                st.session_state.fecha_calendario_ref += timedelta(days=7)
                 st.rerun()
 
         with col_btn_pdf:
-            st.markdown("<div style='margin-top: 27px;'></div>", unsafe_allow_html=True)
-            pdf_bytes = generar_pdf_citas_mes(data_completa, st.session_state.mes_calendario)
-            nombre_archivo_pdf = f"citas_pendientes_agc{nombre_mes_actual.lower()}_2026.pdf"
+            pdf_bytes = generar_pdf_citas_mes(data_completa, st.session_state.fecha_calendario_ref.month)
+            nombre_mes_actual = st.session_state.fecha_calendario_ref.strftime("%B").lower()
+            nombre_archivo_pdf = f"citas_pendientes_agc_{nombre_mes_actual}_2026.pdf"
             
             st.download_button(
                 label="DESCARGAR PDF DE CITAS DEL MES",
@@ -1158,7 +1149,7 @@ def main():
                 use_container_width=True
             )
             
-        render_calendario_visual(data_completa, st.session_state.mes_calendario)
+        render_calendario_semanal_por_horas(data_completa, st.session_state.fecha_calendario_ref)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
