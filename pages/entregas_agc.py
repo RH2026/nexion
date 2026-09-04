@@ -884,11 +884,9 @@ def main():
         return buffer.getvalue()
 
     def render_calendario_semanal_por_horas(data_completa, fecha_ref):
-        # Encontrar el lunes de la semana actual de la fecha de referencia
         lunes = fecha_ref - timedelta(days=fecha_ref.weekday())
-        dias_semana = [lunes + timedelta(days=i) for i in range(7)] # Lunes a Domingo
+        dias_semana = [lunes + timedelta(days=i) for i in range(7)]
 
-        # Mapear eventos por fecha (YYYY-MM-DD) y hora normalizada
         eventos_map = {}
         for item in data_completa:
             if item.get('estatus') == 'ENTREGADA':
@@ -903,7 +901,6 @@ def main():
                     dt_cita = datetime.strptime(fecha_str, "%d/%m/%Y" if len(fecha_str.split('/')[-1])==4 else "%d/%m/%m")
                     f_key = dt_cita.strftime("%Y-%m-%d")
                     
-                    # Normalizar hora a formato HH:00 o mantener estricto
                     h_clean = "08:00"
                     if "11" in hora_str:
                         h_clean = "11:00"
@@ -919,15 +916,21 @@ def main():
                     if h_clean not in eventos_map[f_key]:
                         eventos_map[f_key][h_clean] = []
                     
-                    # Extraer unidades/tarimas de cantidad o producto de forma limpia
-                    cant_txt = str(item.get('cantidad', '0'))
-                    eventos_map[f_key][h_clean].append(f"{item.get('oc','')}, {cant_txt}")
+                    oc_txt = str(item.get('oc', ''))
+                    tarima_val = str(item.get('tarimas_num', '0'))
+                    if not tarima_val or tarima_val in ['0', 'nan', '0.0']:
+                        try:
+                            cant_raw = str(item.get('cantidad', ''))
+                            if "TARIMAS" in cant_raw:
+                                tarima_val = cant_raw.split("TARIMAS")[0].split("/")[-1].strip()
+                        except:
+                            tarima_val = "0"
+                    
+                    eventos_map[f_key][h_clean].append(f"{oc_txt}, {tarima_val}Tarimas")
             except:
                 pass
 
         horas_fijas = ["08:00", "11:00", "15:00"]
-
-        # Encabezados de días
         nombres_dias_es = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
         columnas_html = "<th class='p-3 text-left text-xs font-black uppercase text-slate-400 border-b border-white/10 bg-[#212c31] sticky left-0 z-10'>Hora</th>"
         for i, d in enumerate(dias_semana):
@@ -946,8 +949,6 @@ def main():
                 
                 filas_html += f"<td class='p-3 text-center text-xs border-b border-white/5 bg-[#1a2327] align-top'>{contenido_celda}</td>"
             filas_html += "</tr>"
-
-        mes_nombre = dias_semana[0].strftime("%B").upper()
         
         html_calendario = f"""
         <!DOCTYPE html>
@@ -1063,17 +1064,19 @@ def main():
                     st.rerun()
             st.markdown("---")
 
-        df_entregas = pd.DataFrame()
-        df_entregas['oc'] = df_raw.get('PO Customer', pd.Series(dtype=str)).fillna('').astype(str)
-        df_entregas['item_no'] = df_raw.get('Item No.', pd.Series(dtype=str)).fillna('').astype(str)
-        df_entregas['producto'] = df_raw.get('PRODUCTO', pd.Series(dtype=str)).fillna('').astype(str)
+        # Construcción segura de df_entregas con longitud garantizada
+        num_rows = len(df_raw)
+        df_entregas = pd.DataFrame(index=range(num_rows))
         
-        cajas = df_raw.get('Cajas a Entregar', pd.Series(dtype=str)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
-        tarimas = df_raw.get('Tarimas', pd.Series(dtype=str)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
+        df_entregas['oc'] = df_raw.get('PO Customer', pd.Series(['']*num_rows)).fillna('').astype(str).values
+        df_entregas['item_no'] = df_raw.get('Item No.', pd.Series(['']*num_rows)).fillna('').astype(str).values
+        df_entregas['producto'] = df_raw.get('PRODUCTO', pd.Series(['']*num_rows)).fillna('').astype(str).values
+        
+        cajas = df_raw.get('Cajas a Entregar', pd.Series(['0']*num_rows)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
+        tarimas = df_raw.get('Tarimas', pd.Series(['0']*num_rows)).fillna('').astype(str).str.lower().str.replace('nan', '0').str.strip()
         cajas = cajas.replace({'': '0', '0.0': '0'})
         tarimas = tarimas.replace({'': '0', '0.0': '0'})
         
-        # NOTA: Mantenemos el renderizado de cajas limpio tal como lo solicitaste previamente
         tarimas_limpias = []
         for t_val in tarimas:
             try:
@@ -1085,12 +1088,13 @@ def main():
             except ValueError:
                 tarimas_limpias.append(t_val)
         
-        df_entregas['cantidad'] = cajas + " CJS / " + pd.Series(tarimas_limpias).values + " TARIMAS"
-        df_entregas['semana'] = "OV: " + df_raw.get('OV Jypesa', pd.Series(dtype=str)).fillna('').astype(str)
-        df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', pd.Series(dtype=str)).fillna('').astype(str)
+        df_entregas['tarimas_num'] = tarimas_limpias
+        df_entregas['cantidad'] = cajas.values + " CJS / " + pd.Series(tarimas_limpias).values + " TARIMAS"
+        df_entregas['semana'] = "OV: " + df_raw.get('OV Jypesa', pd.Series(['']*num_rows)).fillna('').astype(str).values
+        df_entregas['entrega_texto'] = df_raw.get('FECHA HORACIO', pd.Series(['']*num_rows)).fillna('').astype(str).values
         
-        cita_series = df_raw.get('CITA', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
-        hora_series = df_raw.get('HORA', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+        cita_series = df_raw.get('CITA', pd.Series(['']*num_rows)).fillna('').astype(str).str.strip().values
+        hora_series = df_raw.get('HORA', pd.Series(['']*num_rows)).fillna('').astype(str).str.strip().values
         
         valores_nulos = ['', 'nan', '0', '0.0', '-', 'nat']
         citas_combinadas = []
@@ -1108,11 +1112,12 @@ def main():
                 citas_combinadas.append(f"{c} - {h}")
                 
         df_entregas['cita'] = citas_combinadas
-        df_entregas['estatus'] = df_raw.get('ESTATUS', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
-        df_entregas['estatus'] = df_entregas['estatus'].replace('NAN', 'PENDIENTE')
         
-        df_entregas['tipo'] = df_raw.get('Unidad', pd.Series(dtype=str)).fillna('').astype(str).str.upper().str.strip()
-        df_entregas['tipo'] = df_entregas['tipo'].str.replace('Ó', 'O') 
+        estatus_raw = df_raw.get('ESTATUS', pd.Series(['PENDIENTE']*num_rows)).fillna('PENDIENTE').astype(str).str.upper().str.strip()
+        df_entregas['estatus'] = estatus_raw.replace('NAN', 'PENDIENTE').values
+        
+        tipo_raw = df_raw.get('Unidad', pd.Series(['']*num_rows)).fillna('').astype(str).str.upper().str.strip()
+        df_entregas['tipo'] = tipo_raw.str.replace('Ó', 'O').values
         
         df_entregas = df_entregas.replace(r'(?i)^nan$', '', regex=True)
         
