@@ -73,19 +73,22 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* CAJA DE BÚSQUEDA MÁS ALTA Y TEXTO MÁS GRANDE AL CENTRO */
+/* CAJA DE BÚSQUEDA MÁS ALTA Y TEXTO CENTRADO CORRECTAMENTE */
 div[data-baseweb="input"] {{
-    height: 52px !important;
-    border-radius: 6px !important;
+    height: 60px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
 }}
 
 div[data-baseweb="input"] input {{
-    font-size: 16px !important;
-    font-weight: 600 !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
     color: {vars_css['text']} !important;
     text-align: center !important;
-    height: 52px !important;
-    padding: 0 15px !important;
+    height: 60px !important;
+    line-height: 60px !important;
+    padding: 0 20px !important;
 }}
 
 /* BOTÓN RASTREAR MÁS ALTO Y LLAMATIVO */
@@ -412,7 +415,7 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # Contenedor centrado para la caja de búsqueda y botón (más alta y texto centrado)
+    # Contenedor centrado para la caja de búsqueda y botón (más alta y texto centrado vertical/horizontalmente)
     col_l, col_c, col_r = st.columns([1, 2.8, 1])
     with col_c:
         es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
@@ -426,7 +429,7 @@ def main():
             disabled=es_atencion3g,
         )
 
-        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
         btn_buscar = st.button("RASTREAR ➔", use_container_width=True, type="primary")
 
         if query or btn_buscar:
