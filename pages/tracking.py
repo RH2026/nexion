@@ -221,7 +221,7 @@ if "tipo_resultado" not in st.session_state:
     st.session_state.tipo_resultado = "OPERACION"
 
 # ==========================================
-# HEADER CON 4 COLUMNAS Y MENÚ HAMBURGUESA IDÉNTICO
+# HEADER CON 4 COLUMNAS (ESPACIOS CONSERVADOS SIN CAJA DE BÚSQUEDA)
 # ==========================================
 header_zone = st.container()
 with header_zone:
@@ -249,43 +249,8 @@ with header_zone:
         )
 
     with c3:
-        es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
-        key_actual = f"main_search_v{st.session_state.search_key_version}"
-
-        query = st.text_input(
-            "Buscar",
-            placeholder="🔍 BUSCADOR DESACTIVADO" if es_atencion3g else "🔍 Buscar factura, pedido, guía...",
-            label_visibility="collapsed",
-            key=key_actual,
-            disabled=es_atencion3g,
-        )
-
-        if query:
-            url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
-            try:
-                df_matriz_fresco = pd.read_csv(url_raw)
-                df_matriz_fresco.columns = df_matriz_fresco.columns.str.strip()
-            except Exception:
-                df_matriz_fresco = cargar_datos_dashboard()
-
-            res_ops = pd.DataFrame()
-            if df_matriz_fresco is not None:
-                cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
-                cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
-                if cols_op_disp:
-                    mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
-                        lambda x: x.str.contains(query, case=False, na=False)
-                    ).any(axis=1)
-                    res_ops = df_matriz_fresco[mask_ops].copy()
-
-            if not res_ops.empty:
-                st.session_state.busqueda_activa = True
-                st.session_state.tipo_resultado = "OPERACION"
-                st.session_state.resultado_busqueda = res_ops
-            else:
-                st.session_state.busqueda_activa = False
-                st.session_state.resultado_busqueda = None
-                st.toast("Sin resultados en Matriz Global", icon="⚠️")
+        # Espacio conservado exactamente idéntico al original, sin la caja de búsqueda en el header
+        st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
 
     with c4:
         with st.popover("☰ Menú", use_container_width=True):
@@ -411,15 +376,79 @@ with header_zone:
                 st.session_state.splash_completado = False
                 st.rerun()
 
-    # RENDERIZADO DE RESULTADOS DE BÚSQUEDA (TIMELINE DETALLADO)
+st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:15px 0; opacity:0.1;'>", unsafe_allow_html=True)
+
+
+# ==========================================
+# CUERPO PRINCIPAL: CENTRO DE BÚSQUEDA TIPO TRES GUERRAS (ESTILO NEXION)
+# ==========================================
+def main():
+    # ── BLOQUE DE BÚSQUEDA CENTRALIZADO E IMPRESIONANTE ────────────────────────
+    st.markdown("""
+        <div style="text-align: center; padding: 20px 0 25px 0; font-family: 'Inter', sans-serif;">
+            <p style="color: #00FFAA; font-size: 11px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px;">
+                NEXION SMART LOGISTICS // RASTREO
+            </p>
+            <h1 style="color: white; font-size: 32px; font-weight: 800; margin: 0; letter-spacing: 1px;">
+                Para realizar la <span style="color: #00FFAA;">búsqueda</span> ingrese el <span style="color: #82D4E6;">talón o pedido</span>
+            </h1>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Contenedor centrado para la caja de búsqueda y botón
+    col_l, col_c, col_r = st.columns([1, 2.5, 1])
+    with col_c:
+        es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
+        key_actual = f"main_search_v{st.session_state.search_key_version}"
+
+        query = st.text_input(
+            "Buscar en central",
+            placeholder="🔍 INGRESE NÚMERO DE GUÍA, PEDIDO O CLIENTE..." if not es_atencion3g else "🔍 BUSCADOR DESACTIVADO",
+            label_visibility="collapsed",
+            key=key_actual,
+            disabled=es_atencion3g,
+        )
+
+        btn_buscar = st.button("RASTREAR ➔", use_container_width=True, type="primary")
+
+        if query or btn_buscar:
+            if query:
+                url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+                try:
+                    df_matriz_fresco = pd.read_csv(url_raw)
+                    df_matriz_fresco.columns = df_matriz_fresco.columns.str.strip()
+                except Exception:
+                    df_matriz_fresco = cargar_datos_dashboard()
+
+                res_ops = pd.DataFrame()
+                if df_matriz_fresco is not None:
+                    cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
+                    cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
+                    if cols_op_disp:
+                        mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
+                            lambda x: x.str.contains(query, case=False, na=False)
+                        ).any(axis=1)
+                        res_ops = df_matriz_fresco[mask_ops].copy()
+
+                if not res_ops.empty:
+                    st.session_state.busqueda_activa = True
+                    st.session_state.tipo_resultado = "OPERACION"
+                    st.session_state.resultado_busqueda = res_ops
+                else:
+                    st.session_state.busqueda_activa = False
+                    st.session_state.resultado_busqueda = None
+                    st.toast("Sin resultados en Matriz Global", icon="⚠️")
+
+    # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA (TIMELINE DETALLADO) ────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
+        st.markdown("<br>", unsafe_allow_html=True)
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
         azul_premium = "#00D4FF"
 
         col_espacio, col_cerrar = st.columns([0.85, 0.15])
         with col_cerrar:
-            if st.button("✕ CERRAR", key="btn_cerrar_top", use_container_width=True):
+            if st.button("✕ CERRAR RESULTADOS", key="btn_cerrar_top", use_container_width=True):
                 st.session_state.busqueda_activa = False
                 st.session_state.resultado_busqueda = None
                 st.session_state.search_key_version += 1
@@ -489,26 +518,9 @@ with header_zone:
                 status_text = d["COMENTARIOS"] if "COMENTARIOS" in d and pd.notna(d.get("COMENTARIOS")) else "OK"
                 st.markdown(f"<div style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {azul_premium};border-radius:12px;padding:18px 25px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:18px;color:{azul_premium};letter-spacing:0.5px;'># {d.get('NÚMERO DE PEDIDO','')}</b><br><span style='font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;'>Envío: {d.get('FECHA DE ENVÍO','')}</span></div><div style='flex:2.5;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('NOMBRE DEL CLIENTE','')}</b><br><i style='font-size:11px;color:rgba(255,255,255,0.5);font-style:normal;font-weight:600;'>{d.get('DESTINO','')}</i></div><div style='flex:1.8;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>TRANSPORTE Y GUÍA</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('FLETERA', 'LOGÍSTICA')}</b><br><span style='font-size:12px;color:{azul_premium};font-weight:700;font-family:monospace;'>{d.get('NÚMERO DE GUÍA','')}</span></div><div style='flex:1.2;text-align:right;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>ESTATUS ENTREGA</span><br><b style='font-size:14px;color:{azul_premium};'>{d.get('FECHA DE ENTREGA REAL','')}</b><br><span style='font-size:10px;color:white;font-weight:800;text-transform:uppercase;opacity:0.8;'>{status_text}</span></div></div>", unsafe_allow_html=True)
 
-    st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+    st.markdown("<br><hr style='border-top:1px solid #ffffff; opacity:0.1;'><br>", unsafe_allow_html=True)
 
-st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
-
-
-# ==========================================
-# CUERPO PRINCIPAL: VISTA DE TRACKING & TIMELINE IMPRESIONANTE
-# ==========================================
-def main():
-    st.markdown("""
-        <div style="background: #2B343B; border: 1px solid #4B5D67; border-left: 5px solid #00FFAA; padding: 30px 35px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-            <h2 style="color: #00FFAA; margin: 0 0 12px 0; font-size: 18px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">
-                NEXION // CENTRAL DE RASTREO Y TRAYECTORIA INTELIGENTE
-            </h2>
-            <p style="color: rgba(255,255,255,0.85); font-size: 14px; margin: 0; line-height: 1.6;">
-                Bienvenida a la central de seguimiento de NEXION. Utiliza el buscador superior para rastrear facturas, números de pedido o guías de embarque al instante. El sistema desplegará de forma automática el timeline completo de entrega, transportista asignado, promesa de entrega y el estatus real con precisión milimétrica.
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
-
+    # ── SECCIÓN INFERIOR: ÚLTIMOS ENVÍOS ACTIVOS ────────────────────────
     df_raw = cargar_datos_dashboard()
     if df_raw is not None:
         st.markdown("<p style='color: #00D4FF; font-weight: 800; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 20px;'>📋 ÚLTIMOS ENVÍOS ACTIVOS EN TRAYECTORIA</p>", unsafe_allow_html=True)
@@ -549,8 +561,6 @@ def main():
                     </div>
                 </div>
             """, unsafe_allow_html=True)
-    else:
-        st.info("Conectando con la base de datos de envíos...")
 
 if __name__ == "__main__":
     main()
