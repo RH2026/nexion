@@ -73,18 +73,28 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
+/* TARJETA FLOTANTE CENTRAL CON SOMBRAS PROFUNDAS */
+.floating-search-card {{
+    background: {vars_css['card']};
+    border: 1px solid {vars_css['border']};
+    border-radius: 14px;
+    padding: 25px;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.5);
+    margin-bottom: 20px;
+}}
+
 /* CAJA DE BÚSQUEDA MINIMALISTA Y POTENTE */
 div[data-baseweb="base-input"] {{
-    height: 65px !important;
-    min-height: 65px !important;
+    height: 60px !important;
+    min-height: 60px !important;
     background-color: #212B30 !important;
     border-radius: 10px !important;
     border: 1px solid {vars_css['border']} !important;
 }}
 
 div[data-baseweb="input"] {{
-    height: 65px !important;
-    min-height: 65px !important;
+    height: 60px !important;
+    min-height: 60px !important;
     background-color: transparent !important;
     display: flex !important;
     align-items: center !important;
@@ -92,12 +102,12 @@ div[data-baseweb="input"] {{
 
 div[data-baseweb="input"] input {{
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 19px !important;
+    font-size: 18px !important;
     font-weight: 700 !important;
     color: #00FFAA !important;
     text-align: center !important;
-    height: 65px !important;
-    line-height: 65px !important;
+    height: 60px !important;
+    line-height: 60px !important;
     padding: 0 20px !important;
     background: transparent !important;
     letter-spacing: 1px !important;
@@ -108,13 +118,13 @@ div[data-baseweb="input"] input::placeholder {{
     color: rgba(255, 255, 255, 0.4) !important;
     font-weight: 600 !important;
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     letter-spacing: 2px !important;
 }}
 
 /* BOTÓN RASTREAR MÁS ALTO Y LLAMATIVO */
 div.stButton > button, div.stDownloadButton > button {{
-    background-color: {vars_css['card']} !important;
+    background-color: #384A52 !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
     border-radius: 6px !important;
@@ -122,7 +132,7 @@ div.stButton > button, div.stDownloadButton > button {{
     text-transform: uppercase;
     font-size: 13px !important;
     letter-spacing: 1px !important;
-    height: 50px !important;
+    height: 48px !important;
     width: 100% !important;
     transition: all 0.3s ease !important;
 }}
@@ -151,11 +161,11 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
 .hud-panel {{
     background: {vars_css['card']};
     border: 1px solid {vars_css['border']};
-    border-radius: 10px;
-    padding: 20px;
+    border-radius: 12px;
+    padding: 18px;
     font-family: 'JetBrains Mono', monospace;
     color: white;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
     height: 100%;
 }}
 
@@ -165,16 +175,16 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
     color: #00FFAA;
     letter-spacing: 2px;
     text-transform: uppercase;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     padding-bottom: 6px;
 }}
 
 .hud-metric {{
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 800;
     color: white;
-    margin: 6px 0;
+    margin: 4px 0;
 }}
 
 .hud-label {{
@@ -310,9 +320,11 @@ if "search_key_version" not in st.session_state:
     st.session_state.search_key_version = 1
 if "tipo_resultado" not in st.session_state:
     st.session_state.tipo_resultado = "OPERACION"
+if "filtro_fletera" not in st.session_state:
+    st.session_state.filtro_fletera = None
 
 # ==========================================
-# HEADER CON 4 COLUMNAS (ESPACIOS CONSERVADOS SIN CAJA DE BÚSQUEDA)
+# HEADER CON 4 COLUMNAS
 # ==========================================
 header_zone = st.container()
 with header_zone:
@@ -470,38 +482,45 @@ st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:15px 0; opacity:0.
 
 
 # ==========================================
-# CUERPO PRINCIPAL: BÚSQUEDA DIRECTA CON PANELES HUD LATERALES
+# CUERPO PRINCIPAL: COMBO COMPLETO (HUD LATERALES + TARJETA CENTRAL + ACCESOS RÁPIDOS)
 # ==========================================
 def main():
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
 
     df_metrics = cargar_datos_dashboard()
     total_registros = len(df_metrics) if df_metrics is not None else 0
     
+    # Calcular guías activas en tránsito de forma segura
+    activas_en_transito = 0
+    if df_metrics is not None and "FECHA DE ENTREGA REAL" in df_metrics.columns:
+        activas_en_transito = int(df_metrics["FECHA DE ENTREGA REAL"].isna().sum())
+
     st.markdown("""
-        <div style="text-align: center; margin-bottom: 20px; font-family: 'JetBrains Mono', monospace;">
+        <div style="text-align: center; margin-bottom: 18px; font-family: 'JetBrains Mono', monospace;">
             <span style="color: #00FFAA; font-size: 13px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; background: rgba(0,255,170,0.08); padding: 8px 18px; border-radius: 6px; border: 1px solid rgba(0,255,170,0.2); box-shadow: 0 0 15px rgba(0,255,170,0.1);">
                 ⚡ COM_START // INGRESE TALÓN O PEDIDO
             </span>
         </div>
     """, unsafe_allow_html=True)
 
+    # Layout de 3 columnas: HUD Izquierdo | Tarjeta de Búsqueda Central | HUD Derecho
     col_hud_l, col_c, col_hud_r = st.columns([1, 2.6, 1], vertical_alignment="center")
 
     with col_hud_l:
         st.markdown(f"""
             <div class="hud-panel">
-                <div class="hud-title">🟢 SYS_STATUS</div>
-                <div class="hud-metric" style="color: #00FFAA; font-size: 16px;">ONLINE // SYNC</div>
-                <div class="hud-label" style="margin-top: 4px;">Matriz Global & T1 Activas</div>
+                <div class="hud-title">🟢 SYS_TELEMETRY</div>
+                <div class="hud-metric" style="color: #00FFAA; font-size: 15px;">ONLINE // SYNC</div>
+                <div class="hud-label" style="margin-top: 4px;">Matriz Global & T1</div>
                 <br>
-                <div class="hud-title" style="margin-bottom: 8px;">📊 REGISTROS</div>
-                <div class="hud-metric">{total_registros:,}</div>
-                <div class="hud-label">Total en Base de Datos</div>
+                <div class="hud-title" style="margin-bottom: 8px;">📦 EN TRÁNSITO</div>
+                <div class="hud-metric">{activas_en_transito:,}</div>
+                <div class="hud-label">Guías Activas Globales</div>
             </div>
         """, unsafe_allow_html=True)
 
     with col_c:
+        st.markdown('<div class="floating-search-card">', unsafe_allow_html=True)
         es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
         key_actual = f"main_search_v{st.session_state.search_key_version}"
 
@@ -515,20 +534,30 @@ def main():
 
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         btn_buscar = st.button("RASTREAR ➔", use_container_width=True, type="primary")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        if query or btn_buscar:
-            if query:
+        if query or btn_buscar or st.session_state.get("filtro_fletera"):
+            if query or st.session_state.get("filtro_fletera"):
                 df_combinado = df_metrics if df_metrics is not None else cargar_datos_dashboard()
 
                 res_ops = pd.DataFrame()
                 if df_combinado is not None:
+                    # Aplicar filtro por fletera si está activo
+                    if st.session_state.get("filtro_fletera"):
+                        f_target = st.session_state.filtro_fletera
+                        if "FLETERA" in df_combinado.columns:
+                            df_combinado = df_combinado[df_combinado["FLETERA"].astype(str).str.contains(f_target, case=False, na=False)]
+
                     cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
                     cols_op_disp = [c for c in cols_op if c in df_combinado.columns]
-                    if cols_op_disp:
+                    
+                    if query and cols_op_disp:
                         mask_ops = df_combinado[cols_op_disp].astype(str).apply(
                             lambda x: x.str.contains(query, case=False, na=False)
                         ).any(axis=1)
                         res_ops = df_combinado[mask_ops].copy()
+                    else:
+                        res_ops = df_combinado.copy()
 
                 if not res_ops.empty:
                     st.session_state.busqueda_activa = True
@@ -537,22 +566,67 @@ def main():
                 else:
                     st.session_state.busqueda_activa = False
                     st.session_state.resultado_busqueda = None
-                    st.toast("Sin resultados en Matriz Global y T1", icon="⚠️")
+                    st.toast("Sin resultados con los criterios seleccionados", icon="⚠️")
 
     with col_hud_r:
         usuario_actual = st.session_state.get("usuario_activo", "GUEST")
         hora_actual = datetime.now().strftime("%H:%M:%S")
         st.markdown(f"""
             <div class="hud-panel">
-                <div class="hud-title">👤 OPERADOR</div>
-                <div class="hud-metric" style="font-size: 15px; color: #82D4E6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{usuario_actual}</div>
+                <div class="hud-title">👤 OPERATOR</div>
+                <div class="hud-metric" style="font-size: 14px; color: #82D4E6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{usuario_actual}</div>
                 <div class="hud-label" style="margin-top: 4px;">Sesión Segura Validada</div>
                 <br>
-                <div class="hud-title" style="margin-bottom: 8px;">⏱️ CLOCK_SYNC</div>
-                <div class="hud-metric" style="font-size: 18px; font-family: monospace;">{hora_actual}</div>
-                <div class="hud-label">Servidor GDL Hub</div>
+                <div class="hud-title" style="margin-bottom: 8px;">📊 TOTAL DB</div>
+                <div class="hud-metric">{total_registros:,}</div>
+                <div class="hud-label">Registros Sincronizados</div>
             </div>
         """, unsafe_allow_html=True)
+
+    # ── BLOQUE INFERIOR: ACCESOS DIRECTOS RÁPIDOS A FLETERAS ────────────────────────
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    st.markdown("""
+        <div style="text-align: center; margin-bottom: 12px; font-family: 'JetBrains Mono', monospace;">
+            <span style="color: rgba(255,255,255,0.7); font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">
+                ⚡ FILTROS RÁPIDOS POR TRANSPORTISTA / FLETERA FRECUENTE
+            </span>
+        </div>
+    """, unsafe_allow_html=True)
+
+    col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns(5)
+    
+    fleteras_populares = ["PAQUETEXPRESS", "TRES GUERRAS", "FEDEX", "DHL", "ESTAFETA"]
+    
+    with col_f1:
+        if st.button("📦 PAQMEX / PAQ", use_container_width=True, key="btn_f_paq"):
+            st.session_state.filtro_fletera = "PAQUETEXPRESS"
+            st.session_state.busqueda_activa = True
+            st.session_state.resultado_busqueda = df_metrics[df_metrics["FLETERA"].astype(str).str.contains("PAQUETEXPRESS", case=False, na=False)] if df_metrics is not None else pd.DataFrame()
+            st.rerun()
+    with col_f2:
+        if st.button("🚛 TRES GUERRAS", use_container_width=True, key="btn_f_3g"):
+            st.session_state.filtro_fletera = "TRES GUERRAS"
+            st.session_state.busqueda_activa = True
+            st.session_state.resultado_busqueda = df_metrics[df_metrics["FLETERA"].astype(str).str.contains("TRES GUERRAS", case=False, na=False)] if df_metrics is not None else pd.DataFrame()
+            st.rerun()
+    with col_f3:
+        if st.button("✈️ FEDEX", use_container_width=True, key="btn_f_fedex"):
+            st.session_state.filtro_fletera = "FEDEX"
+            st.session_state.busqueda_activa = True
+            st.session_state.resultado_busqueda = df_metrics[df_metrics["FLETERA"].astype(str).str.contains("FEDEX", case=False, na=False)] if df_metrics is not None else pd.DataFrame()
+            st.rerun()
+    with col_f4:
+        if st.button("🚀 DHL", use_container_width=True, key="btn_f_dhl"):
+            st.session_state.filtro_fletera = "DHL"
+            st.session_state.busqueda_activa = True
+            st.session_state.resultado_busqueda = df_metrics[df_metrics["FLETERA"].astype(str).str.contains("DHL", case=False, na=False)] if df_metrics is not None else pd.DataFrame()
+            st.rerun()
+    with col_f5:
+        if st.button("🔄 VER TODOS", use_container_width=True, key="btn_f_todos"):
+            st.session_state.filtro_fletera = None
+            st.session_state.busqueda_activa = False
+            st.session_state.resultado_busqueda = None
+            st.rerun()
 
     # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA (TIMELINE DETALLADO) ────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
@@ -566,6 +640,7 @@ def main():
             if st.button("✕ CERRAR RESULTADOS", key="btn_cerrar_top", use_container_width=True):
                 st.session_state.busqueda_activa = False
                 st.session_state.resultado_busqueda = None
+                st.session_state.filtro_fletera = None
                 st.session_state.search_key_version += 1
                 st.rerun()
 
