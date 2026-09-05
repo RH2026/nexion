@@ -148,6 +148,42 @@ div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
     > div {{ padding: 0 !important; }}
 }}
 
+.hud-panel {{
+    background: {vars_css['card']};
+    border: 1px solid {vars_css['border']};
+    border-radius: 10px;
+    padding: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    height: 100%;
+}}
+
+.hud-title {{
+    font-size: 10px;
+    font-weight: 800;
+    color: #00FFAA;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 6px;
+}}
+
+.hud-metric {{
+    font-size: 22px;
+    font-weight: 800;
+    color: white;
+    margin: 6px 0;
+}}
+
+.hud-label {{
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}}
+
 .footer {{ 
     position: fixed; 
     bottom: 0 !important; 
@@ -434,21 +470,40 @@ st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:15px 0; opacity:0.
 
 
 # ==========================================
-# CUERPO PRINCIPAL: BÚSQUEDA DIRECTA (MINIMALISTA)
+# CUERPO PRINCIPAL: BÚSQUEDA DIRECTA CON PANELES HUD LATERALES
 # ==========================================
 def main():
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-    # Línea de texto minimalista con fuente perra (JetBrains Mono / Cyberpunk style)
+    # Cargar datos para métricas rápidas de los paneles HUD
+    df_metrics = cargar_datos_dashboard()
+    total_registros = len(df_metrics) if df_metrics is not None else 0
+    
+    # Línea de texto minimalista con fuente cyberpunk
     st.markdown("""
-        <div style="text-align: center; margin-bottom: 22px; font-family: 'JetBrains Mono', monospace;">
+        <div style="text-align: center; margin-bottom: 20px; font-family: 'JetBrains Mono', monospace;">
             <span style="color: #00FFAA; font-size: 13px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; background: rgba(0,255,170,0.08); padding: 8px 18px; border-radius: 6px; border: 1px solid rgba(0,255,170,0.2); box-shadow: 0 0 15px rgba(0,255,170,0.1);">
                 ⚡ COM_START // INGRESE TALÓN O PEDIDO
             </span>
         </div>
     """, unsafe_allow_html=True)
 
-    col_l, col_c, col_r = st.columns([1, 2.8, 1])
+    # Diseño de 3 columnas: Panel HUD Izquierdo | Buscador Central | Panel HUD Derecho
+    col_hud_l, col_c, col_hud_r = st.columns([1, 2.6, 1], vertical_alignment="center")
+
+    with col_hud_l:
+        st.markdown(f"""
+            <div class="hud-panel">
+                <div class="hud-title">🟢 SYS_STATUS</div>
+                <div class="hud-metric" style="color: #00FFAA; font-size: 16px;">ONLINE // SYNC</div>
+                <div class="hud-label" style="margin-top: 4px;">Matriz Global & T1 Activas</div>
+                <br>
+                <div class="hud-title" style="margin-bottom: 8px;">📊 REGISTROS</div>
+                <div class="hud-metric">{total_registros:,}</div>
+                <div class="hud-label">Total en Base de Datos</div>
+            </div>
+        """, unsafe_allow_html=True)
+
     with col_c:
         es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
         key_actual = f"main_search_v{st.session_state.search_key_version}"
@@ -461,12 +516,12 @@ def main():
             disabled=es_atencion3g,
         )
 
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         btn_buscar = st.button("RASTREAR ➔", use_container_width=True, type="primary")
 
         if query or btn_buscar:
             if query:
-                df_combinado = cargar_datos_dashboard()
+                df_combinado = df_metrics if df_metrics is not None else cargar_datos_dashboard()
 
                 res_ops = pd.DataFrame()
                 if df_combinado is not None:
@@ -486,6 +541,21 @@ def main():
                     st.session_state.busqueda_activa = False
                     st.session_state.resultado_busqueda = None
                     st.toast("Sin resultados en Matriz Global y T1", icon="⚠️")
+
+    with col_hud_r:
+        usuario_actual = st.session_state.get("usuario_activo", "GUEST")
+        hora_actual = datetime.now().strftime("%H:%M:%S")
+        st.markdown(f"""
+            <div class="hud-panel">
+                <div class="hud-title">👤 OPERADOR</div>
+                <div class="hud-metric" style="font-size: 15px; color: #82D4E6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{usuario_actual}</div>
+                <div class="hud-label" style="margin-top: 4px;">Sesión Segura Validada</div>
+                <br>
+                <div class="hud-title" style="margin-bottom: 8px;">⏱️ CLOCK_SYNC</div>
+                <div class="hud-metric" style="font-size: 18px; font-family: monospace;">{hora_actual}</div>
+                <div class="hud-label">Servidor GDL Hub</div>
+            </div>
+        """, unsafe_allow_html=True)
 
     # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA (TIMELINE DETALLADO) ────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
