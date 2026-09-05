@@ -475,11 +475,9 @@ st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:15px 0; opacity:0.
 def main():
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-    # Cargar datos para métricas rápidas de los paneles HUD
     df_metrics = cargar_datos_dashboard()
     total_registros = len(df_metrics) if df_metrics is not None else 0
     
-    # Línea de texto minimalista con fuente cyberpunk
     st.markdown("""
         <div style="text-align: center; margin-bottom: 20px; font-family: 'JetBrains Mono', monospace;">
             <span style="color: #00FFAA; font-size: 13px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; background: rgba(0,255,170,0.08); padding: 8px 18px; border-radius: 6px; border: 1px solid rgba(0,255,170,0.2); box-shadow: 0 0 15px rgba(0,255,170,0.1);">
@@ -488,7 +486,6 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # Diseño de 3 columnas: Panel HUD Izquierdo | Buscador Central | Panel HUD Derecho
     col_hud_l, col_c, col_hud_r = st.columns([1, 2.6, 1], vertical_alignment="center")
 
     with col_hud_l:
