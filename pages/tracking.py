@@ -73,38 +73,30 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* FORZAR ALTURA VERTICAL REAL Y CENTRADO EN BASEWEB */
+/* CONTROL TOTAL DE ALTURA Y CENTRADO DE LA CAJA DE BÚSQUEDA NATIVA */
 div[data-baseweb="base-input"] {{
-    height: 75px !important;
-    min-height: 75px !important;
-    border-radius: 10px !important;
+    height: 65px !important;
+    min-height: 65px !important;
     background-color: #212B30 !important;
+    border-radius: 10px !important;
     border: 1px solid {vars_css['border']} !important;
 }}
 
 div[data-baseweb="input"] {{
-    height: 75px !important;
-    min-height: 75px !important;
-    border-radius: 10px !important;
+    height: 65px !important;
+    min-height: 65px !important;
     background-color: transparent !important;
-    border: none !important;
-    display: flex !important;
-    align-items: center !important;
-}}
-
-div[data-baseweb="input"] > div {{
-    height: 100% !important;
     display: flex !important;
     align-items: center !important;
 }}
 
 div[data-baseweb="input"] input {{
-    font-size: 20px !important;
+    font-size: 18px !important;
     font-weight: 700 !important;
     color: {vars_css['text']} !important;
     text-align: center !important;
-    height: 75px !important;
-    line-height: 75px !important;
+    height: 65px !important;
+    line-height: 65px !important;
     padding: 0 20px !important;
     background: transparent !important;
 }}
@@ -113,7 +105,6 @@ div[data-baseweb="input"] input::placeholder {{
     text-align: center !important;
     color: rgba(255, 255, 255, 0.5) !important;
     font-weight: 600 !important;
-    line-height: normal !important;
 }}
 
 /* BOTÓN RASTREAR MÁS ALTO Y LLAMATIVO */
@@ -424,7 +415,7 @@ st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:15px 0; opacity:0.
 
 
 # ==========================================
-# CUERPO PRINCIPAL: CENTRO DE BÚSQUEDA TIPO TRES GUERRAS (ESTILO NEXION)
+# CUERPO PRINCIPAL: CENTRO DE BÚSQUEDA NATIVO (ESTILO NEXION)
 # ==========================================
 def main():
     st.markdown("""
