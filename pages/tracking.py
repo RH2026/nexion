@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime
 import io
 import re
@@ -10,7 +11,7 @@ import math
 
 from auth import exigir_autenticacion
 
-exigir_autenticacion("tracking")
+exigir_autenticacion("dashboard")
 
 st.set_page_config(
     page_title="JYPESA | Tracking",
@@ -159,7 +160,7 @@ def registrar_acceso_github(usuario, modulo):
 # SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "tracking.py"
+    st.session_state.pagina_destino = "dashboard.py"
     st.switch_page("log.py")
 
 def verificar_permiso_pagina(modulo, submodulo=None):
@@ -190,7 +191,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("dashboard.py")
         st.stop()
 
-verificar_permiso_pagina("tracking")
+verificar_permiso_pagina("DASHBOARD")
 
 # ==========================================
 # FUNCIONES MAESTRAS DE SOPORTE Y DATOS
@@ -508,7 +509,6 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # Mostrar la matriz de envíos recientes en formato de tarjetas de tracking avanzadas
     df_raw = cargar_datos_dashboard()
     if df_raw is not None:
         st.markdown("<p style='color: #00D4FF; font-weight: 800; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 20px;'>📋 ÚLTIMOS ENVÍOS ACTIVOS EN TRAYECTORIA</p>", unsafe_allow_html=True)
@@ -566,9 +566,3 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-'''
-
-with open("tracking.py", "w", encoding="utf-8") as f:
-    f.write(codigo_tracking_pro)
-
-print("tracking.py actualizado con éxito.")
