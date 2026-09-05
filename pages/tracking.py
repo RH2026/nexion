@@ -73,22 +73,38 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* CAJA DE BÚSQUEDA MÁS ALTA Y TEXTO CENTRADO CORRECTAMENTE */
+/* CAJA DE BÚSQUEDA MÁS ALTA EN ALTURA (VERTICAL) Y TEXTO AL CENTRO */
 div[data-baseweb="input"] {{
-    height: 60px !important;
-    border-radius: 8px !important;
+    height: 75px !important;
+    min-height: 75px !important;
+    border-radius: 10px !important;
+    background-color: #212B30 !important;
+    border: 1px solid {vars_css['border']} !important;
+    display: flex !important;
+    align-items: center !important;
+}}
+
+div[data-baseweb="input"] > div {{
+    height: 100% !important;
     display: flex !important;
     align-items: center !important;
 }}
 
 div[data-baseweb="input"] input {{
-    font-size: 18px !important;
+    font-size: 20px !important;
     font-weight: 700 !important;
     color: {vars_css['text']} !important;
     text-align: center !important;
-    height: 60px !important;
-    line-height: 60px !important;
+    height: 100% !important;
+    line-height: 75px !important;
     padding: 0 20px !important;
+    background: transparent !important;
+}}
+
+div[data-baseweb="input"] input::placeholder {{
+    text-align: center !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-weight: 600 !important;
 }}
 
 /* BOTÓN RASTREAR MÁS ALTO Y LLAMATIVO */
@@ -101,7 +117,7 @@ div.stButton > button, div.stDownloadButton > button {{
     text-transform: uppercase;
     font-size: 13px !important;
     letter-spacing: 1px !important;
-    height: 48px !important;
+    height: 50px !important;
     width: 100% !important;
     transition: all 0.3s ease !important;
 }}
@@ -415,7 +431,7 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # Contenedor centrado para la caja de búsqueda y botón (más alta y texto centrado vertical/horizontalmente)
+    # Contenedor centrado para la caja de búsqueda y botón (más alta verticalmente y texto centrado)
     col_l, col_c, col_r = st.columns([1, 2.8, 1])
     with col_c:
         es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
