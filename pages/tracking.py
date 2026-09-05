@@ -1,15 +1,13 @@
-import base64
 from datetime import datetime
 import io
 import re
+import time
 import unicodedata
 import requests
 import pandas as pd
 import streamlit as st
+import math
 
-# ============================================================
-# AUTENTICACIÓN Y CONFIGURACIÓN DE PÁGINA
-# ============================================================
 from auth import exigir_autenticacion
 
 exigir_autenticacion("tracking")
@@ -93,6 +91,21 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     border-color: #00A3A3 !important;
 }}
 
+div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
+    gap: 0.45rem !important;
+}}
+
+div[data-testid="stPopoverBody"] .stButton {{
+    margin-bottom: 0rem !important;
+}}
+
+div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
+    border: none !important;
+    background: transparent !important;
+    margin-bottom: 0rem !important;
+    > div {{ padding: 0 !important; }}
+}}
+
 .footer {{ 
     position: fixed; 
     bottom: 0 !important; 
@@ -112,94 +125,7 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     unsafe_allow_html=True,
 )
 
-# ==========================================
-# 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
-# ==========================================
-if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "tracking.py"
-    st.switch_page("log.py")
-
-def verificar_permiso_pagina(modulo, submodulo=None):
-    permisos = st.session_state.get("permisos", {})
-    if st.session_state.get("usuario_activo", "").upper() == "RIGOBERTO":
-        return True
-        
-    if not permisos.get(modulo.upper(), False):
-        st.markdown(
-            f"""
-            <div style="
-                background: {vars_css['card']}; 
-                border: 1px solid {vars_css['border']}; 
-                border-left: 5px solid #FFD700; 
-                padding: 20px 25px; 
-                border-radius: 8px; 
-                width: 100%; 
-                font-family: 'Inter', sans-serif; 
-                color: white; 
-                box-sizing: border-box; 
-                margin-bottom: 25px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            ">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
-                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
-                        ACCESS RESTRICTED // MÓDULO NO AUTORIZADO
-                    </span>
-                </div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
-                    No cuentas con los permisos activos en la matriz para acceder al módulo: <b style="color: white; text-transform: uppercase;">{modulo}</b>.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        
-        col_regresar_m, col_vacia_m = st.columns([1.5, 4])
-        with col_regresar_m:
-            if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
-                st.switch_page("dashboard.py")
-        st.stop()
-        
-    if submodulo and not permisos.get(submodulo.upper(), False):
-        st.markdown(
-            f"""
-            <div style="
-                background: {vars_css['card']}; 
-                border: 1px solid {vars_css['border']}; 
-                border-left: 5px solid #FFD700; 
-                padding: 20px 25px; 
-                border-radius: 8px; 
-                width: 100%; 
-                font-family: 'Inter', sans-serif; 
-                color: white; 
-                box-sizing: border-box; 
-                margin-bottom: 25px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            ">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
-                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
-                        ACCESS RESTRICTED // SECCIÓN BLOQUEADA
-                    </span>
-                </div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
-                    No cuentas con los privilegios necesarios para visualizar la sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        
-        col_regresar_s, col_vacia_s = st.columns([1.5, 4])
-        with col_regresar_s:
-            if st.button("REGRESAR AL INICIO", key="btn_regresar_submodulo", use_container_width=True):
-                st.switch_page("dashboard.py")
-        st.stop()
-
-# Validación del módulo (puedes ajustar el nombre del permiso según tu matriz, ej: "SEGUIMIENTO")
-verificar_permiso_pagina("tracking")
-
-# ── FUNCIONES DE APOYO ──────────────────────────────────────────
+# ---- REGISTRAR ACCESO GITHUB ----
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
@@ -229,9 +155,48 @@ def registrar_acceso_github(usuario, modulo):
         payload["sha"] = sha
     requests.put(url, json=payload, headers=headers)
 
+# ==========================================
+# SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
+# ==========================================
+if not st.session_state.get("autenticado", False):
+    st.session_state.pagina_destino = "tracking.py"
+    st.switch_page("log.py")
+
+def verificar_permiso_pagina(modulo, submodulo=None):
+    permisos = st.session_state.get("permisos", {})
+    if st.session_state.get("usuario_activo", "").upper() == "RIGOBERTO":
+        return True
+        
+    if not permisos.get(modulo.upper(), False):
+        st.markdown(
+            f"""
+            <div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #FFD700; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
+                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
+                        ACCESS RESTRICTED // MÓDULO NO AUTORIZADO
+                    </span>
+                </div>
+                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
+                    No tienes permisos para acceder al módulo: <b style="color: white; text-transform: uppercase;">{modulo}</b>.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        col_regresar_m, col_vacia_m = st.columns([1.5, 4])
+        with col_regresar_m:
+            if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
+                st.switch_page("dashboard.py")
+        st.stop()
+
+verificar_permiso_pagina("tracking")
+
+# ==========================================
+# FUNCIONES MAESTRAS DE SOPORTE Y DATOS
+# ==========================================
 @st.cache_data(ttl=60)
 def cargar_datos_dashboard():
-    import time
     t = int(time.time())
     url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
     try:
@@ -241,7 +206,6 @@ def cargar_datos_dashboard():
     except Exception as e:
         return None
 
-# Inicialización de estado
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "TRACKING"
 if "menu_sub" not in st.session_state:
@@ -252,9 +216,11 @@ if "resultado_busqueda" not in st.session_state:
     st.session_state.resultado_busqueda = None
 if "search_key_version" not in st.session_state:
     st.session_state.search_key_version = 1
+if "tipo_resultado" not in st.session_state:
+    st.session_state.tipo_resultado = "OPERACION"
 
 # ==========================================
-# HEADER
+# HEADER CON 4 COLUMNAS Y MENÚ HAMBURGUESA IDÉNTICO
 # ==========================================
 header_zone = st.container()
 with header_zone:
@@ -269,7 +235,7 @@ with header_zone:
     with c2:
         azul_nexion = "#82D4E6"
         oro_brillante = "#FFD700"
-        ruta = f"NEXION <span style='color: {azul_nexion}; font-weight: 500; margin: 0 10px; font-size: 16px;'>|</span> <span style='color: {oro_brillante}; font-weight: 500;'>TRACKING & SEGUIMIENTO</span>"
+        ruta = f"NEXION <span style='color: {azul_nexion}; font-weight: 500; margin: 0 10px; font-size: 16px;'>|</span> <span style='color: {oro_brillante}; font-weight: 500;'>TRACKING & TRAYECTORIA</span>"
         st.markdown(
             f"""
             <div style='display: flex; justify-content: center; align-items: center; width: 100%;'>
@@ -287,14 +253,20 @@ with header_zone:
 
         query = st.text_input(
             "Buscar",
-            placeholder="🔍 Buscar factura, pedido o guía..." if not es_atencion3g else "🔍 BUSCADOR DESACTIVADO",
+            placeholder="🔍 BUSCADOR DESACTIVADO" if es_atencion3g else "🔍 Buscar factura, pedido, guía...",
             label_visibility="collapsed",
             key=key_actual,
             disabled=es_atencion3g,
         )
 
         if query:
-            df_matriz_fresco = cargar_datos_dashboard()
+            url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
+            try:
+                df_matriz_fresco = pd.read_csv(url_raw)
+                df_matriz_fresco.columns = df_matriz_fresco.columns.str.strip()
+            except Exception:
+                df_matriz_fresco = cargar_datos_dashboard()
+
             res_ops = pd.DataFrame()
             if df_matriz_fresco is not None:
                 cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
@@ -312,12 +284,14 @@ with header_zone:
             else:
                 st.session_state.busqueda_activa = False
                 st.session_state.resultado_busqueda = None
-                st.toast("Sin resultados: No se encontró la factura o guía", icon="⚠️")
+                st.toast("Sin resultados en Matriz Global", icon="⚠️")
 
     with c4:
         with st.popover("☰ Menú", use_container_width=True):
             usuario = st.session_state.get("usuario_activo", "GUEST")
-            nombre_display = st.session_state.get("nombre_completo", "OPERADOR")
+            permisos = st.session_state.get("permisos", {})
+            nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
+        
             st.markdown(
                 f"""
                 <div style='background-color: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #00D4FF;'>
@@ -327,15 +301,116 @@ with header_zone:
             """,
                 unsafe_allow_html=True,
             )
-            if st.button("DASHBOARD", use_container_width=True):
-                st.switch_page("dashboard.py")
+        
+            if permisos.get("DASHBOARD", False):
+                if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                    registrar_acceso_github(usuario, "DASHBOARD")
+                    st.session_state.menu_main = "DASHBOARD"
+                    st.session_state.menu_sub = "GENERAL"
+                    st.session_state.busqueda_activa = False
+                    st.switch_page("dashboard.py")
+        
+            if permisos.get("SEGUIMIENTO", False):
+                with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                    opciones_seg_posibles = ["ALERTAS", "GANTT", "INCIDENCIAS"]
+                    opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
+                    for s in opciones_seg:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}2"):
+                            registrar_acceso_github(usuario, f"SEGUIMIENTO - {s}")
+                            st.session_state.menu_main = "SEGUIMIENTO"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            if s == "INCIDENCIAS":
+                                st.switch_page("pages/incidencias_tr.py")
+                            else:
+                                st.rerun()
+        
+            if permisos.get("ENTREGAS", False):
+                with st.expander("ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")):
+                    opciones_ent_posibles = ["AGC", "AMAZON", "BARCELO", "NACIONAL"]
+                    opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False)]
+                    for s in opciones_ent:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_ent_{s}2"):
+                            registrar_acceso_github(usuario, f"ENTREGAS - {s}")
+                            st.session_state.menu_main = "ENTREGAS"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            if s == "AGC":
+                                st.switch_page("pages/entregas_agc.py")
+                            elif s == "NACIONAL":
+                                st.switch_page("pages/envios.py")
+                            else:
+                                st.rerun()
+        
+            if permisos.get("REPORTES", False):
+                with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
+                    opciones_rep_posibles = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+                    opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False)]
+                    for s in opciones_rep:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_rep_{s}2"):
+                            registrar_acceso_github(usuario, f"REPORTES - {s}")
+                            st.session_state.menu_main = "REPORTES"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            if s == "ENVIO DE MUESTRAS":
+                                st.switch_page("pages/muestras.py")
+                            else:
+                                st.rerun()
+        
+            if permisos.get("FORMATOS", False):
+                with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
+                    opciones_for_posibles = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
+                    opciones_for = [s for s in opciones_for_posibles if permisos.get(s, False)]
+                    for s in opciones_for:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_for_{s}2"):
+                            registrar_acceso_github(usuario, f"FORMATOS - {s}")
+                            st.session_state.menu_main = "FORMATOS"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            st.rerun()
+        
+            if permisos.get("CENTRO DE DATOS", False):
+                with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
+                    opciones_hub_posibles = ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "ESCANEAR QR", "HERRAMIENTAS"]
+                    opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False)]
+                    for s in opciones_hub:
+                        label = f"» {s}" if st.session_state.menu_sub == s else s
+                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}2"):
+                            registrar_acceso_github(usuario, f"CENTRO DE DATOS - {s}")
+                            st.session_state.menu_main = "CENTRO DE DATOS"
+                            st.session_state.menu_sub = s
+                            st.session_state.busqueda_activa = False
+                            if s == "ASIGNAR FLETERA":
+                                st.switch_page("pages/facturacion_af.py")
+                            elif s == "CARGAR DATOS":
+                                st.switch_page("pages/cargardt.py")
+                            elif s == "ETIQUETAS":
+                                st.switch_page("pages/etiquetas.py")
+                            elif s == "ESCANEAR QR":
+                                st.switch_page("pages/qrup.py")
+                            else:
+                                st.rerun()
+
+            if permisos.get("ACCESS CONTROL", False) or usuario.upper() == "RIGOBERTO":
+                if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl2"):
+                    registrar_acceso_github(usuario, "ACCESS CONTROL")
+                    st.session_state.menu_main = "ACCESS CONTROL"
+                    st.session_state.menu_sub = "SETTINGS"
+                    st.switch_page("pages/accesscontrol.py")
+        
+            st.markdown("<hr style='margin: 4px 0; opacity: 0.1;'>", unsafe_allow_html=True)
             if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
                 st.session_state.autenticado = False
+                st.session_state.splash_completado = False
                 st.rerun()
 
-    # Renderizado de resultados de búsqueda activa (Timeline detallado)
+    # RENDERIZADO DE RESULTADOS DE BÚSQUEDA (TIMELINE DETALLADO)
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
         resultados = st.session_state.resultado_busqueda
         total = len(resultados)
@@ -372,36 +447,37 @@ with header_zone:
                     f_entrega_dt = f_entrega_dt.normalize()
                 status_text, status_color = ("ENTREGADO", "#00FFAA") if pd.isna(f_promesa_dt) or f_entrega_dt <= f_promesa_dt else ("ENTREGA CON RETRASO", "#ff4b4b")
 
-            tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;">
+            tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 25px 30px; border-radius: 12px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.4);">
+                <div style="font-size: 14px; font-weight: 800; color: #00FFAA; margin-bottom: 18px; letter-spacing: 1px; text-transform: uppercase;">⚡ SEGUIMIENTO DETALLADO DE TRAYECTORIA</div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;">
-                    <div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div>
-                    <div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div>
-                    <div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div>
-                    <div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div>
-                    <div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div>
-                    <div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div>
-                    <div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div>
+                    <div style="text-align: center;"><div style="width: 12px; height: 12px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 10px #38bdf8;"></div><div style="font-size: 10px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div>
+                    <div style="flex-grow: 1; height: 3px; background: #38bdf8; margin: 0 8px; opacity: 0.6; transform: translateY(-10px);"></div>
+                    <div style="text-align: center;"><div style="width: 12px; height: 12px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 10px #a855f7;"></div><div style="font-size: 10px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div>
+                    <div style="flex-grow: 1; height: 3px; background: #a855f7; margin: 0 8px; opacity: 0.6; transform: translateY(-10px);"></div>
+                    <div style="text-align: center;"><div style="width: 12px; height: 12px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 10px #eab308;"></div><div style="font-size: 10px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div>
+                    <div style="flex-grow: 1; height: 3px; background: #00FFAA; margin: 0 8px; opacity: 0.6; transform: translateY(-10px);"></div>
+                    <div style="text-align: center;"><div style="width: 12px; height: 12px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 10px {status_color};"></div><div style="font-size: 10px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
                     <div style="flex: 1.2; min-width: 200px;">
                         <div style="color: #00FFAA; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div>
-                        <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div>
+                        <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 6px;">TALÓN / FOLIO</div>
                         <div style="color: #00FFAA; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div>
-                        <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div>
+                        <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 6px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div>
                     </div>
                     <div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
                         <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div>
-                        <div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div>
-                        <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div>
-                        <div style="font-size: 11px; color: #00FFAA; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div>
+                        <div style="color: white; font-weight: 800; font-size: 14px; text-transform: uppercase; line-height: 1.3; margin-top: 4px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div>
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 4px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div>
+                        <div style="font-size: 11px; color: #00FFAA; margin-top: 6px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div>
                     </div>
                     <div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;">
                         <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div>
-                        <div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: #00FFAA;">{envio.get('CANTIDAD DE CAJAS','0')}</span></div>
-                        <div style="color: #00FFAA; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div>
+                        <div style="color: white; font-weight: 700; font-size: 12px; margin-top: 4px;">BULTOS: <span style="color: #00FFAA;">{envio.get('CANTIDAD DE CAJAS','0')}</span></div>
+                        <div style="color: #00FFAA; font-weight: 800; font-size: 14px; margin-top: 4px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div>
                     </div>
-                    <div style="text-align: right; min-width: 130px;">
-                        <span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span>
+                    <div style="text-align: right; min-width: 140px;">
+                        <span style="background-color: {status_color}20; color: {status_color}; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span>
                     </div>
                 </div>
             </div>"""
@@ -414,26 +490,30 @@ with header_zone:
 
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
+st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
+
+
 # ==========================================
-# CUERPO PRINCIPAL: VISTA DE TRACKING PURO
+# CUERPO PRINCIPAL: VISTA DE TRACKING & TIMELINE IMPRESIONANTE
 # ==========================================
 def main():
     st.markdown("""
-        <div style="background: #2B343B; border: 1px solid #4B5D67; border-left: 5px solid #00FFAA; padding: 25px 30px; border-radius: 10px; margin-bottom: 25px;">
-            <h3 style="color: #00FFAA; margin: 0 0 10px 0; font-size: 16px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-                NEXION // CENTRAL DE RASTREO Y TRAYECTORIA
-            </h3>
-            <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 0; line-height: 1.5;">
-                Utiliza el buscador superior para consultar el estatus en tiempo real de cualquier factura, número de pedido o guía de embarque. Visualiza de inmediato el timeline de entrega, transportista asignado, promesa de entrega y detalles del cliente sin necesidad de abrir portales externos.
+        <div style="background: #2B343B; border: 1px solid #4B5D67; border-left: 5px solid #00FFAA; padding: 30px 35px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <h2 style="color: #00FFAA; margin: 0 0 12px 0; font-size: 18px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">
+                NEXION // CENTRAL DE RASTREO Y TRAYECTORIA INTELIGENTE
+            </h2>
+            <p style="color: rgba(255,255,255,0.85); font-size: 14px; margin: 0; line-height: 1.6;">
+                Bienvenida a la central de seguimiento de NEXION. Utiliza el buscador superior para rastrear facturas, números de pedido o guías de embarque al instante. El sistema desplegará de forma automática el timeline completo de entrega, transportista asignado, promesa de entrega y el estatus real con precisión milimétrica.
             </p>
         </div>
     """, unsafe_allow_html=True)
 
+    # Mostrar la matriz de envíos recientes en formato de tarjetas de tracking avanzadas
     df_raw = cargar_datos_dashboard()
     if df_raw is not None:
-        st.markdown("<p style='color: #00D4FF; font-weight: 800; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 15px;'>📋 ÚLTIMOS ENVIOS REGISTRADOS EN SISTEMA</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #00D4FF; font-weight: 800; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 20px;'>📋 ÚLTIMOS ENVÍOS ACTIVOS EN TRAYECTORIA</p>", unsafe_allow_html=True)
         
-        df_recientes = df_raw.head(10).copy()
+        df_recientes = df_raw.head(8).copy()
         for _, row in df_recientes.iterrows():
             pedido = row.get('NÚMERO DE PEDIDO', 'S/N')
             cliente = row.get('NOMBRE DEL CLIENTE', 'N/A')
@@ -443,27 +523,29 @@ def main():
             estatus_real = row.get('FECHA DE ENTREGA REAL', 'EN TRÁNSITO')
             if pd.isna(estatus_real) or str(estatus_real).strip() == "":
                 estatus_real = "EN TRÁNSITO"
+                color_estatus = "#38bdf8"
             else:
                 estatus_real = f"ENTREGADO: {estatus_real}"
+                color_estatus = "#00FFAA"
 
             st.markdown(f"""
-                <div style="background: #263238; border: 1px solid rgba(255,255,255,0.06); border-left: 4px solid #38bdf8; border-radius: 8px; padding: 14px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
+                <div style="background: #263238; border: 1px solid rgba(255,255,255,0.06); border-left: 4px solid #38bdf8; border-radius: 10px; padding: 18px 22px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                    <div style="flex: 1;">
                         <span style="font-size: 9px; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px;">PEDIDO / FACTURA</span>
-                        <br><b style="font-size: 15px; color: #00FFAA; font-family: monospace;">#{pedido}</b>
+                        <br><b style="font-size: 16px; color: #00FFAA; font-family: monospace;">#{pedido}</b>
                     </div>
-                    <div style="flex: 2; padding: 0 20px;">
+                    <div style="flex: 2.5; padding: 0 20px; border-left: 1px solid rgba(255,255,255,0.06);">
                         <span style="font-size: 9px; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px;">CLIENTE / DESTINO</span>
-                        <br><span style="font-size: 12px; color: white; font-weight: 600; text-transform: uppercase;">{str(cliente)[:40]}</span>
-                        <br><span style="font-size: 10px; color: #38bdf8;">📍 {destino}</span>
+                        <br><span style="font-size: 13px; color: white; font-weight: 700; text-transform: uppercase;">{str(cliente)[:45]}</span>
+                        <br><span style="font-size: 11px; color: #38bdf8; font-weight: 600;">📍 {destino}</span>
                     </div>
-                    <div style="flex: 1; text-align: right;">
+                    <div style="flex: 1.5; padding: 0 20px; border-left: 1px solid rgba(255,255,255,0.06);">
                         <span style="font-size: 9px; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px;">TRANSPORTISTA / GUÍA</span>
-                        <br><b style="font-size: 12px; color: white;">{fletera}</b>
-                        <br><span style="font-size: 11px; color: #00D4FF; font-family: monospace;">{guia}</span>
+                        <br><b style="font-size: 13px; color: white; text-transform: uppercase;">{fletera}</b>
+                        <br><span style="font-size: 12px; color: #00D4FF; font-family: monospace; font-weight: 700;">{guia}</span>
                     </div>
-                    <div style="text-align: right; padding-left: 20px;">
-                        <span style="background: rgba(0,255,170,0.1); color: #00FFAA; border: 1px solid rgba(0,255,170,0.3); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase;">{estatus_real}</span>
+                    <div style="text-align: right; padding-left: 15px; border-left: 1px solid rgba(255,255,255,0.06); min-width: 150px;">
+                        <span style="background: {color_estatus}15; color: {color_estatus}; border: 1px solid {color_estatus}40; padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;">{estatus_real}</span>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
@@ -484,3 +566,9 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+'''
+
+with open("tracking.py", "w", encoding="utf-8") as f:
+    f.write(codigo_tracking_pro)
+
+print("tracking.py actualizado con éxito.")
