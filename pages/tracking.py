@@ -12,7 +12,7 @@ import streamlit as st
 # ============================================================
 from auth import exigir_autenticacion
 
-exigir_autenticacion("dashboard")
+exigir_autenticacion("tracking")
 
 st.set_page_config(
     page_title="JYPESA | Tracking",
