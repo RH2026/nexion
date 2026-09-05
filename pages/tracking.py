@@ -11,7 +11,7 @@ import math
 
 from auth import exigir_autenticacion
 
-exigir_autenticacion("dashboard")
+exigir_autenticacion("tracking")
 
 st.set_page_config(
     page_title="JYPESA | Tracking",
@@ -160,7 +160,7 @@ def registrar_acceso_github(usuario, modulo):
 # SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
 # ==========================================
 if not st.session_state.get("autenticado", False):
-    st.session_state.pagina_destino = "dashboard.py"
+    st.session_state.pagina_destino = "tracking.py"
     st.switch_page("log.py")
 
 def verificar_permiso_pagina(modulo, submodulo=None):
@@ -191,7 +191,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
                 st.switch_page("dashboard.py")
         st.stop()
 
-verificar_permiso_pagina("DASHBOARD")
+verificar_permiso_pagina("tracking")
 
 # ==========================================
 # FUNCIONES MAESTRAS DE SOPORTE Y DATOS
