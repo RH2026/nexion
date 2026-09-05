@@ -888,20 +888,20 @@ def main():
     BRANCH = "main"
 
     def cargar_estatus_github():
-    try:
-        url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{BRANCH}/{GITHUB_FILE}"
-        token = st.secrets["GITHUB_TOKEN"]
-        headers = {"Authorization": f"token {token}"}
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            # Forzamos dtype=str para evitar conflictos de tipos con celdas vacías
-            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig", dtype=str)
-            df.columns = df.columns.astype(str).str.strip()
-            return df
-        else:
+        try:
+            url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{BRANCH}/{GITHUB_FILE}"
+            token = st.secrets["GITHUB_TOKEN"]
+            headers = {"Authorization": f"token {token}"}
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                # Forzamos dtype=str para evitar conflictos de tipos con celdas vacías
+                df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig", dtype=str)
+                df.columns = df.columns.astype(str).str.strip()
+                return df
+            else:
+                return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"])
+        except Exception:
             return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"])
-    except Exception:
-        return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"])
 
     def guardar_estatus_github(df_nuevo, mensaje="Actualizar estatus de recolecciones"):
         try:
