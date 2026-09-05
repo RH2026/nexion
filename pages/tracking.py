@@ -73,13 +73,21 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* CAJA DE BÚSQUEDA MÁS ALTA EN ALTURA (VERTICAL) Y TEXTO AL CENTRO */
-div[data-baseweb="input"] {{
+/* FORZAR ALTURA VERTICAL REAL Y CENTRADO EN BASEWEB */
+div[data-baseweb="base-input"] {{
     height: 75px !important;
     min-height: 75px !important;
     border-radius: 10px !important;
     background-color: #212B30 !important;
     border: 1px solid {vars_css['border']} !important;
+}}
+
+div[data-baseweb="input"] {{
+    height: 75px !important;
+    min-height: 75px !important;
+    border-radius: 10px !important;
+    background-color: transparent !important;
+    border: none !important;
     display: flex !important;
     align-items: center !important;
 }}
@@ -95,7 +103,7 @@ div[data-baseweb="input"] input {{
     font-weight: 700 !important;
     color: {vars_css['text']} !important;
     text-align: center !important;
-    height: 100% !important;
+    height: 75px !important;
     line-height: 75px !important;
     padding: 0 20px !important;
     background: transparent !important;
@@ -105,6 +113,7 @@ div[data-baseweb="input"] input::placeholder {{
     text-align: center !important;
     color: rgba(255, 255, 255, 0.5) !important;
     font-weight: 600 !important;
+    line-height: normal !important;
 }}
 
 /* BOTÓN RASTREAR MÁS ALTO Y LLAMATIVO */
@@ -285,7 +294,6 @@ with header_zone:
         )
 
     with c3:
-        # Espacio conservado exactamente idéntico al original, sin la caja de búsqueda en el header
         st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
 
     with c4:
@@ -419,7 +427,6 @@ st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:15px 0; opacity:0.
 # CUERPO PRINCIPAL: CENTRO DE BÚSQUEDA TIPO TRES GUERRAS (ESTILO NEXION)
 # ==========================================
 def main():
-    # ── BLOQUE DE BÚSQUEDA CENTRALIZADO E IMPRESIONANTE ────────────────────────
     st.markdown("""
         <div style="text-align: center; padding: 25px 0 20px 0; font-family: 'Inter', sans-serif;">
             <p style="color: #00FFAA; font-size: 12px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px;">
@@ -431,7 +438,6 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # Contenedor centrado para la caja de búsqueda y botón (más alta verticalmente y texto centrado)
     col_l, col_c, col_r = st.columns([1, 2.8, 1])
     with col_c:
         es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
