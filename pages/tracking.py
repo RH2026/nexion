@@ -73,15 +73,32 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
+/* CAJA DE BÚSQUEDA MÁS ALTA Y TEXTO MÁS GRANDE AL CENTRO */
+div[data-baseweb="input"] {{
+    height: 52px !important;
+    border-radius: 6px !important;
+}}
+
+div[data-baseweb="input"] input {{
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: {vars_css['text']} !important;
+    text-align: center !important;
+    height: 52px !important;
+    padding: 0 15px !important;
+}}
+
+/* BOTÓN RASTREAR MÁS ALTO Y LLAMATIVO */
 div.stButton > button, div.stDownloadButton > button {{
     background-color: {vars_css['card']} !important;
     color: {vars_css['text']} !important;
     border: 1px solid {vars_css['border']} !important;
-    border-radius: 4px !important;
-    font-weight: 700 !important;
+    border-radius: 6px !important;
+    font-weight: 800 !important;
     text-transform: uppercase;
-    font-size: 10px !important;
-    height: 32px !important;
+    font-size: 13px !important;
+    letter-spacing: 1px !important;
+    height: 48px !important;
     width: 100% !important;
     transition: all 0.3s ease !important;
 }}
@@ -385,18 +402,18 @@ st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:15px 0; opacity:0.
 def main():
     # ── BLOQUE DE BÚSQUEDA CENTRALIZADO E IMPRESIONANTE ────────────────────────
     st.markdown("""
-        <div style="text-align: center; padding: 20px 0 25px 0; font-family: 'Inter', sans-serif;">
-            <p style="color: #00FFAA; font-size: 11px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px;">
+        <div style="text-align: center; padding: 25px 0 20px 0; font-family: 'Inter', sans-serif;">
+            <p style="color: #00FFAA; font-size: 12px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px;">
                 NEXION SMART LOGISTICS // RASTREO
             </p>
-            <h1 style="color: white; font-size: 32px; font-weight: 800; margin: 0; letter-spacing: 1px;">
+            <h1 style="color: white; font-size: 34px; font-weight: 800; margin: 0; letter-spacing: 1px; line-height: 1.3;">
                 Para realizar la <span style="color: #00FFAA;">búsqueda</span> ingrese el <span style="color: #82D4E6;">talón o pedido</span>
             </h1>
         </div>
     """, unsafe_allow_html=True)
 
-    # Contenedor centrado para la caja de búsqueda y botón
-    col_l, col_c, col_r = st.columns([1, 2.5, 1])
+    # Contenedor centrado para la caja de búsqueda y botón (más alta y texto centrado)
+    col_l, col_c, col_r = st.columns([1, 2.8, 1])
     with col_c:
         es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "ATENCION3G"
         key_actual = f"main_search_v{st.session_state.search_key_version}"
@@ -409,6 +426,7 @@ def main():
             disabled=es_atencion3g,
         )
 
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
         btn_buscar = st.button("RASTREAR ➔", use_container_width=True, type="primary")
 
         if query or btn_buscar:
