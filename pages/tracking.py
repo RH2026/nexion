@@ -112,6 +112,93 @@ div.stButton > button:hover, div.stDownloadButton > button:hover {{
     unsafe_allow_html=True,
 )
 
+# ==========================================
+# 2. SISTEMA DE SEGURIDAD PRO (VALIDACIÓN DE SESIÓN Y BLINDAJE)
+# ==========================================
+if not st.session_state.get("autenticado", False):
+    st.session_state.pagina_destino = "tracking.py"
+    st.switch_page("log.py")
+
+def verificar_permiso_pagina(modulo, submodulo=None):
+    permisos = st.session_state.get("permisos", {})
+    if st.session_state.get("usuario_activo", "").upper() == "RIGOBERTO":
+        return True
+        
+    if not permisos.get(modulo.upper(), False):
+        st.markdown(
+            f"""
+            <div style="
+                background: {vars_css['card']}; 
+                border: 1px solid {vars_css['border']}; 
+                border-left: 5px solid #FFD700; 
+                padding: 20px 25px; 
+                border-radius: 8px; 
+                width: 100%; 
+                font-family: 'Inter', sans-serif; 
+                color: white; 
+                box-sizing: border-box; 
+                margin-bottom: 25px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            ">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
+                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
+                        ACCESS RESTRICTED // MÓDULO NO AUTORIZADO
+                    </span>
+                </div>
+                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
+                    No cuentas con los permisos activos en la matriz para acceder al módulo: <b style="color: white; text-transform: uppercase;">{modulo}</b>.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        col_regresar_m, col_vacia_m = st.columns([1.5, 4])
+        with col_regresar_m:
+            if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
+                st.switch_page("dashboard.py")
+        st.stop()
+        
+    if submodulo and not permisos.get(submodulo.upper(), False):
+        st.markdown(
+            f"""
+            <div style="
+                background: {vars_css['card']}; 
+                border: 1px solid {vars_css['border']}; 
+                border-left: 5px solid #FFD700; 
+                padding: 20px 25px; 
+                border-radius: 8px; 
+                width: 100%; 
+                font-family: 'Inter', sans-serif; 
+                color: white; 
+                box-sizing: border-box; 
+                margin-bottom: 25px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            ">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
+                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
+                        ACCESS RESTRICTED // SECCIÓN BLOQUEADA
+                    </span>
+                </div>
+                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
+                    No cuentas con los privilegios necesarios para visualizar la sección: <b style="color: white; text-transform: uppercase;">{submodulo}</b>.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        col_regresar_s, col_vacia_s = st.columns([1.5, 4])
+        with col_regresar_s:
+            if st.button("REGRESAR AL INICIO", key="btn_regresar_submodulo", use_container_width=True):
+                st.switch_page("dashboard.py")
+        st.stop()
+
+# Validación del módulo (puedes ajustar el nombre del permiso según tu matriz, ej: "SEGUIMIENTO")
+verificar_permiso_pagina("tracking")
+
 # ── FUNCIONES DE APOYO ──────────────────────────────────────────
 GITHUB_USER = "RH2026"
 GITHUB_REPO = "nexion"
@@ -328,7 +415,7 @@ with header_zone:
     st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
 
 # ==========================================
-# CUERPO PRINCIPAL: VISTA DE TRACKING PURO (SIN DONAS NI GRÁFICOS)
+# CUERPO PRINCIPAL: VISTA DE TRACKING PURO
 # ==========================================
 def main():
     st.markdown("""
@@ -342,12 +429,10 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # Carga de la matriz general para mostrar listado rápido de rastreo reciente
     df_raw = cargar_datos_dashboard()
     if df_raw is not None:
         st.markdown("<p style='color: #00D4FF; font-weight: 800; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 15px;'>📋 ÚLTIMOS ENVIOS REGISTRADOS EN SISTEMA</p>", unsafe_allow_html=True)
         
-        # Mostrar una tabla o tarjetas resumidas de los envíos recientes
         df_recientes = df_raw.head(10).copy()
         for _, row in df_recientes.iterrows():
             pedido = row.get('NÚMERO DE PEDIDO', 'S/N')
