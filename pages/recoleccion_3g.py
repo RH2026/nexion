@@ -415,7 +415,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
         st.stop()
 
 # Blindaje de Módulo DASHBOARD
-verificar_permiso_pagina("FORMATOS" "RECOLECCION 3G")
+verificar_permiso_pagina("FORMATOS", "RECOLECCION 3G")
 
 
 # ==========================================
@@ -894,9 +894,32 @@ def main():
             headers = {"Authorization": f"token {token}"}
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
-                # Forzamos dtype=str para evitar conflictos de tipos con celdas vacías
-                df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig", dtype=str)
+                df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
                 df.columns = df.columns.astype(str).str.strip()
+                
+                # Definir esquema base estricto y limpiar nulos a prueba de errores
+                columnas_requeridas = {
+                    "Folio": str,
+                    "Fecha_Recoleccion": str,
+                    "Cliente": str,
+                    "Proveedor": str,
+                    "Peso_Total": float,
+                    "Estatus": str,
+                    "Observaciones": str,
+                    "Solicitante": str,
+                    "Numero de Guia": str,
+                    "Costo de la Guia": float
+                }
+                
+                for col, tipo in columnas_requeridas.items():
+                    if col not in df.columns:
+                        df[col] = "" if tipo == str else 0.0
+                    else:
+                        if tipo == float:
+                            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+                        else:
+                            df[col] = df[col].astype(str).replace("nan", "")
+                            
                 return df
             else:
                 return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"])
@@ -935,7 +958,6 @@ def main():
 
     # --- DEFINICIÓN DE TABS ---
     tab1, tab2, tab3 = st.tabs(["Formato Solicitud", "Render de Estatus", "Edición y Actualización"])
-    # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
     # --- TAB 1: EL FORMATO ORIGINAL DE TRESGUERRAS ---
     with tab1:
         
@@ -1450,13 +1472,11 @@ def main():
             st.warning("No se encontraron datos en la matriz de facturación.")
 
     # --- TAB 2: RENDER DE ESTATUS ---
-    # --- TAB 2: RENDER DE ESTATUS (NIVEL WAR ROOM) ---
     with tab2:
         
         df_estatus = cargar_estatus_github()
 
         if not df_estatus.empty:
-            # Normalizar columnas a mayúsculas para evitar errores de Matriz
             df_estatus.columns = [str(c).upper().strip() for c in df_estatus.columns]
 
             # 1. FILTROS DE CABECERA PARA EL TABLERO
@@ -1464,12 +1484,10 @@ def main():
                 f_col1, f_col2 = st.columns([2, 2], vertical_alignment="bottom")
                 
                 with f_col1:
-                    # Filtro por Estatus
                     opciones_estatus = ["TODOS"] + sorted(df_estatus["ESTATUS"].dropna().unique().tolist()) if "ESTATUS" in df_estatus.columns else ["TODOS"]
                     filtro_estatus_tab2 = st.selectbox("FILTRAR POR ESTATUS", options=opciones_estatus, key="sel_estatus_tab2")
                 
                 with f_col2:
-                    # Filtro por Proveedor / Fletera
                     col_prov_key = "PROVEEDOR" if "PROVEEDOR" in df_estatus.columns else ("FLETERA" if "FLETERA" in df_estatus.columns else None)
                     if col_prov_key:
                         opciones_prov = ["TODOS"] + sorted(df_estatus[col_prov_key].dropna().unique().tolist())
@@ -1493,7 +1511,6 @@ def main():
             pendientes_n = len(df_estatus[df_estatus["ESTATUS"].str.upper().str.contains("PENDIENTE|PROCESO", na=False)]) if "ESTATUS" in df_estatus.columns else 0
             entregados_n = len(df_estatus[df_estatus["ESTATUS"].str.upper().str.contains("ENTREGADO", na=False)]) if "ESTATUS" in df_estatus.columns else 0
             
-            # Convertimos de forma segura la columna a numérica para evitar el ValueError
             if "PESO_TOTAL" in df_estatus.columns:
                 peso_total_val = pd.to_numeric(df_estatus["PESO_TOTAL"], errors="coerce").sum()
             else:
@@ -1539,13 +1556,11 @@ def main():
             if not df_render.empty:
                 data_render = df_render.to_dict('records')
                 
-                # HTML con tarjetas custom estilo War Room idénticas al bloque de alertas
                 html_render_cards = f"""
                 <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
                     <style>
                         body {{ background: transparent; margin: 0; padding: 0; }}
                         
-                        /* ───────── SCROLLBAR AGC STYLE ───────── */
                         ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
                         ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
                         ::-webkit-scrollbar-thumb {{ 
@@ -1624,7 +1639,6 @@ def main():
                 </div>
                 """
                 
-                # Renderizamos con componentes de altura controlada y scroll pro
                 components.html(html_render_cards, height=600, scrolling=True)
             else:
                 st.markdown(f"""
