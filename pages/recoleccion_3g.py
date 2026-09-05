@@ -1492,8 +1492,13 @@ def main():
             
             pendientes_n = len(df_estatus[df_estatus["ESTATUS"].str.upper().str.contains("PENDIENTE|PROCESO", na=False)]) if "ESTATUS" in df_estatus.columns else 0
             entregados_n = len(df_estatus[df_estatus["ESTATUS"].str.upper().str.contains("ENTREGADO", na=False)]) if "ESTATUS" in df_estatus.columns else 0
-            peso_total_val = df_estatus["PESO_TOTAL"].sum() if "PESO_TOTAL" in df_estatus.columns else 0.0
-
+            
+            # Convertimos de forma segura la columna a numérica para evitar el ValueError
+            if "PESO_TOTAL" in df_estatus.columns:
+                peso_total_val = pd.to_numeric(df_estatus["PESO_TOTAL"], errors="coerce").sum()
+            else:
+                peso_total_val = 0.0
+                
             kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
             with kpi1:
