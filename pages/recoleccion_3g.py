@@ -888,19 +888,20 @@ def main():
     BRANCH = "main"
 
     def cargar_estatus_github():
-        try:
-            url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{BRANCH}/{GITHUB_FILE}"
-            token = st.secrets["GITHUB_TOKEN"]
-            headers = {"Authorization": f"token {token}"}
-            response = requests.get(url, headers=headers)
-            if response.status_code == 200:
-                df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
-                df.columns = df.columns.astype(str).str.strip()
-                return df
-            else:
-                return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones"])
-        except Exception:
-            return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones"])
+    try:
+        url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{BRANCH}/{GITHUB_FILE}"
+        token = st.secrets["GITHUB_TOKEN"]
+        headers = {"Authorization": f"token {token}"}
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            # Forzamos dtype=str para evitar conflictos de tipos con celdas vacías
+            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig", dtype=str)
+            df.columns = df.columns.astype(str).str.strip()
+            return df
+        else:
+            return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"])
+    except Exception:
+        return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"])
 
     def guardar_estatus_github(df_nuevo, mensaje="Actualizar estatus de recolecciones"):
         try:
@@ -1671,11 +1672,11 @@ def main():
                         df_estatus_edit.loc[idx_match, "Observaciones"] = nueva_obs
                         df_estatus_edit.loc[idx_match, "Cliente"] = nuevo_cliente
                         df_estatus_edit.loc[idx_match, "Proveedor"] = nuevo_proveedor
-                        df_estatus_edit.loc[idx_match, "Peso_Total"] = nuevo_peso
+                        df_estatus_edit.loc[idx_match, "Peso_Total"] = float(nuevo_peso)
                         df_estatus_edit.loc[idx_match, "Solicitante"] = nuevo_solicitante
-                        df_estatus_edit.loc[idx_match, "Numero de Guia"] = nuevo_num_guia
-                        df_estatus_edit.loc[idx_match, "Costo de la Guia"] = nuevo_costo_guia
-
+                        df_estatus_edit.loc[idx_match, "Numero de Guia"] = str(nuevo_num_guia).strip()
+                        df_estatus_edit.loc[idx_match, "Costo de la Guia"] = float(nuevo_costo_guia)
+                    
                         if guardar_estatus_github(df_estatus_edit, f"Actualización de estatus y datos para folio {folio_a_editar}"):
                             st.success(f"¡Cambios guardados correctamente en GitHub para el folio {folio_a_editar}!")
                             st.rerun()
