@@ -73,7 +73,7 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* CONTROL TOTAL DE ALTURA Y CENTRADO DE LA CAJA DE BÚSQUEDA NATIVA */
+/* CAJA DE BÚSQUEDA MÁS ALTA Y TEXTO CENTRADO */
 div[data-baseweb="base-input"] {{
     height: 65px !important;
     min-height: 65px !important;
@@ -230,18 +230,32 @@ def verificar_permiso_pagina(modulo, submodulo=None):
 verificar_permiso_pagina("tracking")
 
 # ==========================================
-# FUNCIONES MAESTRAS DE SOPORTE Y DATOS
+# FUNCIONES MAESTRAS DE SOPORTE Y DATOS (MATRIZ GLOBAL Y T1)
 # ==========================================
 @st.cache_data(ttl=60)
 def cargar_datos_dashboard():
     t = int(time.time())
-    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+    url_global = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+    url_t1 = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/T1.csv?v={t}"
+    
+    dfs = []
     try:
-        df = pd.read_csv(url, encoding="utf-8-sig")
-        df.columns = df.columns.str.strip()
-        return df
-    except Exception as e:
-        return None
+        df_global = pd.read_csv(url_global, encoding="utf-8-sig")
+        df_global.columns = df_global.columns.str.strip()
+        dfs.append(df_global)
+    except Exception:
+        pass
+
+    try:
+        df_t1 = pd.read_csv(url_t1, encoding="utf-8-sig")
+        df_t1.columns = df_t1.columns.str.strip()
+        dfs.append(df_t1)
+    except Exception:
+        pass
+
+    if dfs:
+        return pd.concat(dfs, ignore_index=True)
+    return None
 
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "TRACKING"
@@ -415,19 +429,10 @@ st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:15px 0; opacity:0.
 
 
 # ==========================================
-# CUERPO PRINCIPAL: CENTRO DE BÚSQUEDA NATIVO (ESTILO NEXION)
+# CUERPO PRINCIPAL: BÚSQUEDA DIRECTA (MATRIZ GLOBAL Y T1)
 # ==========================================
 def main():
-    st.markdown("""
-        <div style="text-align: center; padding: 25px 0 20px 0; font-family: 'Inter', sans-serif;">
-            <p style="color: #00FFAA; font-size: 12px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px;">
-                NEXION SMART LOGISTICS // RASTREO
-            </p>
-            <h1 style="color: white; font-size: 34px; font-weight: 800; margin: 0; letter-spacing: 1px; line-height: 1.3;">
-                Para realizar la <span style="color: #00FFAA;">búsqueda</span> ingrese el <span style="color: #82D4E6;">talón o pedido</span>
-            </h1>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
     col_l, col_c, col_r = st.columns([1, 2.8, 1])
     with col_c:
@@ -447,22 +452,17 @@ def main():
 
         if query or btn_buscar:
             if query:
-                url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
-                try:
-                    df_matriz_fresco = pd.read_csv(url_raw)
-                    df_matriz_fresco.columns = df_matriz_fresco.columns.str.strip()
-                except Exception:
-                    df_matriz_fresco = cargar_datos_dashboard()
+                df_combinado = cargar_datos_dashboard()
 
                 res_ops = pd.DataFrame()
-                if df_matriz_fresco is not None:
+                if df_combinado is not None:
                     cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
-                    cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
+                    cols_op_disp = [c for c in cols_op if c in df_combinado.columns]
                     if cols_op_disp:
-                        mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
+                        mask_ops = df_combinado[cols_op_disp].astype(str).apply(
                             lambda x: x.str.contains(query, case=False, na=False)
                         ).any(axis=1)
-                        res_ops = df_matriz_fresco[mask_ops].copy()
+                        res_ops = df_combinado[mask_ops].copy()
 
                 if not res_ops.empty:
                     st.session_state.busqueda_activa = True
@@ -471,7 +471,7 @@ def main():
                 else:
                     st.session_state.busqueda_activa = False
                     st.session_state.resultado_busqueda = None
-                    st.toast("Sin resultados en Matriz Global", icon="⚠️")
+                    st.toast("Sin resultados en Matriz Global y T1", icon="⚠️")
 
     # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA (TIMELINE DETALLADO) ────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
@@ -551,50 +551,6 @@ def main():
             for _, d in resultados.iterrows():
                 status_text = d["COMENTARIOS"] if "COMENTARIOS" in d and pd.notna(d.get("COMENTARIOS")) else "OK"
                 st.markdown(f"<div style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {azul_premium};border-radius:12px;padding:18px 25px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:18px;color:{azul_premium};letter-spacing:0.5px;'># {d.get('NÚMERO DE PEDIDO','')}</b><br><span style='font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;'>Envío: {d.get('FECHA DE ENVÍO','')}</span></div><div style='flex:2.5;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('NOMBRE DEL CLIENTE','')}</b><br><i style='font-size:11px;color:rgba(255,255,255,0.5);font-style:normal;font-weight:600;'>{d.get('DESTINO','')}</i></div><div style='flex:1.8;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>TRANSPORTE Y GUÍA</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('FLETERA', 'LOGÍSTICA')}</b><br><span style='font-size:12px;color:{azul_premium};font-weight:700;font-family:monospace;'>{d.get('NÚMERO DE GUÍA','')}</span></div><div style='flex:1.2;text-align:right;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>ESTATUS ENTREGA</span><br><b style='font-size:14px;color:{azul_premium};'>{d.get('FECHA DE ENTREGA REAL','')}</b><br><span style='font-size:10px;color:white;font-weight:800;text-transform:uppercase;opacity:0.8;'>{status_text}</span></div></div>", unsafe_allow_html=True)
-
-    st.markdown("<br><hr style='border-top:1px solid #ffffff; opacity:0.1;'><br>", unsafe_allow_html=True)
-
-    # ── SECCIÓN INFERIOR: ÚLTIMOS ENVÍOS ACTIVOS ────────────────────────
-    df_raw = cargar_datos_dashboard()
-    if df_raw is not None:
-        st.markdown("<p style='color: #00D4FF; font-weight: 800; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 20px;'>📋 ÚLTIMOS ENVÍOS ACTIVOS EN TRAYECTORIA</p>", unsafe_allow_html=True)
-        
-        df_recientes = df_raw.head(8).copy()
-        for _, row in df_recientes.iterrows():
-            pedido = row.get('NÚMERO DE PEDIDO', 'S/N')
-            cliente = row.get('NOMBRE DEL CLIENTE', 'N/A')
-            destino = row.get('DESTINO', 'N/A')
-            guia = row.get('NÚMERO DE GUÍA', 'EN PROCESO')
-            fletera = row.get('FLETERA', 'LOGÍSTICA')
-            estatus_real = row.get('FECHA DE ENTREGA REAL', 'EN TRÁNSITO')
-            if pd.isna(estatus_real) or str(estatus_real).strip() == "":
-                estatus_real = "EN TRÁNSITO"
-                color_estatus = "#38bdf8"
-            else:
-                estatus_real = f"ENTREGADO: {estatus_real}"
-                color_estatus = "#00FFAA"
-
-            st.markdown(f"""
-                <div style="background: #263238; border: 1px solid rgba(255,255,255,0.06); border-left: 4px solid #38bdf8; border-radius: 10px; padding: 18px 22px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                    <div style="flex: 1;">
-                        <span style="font-size: 9px; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px;">PEDIDO / FACTURA</span>
-                        <br><b style="font-size: 16px; color: #00FFAA; font-family: monospace;">#{pedido}</b>
-                    </div>
-                    <div style="flex: 2.5; padding: 0 20px; border-left: 1px solid rgba(255,255,255,0.06);">
-                        <span style="font-size: 9px; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px;">CLIENTE / DESTINO</span>
-                        <br><span style="font-size: 13px; color: white; font-weight: 700; text-transform: uppercase;">{str(cliente)[:45]}</span>
-                        <br><span style="font-size: 11px; color: #38bdf8; font-weight: 600;">📍 {destino}</span>
-                    </div>
-                    <div style="flex: 1.5; padding: 0 20px; border-left: 1px solid rgba(255,255,255,0.06);">
-                        <span style="font-size: 9px; color: rgba(255,255,255,0.5); font-weight: 800; letter-spacing: 1px;">TRANSPORTISTA / GUÍA</span>
-                        <br><b style="font-size: 13px; color: white; text-transform: uppercase;">{fletera}</b>
-                        <br><span style="font-size: 12px; color: #00D4FF; font-family: monospace; font-weight: 700;">{guia}</span>
-                    </div>
-                    <div style="text-align: right; padding-left: 15px; border-left: 1px solid rgba(255,255,255,0.06); min-width: 150px;">
-                        <span style="background: {color_estatus}15; color: {color_estatus}; border: 1px solid {color_estatus}40; padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;">{estatus_real}</span>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
