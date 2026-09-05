@@ -32,7 +32,7 @@ vars_css = {
 st.markdown(
     f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&family=JetBrains+Mono:wght@500;700;800&display=swap');
 
 @keyframes fadeInUp {{
     from {{ opacity: 0; transform: translateY(15px); }}
@@ -73,7 +73,7 @@ html, body, .stApp {{
     background-color: {vars_css['bg']} !important;
 }}
 
-/* CAJA DE BÚSQUEDA MÁS ALTA Y TEXTO CENTRADO */
+/* CAJA DE BÚSQUEDA MINIMALISTA Y POTENTE */
 div[data-baseweb="base-input"] {{
     height: 65px !important;
     min-height: 65px !important;
@@ -91,20 +91,25 @@ div[data-baseweb="input"] {{
 }}
 
 div[data-baseweb="input"] input {{
-    font-size: 18px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 19px !important;
     font-weight: 700 !important;
-    color: {vars_css['text']} !important;
+    color: #00FFAA !important;
     text-align: center !important;
     height: 65px !important;
     line-height: 65px !important;
     padding: 0 20px !important;
     background: transparent !important;
+    letter-spacing: 1px !important;
 }}
 
 div[data-baseweb="input"] input::placeholder {{
     text-align: center !important;
-    color: rgba(255, 255, 255, 0.5) !important;
+    color: rgba(255, 255, 255, 0.4) !important;
     font-weight: 600 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 14px !important;
+    letter-spacing: 2px !important;
 }}
 
 /* BOTÓN RASTREAR MÁS ALTO Y LLAMATIVO */
@@ -429,10 +434,19 @@ st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:15px 0; opacity:0.
 
 
 # ==========================================
-# CUERPO PRINCIPAL: BÚSQUEDA DIRECTA (MATRIZ GLOBAL Y T1)
+# CUERPO PRINCIPAL: BÚSQUEDA DIRECTA (MINIMALISTA)
 # ==========================================
 def main():
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+
+    # Línea de texto minimalista con fuente perra (JetBrains Mono / Cyberpunk style)
+    st.markdown("""
+        <div style="text-align: center; margin-bottom: 22px; font-family: 'JetBrains Mono', monospace;">
+            <span style="color: #00FFAA; font-size: 13px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; background: rgba(0,255,170,0.08); padding: 8px 18px; border-radius: 6px; border: 1px solid rgba(0,255,170,0.2); box-shadow: 0 0 15px rgba(0,255,170,0.1);">
+                ⚡ COM_START // INGRESE TALÓN O PEDIDO
+            </span>
+        </div>
+    """, unsafe_allow_html=True)
 
     col_l, col_c, col_r = st.columns([1, 2.8, 1])
     with col_c:
@@ -441,7 +455,7 @@ def main():
 
         query = st.text_input(
             "Buscar en central",
-            placeholder="🔍 INGRESE NÚMERO DE GUÍA, PEDIDO O CLIENTE..." if not es_atencion3g else "🔍 BUSCADOR DESACTIVADO",
+            placeholder="[ TÁLON / GUÍA / PEDIDO ]" if not es_atencion3g else "BUSCADOR DESACTIVADO",
             label_visibility="collapsed",
             key=key_actual,
             disabled=es_atencion3g,
