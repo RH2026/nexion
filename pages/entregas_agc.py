@@ -900,7 +900,18 @@ def main():
                     fecha_str = partes[0]
                     hora_str = partes[1].upper()
                     
-                    dt_cita = datetime.strptime(fecha_str, "%d/%m/%Y" if len(fecha_str.split('/')[-1])==4 else "%d/%m/%m")
+                    # Corrección robusta de formato de fecha (soporta %m y %Y de manera flexible)
+                    dt_cita = None
+                    for fmt in ("%d/%m/%Y", "%d/%m/%y", "%d/%m/%m"):
+                        try:
+                            dt_cita = datetime.strptime(fecha_str, fmt)
+                            break
+                        except ValueError:
+                            continue
+                    
+                    if not dt_cita:
+                        continue
+
                     f_key = dt_cita.strftime("%Y-%m-%d")
                     
                     h_clean = "08:00"
@@ -930,10 +941,9 @@ def main():
                         except:
                             tarima_val = "0"
                     
-                    # Formato limpio para el calendario: solo Orden, Tarimas y Producto (sin unidad)
                     detalle_html = f"<div class='mb-1 font-bold text-amber-300'>{oc_txt} | {tarima_val} Tarimas</div><div class='text-xs text-slate-200 font-semibold'>{producto_txt}</div>"
                     eventos_map[f_key][h_clean].append(detalle_html)
-            except:
+            except Exception:
                 pass
 
         horas_fijas = ["08:00", "11:00", "15:00"]
