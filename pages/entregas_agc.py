@@ -890,6 +890,8 @@ def main():
         dias_semana = [lunes + timedelta(days=i) for i in range(7)]
 
         eventos_map = {}
+        horas_detectadas = set()
+
         for item in data_completa:
             if item.get('estatus') == 'ENTREGADA':
                 continue
@@ -900,7 +902,6 @@ def main():
                     fecha_str = partes[0]
                     hora_str = partes[1].upper()
                     
-                    # Corrección robusta de formato de fecha (soporta %m y %Y de manera flexible)
                     dt_cita = None
                     for fmt in ("%d/%m/%Y", "%d/%m/%y", "%d/%m/%m"):
                         try:
@@ -914,15 +915,12 @@ def main():
 
                     f_key = dt_cita.strftime("%Y-%m-%d")
                     
-                    h_clean = "08:00"
-                    if "11" in hora_str:
-                        h_clean = "11:00"
-                    elif "15" in hora_str or "03" in hora_str:
-                        h_clean = "15:00"
-                    elif ":" in hora_str:
-                        h_clean = hora_str[:5]
-                    else:
-                        h_clean = "08:00"
+                    # Limpieza y extracción robusta de la hora para mostrarla tal cual o estandarizada
+                    h_clean = hora_str.replace("A. M.", "AM").replace("P. M.", "PM").strip()
+                    if len(h_clean) > 8:
+                        h_clean = h_clean[:8]
+
+                    horas_detectadas.add(h_clean)
 
                     if f_key not in eventos_map:
                         eventos_map[f_key] = {}
@@ -946,7 +944,9 @@ def main():
             except Exception:
                 pass
 
-        horas_fijas = ["08:00", "11:00", "15:00"]
+        # Ordenar las horas detectadas o usar predeterminadas si está vacío
+        horas_fijas = sorted(list(horas_detectadas)) if horas_detectadas else ["08:00", "11:00", "15:00"]
+        
         nombres_dias_es = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
         columnas_html = "<th class='p-3 text-left text-xs font-black uppercase text-slate-400 border-b border-white/10 bg-[#212c31] sticky left-0 z-10'>Hora</th>"
         for i, d in enumerate(dias_semana):
