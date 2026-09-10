@@ -168,8 +168,13 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     # SISTEMA DE SEGURIDAD Y PERMISOS PRO
     # ==========================================
     if not st.session_state.get("autenticado", False):
-        # Guardamos el módulo actual como destino para volver exactamente aquí tras loguearte
-        st.session_state.pagina_destino = modulo_actual
+        # Capturamos el archivo actual desde el que se dispara la seguridad
+        import inspect
+        frame_actual = inspect.currentframe().f_back
+        nombre_archivo = inspect.getfile(frame_actual)
+        
+        # Guardamos la ruta relativa exacta para volver aquí tras loguearte
+        st.session_state.pagina_destino = nombre_archivo
         st.switch_page("pages/log.py")
 
     def verificar_permiso_pagina(modulo, submodulo=None):
