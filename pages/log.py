@@ -50,18 +50,17 @@ DESTINOS_VALIDOS = {
     "recoleccion_3g": "pages/recoleccion_3g.py",
     "tracking": "pages/tracking.py",
     "check_agc": "pages/check_agc.py",
-    
 }
 
 
 # ============================================================
-# 4. OBTENER PÁGINA DE RETORNO
+# 4. OBTENER PÁGINA DE RETORNO (INTELIGENTE)
 # ============================================================
 
 def obtener_pagina_destino():
 
     # --------------------------------------------------------
-    # 1. PRIMERO: URL
+    # 1. PRIMERO: URL QUERY PARAMS
     # --------------------------------------------------------
     try:
         pagina_url = st.query_params.get("return_to", "")
@@ -76,18 +75,39 @@ def obtener_pagina_destino():
         pass
 
     # --------------------------------------------------------
-    # 2. SEGUNDO: SESSION STATE
+    # 2. SEGUNDO: SESSION STATE (GUARDADO POR EL LAYOUT)
     # --------------------------------------------------------
-    pagina_session = st.session_state.get("pagina_pendiente", "")
+    pagina_session = st.session_state.get("pagina_destino", "")
 
     if pagina_session:
         pagina_session = str(pagina_session).strip().lower()
+        
+        # Mapeo por si viene el nombre completo del módulo (ej. "FORMATOS") o clave directa
+        mapeo_modulos = {
+            "formatos": "check_agc",
+            "check list agc": "check_agc",
+            "dashboard": "dashboard"
+        }
+        
+        if pagina_session in mapeo_modulos:
+            return mapeo_modulos[pagina_session]
 
         if pagina_session in DESTINOS_VALIDOS:
             return pagina_session
 
     # --------------------------------------------------------
-    # 3. SI NO HAY DESTINO: DASHBOARD
+    # 3. TERCERO: SESSION STATE ANTIGUO (PENDIENTE)
+    # --------------------------------------------------------
+    pagina_pendiente = st.session_state.get("pagina_pendiente", "")
+
+    if pagina_pendiente:
+        pagina_pendiente = str(pagina_pendiente).strip().lower()
+
+        if pagina_pendiente in DESTINOS_VALIDOS:
+            return pagina_pendiente
+
+    # --------------------------------------------------------
+    # 4. SI NO HAY DESTINO: DASHBOARD
     # --------------------------------------------------------
     return "dashboard"
 
@@ -456,8 +476,7 @@ def login_screen():
 
 
                     # ----------------------------------------
-                    # LIMPIAR RETURN_TO
-                    # NO LO HACEMOS ANTES DEL SWITCH
+                    # DESTINO ARCHIVO
                     # ----------------------------------------
 
                     destino_archivo = (
