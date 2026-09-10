@@ -26,22 +26,8 @@ render_layout(modulo_actual="FORMATOS", submodulo_actual="COTIZACIONES")
 jypesa_azul = "#003A70" 
 jypesa_amarillo = "#FFC72C"
 
-st.markdown("""
-    <style>
-    .analysis-box {
-        background-color: #1A252F;
-        padding: 25px;
-        border-radius: 12px;
-        border: 1px solid #243441;
-        color: #A4B9C8;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-with st.container():
-    st.markdown('<div class="analysis-box">', unsafe_allow_html=True)
-    
-    st.markdown("<h4 style='color: #FFFFFF; font-size: 12px; font-family: \"Segoe UI\", sans-serif; font-weight: 400; letter-spacing: 1px; margin-bottom: 0px;'>DATOS GENERALES</h4>", unsafe_allow_html=True)
+with st.container(border=True):
+    st.markdown("<p style='color: #A4B9C8; font-size: 11px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px;'>DATOS GENERALES</p>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     with c1:
         cliente = st.text_input("CLIENTE / EMPRESA", placeholder="Ej. Comercializadora ABC")
@@ -50,9 +36,9 @@ with st.container():
     with c3:
         destino = st.text_input("DESTINO", placeholder="Ej. Monterrey, N.L.")
     
-    st.write("") # Un pequeño espacio visual
+    st.write("") 
     
-    st.markdown("<h4 style='color: #FFFFFF; font-size: 12px; font-family: \"Segoe UI\", sans-serif; font-weight: 400; letter-spacing: 1px; margin-bottom: 0px;'>DETALLES DEL SERVICIO</h4>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #A4B9C8; font-size: 11px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px;'>DETALLES DEL SERVICIO</p>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     with col1:
         transporte = st.text_input("FLETERA / TRANSPORTE")
@@ -65,9 +51,7 @@ with st.container():
         tiempo_transito = st.text_input("TIEMPO DE TRÁNSITO", placeholder="Ej. 2 a 3 días hábiles")
     
     observaciones = st.text_area("OBSERVACIONES (Opcional)", placeholder="Condiciones especiales, maniobras, seguro, etc.")
-        
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+
 st.write("") 
 
 # --- LÓGICA DE IMPRESIÓN COMPACTA Y SIN ENCABEZADOS ---
@@ -91,9 +75,7 @@ def generar_cotizacion_html():
     <head>
         <style>
             @media print {{
-                /* Esto quita la URL, fecha y números de página por defecto del navegador */
                 @page {{ margin: 0; size: letter; }}
-                /* Margen seguro para que el contenido no quede pegado a la orilla del papel */
                 body {{ margin: 1.5cm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
             }}
         </style>
