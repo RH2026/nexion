@@ -22,6 +22,7 @@ PAGINAS = {
     "recoleccion_3g": "pages/recoleccion_3g.py",
     "tracking": "pages/tracking.py",
     "check_agc": "pages/check_agc.py",
+    "preguia_paqmex.py": "pages/preguia_paqmex.py",
 }
 
 # ============================================================
