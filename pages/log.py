@@ -54,7 +54,7 @@ DESTINOS_VALIDOS = {
 
 
 # ============================================================
-# 4. OBTENER PÁGINA DE RETORNO (INTELIGENTE)
+# 4. OBTENER PÁGINA DE RETORNO
 # ============================================================
 
 def obtener_pagina_destino():
@@ -64,50 +64,40 @@ def obtener_pagina_destino():
     # --------------------------------------------------------
     try:
         pagina_url = st.query_params.get("return_to", "")
-
         if pagina_url:
             pagina_url = str(pagina_url).strip().lower()
-
             if pagina_url in DESTINOS_VALIDOS:
                 return pagina_url
-
     except Exception:
         pass
 
     # --------------------------------------------------------
-    # 2. SEGUNDO: SESSION STATE (GUARDADO POR EL LAYOUT)
+    # 2. SEGUNDO: SESSION STATE (CAPTURADO POR EL LAYOUT)
     # --------------------------------------------------------
     pagina_session = st.session_state.get("pagina_destino", "")
 
     if pagina_session:
-        pagina_session = str(pagina_session).strip().lower()
+        pagina_session_str = str(pagina_session).strip().lower()
         
-        # Mapeo por si viene el nombre completo del módulo (ej. "FORMATOS") o clave directa
-        mapeo_modulos = {
-            "formatos": "check_agc",
-            "check list agc": "check_agc",
-            "dashboard": "dashboard"
-        }
-        
-        if pagina_session in mapeo_modulos:
-            return mapeo_modulos[pagina_session]
+        # Si viene una ruta completa de archivo (ej. /app/nexion/pages/check_agc.py o pages/check_agc.py)
+        for clave, ruta_relativa in DESTINOS_VALIDOS.items():
+            if clave in pagina_session_str or ruta_relativa.lower() in pagina_session_str:
+                return clave
 
-        if pagina_session in DESTINOS_VALIDOS:
-            return pagina_session
+        if pagina_session_str in DESTINOS_VALIDOS:
+            return pagina_session_str
 
     # --------------------------------------------------------
-    # 3. TERCERO: SESSION STATE ANTIGUO (PENDIENTE)
+    # 3. TERCERO: SESSION STATE PENDIENTE ANTIGUO
     # --------------------------------------------------------
     pagina_pendiente = st.session_state.get("pagina_pendiente", "")
-
     if pagina_pendiente:
         pagina_pendiente = str(pagina_pendiente).strip().lower()
-
         if pagina_pendiente in DESTINOS_VALIDOS:
             return pagina_pendiente
 
     # --------------------------------------------------------
-    # 4. SI NO HAY DESTINO: DASHBOARD
+    # 4. SI NO HAY DESTINO VÁLIDO: DASHBOARD
     # --------------------------------------------------------
     return "dashboard"
 
