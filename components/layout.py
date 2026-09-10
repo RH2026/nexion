@@ -465,10 +465,10 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 else:
                                     st.rerun()
             
-                if permisos.get("FORMATOS", False):
+                if permisos.get("FORMATOS", False) or usuario.upper() == "RIGOBERTO":
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        opciones_for_posibles = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
-                        opciones_for = [s for s in opciones_for_posibles if permisos.get(s, False)]
+                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
+                        
                         for s in opciones_for:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_for_{s}2"):
@@ -476,7 +476,15 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 st.session_state.menu_main = "FORMATOS"
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
-                                st.rerun()
+                                
+                                # Redirecciones específicas según la opción seleccionada
+                                if s == "CHECK LIST AGC":
+                                    st.switch_page("pages/check_agc.py")
+                                elif s == "RECOLECCION 3G":
+                                    st.switch_page("pages/recoleccion_3g.py")
+                                else:
+                                    st.toast(f"Módulo {s} en desarrollo...", icon="🚧")
+                                    st.rerun()
             
                 if permisos.get("CENTRO DE DATOS", False):
                     with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
