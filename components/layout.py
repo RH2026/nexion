@@ -168,9 +168,8 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     # SISTEMA DE SEGURIDAD Y PERMISOS PRO
     # ==========================================
     if not st.session_state.get("autenticado", False):
-        # Guardamos la ruta o archivo actual para regresar aquí mismo tras el login
-        # (Streamlit sabe en qué página está ejecutándose)
-        st.session_state.pagina_destino = st.session_state.get("menu_main", "dashboard.py")
+        # Guardamos el módulo actual como destino para volver exactamente aquí tras loguearte
+        st.session_state.pagina_destino = modulo_actual
         st.switch_page("pages/log.py")
 
     def verificar_permiso_pagina(modulo, submodulo=None):
