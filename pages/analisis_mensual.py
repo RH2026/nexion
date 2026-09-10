@@ -27,73 +27,78 @@ render_layout(modulo_actual="REPORTES", submodulo_actual="ANALISIS MENSUAL")
 # 3. LÓGICA DE NEGOCIO Y DATOS
 # ============================================================
 
-# --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX & REDISEÑO DE TARJETAS) ---
+# --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO NEÓN ESMERALDA VIVO) ---
 st.markdown("""
 <style>
-.main { background-color: #0B1014; }
+.main { background-color: #070B0E; }
 
-/* Rediseño de Tarjetas estilo Onyx / Tarjeta Ejecutiva Moderna */
+/* Tarjetas con estilo moderno, luminosas y borde esmeralda vibrante */
 .metric-card {
-    background: linear-gradient(145deg, #131A21 0%, #1A252F 100%);
-    padding: 20px;
-    border-radius: 14px;
-    border: 1px solid #243441;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-    margin-bottom: 16px;
+    background: linear-gradient(135deg, rgba(20, 35, 45, 0.8) 0%, rgba(12, 22, 30, 0.95) 100%);
+    padding: 22px;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 255, 170, 0.3);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 170, 0.1);
+    margin-bottom: 18px;
     position: relative;
     overflow: hidden;
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
 }
 .metric-card:hover {
     border-color: #00FFAA;
-    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 255, 170, 0.25);
+    transform: translateY(-3px);
 }
 .metric-card::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
-    width: 4px;
+    width: 5px;
     height: 100%;
-    background: #00FFAA;
+    background: linear-gradient(180deg, #00FFAA 0%, #00B4D8 100%);
+    box-shadow: 0 0 10px #00FFAA;
 }
 .metric-label {
-    color: #8A9BA8;
+    color: #A0B3C6;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     margin-bottom: 8px;
 }
 .metric-value {
     color: #FFFFFF;
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-weight: 900;
     letter-spacing: -0.5px;
     margin-bottom: 6px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 .metric-delta {
     font-size: 0.75rem;
     font-weight: 700;
     display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
 }
-.delta-pos { color: #00FFAA; background: rgba(0, 255, 170, 0.1); }
-.delta-neg { color: #FF5252; background: rgba(255, 82, 82, 0.1); }
+.delta-pos { color: #00FFAA; background: rgba(0, 255, 170, 0.15); border: 1px solid rgba(0, 255, 170, 0.3); }
+.delta-neg { color: #FF5252; background: rgba(255, 82, 82, 0.15); border: 1px solid rgba(255, 82, 82, 0.3); }
 
-h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #A4B9C8; padding-bottom: 10px; }
-h3 { color: #A4B9C8; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
+h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #00FFAA; padding-bottom: 10px; }
+h3 { color: #00FFAA; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,255,170,0.2); }
 .analysis-box {
-    background-color: #1A252F;
+    background: linear-gradient(135deg, rgba(20, 35, 45, 0.9) 0%, rgba(12, 22, 30, 0.95) 100%);
     padding: 25px;
-    border-radius: 12px;
-    border: 1px solid #243441;
-    color: #A4B9C8;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 255, 170, 0.3);
+    color: #C1D0DF;
     line-height: 1.8;
     font-size: 0.95rem;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
 }
-.highlight { color: #FFFFFF; font-weight: bold; }
+.highlight { color: #00FFAA; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -207,7 +212,7 @@ try:
         total_consignas = df_filtered.loc[conceptos_limpios.str.contains('CONSIGNA', regex=True), 'COSTO DE LA GUIA'].sum()
         total_fnacional = df_filtered.loc[conceptos_limpios.str.contains('NACIONAL', regex=True), 'COSTO DE LA GUIA'].sum()
     else:
-        st.warning("⚠️ Amor, Nexion não está detectando la columna CONCEPTO en el archivo CSV.")
+        st.warning("⚠️ Amor, Nexion no está detectando la columna CONCEPTO en el archivo CSV.")
 
     # --- LÓGICA DE HIERRO INTELIGENTE: COMPARATIVA MES ANTERIOR ---
     meses_map_inv = {k: v for v, k in meses_nombres.items()}
@@ -256,13 +261,12 @@ try:
         if st.button("VER GRÁFICO COMPARATIVO", use_container_width=True):
             st.session_state.ver_grafico = True
 
-    # --- 5. VISTA DE TARJETAS (REDISEÑADAS) ---
+    # --- 5. VISTA DE TARJETAS (ESTILO NEÓN ESMERALDA VIVO) ---
     if not st.session_state.ver_grafico:
         st.markdown("### RESUMEN DE RENDIMIENTO")
         
         txt_mes_ant = f"vs {mes_anterior_nombre}" if mes_anterior_nombre else "Promedio"
         
-        # Función auxiliar para renderizar las tarjetas personalizadas limpias
         def render_card(label, value, delta_text, is_positive=True):
             delta_class = "delta-pos" if is_positive else "delta-neg"
             st.markdown(f"""
@@ -317,13 +321,13 @@ try:
             <div style="display: flex; justify-content: space-between;">
                 <b>ESTADO FINANCIERO:</b> <span>{status_target}</span>
             </div>
-            <hr style="border: 0.5px solid #243441; margin: 10px 0;">
+            <hr style="border: 0.5px solid rgba(0, 255, 170, 0.2); margin: 10px 0;">
             <b>RESUMEN EJECUTIVO:</b><br>
             • {desc_costo}<br>
             • La logística de entregas se califica como <span class="highlight">{status_entrega}</span> con un cumplimiento del {pct_eficiencia:.1f}%.<br>
             • El costo operativo por unidad presenta {tendencia_caja} del {abs(var_costo_caja):.1f}% vs el año anterior.{alerta_incidencias}
             <br><br>
-            <i style="font-size: 0.85rem; color: #A4B9C8;">* Datos calculados dinámicamente basados en el cierre de fletes y promesas de entrega.</i>
+            <i style="font-size: 0.85rem; color: #8FA4B5;">* Datos calculados dinámicamente basados en el cierre de fletes y promesas de entrega.</i>
         </div>'''
         
         st.markdown(html_analisis, unsafe_allow_html=True)
@@ -594,7 +598,7 @@ try:
             x=df_g_2026.sort_values('MES')['MES'], 
             y=df_g_2026.sort_values('MES')['COSTO DE FLETE'], 
             name='Gasto 2026 (Actual)', 
-            marker_color='#D4AF37', 
+            marker_color='#00FFAA', 
             text=[f'${x:,.0f}' for x in df_g_2026.sort_values('MES')['COSTO DE FLETE']],
             textposition='outside',
             textfont=dict(color='#FFFFFF')
