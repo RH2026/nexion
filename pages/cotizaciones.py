@@ -54,12 +54,22 @@ with st.container(border=True):
 
 st.write("") 
 
-# --- LÓGICA DE IMPRESIÓN COMPACTA Y SIN ENCABEZADOS ---
+# --- LÓGICA DE IMPRESIÓN CON NOMBRE DINÁMICO ---
 def generar_cotizacion_html():
     ahora = datetime.now()
     ms = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
     fecha_texto = f"{ahora.day} de {ms[ahora.month - 1]} del {ahora.year}"
     
+    # Formato de fecha corto para el nombre del archivo (Ej. 20260910)
+    fecha_archivo = ahora.strftime('%Y%m%d')
+    
+    # Limpiamos los textos para que no lleven caracteres extraños en el nombre del archivo
+    destino_limpio = "".join(c for c in (destino if destino else "DESTINO") if c.isalnum() or c.isspace()).strip().replace(" ", "_")
+    transporte_limpio = "".join(c for c in (transporte if transporte else "TRANSPORTE") if c.isalnum() or c.isspace()).strip().replace(" ", "_")
+    
+    # Nombre del archivo resultante: COTIZACION_20260910_Monterrey_Paquetexpress
+    nombre_archivo_pdf = f"COTIZACION_{fecha_archivo}_{destino_limpio}_{transporte_limpio}"
+
     cliente_txt = cliente if cliente else "A QUIEN CORRESPONDA"
     
     obs_html = f"""
@@ -73,6 +83,7 @@ def generar_cotizacion_html():
     <!DOCTYPE html>
     <html>
     <head>
+        <title>{nombre_archivo_pdf}</title>
         <style>
             @media print {{
                 @page {{ margin: 0; size: letter; }}
