@@ -656,6 +656,8 @@ with header_zone:
                                     st.switch_page("pages/check_agc.py")
                                 elif s == "RECOLECCION 3G":
                                     st.switch_page("pages/recoleccion_3g.py")
+                                elif s == "PREGUIA PAQMEX":
+                                    st.switch_page("pages/preguia_paqmex.py")
                                 else:
                                     st.toast(f"Módulo {s} en desarrollo...", icon="🚧")
                                     st.rerun()
