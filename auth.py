@@ -24,6 +24,7 @@ PAGINAS = {
     "check_agc": "pages/check_agc.py",
     "preguia_paqmex": "pages/preguia_paqmex.py",
     "salida_pt": "pages/salida_pt.py",
+    "analisis_mensual" : "pages/analisis_mensual.py",
 }
 
 # ============================================================
