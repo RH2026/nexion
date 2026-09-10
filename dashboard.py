@@ -652,12 +652,14 @@ with header_zone:
                                 st.session_state.busqueda_activa = False
                                 
                                 # Redirecciones específicas según la opción seleccionada
-                                if s == "CHECK LIST AGC":
+                                if s == "SALIDA DE PT":
+                                    st.switch_page("pages/salida_pt.py")
+                                elif s == "CHECK LIST AGC":
                                     st.switch_page("pages/check_agc.py")
-                                elif s == "RECOLECCION 3G":
-                                    st.switch_page("pages/recoleccion_3g.py")
                                 elif s == "PREGUIA PAQMEX":
                                     st.switch_page("pages/preguia_paqmex.py")
+                                elif s == "RECOLECCION 3G":
+                                    st.switch_page("pages/recoleccion_3g.py")
                                 else:
                                     st.toast(f"Módulo {s} en desarrollo...", icon="🚧")
                                     st.rerun()
