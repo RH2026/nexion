@@ -27,15 +27,15 @@ render_layout(modulo_actual="REPORTES", submodulo_actual="ANALISIS MENSUAL")
 # 3. LÓGICA DE NEGOCIO Y DATOS
 # ============================================================
 
-# --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO NEÓN ESMERALDA VIVO) ---
+# --- 1. MOTOR DE DATOS NIVEL ELITE (JERARQUÍA Y FLECHAS EN DELTAS) ---
 st.markdown("""
 <style>
 .main { background-color: #070B0E; }
 
-/* Tarjetas con estilo moderno, luminosas y borde esmeralda vibrante */
+/* Tarjetas con diseño esmeralda y moderno */
 .metric-card {
     background: linear-gradient(135deg, rgba(20, 35, 45, 0.8) 0%, rgba(12, 22, 30, 0.95) 100%);
-    padding: 22px;
+    padding: 20px 22px;
     border-radius: 16px;
     border: 1px solid rgba(0, 255, 170, 0.3);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 170, 0.1);
@@ -60,31 +60,35 @@ st.markdown("""
     background: linear-gradient(180deg, #00FFAA 0%, #00B4D8 100%);
     box-shadow: 0 0 10px #00FFAA;
 }
+/* Etiqueta superior compacta */
 .metric-label {
-    color: #A0B3C6;
-    font-size: 0.75rem;
-    font-weight: 800;
+    color: #8398AB;
+    font-size: 0.65rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-bottom: 8px;
+    letter-spacing: 1.2px;
+    margin-bottom: 6px;
 }
+/* Valor principal con tipografía contundente */
 .metric-value {
     color: #FFFFFF;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 900;
     letter-spacing: -0.5px;
-    margin-bottom: 6px;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    margin-bottom: 8px;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.4);
 }
+/* Deltas grandes con indicadores de dirección claros */
 .metric-delta {
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: 0.9rem;
+    font-weight: 800;
     display: inline-block;
-    padding: 3px 8px;
+    padding: 4px 10px;
     border-radius: 6px;
+    letter-spacing: 0.3px;
 }
-.delta-pos { color: #00FFAA; background: rgba(0, 255, 170, 0.15); border: 1px solid rgba(0, 255, 170, 0.3); }
-.delta-neg { color: #FF5252; background: rgba(255, 82, 82, 0.15); border: 1px solid rgba(255, 82, 82, 0.3); }
+.delta-pos { color: #00FFAA; background: rgba(0, 255, 170, 0.15); border: 1px solid rgba(0, 255, 170, 0.35); }
+.delta-neg { color: #FF5252; background: rgba(255, 82, 82, 0.15); border: 1px solid rgba(255, 82, 82, 0.35); }
 
 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #00FFAA; padding-bottom: 10px; }
 h3 { color: #00FFAA; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,255,170,0.2); }
@@ -261,14 +265,18 @@ try:
         if st.button("VER GRÁFICO COMPARATIVO", use_container_width=True):
             st.session_state.ver_grafico = True
 
-    # --- 5. VISTA DE TARJETAS (ESTILO NEÓN ESMERALDA VIVO) ---
+    # --- 5. VISTA DE TARJETAS (CON FLECHAS ARRIBA/ABAJO) ---
     if not st.session_state.ver_grafico:
         st.markdown("### RESUMEN DE RENDIMIENTO")
         
         txt_mes_ant = f"vs {mes_anterior_nombre}" if mes_anterior_nombre else "Promedio"
         
-        def render_card(label, value, delta_text, is_positive=True):
+        def render_card(label, value, raw_val, text_template, is_positive=True):
+            # Asignación automática de flecha arriba (▲) o abajo (▼) según el signo o valor numérico
+            arrow = "▲" if raw_val >= 0 else "▼"
+            delta_text = f"{arrow} {text_template}"
             delta_class = "delta-pos" if is_positive else "delta-neg"
+            
             st.markdown(f"""
                 <div class="metric-card">
                     <div class="metric-label">{label}</div>
@@ -278,26 +286,26 @@ try:
             """, unsafe_allow_html=True)
 
         k1, k2, k3 = st.columns(3)
-        with k1: render_card("COSTO DE FLETE", f"${total_flete_2026:,.2f}", f"{var_flete_total:.1f}% vs 2025", var_flete_total <= 0)
-        with k2: render_card("FACTURACIÓN", f"${total_fact_actual:,.2f}", f"{var_fact_mensual:+.1f}% {txt_mes_ant}", var_fact_mensual >= 0)
-        with k3: render_card("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", f"{var_volumen:.1f}% Vol.", var_volumen >= 0)
+        with k1: render_card("COSTO DE FLETE", f"${total_flete_2026:,.2f}", var_flete_total, f"{abs(var_flete_total):.1f}% vs 2025", var_flete_total <= 0)
+        with k2: render_card("FACTURACIÓN", f"${total_fact_actual:,.2f}", var_fact_mensual, f"{abs(var_fact_mensual):.1f}% {txt_mes_ant}", var_fact_mensual >= 0)
+        with k3: render_card("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", var_volumen, f"{abs(var_volumen):.1f}% Vol.", var_volumen >= 0)
         
         k4, k5, k6 = st.columns(3)
-        with k4: render_card("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", f"{diferencia_target:+.2f}% vs Target 7.5%", diferencia_target <= 0)
-        with k5: render_card("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", f"{var_costo_caja:.1f}% vs 2025", var_costo_caja <= 0)
-        with k6: render_card("% EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%", f"{var_eficiencia_mensual:+.1f}% {txt_mes_ant}", var_eficiencia_mensual >= 0)
+        with k4: render_card("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", diferencia_target, f"{abs(diferencia_target):.2f}% vs Target 7.5%", diferencia_target <= 0)
+        with k5: render_card("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", var_costo_caja, f"{abs(var_costo_caja):.1f}% vs 2025", var_costo_caja <= 0)
+        with k6: render_card("% EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%", var_eficiencia_mensual, f"{abs(var_eficiencia_mensual):.1f}% {txt_mes_ant}", var_eficiencia_mensual >= 0)
         
         k7, k8, k9 = st.columns(3)
-        with k7: render_card("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}", f"${var_val_monto:,.2f}", var_val_monto <= 0)
-        with k8: render_card("% DE INCIDENCIAS", f"{pct_inc:.1f}%", f"{var_pct_inc:.1f}%", var_pct_inc <= 0)
-        with k9: render_card("INCREMENTO + VI", f"${inc_vi_monto:,.2f}", f"{var_inc_vi_pct:.1f}%", inc_vi_monto <= 0)
+        with k7: render_card("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}", var_val_monto, f"${abs(var_val_monto):,.2f}", var_val_monto <= 0)
+        with k8: render_card("% DE INCIDENCIAS", f"{pct_inc:.1f}%", var_pct_inc, f"{abs(var_pct_inc):.1f}%", var_pct_inc <= 0)
+        with k9: render_card("INCREMENTO + VI", f"${inc_vi_monto:,.2f}", inc_vi_monto, f"{abs(var_inc_vi_pct):.1f}%", inc_vi_monto <= 0)
 
         # --- NUEVAS TARJETAS DE CONCEPTOS ---
         st.markdown("### DESGLOSE DE CONCEPTOS (INFORMATIVO)")
         k10, k11, k12 = st.columns(3)
-        with k10: render_card("MUESTRAS / REC.", f"${total_muestras:,.2f}", "Informativo", True)
-        with k11: render_card("CONSIGNAS", f"${total_consignas:,.2f}", "Informativo", True)
-        with k12: render_card("F NACIONAL", f"${total_fnacional:,.2f}", "Informativo", True)
+        with k10: render_card("MUESTRAS / REC.", f"${total_muestras:,.2f}", 1, "Informativo", True)
+        with k11: render_card("CONSIGNAS", f"${total_consignas:,.2f}", 1, "Informativo", True)
+        with k12: render_card("F NACIONAL", f"${total_fnacional:,.2f}", 1, "Informativo", True)
 
         # --- 6. ANÁLISIS DINÁMICO PROFUNDO ---
         st.markdown("### DIAGNÓSTICO ESTRATÉGICO DE OPERACIÓN")
