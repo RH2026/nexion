@@ -449,10 +449,11 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 else:
                                     st.rerun()
             
-                if permisos.get("REPORTES", False):
+                if permisos.get("REPORTES", False) or usuario.upper() == "RIGOBERTO":
                     with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                         opciones_rep_posibles = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
-                        opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False)]
+                        opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
+                        
                         for s in opciones_rep:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_rep_{s}2"):
@@ -460,9 +461,14 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 st.session_state.menu_main = "REPORTES"
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
-                                if s == "ENVIO DE MUESTRAS":
+                                
+                                # Redirecciones específicas según la opción seleccionada
+                                if s == "ANALISIS MENSUAL":
+                                    st.switch_page("pages/analisis_mensual.py")
+                                elif s == "ENVIO DE MUESTRAS":
                                     st.switch_page("pages/muestras.py")
                                 else:
+                                    st.toast(f"Módulo {s} en desarrollo...", icon="🚧")
                                     st.rerun()
             
                 if permisos.get("FORMATOS", False) or usuario.upper() == "RIGOBERTO":
