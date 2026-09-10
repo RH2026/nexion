@@ -27,24 +27,61 @@ render_layout(modulo_actual="REPORTES", submodulo_actual="ANALISIS MENSUAL")
 # 3. LÓGICA DE NEGOCIO Y DATOS
 # ============================================================
 
-# --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX) ---
+# --- 1. MOTOR DE DATOS NIVEL ELITE (ESTILO ONYX & REDISEÑO DE TARJETAS) ---
 st.markdown("""
 <style>
 .main { background-color: #0B1014; }
-[data-testid="stMetric"] { 
-    background-color: #1A252F; 
-    padding: 25px; 
-    border-radius: 12px; 
-    border-left: 5px solid #A4B9C8; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    min-height: 100px !important;
-    max-height: 100px !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+
+/* Rediseño de Tarjetas estilo Onyx / Tarjeta Ejecutiva Moderna */
+.metric-card {
+    background: linear-gradient(145deg, #131A21 0%, #1A252F 100%);
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid #243441;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease;
 }
-div[data-testid="stMetricValue"] { color: #E0E6ED; font-weight: 900; font-size: 1.1rem; }
-div[data-testid="stMetricLabel"] { color: #A4B9C8; letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: bold; }
+.metric-card:hover {
+    border-color: #00FFAA;
+    transform: translateY(-2px);
+}
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #00FFAA;
+}
+.metric-label {
+    color: #8A9BA8;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+}
+.metric-value {
+    color: #FFFFFF;
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+}
+.metric-delta {
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.delta-pos { color: #00FFAA; background: rgba(0, 255, 170, 0.1); }
+.delta-neg { color: #FF5252; background: rgba(255, 82, 82, 0.1); }
+
 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #A4B9C8; padding-bottom: 10px; }
 h3 { color: #A4B9C8; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; }
 .analysis-box {
@@ -57,12 +94,6 @@ h3 { color: #A4B9C8; margin-top: 30px; font-family: 'Arial'; text-transform: upp
     font-size: 0.95rem;
 }
 .highlight { color: #FFFFFF; font-weight: bold; }
-
-/* Esto cambia específicamente el tamaño del texto del Delta */
-div[data-testid="stMetricDelta"] {
-    font-size: 0.7rem !important; 
-    font-weight: bold;
-}            
 </style>
 """, unsafe_allow_html=True)
 
@@ -107,7 +138,6 @@ try:
     df_actual['MES'] = df_actual['MES'].fillna("SIN MES").astype(str).str.strip().str.upper()
     df_2025['MES'] = df_2025['MES'].fillna("SIN MES").astype(str).str.strip().str.upper()
 
-    # Blindaje en caso de que la columna no exista
     if 'FORMA DE ENVIO' in df_actual.columns:
         df_gastos = df_actual[df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False)].copy()
     else:
@@ -169,20 +199,15 @@ try:
     total_consignas = 0.0
     total_fnacional = 0.0
     
-    # 1. Buscamos el nombre de la columna dinámicamente por si el CSV le agregó espacios invisibles
     col_concepto = next((c for c in df_filtered.columns if 'CONCEPTO' in c), None)
     
     if col_concepto:
-        # 2. Llenamos los espacios vacíos y limpiamos el texto para que no haya errores por 'NaN'
         conceptos_limpios = df_filtered[col_concepto].fillna('SIN CONCEPTO').astype(str).str.strip().str.upper()
-        
-        # 3. Sumamos usando regex para que pesque cualquier variante de la palabra (F NACIONAL, Consignas, etc.)
         total_muestras = df_filtered.loc[conceptos_limpios.str.contains('MUESTRA|RECOLECCI', regex=True), 'COSTO DE LA GUIA'].sum()
         total_consignas = df_filtered.loc[conceptos_limpios.str.contains('CONSIGNA', regex=True), 'COSTO DE LA GUIA'].sum()
         total_fnacional = df_filtered.loc[conceptos_limpios.str.contains('NACIONAL', regex=True), 'COSTO DE LA GUIA'].sum()
     else:
-        # Si esto aparece en pantalla, significa que Pandas no está logrando importar la columna desde tu Excel
-        st.warning("⚠️ Amor, Nexion no está detectando la columna CONCEPTO en el archivo CSV.")
+        st.warning("⚠️ Amor, Nexion não está detectando la columna CONCEPTO en el archivo CSV.")
 
     # --- LÓGICA DE HIERRO INTELIGENTE: COMPARATIVA MES ANTERIOR ---
     meses_map_inv = {k: v for v, k in meses_nombres.items()}
@@ -194,18 +219,14 @@ try:
     var_eficiencia_mensual = 0
     mes_anterior_nombre = None
     
-    # Solo hacemos cálculos de mes anterior si no seleccionaron "TODOS"
     if mes_sel != "TODOS":
         num_mes_actual = meses_map_inv.get(mes_sel, 3) 
-        
-        # Lógica de transición de año: Si es Enero, el anterior es Diciembre del 2025
         if num_mes_actual == 1:
             mes_anterior_nombre = "DICIEMBRE"
             if 'FORMA DE ENVIO' in df_2025.columns:
                 df_ant_raw = df_2025[(df_2025['MES'] == mes_anterior_nombre) & (df_2025['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False))]
             else:
                 df_ant_raw = df_2025[df_2025['MES'] == mes_anterior_nombre]
-                
             total_fact_mes_anterior = df_ant_raw['FACTURACION'].sum() if 'FACTURACION' in df_ant_raw.columns else 0
         else:
             mes_anterior_nombre = meses_nombres.get(num_mes_actual - 1)
@@ -213,14 +234,11 @@ try:
                 df_ant_raw = df_actual[(df_actual['MES'] == mes_anterior_nombre) & (df_actual['FORMA DE ENVIO'].str.contains('REGRESO', na=False, case=False))]
             else:
                 df_ant_raw = df_actual[df_actual['MES'] == mes_anterior_nombre]
-                
             total_fact_mes_anterior = df_ant_raw['FACTURACION'].sum() if 'FACTURACION' in df_ant_raw.columns else 0
 
-        # Variación Facturación Mensual
         if total_fact_mes_anterior > 0:
             var_fact_mensual = ((total_fact_actual - total_fact_mes_anterior) / total_fact_mes_anterior) * 100
 
-        # Variación Eficiencia Mensual
         if not df_ant_raw.empty:
             mask_ant = df_ant_raw['PROMESA DE ENTREGA'].notna() & df_ant_raw['FECHA DE ENTREGA REAL'].notna()
             df_eval_ant = df_ant_raw[mask_ant]
@@ -238,33 +256,44 @@ try:
         if st.button("VER GRÁFICO COMPARATIVO", use_container_width=True):
             st.session_state.ver_grafico = True
 
-    # --- 5. VISTA DE TARJETAS ---
+    # --- 5. VISTA DE TARJETAS (REDISEÑADAS) ---
     if not st.session_state.ver_grafico:
         st.markdown("### RESUMEN DE RENDIMIENTO")
         
         txt_mes_ant = f"vs {mes_anterior_nombre}" if mes_anterior_nombre else "Promedio"
         
+        # Función auxiliar para renderizar las tarjetas personalizadas limpias
+        def render_card(label, value, delta_text, is_positive=True):
+            delta_class = "delta-pos" if is_positive else "delta-neg"
+            st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-label">{label}</div>
+                    <div class="metric-value">{value}</div>
+                    <div class="metric-delta {delta_class}">{delta_text}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
         k1, k2, k3 = st.columns(3)
-        with k1: st.metric("COSTO DE FLETE", f"${total_flete_2026:,.2f}", delta=f"{var_flete_total:.1f}% vs 2025", delta_color="inverse")
-        with k2: st.metric("FACTURACIÓN", f"${total_fact_actual:,.2f}", delta=f"{var_fact_mensual:+.1f}% {txt_mes_ant}", delta_color="normal")
-        with k3: st.metric("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", delta=f"{var_volumen:.1f}% Vol.", delta_color="normal")
+        with k1: render_card("COSTO DE FLETE", f"${total_flete_2026:,.2f}", f"{var_flete_total:.1f}% vs 2025", var_flete_total <= 0)
+        with k2: render_card("FACTURACIÓN", f"${total_fact_actual:,.2f}", f"{var_fact_mensual:+.1f}% {txt_mes_ant}", var_fact_mensual >= 0)
+        with k3: render_card("CAJAS ENVIADAS", f"{total_cajas_2026:,.0f}", f"{var_volumen:.1f}% Vol.", var_volumen >= 0)
         
         k4, k5, k6 = st.columns(3)
-        with k4: st.metric("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", delta=f"{diferencia_target:+.2f}% vs Target 7.5%", delta_color="inverse")
-        with k5: st.metric("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", delta=f"{var_costo_caja:.1f}% vs 2025", delta_color="inverse")
-        with k6: st.metric("% EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%", delta=f"{var_eficiencia_mensual:+.1f}% {txt_mes_ant}")
+        with k4: render_card("COSTO LOGÍSTICO", f"{costo_log_real:.2f}%", f"{diferencia_target:+.2f}% vs Target 7.5%", diferencia_target <= 0)
+        with k5: render_card("COSTO POR CAJA", f"${costo_caja_2026:,.2f}", f"{var_costo_caja:.1f}% vs 2025", var_costo_caja <= 0)
+        with k6: render_card("% EFICIENCIA ENTREGA", f"{pct_eficiencia:.1f}%", f"{var_eficiencia_mensual:+.1f}% {txt_mes_ant}", var_eficiencia_mensual >= 0)
         
         k7, k8, k9 = st.columns(3)
-        with k7: st.metric("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}", delta=f"${var_val_monto:,.2f}", delta_color="inverse")
-        with k8: st.metric("% DE INCIDENCIAS", f"{pct_inc:.1f}%", delta=f"{var_pct_inc:.1f}%", delta_color="inverse")
-        with k9: st.metric("INCREMENTO + VI", f"${inc_vi_monto:,.2f}", delta=f"{var_inc_vi_pct:.1f}%", delta_color="normal")
+        with k7: render_card("VALUACIÓN INCIDENCIAS", f"${total_valuacion_2026:,.2f}", f"${var_val_monto:,.2f}", var_val_monto <= 0)
+        with k8: render_card("% DE INCIDENCIAS", f"{pct_inc:.1f}%", f"{var_pct_inc:.1f}%", var_pct_inc <= 0)
+        with k9: render_card("INCREMENTO + VI", f"${inc_vi_monto:,.2f}", f"{var_inc_vi_pct:.1f}%", inc_vi_monto <= 0)
 
         # --- NUEVAS TARJETAS DE CONCEPTOS ---
         st.markdown("### DESGLOSE DE CONCEPTOS (INFORMATIVO)")
         k10, k11, k12 = st.columns(3)
-        with k10: st.metric("MUESTRAS / REC.", f"${total_muestras:,.2f}")
-        with k11: st.metric("CONSIGNAS", f"${total_consignas:,.2f}")
-        with k12: st.metric("F NACIONAL", f"${total_fnacional:,.2f}")
+        with k10: render_card("MUESTRAS / REC.", f"${total_muestras:,.2f}", "Informativo", True)
+        with k11: render_card("CONSIGNAS", f"${total_consignas:,.2f}", "Informativo", True)
+        with k12: render_card("F NACIONAL", f"${total_fnacional:,.2f}", "Informativo", True)
 
         # --- 6. ANÁLISIS DINÁMICO PROFUNDO ---
         st.markdown("### DIAGNÓSTICO ESTRATÉGICO DE OPERACIÓN")
@@ -402,7 +431,6 @@ try:
             fecha_hoy = ahora_gdl.strftime('%d/%m/%Y')
             hora_hoy = ahora_gdl.strftime('%H:%M')
             
-            # --- LÓGICA DINÁMICA DE INTERPRETACIÓN TÉCNICA ---
             txt_volumen = "el alza" if var_volumen >= 0 else "la reducción"
             txt_gasto = "el incremento" if var_flete_total >= 0 else "la disminución"
             
