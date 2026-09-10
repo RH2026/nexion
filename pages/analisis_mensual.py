@@ -27,19 +27,19 @@ render_layout(modulo_actual="REPORTES", submodulo_actual="ANALISIS MENSUAL")
 # 3. LÓGICA DE NEGOCIO Y DATOS
 # ============================================================
 
-# --- 1. MOTOR DE DATOS NIVEL ELITE (JERARQUÍA Y FLECHAS EN DELTAS) ---
+# --- 1. MOTOR DE DATOS NIVEL ELITE (ALTURA DE TARJETAS REDUCIDA Y ESTILO) ---
 st.markdown("""
 <style>
 .main { background-color: #070B0E; }
 
-/* Tarjetas con diseño esmeralda y moderno */
+/* Tarjetas con altura reducida (padding más compacto) y diseño esmeralda */
 .metric-card {
     background: linear-gradient(135deg, rgba(20, 35, 45, 0.8) 0%, rgba(12, 22, 30, 0.95) 100%);
-    padding: 20px 22px;
-    border-radius: 16px;
+    padding: 12px 18px;
+    border-radius: 12px;
     border: 1px solid rgba(0, 255, 170, 0.3);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 170, 0.1);
-    margin-bottom: 18px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 170, 0.1);
+    margin-bottom: 12px;
     position: relative;
     overflow: hidden;
     backdrop-filter: blur(10px);
@@ -47,55 +47,66 @@ st.markdown("""
 }
 .metric-card:hover {
     border-color: #00FFAA;
-    box-shadow: 0 10px 30px rgba(0, 255, 170, 0.25);
-    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 255, 170, 0.25);
+    transform: translateY(-2px);
 }
 .metric-card::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
-    width: 5px;
+    width: 4px;
     height: 100%;
     background: linear-gradient(180deg, #00FFAA 0%, #00B4D8 100%);
-    box-shadow: 0 0 10px #00FFAA;
+    box-shadow: 0 0 8px #00FFAA;
 }
-/* Etiqueta superior compacta */
+/* Etiqueta superior compacta con espaciado amplio */
 .metric-label {
     color: #8398AB;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1.2px;
-    margin-bottom: 6px;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
 }
-/* Valor principal con tipografía contundente */
+/* Valor principal contundente y optimizado en espacio */
 .metric-value {
     color: #FFFFFF;
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     font-weight: 900;
     letter-spacing: -0.5px;
-    margin-bottom: 8px;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    margin-bottom: 4px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
-/* Deltas grandes con indicadores de dirección claros */
+/* Deltas con flechas claras y tamaño ajustado */
 .metric-delta {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 800;
     display: inline-block;
-    padding: 4px 10px;
-    border-radius: 6px;
+    padding: 2px 8px;
+    border-radius: 4px;
     letter-spacing: 0.3px;
 }
 .delta-pos { color: #00FFAA; background: rgba(0, 255, 170, 0.15); border: 1px solid rgba(0, 255, 170, 0.35); }
 .delta-neg { color: #FF5252; background: rgba(255, 82, 82, 0.15); border: 1px solid rgba(255, 82, 82, 0.35); }
 
 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #00FFAA; padding-bottom: 10px; }
-h3 { color: #00FFAA; margin-top: 30px; font-family: 'Arial'; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,255,170,0.2); }
+
+/* Títulos con el espaciado amplio idéntico al de tu captura */
+h3 { 
+    color: #00FFAA; 
+    margin-top: 25px; 
+    font-family: 'Segoe UI', Roboto, sans-serif; 
+    font-weight: 800;
+    text-transform: uppercase; 
+    letter-spacing: 3px; 
+    text-shadow: 0 0 10px rgba(0,255,170,0.2); 
+}
+
 .analysis-box {
     background: linear-gradient(135deg, rgba(20, 35, 45, 0.9) 0%, rgba(12, 22, 30, 0.95) 100%);
-    padding: 25px;
-    border-radius: 16px;
+    padding: 20px;
+    border-radius: 14px;
     border: 1px solid rgba(0, 255, 170, 0.3);
     color: #C1D0DF;
     line-height: 1.8;
@@ -265,14 +276,13 @@ try:
         if st.button("VER GRÁFICO COMPARATIVO", use_container_width=True):
             st.session_state.ver_grafico = True
 
-    # --- 5. VISTA DE TARJETAS (CON FLECHAS ARRIBA/ABAJO) ---
+    # --- 5. VISTA DE TARJETAS (ALTURA REDUCIDA Y FLECHAS DINÁMICAS) ---
     if not st.session_state.ver_grafico:
         st.markdown("### RESUMEN DE RENDIMIENTO")
         
         txt_mes_ant = f"vs {mes_anterior_nombre}" if mes_anterior_nombre else "Promedio"
         
         def render_card(label, value, raw_val, text_template, is_positive=True):
-            # Asignación automática de flecha arriba (▲) o abajo (▼) según el signo o valor numérico
             arrow = "▲" if raw_val >= 0 else "▼"
             delta_text = f"{arrow} {text_template}"
             delta_class = "delta-pos" if is_positive else "delta-neg"
