@@ -49,6 +49,8 @@ DESTINOS_VALIDOS = {
     "incidencias": "pages/incidencias_tr.py",
     "recoleccion_3g": "pages/recoleccion_3g.py",
     "tracking": "pages/tracking.py",
+    "check_agc": "pages/check_agc.py",
+    
 }
 
 
