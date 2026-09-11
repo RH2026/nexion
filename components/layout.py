@@ -32,27 +32,35 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
         "border": "#4B5D67",
         "logo": "n1.png",
     }
-
+    
     st.markdown(
         f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&display=swap');
+    
+    /* --- ANIMACIONES DE ENTRADA --- */
     @keyframes fadeInUp {{
-        from {{ opacity: 0; transform: translateY(15px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
+        from {{
+            opacity: 0;
+            transform: translateY(15px);
+        }}
+        to {{
+            opacity: 1;
+            transform: translateY(0);
+        }}
     }}
-
+    
     [data-testid="stVerticalBlock"] > div {{
         animation: fadeInUp 0.6s ease-out;
     }}
-
+    
+    /* --- OCULTAR ELEMENTOS DE STREAMLIT Y SIDEBAR --- */
     header, footer, [data-testid="stHeader"] {{
         visibility: hidden !important;
         display: none !important;
         height: 0px !important;
     }}
-
+    
     [data-testid="collapsedControl"], 
     [data-testid="stSidebar"], 
     [data-testid="stToolbar"], 
@@ -64,23 +72,25 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
         opacity: 0 !important;
         pointer-events: none !important;
     }}
-
+    
+    /* APP BASE */
     html, body, .stApp {{
         background-color: {vars_css['bg']} !important;
         color: {vars_css['text']} !important;
         font-family: 'Inter', sans-serif !important;
     }}
-
+    
     .block-container {{
         padding-top: 0.8rem !important;
         padding-bottom: 5rem !important;
         background-color: {vars_css['bg']} !important;
     }}
-
+    
+    /* BOTONES SLIM Y BOTONES DE DESCARGA */
     div.stButton > button, div.stDownloadButton > button {{
-        background-color: #628290 !important;
-        color: #ffffff !important;
-        border: 1px solid #628290 !important;
+        background-color: {vars_css['card']} !important;
+        color: {vars_css['text']} !important;
+        border: 1px solid {vars_css['border']} !important;
         border-radius: 4px !important;
         font-weight: 700 !important;
         text-transform: uppercase;
@@ -89,28 +99,110 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
         width: 100% !important;
         transition: all 0.3s ease !important;
     }}
-
+    
     div.stButton > button:hover, div.stDownloadButton > button:hover {{
-        background-color: {vars_css['card']} !important;
-        color: {vars_css['text']} !important;
-        border-color: {vars_css['border']} !important;
+        background-color: #00A3A3 !important;
+        color: #ffffff !important;
+        border-color: #00A3A3 !important;
     }}
-
+    
+    /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
     div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
         gap: 0.45rem !important;
     }}
-
+    
     div[data-testid="stPopoverBody"] .stButton {{
         margin-bottom: 0rem !important;
     }}
-
+    
     div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
         border: none !important;
         background: transparent !important;
         margin-bottom: 0rem !important;
-        > div {{ padding: 0 !important; }}
+        > div {{
+            padding: 0 !important;
+        }}
     }}
-
+    
+    /* ===================== TABS - ESTILO NEXION (IGUAL A TÍTULOS DINÁMICOS) ===================== */
+    
+    /* CONTENEDOR DE LAS PESTAÑAS */
+    div[data-testid="stTabs"] [role="tablist"] {{
+        display: flex !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        gap: 36px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: transparent !important;
+        border-bottom: 1px solid {vars_css['border']} !important;
+    }}
+    
+    /* CADA PESTAÑA (INACTIVA / BASE) */
+    div[data-testid="stTabs"] button,
+    div[data-testid="stTabs"] div[data-baseweb="tab"],
+    div[data-testid="stTabs"] [role="tab"] {{
+        min-height: 30px !important;
+        height: 30px !important;
+        padding: 0px 4px !important;
+        margin: 0 !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        transition: all .25s ease !important;
+        flex: 0 0 auto !important;
+    }}
+    
+    /* TEXTO INTERNO DE LAS PESTAÑAS (IGUALADO A TÍTULOS DINÁMICOS: 13px y 5px de espacio) */
+    div[data-testid="stTabs"] [role="tab"] p,
+    div[data-testid="stTabs"] [role="tab"] span {{
+        color: rgba(255, 255, 255, 0.6) !important;
+        font-size: 13px !important;
+        font-weight: 400 !important;
+        letter-spacing: 0px !important;
+        text-transform: uppercase !important;
+        margin: 0 !important;
+    }}
+    
+    /* HOVER EN PESTAÑAS */
+    div[data-testid="stTabs"] [role="tab"]:hover p,
+    div[data-testid="stTabs"] [role="tab"]:hover span {{
+        color: #FFD700 !important;
+    }}
+    
+    /* TAB ACTIVA (TEXTO BLANCO PURO IDÉNTICO AL HEADER) */
+    div[data-testid="stTabs"] button[aria-selected="true"],
+    div[data-testid="stTabs"] div[aria-selected="true"],
+    div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
+        background: transparent !important;
+        background-color: transparent !important;
+    }}
+    
+    div[data-testid="stTabs"] [role="tab"][aria-selected="true"] p,
+    div[data-testid="stTabs"] [role="tab"][aria-selected="true"] span {{
+        color: #FFFFFF !important;
+        font-weight: 400 !important;
+        letter-spacing: 0px !important;
+    }}
+    
+    /* ELIMINAR FOCUS / SOMBRAS DE STREAMLIT */
+    div[data-testid="stTabs"] button:focus,
+    div[data-testid="stTabs"] button:active,
+    div[data-testid="stTabs"] [role="tab"]:focus {{
+        outline: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }}
+    
+    /* LÍNEA INFERIOR DE SELECCIÓN (INDICADOR DE COLOR) */
+    div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {{
+        background-color: #38bdf8 !important;
+        height: 2px !important;
+    }}
+    
+    /*FOOTER FIJO */
     .footer {{ 
         position: fixed; 
         bottom: 0 !important; 
