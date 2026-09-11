@@ -87,25 +87,47 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     }}
     
     /* BOTONES SLIM Y BOTONES DE DESCARGA */
-    div.stButton > button, div.stDownloadButton > button {{
+    /* ── BOTONES SLIM, DESCARGA Y FORMULARIOS ── */
+    .stApp div.stButton > button, 
+    .stApp div.stDownloadButton > button,
+    .stApp div.stFormSubmitButton > button,
+    div[data-testid="stForm"] button {{
         background-color: #628290 !important;
         color: #ffffff !important;
         border: 1px solid #628290 !important;
         border-radius: 4px !important;
         font-weight: 700 !important;
-        text-transform: uppercase;
+        text-transform: uppercase !important;
         font-size: 10px !important;
         height: 32px !important;
         width: 100% !important;
         transition: all 0.3s ease !important;
+        box-shadow: none !important;
     }}
     
-    div.stButton > button:hover, div.stDownloadButton > button:hover {{
+    .stApp div.stButton > button:hover, 
+    .stApp div.stDownloadButton > button:hover,
+    .stApp div.stFormSubmitButton > button:hover,
+    div[data-testid="stForm"] button:hover {{
         background-color: #7999a7 !important;
         color: #ffffff !important;
-        border-color: #7999a7 !important;  
+        border-color: #7999a7 !important;
+        box-shadow: 0 0 10px rgba(121, 153, 167, 0.4) !important;
     }}
     
+    /* Botones primarios */
+    .stApp div.stButton > button[kind="primary"],
+    .stApp div.stFormSubmitButton > button[kind="primary"] {{
+        background-color: #00838F !important;
+        border-color: #00D4FF !important;
+    }}
+    
+    .stApp div.stButton > button[kind="primary"]:hover,
+    .stApp div.stFormSubmitButton > button[kind="primary"]:hover {{
+        background-color: #00A3A3 !important;
+        border-color: #ffffff !important;
+    }}
+        
     /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
     div[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {{
         gap: 0.45rem !important;
