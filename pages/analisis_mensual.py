@@ -95,11 +95,11 @@ h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #00FFA
 /* ENENCABEZADOS BLANCOS, PEQUEÑOS Y ESTILIZADOS */
 h3 { 
     color: #FFFFFF !important; 
-    font-size: 0.95rem !important; 
+    font-size: 0.45rem !important; 
     margin-top: 20px !important; 
     margin-bottom: 10px !important;
     font-family: 'Segoe UI', Roboto, sans-serif !important; 
-    font-weight: 800 !important;
+    font-weight: 500 !important;
     text-transform: uppercase !important; 
     letter-spacing: 2px !important; 
     text-shadow: 0 0 8px rgba(255,255,255,0.15); 
