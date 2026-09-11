@@ -87,9 +87,9 @@ html, body, .stApp {{
 }}
 
 div.stButton > button, div.stDownloadButton > button {{
-    background-color: #00A3A3 !important;
+    background-color: #628290 !important;
     color: #ffffff !important;
-    border: 1px solid #00A3A3 !important;
+    border: 1px solid #628290 !important;
     border-radius: 4px !important;
     font-weight: 700 !important;
     text-transform: uppercase;
@@ -100,9 +100,9 @@ div.stButton > button, div.stDownloadButton > button {{
 }}
 
 div.stButton > button:hover, div.stDownloadButton > button:hover {{
-    background-color: {vars_css['card']} !important;
-    color: {vars_css['text']} !important;
-    border-color: {vars_css['border']} !important;  
+    background-color: #7999a7 !important;
+    color: #ffffff !important;
+    border-color: #7999a7 !important;  
 }}
 
 /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
