@@ -477,7 +477,7 @@ with header_zone:
         
             if permisos.get("SEGUIMIENTO", False):
                 with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                    opciones_seg_posibles = ["ALERTAS", "GANTT", "QUEJAS"]
+                    opciones_seg_posibles = ["ALERTAS", "GANTT", "INCIDENCIAS"]
                     opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
                     for s in opciones_seg:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
