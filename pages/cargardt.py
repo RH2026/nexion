@@ -25,44 +25,6 @@ st.set_page_config(
 # ============================================================
 render_layout(modulo_actual="CENTRO DE DATOS", submodulo_actual="CARGAR DATOS")
 
-# Verificación de seguridad específica del módulo
-def verificar_permiso_modulo(modulo, submodulo=None):
-    permisos = st.session_state.get("permisos", {})
-    if st.session_state.get("usuario_activo", "").upper() == "RIGOBERTO":
-        return True
-        
-    if not permisos.get(modulo.upper(), False) or (submodulo and not permisos.get(submodulo.upper(), False)):
-        st.markdown(
-            f"""
-            <div style="
-                background: #2B343B; 
-                border: 1px solid #4B5D67; 
-                border-left: 5px solid #FFD700; 
-                padding: 20px 25px; 
-                border-radius: 8px; 
-                width: 100%; 
-                font-family: 'Inter', sans-serif; 
-                color: white; 
-                box-sizing: border-box; 
-                margin-top: 20px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            ">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                    <div style="width: 10px; height: 10px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 8px #FFD700;"></div>
-                    <span style="color: #FFD700; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;">
-                        ACCESS RESTRICTED // MÓDULO NO AUTORIZADO
-                    </span>
-                </div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; padding-left: 20px;">
-                    No cuentas con los permisos activos en la matriz para acceder a esta sección.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.stop()
-
-verificar_permiso_modulo("CENTRO DE DATOS", "CARGAR DATOS")
 
 # ============================================================
 # 3. INTERFAZ PRINCIPAL (DATA HUB PREMIUM)
