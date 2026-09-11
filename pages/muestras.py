@@ -75,6 +75,13 @@ def limpiar_texto(texto):
 
 if "reset_key" not in st.session_state:
     st.session_state.reset_key = 0
+    # Inicialización segura de estados de sesión
+if "reset_key" not in st.session_state:
+    st.session_state.reset_key = 0
+if "folio_guardado" not in st.session_state:
+    st.session_state.folio_guardado = False
+if "seleccionados_muestras" not in st.session_state:
+    st.session_state.seleccionados_muestras = []
 
 # ==========================================
 # 5. INTERFAZ PRINCIPAL (MUESTRAS)
