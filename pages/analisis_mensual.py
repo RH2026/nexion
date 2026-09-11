@@ -27,18 +27,18 @@ render_layout(modulo_actual="REPORTES", submodulo_actual="ANALISIS MENSUAL")
 # 3. LÓGICA DE NEGOCIO Y DATOS
 # ============================================================
 
-# --- 1. MOTOR DE DATOS NIVEL ELITE (BORDES AMARILLOS Y ESTILO COMPACTO) ---
+# --- 1. MOTOR DE DATOS NIVEL ELITE (BORDES BLANCOS Y DELTAS MÁS GRANDES) ---
 st.markdown("""
 <style>
 .main { background-color: #070B0E; }
 
-/* Tarjetas con bordes y acentos en amarillo elegante */
+/* Tarjetas con bordes blancos estilizados y elegantes */
 .metric-card {
     background: linear-gradient(135deg, rgba(20, 35, 45, 0.8) 0%, rgba(12, 22, 30, 0.95) 100%);
     padding: 12px 18px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 193, 7, 0.4);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 235, 59, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     margin-bottom: 12px;
     position: relative;
     overflow: hidden;
@@ -46,8 +46,8 @@ st.markdown("""
     transition: all 0.3s ease;
 }
 .metric-card:hover {
-    border-color: #FFC107;
-    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3);
+    border-color: #FFFFFF;
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
 }
 .metric-card::before {
@@ -57,8 +57,8 @@ st.markdown("""
     left: 0;
     width: 4px;
     height: 100%;
-    background: linear-gradient(180deg, #FFC107 0%, #FF9800 100%);
-    box-shadow: 0 0 8px #FFC107;
+    background: linear-gradient(180deg, #FFFFFF 0%, #A4B9C8 100%);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 /* Etiqueta superior compacta */
 .metric-label {
@@ -78,13 +78,13 @@ st.markdown("""
     margin-bottom: 4px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
-/* Deltas con flechas claras */
+/* Deltas con tamaño más grande y llamativo */
 .metric-delta {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     font-weight: 800;
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 3px 10px;
+    border-radius: 6px;
     letter-spacing: 0.3px;
 }
 .delta-pos { color: #00FFAA; background: rgba(0, 255, 170, 0.15); border: 1px solid rgba(0, 255, 170, 0.35); }
@@ -109,13 +109,13 @@ h3 {
     background: linear-gradient(135deg, rgba(20, 35, 45, 0.9) 0%, rgba(12, 22, 30, 0.95) 100%);
     padding: 20px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 193, 7, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     color: #C1D0DF;
     line-height: 1.8;
     font-size: 0.95rem;
     box-shadow: 0 8px 25px rgba(0,0,0,0.5);
 }
-.highlight { color: #FFC107; font-weight: bold; }
+.highlight { color: #00FFAA; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -278,7 +278,7 @@ try:
         if st.button("VER GRÁFICO COMPARATIVO", use_container_width=True):
             st.session_state.ver_grafico = True
 
-    # --- 5. VISTA DE TARJETAS (ALTURA REDUCIDA Y FLECHAS DINÁMICAS) ---
+    # --- 5. VISTA DE TARJETAS (ALTURA REDUCIDA Y DELTAS MÁS GRANDES) ---
     if not st.session_state.ver_grafico:
         st.markdown("### RESUMEN DE RENDIMIENTO")
         
@@ -341,7 +341,7 @@ try:
             <div style="display: flex; justify-content: space-between;">
                 <b>ESTADO FINANCIERO:</b> <span>{status_target}</span>
             </div>
-            <hr style="border: 0.5px solid rgba(255, 193, 7, 0.2); margin: 10px 0;">
+            <hr style="border: 0.5px solid rgba(255, 255, 255, 0.2); margin: 10px 0;">
             <b>RESUMEN EJECUTIVO:</b><br>
             • {desc_costo}<br>
             • La logística de entregas se califica como <span class="highlight">{status_entrega}</span> con un cumplimiento del {pct_eficiencia:.1f}%.<br>
