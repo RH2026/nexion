@@ -95,7 +95,7 @@ h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #00FFA
 /* ENENCABEZADOS BLANCOS, PEQUEÑOS Y ESTILIZADOS */
 h3 { 
     color: #FFFFFF !important; 
-    font-size: 0.45rem !important; 
+    font-size: 0.85rem !important; 
     margin-top: 20px !important; 
     margin-bottom: 10px !important;
     font-family: 'Segoe UI', Roboto, sans-serif !important; 
