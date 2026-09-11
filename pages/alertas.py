@@ -1,5 +1,6 @@
 from datetime import datetime, date
 import os
+import time
 import pytz
 import pandas as pd
 import streamlit as st
@@ -22,31 +23,33 @@ st.set_page_config(
 render_layout(modulo_actual="SEGUIMIENTO", submodulo_actual="ALERTAS")
 
 # ============================================================
-# 3. LÓGICA DE NEGOCIO Y DATOS (ALERTAS)
+# 3. CARGA DE DATOS (LECTURA DIRECTA Y DINÁMICA DESDE GITHUB)
 # ============================================================
+def cargar_matriz_github():
+    t = int(time.time())
+    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
+    try:
+        return pd.read_csv(url, encoding='utf-8-sig')
+    except:
+        return None
 
-# Variables de estilo y zona horaria
-vars_css = {"sub": "#A4B9C8"}
+df_seguimiento = cargar_matriz_github()
+
+if df_seguimiento is None:
+    st.error("⚠️ ERROR: No se detectó la base de datos en GitHub.")
+    st.stop()
+
+# ============================================================
+# 4. RELOJ MAESTRO (GUADALAJARA) Y VARIABLES
+# ============================================================
 tz_gdl = pytz.timezone('America/Mexico_City')
 hoy_gdl = datetime.now(tz_gdl)
-
-# Variable de control para simular si es de atención 3G o general (ajustar según tu sesión)
+vars_css = {"sub": "#A4B9C8"}
 es_atencion3g = st.session_state.get("es_atencion3g", False)
 
-# Carga de base de datos de seguimiento (asegura que el archivo CSV exista o se ajuste a tu entorno)
-@st.cache_data
-def load_seguimiento():
-    ruta = os.path.join(os.getcwd(), "seguimiento.csv")
-    if not os.path.exists(ruta):
-        ruta = os.path.join(os.getcwd(), "..", "seguimiento.csv")
-    try:
-        return pd.read_csv(ruta, sep=None, engine='python', encoding='utf-8-sig')
-    except:
-        return pd.DataFrame()
-
-df_seguimiento = load_seguimiento()
-
-# 1. FILTROS DE CABECERA
+# ============================================================
+# 5. FILTROS DE CABECERA
+# ============================================================
 with st.container():
     st.write("")
     f_col1, f_col2, f_col3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
@@ -64,13 +67,7 @@ with st.container():
         else:
             fin_m = date(hoy_gdl.year, mes_num + 1, 1) - pd.Timedelta(days=1)
         
-        # Aseguramos que fin_m sea objeto date puro de forma segura
-        if isinstance(fin_m, datetime):
-            fin_m_final = fin_m.date()
-        elif hasattr(fin_m, 'date') and callable(fin_m.date):
-            fin_m_final = fin_m.date()
-        else:
-            fin_m_final = fin_m
+        fin_m_final = fin_m.date() if hasattr(fin_m, 'date') else fin_m
         
         rango_fechas = st.date_input(
             "RANGO DE ANÁLISIS",
@@ -79,7 +76,7 @@ with st.container():
         )
     
     with f_col3:
-        opciones_raw = sorted(df_seguimiento["FLETERA"].unique()) if not df_seguimiento.empty and "FLETERA" in df_seguimiento.columns else []
+        opciones_raw = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
         
         if es_atencion3g:
             opciones_f = ["TRES GUERRAS"]
@@ -97,8 +94,10 @@ with st.container():
             disabled=not habilitado
         )
 
-# ── 2. PROCESAMIENTO DE DATOS KPI ──
-df_kpi = df_seguimiento.copy() if not df_seguimiento.empty else pd.DataFrame(columns=["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL", "FLETERA"])
+# ============================================================
+# 6. PROCESAMIENTO DE DATOS KPI
+# ============================================================
+df_kpi = df_seguimiento.copy()
 df_kpi.columns = [str(c).upper() for c in df_kpi.columns]
 
 for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
@@ -106,7 +105,7 @@ for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
         df_kpi[col] = pd.to_datetime(df_kpi[col], dayfirst=True, errors='coerce')
 
 # A. Filtrado por rango de fechas
-if not df_kpi.empty and "FECHA DE ENVÍO" in df_kpi.columns:
+if "FECHA DE ENVÍO" in df_kpi.columns:
     df_kpi = df_kpi.dropna(subset=["FECHA DE ENVÍO"])
     if isinstance(rango_fechas, tuple) and len(rango_fechas) == 2:
         df_kpi = df_kpi[(df_kpi["FECHA DE ENVÍO"].dt.date >= rango_fechas[0]) & 
@@ -117,7 +116,7 @@ if filtro_global_fletera != "TODOS" and "FLETERA" in df_kpi.columns:
     df_kpi = df_kpi[df_kpi["FLETERA"] == filtro_global_fletera]
     
 # C. Identificación de "En Tránsito" y Cálculo de Atrasos
-if not df_kpi.empty and 'FECHA DE ENTREGA REAL' in df_kpi.columns:
+if 'FECHA DE ENTREGA REAL' in df_kpi.columns:
     df_kpi['ESTATUS_CALCULADO'] = df_kpi['FECHA DE ENTREGA REAL'].apply(lambda x: 'ENTREGADO' if pd.notna(x) else 'EN TRANSITO')
     df_sin_entregar = df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'EN TRANSITO'].copy()
 else:
@@ -132,29 +131,9 @@ else:
         df_sin_entregar["DIAS_ATRASO"] = 0
         df_sin_entregar["DIAS_TRANS"] = 0
 
-# D. Lógica para el PRÓXIMO MES
-proximo_mes_num = mes_num + 1 if mes_num < 12 else 1
-anio_proximo = hoy_gdl.year if mes_num < 12 else hoy_gdl.year + 1
-nombre_prox_mes = meses[proximo_mes_num - 1]
-
-df_full = df_seguimiento.copy() if not df_seguimiento.empty else pd.DataFrame()
-if not df_full.empty:
-    df_full.columns = [str(c).upper() for c in df_full.columns]
-    if "PROMESA DE ENTREGA" in df_full.columns:
-        fechas_promesa = pd.to_datetime(df_full["PROMESA DE ENTREGA"], dayfirst=True, errors='coerce')
-        conteo_proximo = len(df_full[(fechas_promesa.dt.month == proximo_mes_num) & (fechas_promesa.dt.year == anio_proximo)])
-    else:
-        conteo_proximo = 0
-else:
-    conteo_proximo = 0
-
-# E. Métricas Finales
-total_p = len(df_kpi)
-pend_p = len(df_sin_entregar)
-entregados_v = len(df_kpi[df_kpi['ESTATUS_CALCULADO'] == 'ENTREGADO']) if not df_kpi.empty and 'ESTATUS_CALCULADO' in df_kpi.columns else 0
-eficiencia = (entregados_v / total_p * 100) if total_p > 0 else 0
-
-# Estilo para tarjetas de alerta
+# ============================================================
+# 7. SEMÁFORO DE ALERTAS
+# ============================================================
 st.markdown("""
     <style>
     .base-card-alerta {
@@ -167,7 +146,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ── 4. SEMÁFORO DE ALERTAS ──
 st.markdown(f"<div style='margin-top:40px; margin-bottom:15px; text-align:center;'><span style='color:{vars_css['sub']}; font-size:10px; font-weight:800; letter-spacing:4px; opacity:0.6; text-transform:uppercase;'>S E M Á F O R O &nbsp; D E &nbsp; A L E R T A S</span></div>", unsafe_allow_html=True)
 
 a1_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] == 1]) if not df_sin_entregar.empty and "DIAS_ATRASO" in df_sin_entregar.columns else 0
@@ -176,7 +154,6 @@ a5_v = len(df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] >= 5]) if not df_sin_e
 
 c_a1, c_a2, c_a3 = st.columns(3)
 
-# Alerta LEVE (Amarillo Neón)
 c_a1.markdown(f"""
     <div class='base-card-alerta' style='border-left-color: #FDE047;'>
         <div style='color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; letter-spacing: 1px;'>BAJO RIESGO (1D)</div>
@@ -184,7 +161,6 @@ c_a1.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Alerta MODERADO (Naranja Eléctrico)
 c_a2.markdown(f"""
     <div class='base-card-alerta' style='border-left-color: #F97316;'>
         <div style='color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; letter-spacing: 1px;'>DEMORA (2-4D)</div>
@@ -192,7 +168,6 @@ c_a2.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Alerta CRÍTICO (Rojo Intenso)
 c_a3.markdown(f"""
     <div class='base-card-alerta' style='border-left-color: #FF4B4B;'>
         <div style='color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; letter-spacing: 1px;'>CRÍTICO (+5D)</div>
@@ -200,7 +175,9 @@ c_a3.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# --- 5. PANEL DE EXCEPCIONES (DISEÑO WAR ROOM) ---
+# ============================================================
+# 8. PANEL DE EXCEPCIONES (WAR ROOM)
+# ============================================================
 st.divider()
 df_criticos = df_sin_entregar[df_sin_entregar["DIAS_ATRASO"] > 0].copy() if not df_sin_entregar.empty and "DIAS_ATRASO" in df_sin_entregar.columns else pd.DataFrame()
 df_viz = pd.DataFrame()
@@ -334,7 +311,9 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
-# --- 6. BOTÓN DE DESCARGA: EXCEPCIONES Y RETRASOS ---
+# ============================================================
+# 9. BOTÓN DE DESCARGA: EXCEPCIONES Y RETRASOS
+# ============================================================
 st.divider()
 
 if 'df_viz' in locals() and not df_viz.empty:
