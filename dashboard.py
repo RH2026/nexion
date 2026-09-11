@@ -588,24 +588,24 @@ with header_zone:
                         st.switch_page("dashboard.py")
             
                 if permisos.get("SEGUIMIENTO", False):
-                        with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                            opciones_seg_posibles = ["ALERTAS", "GANTT", "INCIDENCIAS"]
-                            opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
-                            for s in opciones_seg:
-                                label = f"» {s}" if st.session_state.menu_sub == s else s
-                                if st.button(label, use_container_width=True, key=f"pop_sub_{s}2"):
-                                    registrar_acceso_github(usuario, f"SEGUIMIENTO - {s}")
-                                    st.session_state.menu_main = "SEGUIMIENTO"
-                                    st.session_state.menu_sub = s
-                                    st.session_state.busqueda_activa = False
-                                    
-                                    # Redirección dinámica según la opción seleccionada
-                                    if s == "ALERTAS":
-                                        st.switch_page("pages/alertas.py")
-                                    elif s == "INCIDENCIAS":
-                                        st.switch_page("pages/incidencias_tr.py")
-                                    else:
-                                        st.rerun()
+                    with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                        opciones_seg_posibles = ["ALERTAS", "GANTT", "INCIDENCIAS"]
+                        opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
+                        for s in opciones_seg:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_sub_{s}2"):
+                                registrar_acceso_github(usuario, f"SEGUIMIENTO - {s}")
+                                st.session_state.menu_main = "SEGUIMIENTO"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                
+                                # Redirección dinámica según la opción seleccionada
+                                if s == "ALERTAS":
+                                    st.switch_page("pages/alertas.py")
+                                elif s == "INCIDENCIAS":
+                                    st.switch_page("pages/incidencias_tr.py")
+                                else:
+                                    st.rerun()
             
                 if permisos.get("ENTREGAS", False):
                     with st.expander("ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")):
