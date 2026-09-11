@@ -27,12 +27,12 @@ render_layout(modulo_actual="REPORTES", submodulo_actual="ANALISIS MENSUAL")
 # 3. LÓGICA DE NEGOCIO Y DATOS
 # ============================================================
 
-# --- 1. MOTOR DE DATOS NIVEL ELITE (ALTURA DE TARJETAS REDUCIDA Y ESTILO) ---
+# --- 1. MOTOR DE DATOS NIVEL ELITE (ENCABEZADOS Y TARJETAS AJUSTADAS) ---
 st.markdown("""
 <style>
 .main { background-color: #070B0E; }
 
-/* Tarjetas con altura reducida (padding más compacto) y diseño esmeralda */
+/* Tarjetas compactas, estilizadas y con bordes esmeralda */
 .metric-card {
     background: linear-gradient(135deg, rgba(20, 35, 45, 0.8) 0%, rgba(12, 22, 30, 0.95) 100%);
     padding: 12px 18px;
@@ -60,7 +60,7 @@ st.markdown("""
     background: linear-gradient(180deg, #00FFAA 0%, #00B4D8 100%);
     box-shadow: 0 0 8px #00FFAA;
 }
-/* Etiqueta superior compacta con espaciado amplio */
+/* Etiqueta superior compacta */
 .metric-label {
     color: #8398AB;
     font-size: 0.6rem;
@@ -69,7 +69,7 @@ st.markdown("""
     letter-spacing: 2px;
     margin-bottom: 4px;
 }
-/* Valor principal contundente y optimizado en espacio */
+/* Valor principal contundente */
 .metric-value {
     color: #FFFFFF;
     font-size: 1.5rem;
@@ -78,7 +78,7 @@ st.markdown("""
     margin-bottom: 4px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
-/* Deltas con flechas claras y tamaño ajustado */
+/* Deltas con flechas claras */
 .metric-delta {
     font-size: 0.8rem;
     font-weight: 800;
@@ -92,14 +92,16 @@ st.markdown("""
 
 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #00FFAA; padding-bottom: 10px; }
 
-/* Títulos con el espaciado amplio idéntico al de tu captura */
+/* ENCABEZADOS REDUCIDOS Y ESTILIZADOS */
 h3 { 
-    color: #00FFAA; 
-    margin-top: 25px; 
-    font-family: 'Segoe UI', Roboto, sans-serif; 
-    font-weight: 800;
-    text-transform: uppercase; 
-    letter-spacing: 3px; 
+    color: #00FFAA !important; 
+    font-size: 1.05rem !important; 
+    margin-top: 25px !important; 
+    margin-bottom: 15px !important;
+    font-family: 'Segoe UI', Roboto, sans-serif !important; 
+    font-weight: 800 !important;
+    text-transform: uppercase !important; 
+    letter-spacing: 2.5px !important; 
     text-shadow: 0 0 10px rgba(0,255,170,0.2); 
 }
 
