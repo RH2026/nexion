@@ -26,7 +26,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     # ── TEMA Y CSS MAESTROS ──────────────────────────────────────────
     vars_css = {
         "bg": "#384A52",
-        "card": "#2B343B",
+        "card": "#628290",
         "text": "#FFFFFF",
         "sub": "#FFFFFF",
         "border": "#4B5D67",
