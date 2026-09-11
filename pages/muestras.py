@@ -735,23 +735,7 @@ def main():
         with t1:
             contenedor_aviso = st.empty()
             if not df_actual.empty:
-                st.markdown("""
-                <style>
-                div[data-testid="stButton"] button {
-                    background-color: #263238 !important; 
-                    color: #FFFFFF !important;
-                    border: 1px solid #44555A !important;
-                    transition: all 0.3s ease-in-out !important;
-                }
-                div[data-testid="stButton"] button:hover {
-                    background-color: #00A3A3 !important;
-                    color: #FFFFFF !important;
-                    border-color: #00A3A3 !important;
-                    box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
-                }
-                </style>
-                """, unsafe_allow_html=True)
-                
+                                
                 df_sorted = df_actual.sort_values(by="FOLIO", ascending=False)
                 opciones_folios = [f"{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']}" for _, r in df_sorted.iterrows()]
                 
@@ -1054,30 +1038,7 @@ def main():
         with t3:
             st.markdown("### EDICIÓN TOTAL DE MATRIZ DE MUESTRAS")
             st.info("Modifica cualquier registro de la base de datos de manera directa. Los cambios se sincronizarán y actualizarán en GitHub al guardar.")
-        
-            st.markdown("""
-                <style>
-                    div[data-testid="stForm"] button,
-                    div[data-testid="stForm"] button:focus,
-                    div[data-testid="stForm"] button:active {
-                        background-color: #263238 !important;
-                        color: #FFFFFF !important;
-                        border: 1px solid #44555A !important;
-                        width: 100% !important;
-                        border-radius: 4px !important;
-                        font-weight: 400 !important;
-                        box-shadow: none !important;
-                        outline: none !important;
-                    }
-                    div[data-testid="stForm"] button:hover {
-                        background-color: #00A3A3 !important;
-                        border-color: #00A3A3 !important;
-                        color: #FFFFFF !important;
-                        box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
-                    }
-                </style>
-            """, unsafe_allow_html=True)
-        
+               
             if df_actual.empty:
                 st.warning("No hay registros en la matriz de muestras para editar.")
             else:
