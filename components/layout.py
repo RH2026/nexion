@@ -87,9 +87,9 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     }}
     
    div.stButton > button, div.stDownloadButton > button {{
-        background-color: #628290 !important;
+        background-color: #1F75B4 !important;
         color: #ffffff !important;
-        border: 1px solid #628290 !important;
+        border: 1px solid #1F75B4 !important;
         border-radius: 4px !important;
         font-weight: 700 !important;
         text-transform: uppercase;
