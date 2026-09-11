@@ -27,7 +27,7 @@ render_layout(modulo_actual="REPORTES", submodulo_actual="ANALISIS MENSUAL")
 # 3. LÓGICA DE NEGOCIO Y DATOS
 # ============================================================
 
-# --- 1. MOTOR DE DATOS NIVEL ELITE (ENCABEZADOS Y TARJETAS AJUSTADAS) ---
+# --- 1. MOTOR DE DATOS NIVEL ELITE (ENCABEZADOS BLANCOS Y COMPACTOS) ---
 st.markdown("""
 <style>
 .main { background-color: #070B0E; }
@@ -92,17 +92,17 @@ st.markdown("""
 
 h1 { color: #FFFFFF; font-family: 'Arial Black'; border-bottom: 2px solid #00FFAA; padding-bottom: 10px; }
 
-/* ENCABEZADOS REDUCIDOS Y ESTILIZADOS */
+/* ENENCABEZADOS BLANCOS, PEQUEÑOS Y ESTILIZADOS */
 h3 { 
-    color: #00FFAA !important; 
-    font-size: 1.05rem !important; 
-    margin-top: 25px !important; 
-    margin-bottom: 15px !important;
+    color: #FFFFFF !important; 
+    font-size: 0.95rem !important; 
+    margin-top: 20px !important; 
+    margin-bottom: 10px !important;
     font-family: 'Segoe UI', Roboto, sans-serif !important; 
     font-weight: 800 !important;
     text-transform: uppercase !important; 
-    letter-spacing: 2.5px !important; 
-    text-shadow: 0 0 10px rgba(0,255,170,0.2); 
+    letter-spacing: 2px !important; 
+    text-shadow: 0 0 8px rgba(255,255,255,0.15); 
 }
 
 .analysis-box {
