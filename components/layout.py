@@ -88,9 +88,9 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     
     /* BOTONES SLIM Y BOTONES DE DESCARGA */
     div.stButton > button, div.stDownloadButton > button {{
-        background-color: #628290 !important;
-        color: #ffffff !important;
-        border: 1px solid #628290 !important;
+        background-color: {vars_css['card']} !important;
+        color: {vars_css['text']} !important;
+        border: 1px solid {vars_css['border']} !important;
         border-radius: 4px !important;
         font-weight: 700 !important;
         text-transform: uppercase;
@@ -99,11 +99,11 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
         width: 100% !important;
         transition: all 0.3s ease !important;
     }}
-
+    
     div.stButton > button:hover, div.stDownloadButton > button:hover {{
-        background-color: {vars_css['card']} !important;
-        color: {vars_css['text']} !important;
-        border-color: {vars_css['border']} !important;
+        background-color: #00A3A3 !important;
+        color: #ffffff !important;
+        border-color: #00A3A3 !important;
     }}
     
     /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
