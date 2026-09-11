@@ -1038,6 +1038,29 @@ def main():
         with t3:
             st.markdown("### EDICIÓN TOTAL DE MATRIZ DE MUESTRAS")
             st.info("Modifica cualquier registro de la base de datos de manera directa. Los cambios se sincronizarán y actualizarán en GitHub al guardar.")
+            st.markdown("""
+                <style>
+                    div[data-testid="stForm"] button,
+                    div[data-testid="stForm"] button:focus,
+                    div[data-testid="stForm"] button:active {
+                        background-color: #4E6772 !important;
+                        color: #FFFFFF !important;
+                        border: 1px solid #4E6772 !important;
+                        width: 100% !important;
+                        border-radius: 4px !important;
+                        font-weight: 400 !important;
+                        box-shadow: none !important;
+                        outline: none !important;
+                    }
+                    div[data-testid="stForm"] button:hover {
+                        background-color: #628290 !important;
+                        border-color: #628290 !important;
+                        color: #FFFFFF !important;
+                        box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
+                    }
+                </style>
+            """, unsafe_allow_html=True)       
+
                
             if df_actual.empty:
                 st.warning("No hay registros en la matriz de muestras para editar.")
