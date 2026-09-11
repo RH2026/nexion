@@ -8,6 +8,7 @@ import requests
 import pandas as pd
 import streamlit as st
 import pytz
+import streamlit.components.v1 as components
 
 from components.layout import render_layout
 
@@ -565,15 +566,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# ── FOOTER FIJO ────────────────────────
-st.markdown(
-    f"""
-    <div class="footer">
-        NEXION // SUPPLY CHAIN INTELLIGENCE // GDL HUB // © 2026 <br>
-        <span style="opacity:0.5; font-size:8px; letter-spacing:4px;">ENGINEERED BY</span>
-        <span style="color:{vars_css['text']}; font-weight:500; letter-spacing:3px;">RIGOBERTO HERNANDEZ</span>
-    </div>
-""",
-    unsafe_allow_html=True,
-)
