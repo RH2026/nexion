@@ -102,7 +102,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     div.stButton > button:hover, div.stDownloadButton > button:hover {{
         background-color: #628290 !important;
         color: #ffffff !important;
-        border-color: #7999a7 !important;  
+        border-color: #628290 !important;  
     }}
         
     /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
