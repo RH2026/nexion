@@ -580,52 +580,52 @@ with header_zone:
             )
         
             if permisos.get("DASHBOARD", False):
-                if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
-                    registrar_acceso_github(usuario, "DASHBOARD")
-                    st.session_state.menu_main = "DASHBOARD"
-                    st.session_state.menu_sub = "GENERAL"
-                    st.session_state.busqueda_activa = False
-                    st.switch_page("dashboard.py")
-        
-            if permisos.get("SEGUIMIENTO", False):
-                with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                    opciones_seg_posibles = ["ALERTAS", "GANTT", "INCIDENCIAS"]
-                    opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
-                    for s in opciones_seg:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_sub_{s}2"):
-                            registrar_acceso_github(usuario, f"SEGUIMIENTO - {s}")
-                            st.session_state.menu_main = "SEGUIMIENTO"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            
-                            # Redirección dinámica según la opción seleccionada
-                            if s == "ALERTAS":
-                                st.switch_page("pages/alertas.py")
-                            elif s == "INCIDENCIAS":
-                                st.switch_page("pages/incidencias_tr.py")
-                            else:
-                                st.rerun()
-        
-            if permisos.get("ENTREGAS", False):
-                with st.expander("ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")):
-                    opciones_ent_posibles = ["AGC", "AMAZON", "BARCELO", "NACIONAL"]
-                    opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False)]
-                    for s in opciones_ent:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_ent_{s}2"):
-                            registrar_acceso_github(usuario, f"ENTREGAS - {s}")
-                            st.session_state.menu_main = "ENTREGAS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            if s == "AGC":
-                                st.switch_page("pages/entregas_agc.py")
-                            elif s == "NACIONAL":
-                                st.switch_page("pages/envios.py")
-                            else:
-                                st.rerun()
-        
-            if permisos.get("REPORTES", False) or usuario.upper() == "RIGOBERTO":
+                    if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
+                        registrar_acceso_github(usuario, "DASHBOARD")
+                        st.session_state.menu_main = "DASHBOARD"
+                        st.session_state.menu_sub = "GENERAL"
+                        st.session_state.busqueda_activa = False
+                        st.switch_page("dashboard.py")
+            
+                if permisos.get("SEGUIMIENTO", False):
+                    with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
+                        opciones_seg_posibles = ["ALERTAS", "GANTT", "INCIDENCIAS"]
+                        opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
+                        for s in opciones_seg:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_sub_{s}2"):
+                                registrar_acceso_github(usuario, f"SEGUIMIENTO - {s}")
+                                st.session_state.menu_main = "SEGUIMIENTO"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                
+                                # Redirección dinámica según la opción seleccionada
+                                if s == "ALERTAS":
+                                    st.switch_page("pages/alertas.py")
+                                elif s == "INCIDENCIAS":
+                                    st.switch_page("pages/incidencias_tr.py")
+                                else:
+                                    st.rerun()
+            
+                if permisos.get("ENTREGAS", False):
+                    with st.expander("ENTREGAS", expanded=(st.session_state.menu_main == "ENTREGAS")):
+                        opciones_ent_posibles = ["AGC", "AMAZON", "BARCELO", "NACIONAL"]
+                        opciones_ent = [s for s in opciones_ent_posibles if permisos.get(s, False)]
+                        for s in opciones_ent:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_ent_{s}2"):
+                                registrar_acceso_github(usuario, f"ENTREGAS - {s}")
+                                st.session_state.menu_main = "ENTREGAS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                if s == "AGC":
+                                    st.switch_page("pages/entregas_agc.py")
+                                elif s == "NACIONAL":
+                                    st.switch_page("pages/envios.py")
+                                else:
+                                    st.rerun()
+            
+                if permisos.get("REPORTES", False) or usuario.upper() == "RIGOBERTO":
                     with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
                         opciones_rep_posibles = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
                         opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
@@ -646,8 +646,8 @@ with header_zone:
                                 else:
                                     st.toast(f"Módulo {s} en desarrollo...", icon="🚧")
                                     st.rerun()
-        
-            if permisos.get("FORMATOS", False) or usuario.upper() == "RIGOBERTO":
+            
+                if permisos.get("FORMATOS", False) or usuario.upper() == "RIGOBERTO":
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
                         opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
                         
@@ -673,68 +673,66 @@ with header_zone:
                                 else:
                                     st.toast(f"Módulo {s} en desarrollo...", icon="🚧")
                                     st.rerun()
-        
-            if permisos.get("CENTRO DE DATOS", False):
-                with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
-                    opciones_hub_posibles = ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "ESCANEAR QR", "HERRAMIENTAS"]
-                    opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False)]
-                    for s in opciones_hub:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_hub_{s}2"):
-                            registrar_acceso_github(usuario, f"CENTRO DE DATOS - {s}")
-                            st.session_state.menu_main = "CENTRO DE DATOS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            if s == "ASIGNAR FLETERA":
-                                st.switch_page("pages/facturacion_af.py")
-                            elif s == "CARGAR DATOS":
-                                st.switch_page("pages/cargardt.py")
-                            elif s == "ETIQUETAS":
-                                st.switch_page("pages/etiquetas.py")
-                            elif s == "ESCANEAR QR":
-                                st.switch_page("pages/qrup.py")
-                            else:
+            
+                if permisos.get("CENTRO DE DATOS", False):
+                    with st.expander("CENTRO DE DATOS", expanded=(st.session_state.menu_main == "CENTRO DE DATOS")):
+                        opciones_hub_posibles = ["ASIGNAR FLETERA", "CARGAR DATOS", "ETIQUETAS", "ESCANEAR QR", "HERRAMIENTAS"]
+                        opciones_hub = [s for s in opciones_hub_posibles if permisos.get(s, False)]
+                        for s in opciones_hub:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_hub_{s}2"):
+                                registrar_acceso_github(usuario, f"CENTRO DE DATOS - {s}")
+                                st.session_state.menu_main = "CENTRO DE DATOS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
+                                if s == "ASIGNAR FLETERA":
+                                    st.switch_page("pages/facturacion_af.py")
+                                elif s == "ETIQUETAS":
+                                    st.switch_page("pages/etiquetas.py")
+                                elif s == "ESCANEAR QR":
+                                    st.switch_page("pages/qrup.py")
+                                else:
+                                    st.rerun()
+            
+                if permisos.get("FINANZAS", False):
+                    with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
+                        opciones_fin_posibles = ["WALLET", "CAJA CHICA", "GASTOS"]
+                        opciones_fin = [s for s in opciones_fin_posibles if permisos.get(s, False)]
+                        for s in opciones_fin:
+                            label = f"» {s}" if st.session_state.menu_sub == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_fin_{s}2"):
+                                registrar_acceso_github(usuario, f"FINANZAS - {s}")
+                                st.session_state.menu_main = "FINANZAS"
+                                st.session_state.menu_sub = s
+                                st.session_state.busqueda_activa = False
                                 st.rerun()
-        
-            if permisos.get("FINANZAS", False):
-                with st.expander("FINANZAS", expanded=(st.session_state.menu_main == "FINANZAS")):
-                    opciones_fin_posibles = ["WALLET", "CAJA CHICA", "GASTOS"]
-                    opciones_fin = [s for s in opciones_fin_posibles if permisos.get(s, False)]
-                    for s in opciones_fin:
-                        label = f"» {s}" if st.session_state.menu_sub == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_fin_{s}2"):
-                            registrar_acceso_github(usuario, f"FINANZAS - {s}")
-                            st.session_state.menu_main = "FINANZAS"
-                            st.session_state.menu_sub = s
-                            st.session_state.busqueda_activa = False
-                            st.rerun()
 
-            if permisos.get("ENFOQUE", False):
-                with st.expander("ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
-                    opciones_enf_posibles = ["MORENO", "VAZQUEZ", "MIGUEL"]
-                    opciones_enf = [s for s in opciones_enf_posibles if permisos.get(s, False)]
-                    for s in opciones_enf:
-                        label = f"» {s}" if st.session_state.get("menu_sub") == s else s
-                        if st.button(label, use_container_width=True, key=f"pop_enf_{s}2"):
-                            registrar_acceso_github(usuario, f"ENFOQUE - {s}")
-                            st.session_state.menu_main = "ENFOQUE"
-                            st.session_state.menu_sub = s
-                            st.rerun()
-        
-            if permisos.get("ACCESS CONTROL", False) or usuario.upper() == "RIGOBERTO":
-                if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl2"):
-                    registrar_acceso_github(usuario, "ACCESS CONTROL")
-                    st.session_state.menu_main = "ACCESS CONTROL"
-                    st.session_state.menu_sub = "SETTINGS"
-                    st.switch_page("pages/accesscontrol.py")
-        
-            st.markdown("<hr style='margin: 4px 0; opacity: 0.1;'>", unsafe_allow_html=True)
-            if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
-                for key in list(st.session_state.keys()):
-                    del st.session_state[key]
-                st.session_state.autenticado = False
-                st.session_state.splash_completado = False
-                st.rerun()
+                if permisos.get("ENFOQUE", False):
+                    with st.expander("ENFOQUE", expanded=(st.session_state.get("menu_main") == "ENFOQUE")):
+                        opciones_enf_posibles = ["MORENO", "VAZQUEZ", "MIGUEL"]
+                        opciones_enf = [s for s in opciones_enf_posibles if permisos.get(s, False)]
+                        for s in opciones_enf:
+                            label = f"» {s}" if st.session_state.get("menu_sub") == s else s
+                            if st.button(label, use_container_width=True, key=f"pop_enf_{s}2"):
+                                registrar_acceso_github(usuario, f"ENFOQUE - {s}")
+                                st.session_state.menu_main = "ENFOQUE"
+                                st.session_state.menu_sub = s
+                                st.rerun()
+            
+                if permisos.get("ACCESS CONTROL", False) or usuario.upper() == "RIGOBERTO":
+                    if st.button("ACCESS CONTROL", use_container_width=True, key="pop_access_ctrl2"):
+                        registrar_acceso_github(usuario, "ACCESS CONTROL")
+                        st.session_state.menu_main = "ACCESS CONTROL"
+                        st.session_state.menu_sub = "SETTINGS"
+                        st.switch_page("pages/accesscontrol.py")
+            
+                st.markdown("<hr style='margin: 4px 0; opacity: 0.1;'>", unsafe_allow_html=True)
+                if st.button("TERMINAR SESIÓN", use_container_width=True, type="primary"):
+                    for key in list(st.session_state.keys()):
+                        del st.session_state[key]
+                    st.session_state.autenticado = False
+                    st.session_state.splash_completado = False
+                    st.rerun()
 
     # ── RENDERIZADO DE RESULTADOS DE BÚSQUEDA ──────────────────────────────
     if st.session_state.busqueda_activa and st.session_state.resultado_busqueda is not None:
