@@ -20,6 +20,11 @@ verificar_permiso_pagina("REPORTES", "ENVIO DE MUESTRAS")
 
 cm = units.cm
 
+# ============================================================
+# 2. LLAMADA AL LAYOUT MAESTRO
+# ============================================================
+render_layout(modulo_actual="REPORTES", submodulo_actual="MUESTRAS")
+
 # ==========================================
 # LÓGICA Y COMPONENTES DEL MÓDULO DE MUESTRAS
 # ==========================================
