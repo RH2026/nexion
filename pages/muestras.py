@@ -73,6 +73,9 @@ def limpiar_texto(texto):
     texto = re.sub(r"[^A-Z0-9\s]", " ", texto)
     return " ".join(texto.split())
 
+if "reset_key" not in st.session_state:
+    st.session_state.reset_key = 0
+
 # ==========================================
 # 5. INTERFAZ PRINCIPAL (MUESTRAS)
 # ==========================================
