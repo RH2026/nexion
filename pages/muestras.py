@@ -738,16 +738,15 @@ def main():
                 st.markdown("""
                 <style>
                 div[data-testid="stButton"] button {
-                    background-color: #4E6772 !important; 
+                    background-color: #628290 !important; 
                     color: #FFFFFF !important;
-                    border: 1px solid #4E6772 !important;
+                    border: 1px solid #628290 !important;
                     transition: all 0.3s ease-in-out !important;
                 }
                 div[data-testid="stButton"] button:hover {
-                    background-color: #628290 !important;
+                    background-color: #4E6772 !important;
                     color: #FFFFFF !important;
-                    border-color: #628290 !important;
-                    box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
+                    border-color: #4E6772 !important;                    
                 }
                 </style>
                 """, unsafe_allow_html=True)
