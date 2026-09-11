@@ -12,13 +12,16 @@ from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
 import reportlab.lib.units as units
 
-# ==========================================
-# VALIDACIÓN DE PERMISO DE SECCIÓN
-# ==========================================
-from layout import verificar_permiso_pagina, vars_css
-verificar_permiso_pagina("REPORTES", "ENVIO DE MUESTRAS")
+from components.layout import render_layout
 
-cm = units.cm
+# ============================================================
+# 1. CONFIGURACIÓN DE PÁGINA
+# ============================================================
+st.set_page_config(
+    page_title="JYPESA | Envio de Muestras",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 # ============================================================
 # 2. LLAMADA AL LAYOUT MAESTRO
