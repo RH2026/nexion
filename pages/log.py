@@ -317,7 +317,7 @@ def login_screen():
                     ">
                         <img
                             src="data:image/png;base64,{encoded}"
-                            width="180"
+                            width="240"
                         >
                     </div>
                     ''',
@@ -340,7 +340,7 @@ def login_screen():
                     ">
                         <img
                             src="data:image/png;base64,{encoded}"
-                            width="240"
+                            width="180"
                         >
                     </div>
                     ''',
