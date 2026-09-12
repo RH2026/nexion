@@ -916,6 +916,7 @@ def main():
                             file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
                             mime="application/pdf",
                             use_container_width=True
+                            type="primary"
                         )
         
         with t2:
