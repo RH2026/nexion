@@ -893,14 +893,15 @@ def main():
                             factura_val=f"JYP-{int(datos_fol['FOLIO'])}",
                             transporte_val=transporte_etq
                         )                      
-                        
+                        st.markdown("""
+    
+                        """, unsafe_allow_html=True)
                         st.download_button(
                             label=":material/save: DESCARGAR ETIQUETA PDF",
                             data=pdf_etq_bytes,
                             file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
                             mime="application/pdf",
-                            use_container_width=True
-                            type="primary"
+                            use_container_width=True                           
                         )
         
         with t2:
