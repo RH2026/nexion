@@ -1051,8 +1051,8 @@ def main():
                 
                 div[data-testid="stDownloadButton"] button:hover {
                     background-color: #4E6772 !important;
-                    border-color: #00A3A3 !important;
-                    color: #4E6772 !important;
+                    border-color: #4E6772 !important;
+                    color: #FFFFFF !important;
                 }
                 
                 div[data-testid="stDownloadButton"] button:focus,
