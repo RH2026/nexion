@@ -804,101 +804,229 @@ def main():
                 c_adm1, c_adm2 = st.columns(2)
                 
                 with c_adm1:
+
                     st.markdown(
-                        "<p style='color: #00FFAA; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;'>1. ASIGNAR DATOS DE ENVIO</p>",
+                        "<p style='color: #00FFAA; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;'>1. ASIGNAR DATOS DE ENVÍO</p>",
                         unsafe_allow_html=True,
                     )
-                    n_paq_nombre = st.selectbox("Nombre de Paquetería", 
-                        ["AEREO", "NO APLICA","TRES GUERRAS", "ONE", "POTOSINOS", "CASTORES", "FEDEX", "PAQMEX", "TINY PACK"],
-                        index=None, placeholder="Selecciona paquetería...")
-                    
-                    n_tipo_pago = st.selectbox("Modalidad de Pago", 
-                        ["NO APLICA","CREDITO", "COBRO DESTINO"],
-                        index=None, placeholder="¿Cómo se paga?")
-                    
-                    n_gui = st.text_input("Número de Guía").upper()
-                    n_costo_guia = st.number_input("Costo de Flete ($)", min_value=0.0)
-                    
-                    val_def_cajas = int(datos_fol.get('CANTIDAD_TOTAL', 1)) if datos_fol is not None else 1
-                    n_total_cajas = st.number_input("Cantidad Final de Cajas / Bultos", min_value=1, max_value=100, value=max(val_def_cajas, 1), step=1)
-                    
-                    btn_guardar = st.button(":material/update: GUARDAR Y ACTUALIZAR FOLIO", 
-                                            use_container_width=True, 
-                                            disabled=not fol_sel_texto)
-                    
+                
+                    # ============================================================
+                    # FILA 1 - 3 INPUTS
+                    # ============================================================
+                    c1, c2, c3 = st.columns(3)
+                
+                    with c1:
+                        n_paq_nombre = st.selectbox(
+                            "Nombre de Paquetería",
+                            [
+                                "AEREO",
+                                "NO APLICA",
+                                "TRES GUERRAS",
+                                "ONE",
+                                "POTOSINOS",
+                                "CASTORES",
+                                "FEDEX",
+                                "PAQMEX",
+                                "TINY PACK"
+                            ],
+                            index=None,
+                            placeholder="Selecciona paquetería..."
+                        )
+                
+                    with c2:
+                        n_tipo_pago = st.selectbox(
+                            "Modalidad de Pago",
+                            [
+                                "NO APLICA",
+                                "CREDITO",
+                                "COBRO DESTINO"
+                            ],
+                            index=None,
+                            placeholder="¿Cómo se paga?"
+                        )
+                
+                    with c3:
+                        n_gui = st.text_input(
+                            "Número de Guía"
+                        ).upper()
+                
+                    # ============================================================
+                    # FILA 2 - 2 INPUTS
+                    # ============================================================
+                    c4, c5, c6 = st.columns([1, 1, 1])
+                
+                    with c4:
+                        n_costo_guia = st.number_input(
+                            "Costo de Flete ($)",
+                            min_value=0.0
+                        )
+                
+                    with c5:
+                        val_def_cajas = int(
+                            datos_fol.get('CANTIDAD_TOTAL', 1)
+                        ) if datos_fol is not None else 1
+                
+                        n_total_cajas = st.number_input(
+                            "Cantidad Final de Cajas / Bultos",
+                            min_value=1,
+                            max_value=100,
+                            value=max(val_def_cajas, 1),
+                            step=1
+                        )
+                
+                    # ============================================================
+                    # AVISO
+                    # ============================================================
+                    st.info(
+                        "Verifica los datos antes de imprimir. "
+                        "La base de datos no se afecta hasta que guardes."
+                    )
+                
+                    # ============================================================
+                    # FILA 3 - 3 BOTONES
+                    # ============================================================
+                    b1, b2, b3 = st.columns(3)
+                
+                    with b1:
+                        btn_guardar = st.button(
+                            ":material/update: GUARDAR Y ACTUALIZAR FOLIO",
+                            use_container_width=True,
+                            disabled=not fol_sel_texto
+                        )
+                
+                    with b2:
+                        btn_imprimir = st.button(
+                            ":material/print: IMPRIMIR FORMATO ACTUALIZADO",
+                            use_container_width=True,
+                            disabled=not fol_sel_texto
+                        )
+                
+                    with b3:
+                        if fol_sel_texto and datos_fol is not None:
+                
+                            cant_etiquetas_sel = n_total_cajas
+                
+                            transporte_etq = (
+                                n_paq_nombre
+                                if n_paq_nombre
+                                else datos_fol.get(
+                                    "PAQUETERIA_NOMBRE",
+                                    datos_fol.get(
+                                        "PAQUETERIA",
+                                        "TRES GUERRAS"
+                                    )
+                                )
+                            )
+                
+                            pdf_etq_bytes = generar_etiquetas_limpias(
+                                reg_datos=datos_fol,
+                                total_etqs=int(cant_etiquetas_sel),
+                                factura_val=f"JYP-{int(datos_fol['FOLIO'])}",
+                                transporte_val=transporte_etq
+                            )
+                
+                            st.download_button(
+                                label=":material/save: DESCARGAR ETIQUETA PDF",
+                                data=pdf_etq_bytes,
+                                file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
+                                mime="application/pdf",
+                                use_container_width=True
+                            )
+                
+                        else:
+                            st.button(
+                                ":material/save: DESCARGAR ETIQUETA PDF",
+                                use_container_width=True,
+                                disabled=True
+                            )
+                
+                    # ============================================================
+                    # GUARDAR
+                    # ============================================================
                     if btn_guardar and datos_fol is not None:
-                        idx = df_actual.index[df_actual['FOLIO'] == fol_edit].tolist()[0]
+                
+                        idx = df_actual.index[
+                            df_actual['FOLIO'] == fol_edit
+                        ].tolist()[0]
+                
                         df_actual.at[idx, "PAQUETERIA_NOMBRE"] = n_paq_nombre
                         df_actual.at[idx, "MODALIDAD_PAGO"] = n_tipo_pago
                         df_actual.at[idx, "NUMERO_GUIA"] = n_gui
                         df_actual.at[idx, "COSTO_GUIA"] = n_costo_guia
-                        df_actual.at[idx, "CANTIDAD_TOTAL"] = n_total_cajas 
-                        df_actual.at[idx, "ESTATUS"] = "DESPACHADO" 
-                        
-                        if subir_a_github(df_actual, sha_actual, f"Logistica Folio {fol_edit}"):
-                            st.success(f"FOLIO JYP-{fol_edit} GUARDADO")
+                        df_actual.at[idx, "CANTIDAD_TOTAL"] = n_total_cajas
+                        df_actual.at[idx, "ESTATUS"] = "DESPACHADO"
+                
+                        if subir_a_github(
+                            df_actual,
+                            sha_actual,
+                            f"Logistica Folio {fol_edit}"
+                        ):
+                            st.success(
+                                f"FOLIO JYP-{fol_edit} GUARDADO"
+                            )
                             time.sleep(1.5)
                             st.rerun()
                 
-                with c_adm2:
-                    st.markdown(
-                        "<p style='color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;'>2. IMPRESION FINAL</p>",
-                        unsafe_allow_html=True,
-                    )
-                    st.info("Verifica los datos antes de imprimir. La base de datos no se afecta hasta que guardes.")
-                    
-                    btn_imprimir = st.button(":material/print: IMPRIMIR FORMATO ACTUALIZADO", 
-                                            use_container_width=True, 
-                                            disabled=not fol_sel_texto)
-                    
+                    # ============================================================
+                    # IMPRIMIR
+                    # ============================================================
                     if btn_imprimir and datos_fol is not None:
+                
                         prods_re = []
+                
                         for p in precios.keys():
-                            if p in datos_fol and datos_fol[p] > 0: 
-                                prods_re.append({"desc": p, "cant": int(datos_fol[p])})
-                        
-                        paq_a_imprimir = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", "S/P")
-                        pago_a_imprimir = n_tipo_pago if n_tipo_pago else datos_fol.get("MODALIDAD_PAGO", "PENDIENTE")
+                            if p in datos_fol and datos_fol[p] > 0:
+                                prods_re.append({
+                                    "desc": p,
+                                    "cant": int(datos_fol[p])
+                                })
+                
+                        paq_a_imprimir = (
+                            n_paq_nombre
+                            if n_paq_nombre
+                            else datos_fol.get(
+                                "PAQUETERIA_NOMBRE",
+                                "S/P"
+                            )
+                        )
+                
+                        pago_a_imprimir = (
+                            n_tipo_pago
+                            if n_tipo_pago
+                            else datos_fol.get(
+                                "MODALIDAD_PAGO",
+                                "PENDIENTE"
+                            )
+                        )
                 
                         h_re = generar_html_impresion(
-                            f"JYP-{int(datos_fol['FOLIO'])}", 
-                            datos_fol.get("PAQUETERIA", "ENVIO"), 
-                            datos_fol.get("TIPO_ENTREGA", "DOMICILIO"), 
-                            datos_fol["FECHA"], 
-                            "RIGOBERTO HERNANDEZ", 
-                            "3319753122", 
-                            datos_fol["SOLICITO"], 
-                            datos_fol["NOMBRE DEL HOTEL"], 
-                            "", "", "", 
-                            datos_fol["DESTINO"], 
-                            "", 
-                            datos_fol["CONTACTO"], 
-                            prods_re, 
-                            datos_fol.get("COMENTARIOS", "RE-IMPRESIÓN DE LOGÍSTICA"), 
-                            paq_a_imprimir, 
+                            f"JYP-{int(datos_fol['FOLIO'])}",
+                            datos_fol.get("PAQUETERIA", "ENVIO"),
+                            datos_fol.get("TIPO_ENTREGA", "DOMICILIO"),
+                            datos_fol["FECHA"],
+                            "RIGOBERTO HERNANDEZ",
+                            "3319753122",
+                            datos_fol["SOLICITO"],
+                            datos_fol["NOMBRE DEL HOTEL"],
+                            "",
+                            "",
+                            "",
+                            datos_fol["DESTINO"],
+                            "",
+                            datos_fol["CONTACTO"],
+                            prods_re,
+                            datos_fol.get(
+                                "COMENTARIOS",
+                                "RE-IMPRESIÓN DE LOGÍSTICA"
+                            ),
+                            paq_a_imprimir,
                             pago_a_imprimir,
-                            total_cajas=n_total_cajas 
+                            total_cajas=n_total_cajas
                         )
-                        components.html(f"<html><body>{h_re}<script>window.print();</script></body></html>", height=0)
-                    
-                    st.write("")
-                    
-                    if fol_sel_texto and datos_fol is not None:
-                        cant_etiquetas_sel = n_total_cajas 
-                        transporte_etq = n_paq_nombre if n_paq_nombre else datos_fol.get("PAQUETERIA_NOMBRE", datos_fol.get("PAQUETERIA", "TRES GUERRAS"))
-                        
-                        pdf_etq_bytes = generar_etiquetas_limpias(
-                            reg_datos=datos_fol,
-                            total_etqs=int(cant_etiquetas_sel),
-                            factura_val=f"JYP-{int(datos_fol['FOLIO'])}",
-                            transporte_val=transporte_etq
-                        )                     
-                        st.download_button(
-                            label=":material/save: DESCARGAR ETIQUETA PDF",
-                            data=pdf_etq_bytes,
-                            file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
-                            mime="application/pdf",
-                            use_container_width=True                           
+                
+                        components.html(
+                            f"<html><body>{h_re}<script>window.print();</script></body></html>",
+                            height=0
                         )
         
         with t2:
