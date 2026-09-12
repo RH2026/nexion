@@ -1064,36 +1064,18 @@ def main():
         with t3:
             st.markdown("### EDICIÓN TOTAL DE MATRIZ DE MUESTRAS")
             st.info("Modifica cualquier registro de la base de datos de manera directa. Los cambios se sincronizarán y actualizarán en GitHub al guardar.")
-            st.markdown("""
-                <style>
-                    div[data-testid="stForm"] button,
-                    div[data-testid="stForm"] button:focus,
-                    div[data-testid="stForm"] button:active {
-                        background-color: #263238 !important;
-                        color: #FFFFFF !important;
-                        border: 1px solid #44555A !important;
-                        width: 100% !important;
-                        border-radius: 4px !important;
-                        font-weight: 400 !important;
-                        box-shadow: none !important;
-                        outline: none !important;
-                    }
-                    div[data-testid="stForm"] button:hover {
-                        background-color: #00A3A3 !important;
-                        border-color: #00A3A3 !important;
-                        color: #FFFFFF !important;
-                        box-shadow: 0 0 15px rgba(0, 196, 180, 0.5) !important;
-                    }
-                </style>
-            """, unsafe_allow_html=True)
-
-               
+        
             if df_actual.empty:
                 st.warning("No hay registros en la matriz de muestras para editar.")
+        
             else:
                 df_sorted_edit = df_actual.sort_values(by="FOLIO", ascending=False)
-                opciones_edit = [f"Folio #{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']} ({r['FECHA']})" for _, r in df_sorted_edit.iterrows()]
-                
+        
+                opciones_edit = [
+                    f"Folio #{int(r['FOLIO'])} - {r['NOMBRE DEL HOTEL']} ({r['FECHA']})"
+                    for _, r in df_sorted_edit.iterrows()
+                ]
+        
                 folio_a_editar = st.selectbox(
                     "Selecciona el Folio que deseas modificar o eliminar:",
                     opciones_edit,
@@ -1103,102 +1085,313 @@ def main():
                 )
         
                 if folio_a_editar:
-                    num_folio_sel = int(folio_a_editar.split(" - ")[0].replace("Folio #", ""))
-                    idx_fila = df_actual.index[df_actual['FOLIO'] == num_folio_sel].tolist()[0]
+        
+                    num_folio_sel = int(
+                        folio_a_editar.split(" - ")[0].replace("Folio #", "")
+                    )
+        
+                    idx_fila = df_actual.index[
+                        df_actual["FOLIO"] == num_folio_sel
+                    ].tolist()[0]
+        
                     registro_sel = df_actual.loc[idx_fila]
         
                     st.markdown("---")
                     st.subheader(f"Editando: JYP-{num_folio_sel}")
         
-                    with st.form(key=f"form_edicion_{num_folio_sel}"):
-                        col_e1, col_e2, col_e3 = st.columns(3)
-                        
-                        with col_e1:
-                            nuevo_hotel = st.text_input("Nombre del Hotel", value=str(registro_sel.get("NOMBRE DEL HOTEL", ""))).upper()
-                            nuevo_solicito = st.text_input("Solicitante", value=str(registro_sel.get("SOLICITO", ""))).upper()
-                            nuevo_estatus = st.selectbox(
-                                "Estatus", 
-                                ["NO SURTIDO", "DESPACHADO"], 
-                                index=0 if str(registro_sel.get("ESTATUS", "NO SURTIDO")) == "NO SURTIDO" else 1
+                    # ============================================================
+                    # DATOS GENERALES
+                    # ============================================================
+        
+                    col_e1, col_e2, col_e3 = st.columns(3)
+        
+                    with col_e1:
+        
+                        nuevo_hotel = st.text_input(
+                            "Nombre del Hotel",
+                            value=str(
+                                registro_sel.get("NOMBRE DEL HOTEL", "")
+                            ),
+                            key=f"hotel_{num_folio_sel}"
+                        ).upper()
+        
+                        nuevo_solicito = st.text_input(
+                            "Solicitante",
+                            value=str(
+                                registro_sel.get("SOLICITO", "")
+                            ),
+                            key=f"solicito_{num_folio_sel}"
+                        ).upper()
+        
+                        nuevo_estatus = st.selectbox(
+                            "Estatus",
+                            ["NO SURTIDO", "DESPACHADO"],
+                            index=(
+                                0
+                                if str(
+                                    registro_sel.get(
+                                        "ESTATUS",
+                                        "NO SURTIDO"
+                                    )
+                                ) == "NO SURTIDO"
+                                else 1
+                            ),
+                            key=f"estatus_{num_folio_sel}"
+                        )
+        
+                    with col_e2:
+        
+                        nuevo_destino = st.text_area(
+                            "Destino / Dirección",
+                            value=str(
+                                registro_sel.get("DESTINO", "")
+                            ),
+                            key=f"destino_{num_folio_sel}"
+                        ).upper()
+        
+                        nuevo_contacto = st.text_input(
+                            "Contacto Receptor",
+                            value=str(
+                                registro_sel.get("CONTACTO", "")
+                            ),
+                            key=f"contacto_{num_folio_sel}"
+                        ).upper()
+        
+                    with col_e3:
+        
+                        nueva_paqueteria = st.text_input(
+                            "Paquetería",
+                            value=str(
+                                registro_sel.get(
+                                    "PAQUETERIA_NOMBRE",
+                                    registro_sel.get("PAQUETERIA", "")
+                                )
+                            ),
+                            key=f"paqueteria_{num_folio_sel}"
+                        ).upper()
+        
+                        nueva_guia = st.text_input(
+                            "Número de Guía",
+                            value=str(
+                                registro_sel.get("NUMERO_GUIA", "")
+                            ),
+                            key=f"guia_{num_folio_sel}"
+                        ).upper()
+        
+                        nuevo_costo_guia = st.number_input(
+                            "Costo Guía / Flete ($)",
+                            min_value=0.0,
+                            value=float(
+                                registro_sel.get("COSTO_GUIA", 0.0)
+                            ),
+                            key=f"costo_{num_folio_sel}"
+                        )
+        
+                    # ============================================================
+                    # CANTIDADES DE PRODUCTOS
+                    # ============================================================
+        
+                    st.markdown("##### 📦 Modificar Cantidades de Productos")
+                    st.write(
+                        "Ajusta las piezas de los productos incluidos en este folio:"
+                    )
+        
+                    nuevas_cantidades = {}
+        
+                    cols_prods = st.columns(3)
+        
+                    keys_precios = list(precios.keys())
+        
+                    for i, prod in enumerate(keys_precios):
+        
+                        val_bruto = registro_sel.get(prod, 0)
+        
+                        try:
+                            cant_actual = (
+                                int(val_bruto)
+                                if pd.notna(val_bruto)
+                                and str(val_bruto).strip() != ""
+                                else 0
                             )
         
-                        with col_e2:
-                            nuevo_destino = st.text_area("Destino / Dirección", value=str(registro_sel.get("DESTINO", ""))).upper()
-                            nuevo_contacto = st.text_input("Contacto Receptor", value=str(registro_sel.get("CONTACTO", ""))).upper()
+                        except (ValueError, TypeError):
+                            cant_actual = 0
         
-                        with col_e3:
-                            nueva_paqueteria = st.text_input("Paquetería", value=str(registro_sel.get("PAQUETERIA_NOMBRE", registro_sel.get("PAQUETERIA", "")))).upper()
-                            nueva_guia = st.text_input("Número de Guía", value=str(registro_sel.get("NUMERO_GUIA", ""))).upper()
-                            nuevo_costo_guia = st.number_input("Costo Guía / Flete ($)", min_value=0.0, value=float(registro_sel.get("COSTO_GUIA", 0.0)))
+                        col_target = cols_prods[i % 3]
         
-                        st.markdown("##### 📦 Modificar Cantidades de Productos")
-                        st.write("Ajusta las piezas de los productos incluidos en este folio:")
+                        with col_target:
         
-                        nuevas_cantidades = {}
-                        cols_prods = st.columns(3)
-                        
-                        keys_precios = list(precios.keys())
-                        for i, prod in enumerate(keys_precios):
-                            val_bruto = registro_sel.get(prod, 0)
-                            try:
-                                cant_actual = int(val_bruto) if pd.notna(val_bruto) and str(val_bruto).strip() != "" else 0
-                            except (ValueError, TypeError):
-                                cant_actual = 0
+                            nuevas_cantidades[prod] = st.number_input(
+                                f"{prod[:28]}",
+                                min_value=0,
+                                step=1,
+                                value=cant_actual,
+                                key=f"edit_{num_folio_sel}_{prod}"
+                            )
         
-                            col_target = cols_prods[i % 3]
-                            with col_target:
-                                nuevas_cantidades[prod] = st.number_input(
-                                    f"{prod[:28]}", 
-                                    min_value=0, 
-                                    step=1, 
-                                    value=cant_actual, 
-                                    key=f"edit_{num_folio_sel}_{prod}"
-                                )
+                    # ============================================================
+                    # COMENTARIOS
+                    # ============================================================
         
-                        nuevo_comentario = st.text_area("Comentarios Adicionales", value=str(registro_sel.get("COMENTARIOS", ""))).upper()
+                    nuevo_comentario = st.text_area(
+                        "Comentarios Adicionales",
+                        value=str(
+                            registro_sel.get("COMENTARIOS", "")
+                        ),
+                        key=f"comentarios_{num_folio_sel}"
+                    ).upper()
         
-                        st.markdown("---")
-                        
-                        col_btn_1, col_btn_2 = st.columns([2, 1])
-                        
-                        guardar_cambios = col_btn_1.form_submit_button("GUARDAR CAMBIOS EN ESTE FOLIO", use_container_width=True)
-                        eliminar_registro = col_btn_2.form_submit_button("ELIMINAR ESTE FOLIO", use_container_width=True)
+                    st.markdown("---")
         
-                        if guardar_cambios:
-                            total_cants = sum(nuevas_cantidades.values())
-                            total_cost_p = sum(qty * precios.get(p_key, 0) for p_key, qty in nuevas_cantidades.items())
+                    # ============================================================
+                    # BOTONES DE ACCIÓN
+                    # FUERA DE CUALQUIER FORMULARIO
+                    # ============================================================
         
-                            df_actual.at[idx_fila, "NOMBRE DEL HOTEL"] = nuevo_hotel
-                            df_actual.at[idx_fila, "SOLICITO"] = nuevo_solicito
-                            df_actual.at[idx_fila, "ESTATUS"] = nuevo_estatus
-                            df_actual.at[idx_fila, "DESTINO"] = nuevo_destino
-                            df_actual.at[idx_fila, "CONTACTO"] = nuevo_contacto
-                            df_actual.at[idx_fila, "PAQUETERIA_NOMBRE"] = nueva_paqueteria
-                            df_actual.at[idx_fila, "NUMERO_GUIA"] = nueva_guia
-                            df_actual.at[idx_fila, "COSTO_GUIA"] = nuevo_costo_guia
-                            df_actual.at[idx_fila, "CANTIDAD_TOTAL"] = total_cants
-                            df_actual.at[idx_fila, "COSTO_TOTAL"] = round(total_cost_p, 2)
-                            df_actual.at[idx_fila, "COMENTARIOS"] = nuevo_comentario
+                    col_btn_1, col_btn_2 = st.columns([2, 1])
         
-                            for p_key, qty in nuevas_cantidades.items():
-                                df_actual.at[idx_fila, p_key] = qty
+                    with col_btn_1:
+                        guardar_cambios = st.button(
+                            "GUARDAR CAMBIOS EN ESTE FOLIO",
+                            key=f"guardar_cambios_{num_folio_sel}",
+                            use_container_width=True
+                        )
         
-                            if subir_a_github(df_actual, sha_actual, f"Edicion total Folio JYP-{num_folio_sel}"):
-                                st.success(f"¡Folio JYP-{num_folio_sel} actualizado y sincronizado correctamente!")
-                                time.sleep(1)
-                                st.rerun()
-                            else:
-                                st.error("Error al sincronizar con GitHub. Verifica tus credenciales.")
+                    with col_btn_2:
+                        eliminar_registro = st.button(
+                            "ELIMINAR ESTE FOLIO",
+                            key=f"eliminar_registro_{num_folio_sel}",
+                            use_container_width=True
+                        )
         
-                        if eliminar_registro:
-                            df_actual = df_actual.drop(idx_fila).reset_index(drop=True)
-                            
-                            if subir_a_github(df_actual, sha_actual, f"Eliminacion Folio JYP-{num_folio_sel}"):
-                                st.success(f"¡El folio JYP-{num_folio_sel} ha sido eliminado permanentemente!")
-                                time.sleep(1)
-                                st.rerun()
-                            else:
-                                st.error("Error al eliminar el registro en GitHub.")
+                    # ============================================================
+                    # GUARDAR CAMBIOS
+                    # ============================================================
+        
+                    if guardar_cambios:
+        
+                        total_cants = sum(
+                            nuevas_cantidades.values()
+                        )
+        
+                        total_cost_p = sum(
+                            qty * precios.get(p_key, 0)
+                            for p_key, qty in nuevas_cantidades.items()
+                        )
+        
+                        df_actual.at[
+                            idx_fila,
+                            "NOMBRE DEL HOTEL"
+                        ] = nuevo_hotel
+        
+                        df_actual.at[
+                            idx_fila,
+                            "SOLICITO"
+                        ] = nuevo_solicito
+        
+                        df_actual.at[
+                            idx_fila,
+                            "ESTATUS"
+                        ] = nuevo_estatus
+        
+                        df_actual.at[
+                            idx_fila,
+                            "DESTINO"
+                        ] = nuevo_destino
+        
+                        df_actual.at[
+                            idx_fila,
+                            "CONTACTO"
+                        ] = nuevo_contacto
+        
+                        df_actual.at[
+                            idx_fila,
+                            "PAQUETERIA_NOMBRE"
+                        ] = nueva_paqueteria
+        
+                        df_actual.at[
+                            idx_fila,
+                            "NUMERO_GUIA"
+                        ] = nueva_guia
+        
+                        df_actual.at[
+                            idx_fila,
+                            "COSTO_GUIA"
+                        ] = nuevo_costo_guia
+        
+                        df_actual.at[
+                            idx_fila,
+                            "CANTIDAD_TOTAL"
+                        ] = total_cants
+        
+                        df_actual.at[
+                            idx_fila,
+                            "COSTO_TOTAL"
+                        ] = round(total_cost_p, 2)
+        
+                        df_actual.at[
+                            idx_fila,
+                            "COMENTARIOS"
+                        ] = nuevo_comentario
+        
+                        for p_key, qty in nuevas_cantidades.items():
+        
+                            df_actual.at[
+                                idx_fila,
+                                p_key
+                            ] = qty
+        
+                        if subir_a_github(
+                            df_actual,
+                            sha_actual,
+                            f"Edicion total Folio JYP-{num_folio_sel}"
+                        ):
+        
+                            st.success(
+                                f"¡Folio JYP-{num_folio_sel} actualizado y sincronizado correctamente!"
+                            )
+        
+                            time.sleep(1)
+                            st.rerun()
+        
+                        else:
+        
+                            st.error(
+                                "Error al sincronizar con GitHub. "
+                                "Verifica tus credenciales."
+                            )
+        
+                    # ============================================================
+                    # ELIMINAR REGISTRO
+                    # ============================================================
+        
+                    if eliminar_registro:
+        
+                        df_actual = (
+                            df_actual
+                            .drop(idx_fila)
+                            .reset_index(drop=True)
+                        )
+        
+                        if subir_a_github(
+                            df_actual,
+                            sha_actual,
+                            f"Eliminacion Folio JYP-{num_folio_sel}"
+                        ):
+        
+                            st.success(
+                                f"¡El folio JYP-{num_folio_sel} "
+                                "ha sido eliminado permanentemente!"
+                            )
+        
+                            time.sleep(1)
+                            st.rerun()
+        
+                        else:
+        
+                            st.error(
+                                "Error al eliminar el registro en GitHub."
+                            )
     else:
         html_restringido = f"""<div style="background-color:{vars_css['card']}; border:1px solid {vars_css['border']}; border-left:8px solid #F7C300; padding:18px 40px; border-radius:10px; margin:15px 0; box-shadow:0 6px 20px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; gap:25px;"><span style="font-size:28px;">🔐</span><div style="text-align:left;"><span style="color:#F7C300; font-weight:900; font-size:14px; letter-spacing:3px; text-transform:uppercase; display:block; margin-bottom:4px;">ÁREA RESTRINGIDA</span><span style="color:{vars_css['text']}; font-size:14px; font-weight:500; opacity:0.9;">El perfil de operador <b>{usuario_logeado}</b> no cuenta con privilegios de nivel <b>Logística</b>.</span></div></div><div style="padding:6px 16px; border:1px solid rgba(247,195,0,0.5); background:rgba(247,195,0,0.1); border-radius:6px; font-size:11px; color:#F7C300; font-weight:900; letter-spacing:1px;">ID ACCESO: {st.session_state.get('usuario_activo', 'ERR')}</div></div>"""
         st.markdown(html_restringido, unsafe_allow_html=True)
