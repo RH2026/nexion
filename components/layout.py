@@ -90,7 +90,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
         background-color: #628290 !important;
         color: #ffffff !important;
         border: 1px solid #628290 !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         font-weight: 700 !important;
         text-transform: uppercase;
         font-size: 10px !important;
@@ -102,7 +102,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     div.stButton > button:hover, div.stDownloadButton > button:hover {{
         background-color: #4E6772 !important;
         color: #ffffff !important;
-        border-color: #FFFFFF !important;  
+        border-color: #4E6772 !important;  
     }}
         
     /* --- SEPARACIÓN EQUILIBRADA EN EL POPOVER --- */
