@@ -90,7 +90,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
         background-color: #628290 !important;
         color: #ffffff !important;
         border: 1px solid #628290 !important;
-        border-radius: 10px !important;
+        border-radius: 7px !important;
         font-weight: 700 !important;
         text-transform: uppercase;
         font-size: 10px !important;
