@@ -1039,9 +1039,9 @@ def main():
                    ============================================================ */
                 
                 div[data-testid="stDownloadButton"] button {
-                    background-color: #263238 !important;
+                    background-color: #628290 !important;
                     color: #FFFFFF !important;
-                    border: 1px solid #44555A !important;
+                    border: 1px solid #628290 !important;
                     width: 100% !important;
                     border-radius: 4px !important;
                     font-weight: 400 !important;
@@ -1050,9 +1050,9 @@ def main():
                 }
                 
                 div[data-testid="stDownloadButton"] button:hover {
-                    background-color: #00A3A3 !important;
+                    background-color: #4E6772 !important;
                     border-color: #00A3A3 !important;
-                    color: #FFFFFF !important;
+                    color: #4E6772 !important;
                 }
                 
                 div[data-testid="stDownloadButton"] button:focus,
