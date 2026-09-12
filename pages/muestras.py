@@ -892,30 +892,15 @@ def main():
                             total_etqs=int(cant_etiquetas_sel),
                             factura_val=f"JYP-{int(datos_fol['FOLIO'])}",
                             transporte_val=transporte_etq
-                        )
-                        
-                        st.markdown("""
-                        <style>
-                        div[data-testid="stButton"] button {
-                            background-color: #628290 !important; 
-                            color: #FFFFFF !important;
-                            border: 1px solid #628290 !important;
-                            transition: all 0.3s ease-in-out !important;
-                        }
-                        div[data-testid="stButton"] button:hover {
-                            background-color: #4E6772 !important;
-                            color: #FFFFFF !important;
-                            border-color: #4E6772 !important;                    
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
+                        )                      
                         
                         st.download_button(
                             label=":material/save: DESCARGAR ETIQUETA PDF",
                             data=pdf_etq_bytes,
                             file_name=f"Etiqueta_JYP-{int(datos_fol['FOLIO'])}.pdf",
                             mime="application/pdf",
-                            use_container_width=True                            
+                            use_container_width=True
+                            type="primary"
                         )
         
         with t2:
