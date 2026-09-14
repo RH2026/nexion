@@ -1541,9 +1541,9 @@ def main():
                             )
     else:        
         vars_css = {
-            bg_card = "#263238"
-            bg_border = "rgba(255,255,255,0.05)"
-            fg_text = "#FFFFFF"
+            "bg_card" = "#263238"
+            "bg_border" = "rgba(255,255,255,0.05)"
+            "fg_text" = "#FFFFFF"
                 
         }
         
