@@ -607,8 +607,11 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 st.session_state.menu_main = "CENTRO DE DATOS"
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
+                                
                                 if s == "ASIGNAR FLETERA":
                                     st.switch_page("pages/facturacion_af.py")
+                                elif s == "CARGAR DATOS":
+                                    st.switch_page("pages/cargardt.py")
                                 elif s == "ETIQUETAS":
                                     st.switch_page("pages/etiquetas.py")
                                 elif s == "ESCANEAR QR":
