@@ -1541,9 +1541,9 @@ def main():
                             )
     else:        
         vars_css = {
-            "card": = "#263238"
-            "border": = "rgba(255,255,255,0.05)"
-            "text": = "#FFFFFF"
+            "card": "#263238",
+            "border": "rgba(255,255,255,0.05)",
+            "text": "#FFFFFF"
                 
         }
         
