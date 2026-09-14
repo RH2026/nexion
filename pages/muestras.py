@@ -32,7 +32,7 @@ st.set_page_config(
 # ============================================================
 # 2. LLAMADA AL LAYOUT MAESTRO Y PERMISOS
 # ============================================================
-render_layout(modulo_actual="REPORTES", submodulo_actual="MUESTRAS")
+render_layout(modulo_actual="REPORTES", submodulo_actual="ENVIO DE MUESTRAS")
 
 
 # ==========================================
