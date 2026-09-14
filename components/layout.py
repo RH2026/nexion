@@ -25,12 +25,14 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     
     # ── TEMA Y CSS MAESTROS ──────────────────────────────────────────
     vars_css = {
-        "bg": "#384A52",
-        "card": "#628290",
-        "text": "#FFFFFF",
-        "sub": "#FFFFFF",
-        "border": "#4B5D67",
-        "logo": "n1.png",
+        "bg": "#384A52",           # Fondo profundo (Base)
+        "card": "#2B343B",         # Azul grisáceo oscuro para celdas
+        "text": "#FFFFFF",         # Blanco Perla Ultra Chic (Texto principal)
+        "sub": "#FFFFFF",          # Gris Azulado Claro (Subtítulos/Secundario)
+        "border": "#4B5D67",       # Contorno sutil para elevación
+        "table_header": "#ffffff",
+        "table_bg": "#2B343B",     # Tono profundo para encabezados de tabla
+        "logo": "n1.png"           # Tu archivo de imagen
     }
     
     st.markdown(
