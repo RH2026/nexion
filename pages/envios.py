@@ -155,7 +155,7 @@ def main():
     else:
         modo_edicion = False
 
-    # ── TÍTULO Y BOTÓN DE ACTUALIZACIÓN ────────────────────────
+    # ── TÍTULO Y BOTÓN DE ACTUALIZACIÓN (SE RENDERIZAN AL INSTANTE) ──
     col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
     with col_titulo:
         st.markdown(
@@ -227,14 +227,10 @@ def main():
             st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
             return False
 
-    # ── AVISO DE CARGA VISIBLE (PLACEHOLDER DINÁMICO) ──
-    loading_placeholder = st.empty()
-    loading_placeholder.info("🔄 Sincronizando y cargando matriz de envíos (últimos 10 días)... Por favor espera un momento, amor.")
-
-    df_raw = get_github_data()
-    df_dashboard_global = cargar_datos_dashboard()
-
-    loading_placeholder.empty()  # Limpiamos el aviso una vez descargado
+    # ── CONTENEDOR DE CARGA VISIBLE CON ST.SPINNER REAL ──
+    with st.spinner("🔄 Conectando con GitHub y cargando la matriz de envíos (últimos 10 días)... Por favor espera, amor."):
+        df_raw = get_github_data()
+        df_dashboard_global = cargar_datos_dashboard()
 
     df_t1_global = pd.DataFrame()
     try:
@@ -298,7 +294,7 @@ def main():
         dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
         df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
 
-        # ── FILTRADO RÁPIDO: 10 DÍAS O BÚSQUEDA DE FACTURA ──
+        # ── SELECTOR DE FACTURA Y FILTROS RÁPIDOS ──
         facturas_opts_temp = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
         
         f1, f2, f3, f4, f5 = st.columns(5)
@@ -318,7 +314,7 @@ def main():
             df_raw_procesar = df_raw[df_raw['Factura'].astype(str).str.strip() == filtro_factura].copy()
             df_envios_procesar = df_envios[df_envios['factura'] == filtro_factura].copy()
 
-        # ── PROCESAMIENTO EXCLUSIVO DE LOS REGISTROS FILTRADOS ──
+        # ── PROCESAMIENTO DE REGISTROS FILTRADOS ──
         lista_guias = []
         lista_fechas_envio = []
         
