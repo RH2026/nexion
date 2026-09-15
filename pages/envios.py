@@ -43,7 +43,7 @@ def cargar_datos_dashboard():
 
 
 # ============================================================
-# 4. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (CON SCROLL CORREGIDO)
+# 4. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS
 # ============================================================
 def render_envios_flow_responsive(data):
     sorted_data = sorted(data, key=lambda x: str(x['factura']), reverse=True)
@@ -227,10 +227,14 @@ def main():
             st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
             return False
 
-    # ── MENSAJE Y SPINNER DE CARGA DE LA MATRIZ ──
-    with st.spinner("Sincronizando y cargando matriz de envíos... Por favor espera un momento, amor. 🔄"):
-        df_raw = get_github_data()
-        df_dashboard_global = cargar_datos_dashboard()
+    # ── AVISO DE CARGA VISIBLE (PLACEHOLDER DINÁMICO) ──
+    loading_placeholder = st.empty()
+    loading_placeholder.info("🔄 Sincronizando y cargando matriz de envíos (últimos 10 días)... Por favor espera un momento, amor.")
+
+    df_raw = get_github_data()
+    df_dashboard_global = cargar_datos_dashboard()
+
+    loading_placeholder.empty()  # Limpiamos el aviso una vez descargado
 
     df_t1_global = pd.DataFrame()
     try:
