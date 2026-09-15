@@ -43,7 +43,7 @@ def cargar_datos_dashboard():
 
 
 # ============================================================
-# 4. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS
+# 4. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (CON SCROLL RESTAURADO)
 # ============================================================
 def render_envios_flow_responsive(data):
     sorted_data = sorted(data, key=lambda x: str(x['factura']), reverse=True)
@@ -104,6 +104,10 @@ def render_envios_flow_responsive(data):
         f"{chr(60)}link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap\" rel=\"stylesheet\"{chr(62)}"
         f"{chr(60)}style{chr(62)}"
         "body { font-family: 'Inter', sans-serif; background-color: #384A52; color: #e2e8f0; margin: 0; padding: 5px; width: 100%; }"
+        ":-webkit-scrollbar { width: 8px; height: 8px; }"
+        ":-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }"
+        ":-webkit-scrollbar-thumb { background: #3498db; border-radius: 10px; border: 2px solid #384A52; }"
+        ":-webkit-scrollbar-thumb:hover { background: #2ecc71; }"
         ".list-row { background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s ease; margin-bottom: 6px; border-radius: 8px; overflow: hidden; width: 100%; }"
         ".list-row:hover { background-color: #2c3b42; border-color: rgba(56, 189, 248, 0.3); }"
         ".label-mini { font-size: 8px; text-transform: uppercase; font-weight: 800; color: #BFBFBF; letter-spacing: 0.5px; margin-bottom: 2px; }"
@@ -118,6 +122,7 @@ def render_envios_flow_responsive(data):
         f"{chr(60)}/body{chr(62)}"
         f"{chr(60)}/html{chr(62)}"
     )
+    # ── AQUÍ ESTÁ EL SCROLL VERTICAL RESTAURADO ──
     return components.html(html_content, height=800, scrolling=True)
 
 
