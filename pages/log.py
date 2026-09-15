@@ -503,64 +503,41 @@ def login_screen():
 if not st.session_state.splash_completado:
     p = st.empty()
 
-    mensajes = [
+    for m in [
         "ESTABLISHING SECURE ACCESS...",
         "AUTHENTICATING NEXION GATEWAY...",
         "LOGISTICS DATA FLOW INITIALIZING...",
         "SYSTEM READY..."
-    ]
-
-    total_pasos = len(mensajes)
-
-    for i, m in enumerate(mensajes):
-        # Calculamos el porcentaje para una barra de progreso elegante
-        progreso = int(((i + 1) / total_pasos) * 100)
-        
+    ]:
         html_splash = (
-            f"{chr(60)}div style=\"height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #384A52;\"{chr(62)}"
-            
-            # Tarjeta contenedor estilo glassmorphism minimalista
-            f"{chr(60)}div style=\"background: rgba(26, 37, 43, 0.6); border: 1px solid rgba(130, 212, 230, 0.12); backdrop-filter: blur(12px); padding: 45px 55px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; width: 420px; max-width: 90vw;\"{chr(62)}"
-            
-            # Logo o isotipo corporativo minimalista (Anillo sutil con pulso interior)
-            f"{chr(60)}div style=\"position: relative; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; margin-bottom: 30px;\"{chr(62)}"
-            f"{chr(60)}div style=\"position: absolute; width: 100%; height: 100%; border: 2px solid rgba(130, 212, 230, 0.1); border-top: 2px solid #82D4E6; border-radius: 50%; animation: nexionSpin 0.9s linear infinite;\"{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div style=\"width: 14px; height: 14px; background: #82D4E6; border-radius: 50%; box-shadow: 0 0 12px #82D4E6; animation: nexionPulse 1.5s ease-in-out infinite;\"{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div style=\"height:70vh; display:flex; flex-direction:column; justify-content:center; align-items:center;\"{chr(62)}"
+            f"{chr(60)}div style=\"position:relative; width:90px; height:90px; display:flex; justify-content:center; align-items:center; margin-bottom:25px;\"{chr(62)}"
+            f"{chr(60)}div style=\"position:absolute; width:100%; height:100%; border:2px solid rgba(130,212,230,0.15); border-top:2px solid #82D4E6; border-radius:50%; animation:nexionSpin 1s linear infinite;\"{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div style=\"width:16px; height:16px; background:#82D4E6; border-radius:50%; box-shadow:0 0 14px #82D4E6; animation:nexionPulse 1.5s ease-in-out infinite;\"{chr(62)}{chr(60)}/div{chr(62)}"
             f"{chr(60)}/div{chr(62)}"
-            
-            # Texto de estado técnico
-            f"{chr(60)}div style=\"font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 3.5px; color: #82D4E6; text-transform: uppercase; margin-bottom: 15px; text-align: center;\"{chr(62)}"
-            "JYPESA // NEXION OS"
+            f"{chr(60)}p style=\"font-family:monospace; font-size:11px; letter-spacing:4px; color:#FFFFFF; text-transform:uppercase;\"{chr(62)}{m}{chr(60)}/p{chr(62)}"
             f"{chr(60)}/div{chr(62)}"
-            
-            f"{chr(60)}div style=\"font-family: monospace; font-size: 11px; letter-spacing: 2px; color: #FFFFFF; text-transform: uppercase; margin-bottom: 25px; text-align: center; min-height: 16px;\"{chr(62)}"
-            f"{m}"
-            f"{chr(60)}/div{chr(62)}"
-            
-            # Barra de progreso minimalista corporativa
-            f"{chr(60)}div style=\"width: 100%; height: 3px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; position: relative;\"{chr(62)}"
-            f"{chr(60)}div style=\"width: {progreso}%; height: 100%; background: linear-gradient(90deg, #3498db, #82D4E6); border-radius: 3px; transition: width 0.3s ease; box-shadow: 0 0 10px rgba(130,212,230,0.5);\"{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}/div{chr(62)}"
-            
-            f"{chr(60)}/div{chr(62)}" # Fin tarjeta
-            
-            f"{chr(60)}/div{chr(62)}" # Fin contenedor global
-            
-            # Keyframes CSS limpios
             f"{chr(60)}style{chr(62)}"
             "@keyframes nexionSpin { 100% { transform: rotate(360deg); } }"
-            "@keyframes nexionPulse { 0%, 100% { transform: scale(0.85); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 20px #82D4E6; } }"
+            "@keyframes nexionPulse { 0%, 100% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 20px #82D4E6; } }"
             f"{chr(60)}/style{chr(62)}"
         )
 
-        p.markdown(html_splash, unsafe_allow_html=True)
-        time.sleep(0.45)
+        p.markdown(
+            html_splash,
+            unsafe_allow_html=True
+        )
+
+        time.sleep(0.4)
 
     p.empty()
+
     st.session_state.splash_completado = True
+
     st.rerun()
 
 elif not st.session_state.autenticado:
+
     login_screen()
 
 else:
