@@ -501,6 +501,7 @@ def login_screen():
 # ============================================================
 
 if not st.session_state.splash_completado:
+
     p = st.empty()
 
     for m in [
@@ -509,19 +510,8 @@ if not st.session_state.splash_completado:
         "LOGISTICS DATA FLOW INITIALIZING...",
         "SYSTEM READY..."
     ]:
-        html_splash = (
-            f"{chr(60)}div style=\"height:70vh; display:flex; flex-direction:column; justify-content:center; align-items:center;\"{chr(62)}"
-            f"{chr(60)}div style=\"position:relative; width:90px; height:90px; display:flex; justify-content:center; align-items:center; margin-bottom:25px;\"{chr(62)}"
-            f"{chr(60)}div style=\"position:absolute; width:100%; height:100%; border:2px solid rgba(130,212,230,0.15); border-top:2px solid #82D4E6; border-radius:50%; animation:nexionSpin 1s linear infinite;\"{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div style=\"width:16px; height:16px; background:#82D4E6; border-radius:50%; box-shadow:0 0 14px #82D4E6; animation:nexionPulse 1.5s ease-in-out infinite;\"{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}/div{chr(62)}"
-            f"{chr(60)}p style=\"font-family:monospace; font-size:11px; letter-spacing:4px; color:#FFFFFF; text-transform:uppercase;\"{chr(62)}{m}{chr(60)}/p{chr(62)}"
-            f"{chr(60)}/div{chr(62)}"
-            f"{chr(60)}style{chr(62)}"
-            "@keyframes nexionSpin { 100% { transform: rotate(360deg); } }"
-            "@keyframes nexionPulse { 0%, 100% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 20px #82D4E6; } }"
-            f"{chr(60)}/style{chr(62)}"
-        )
+
+        html_splash = f'<div style="height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><div style="width:90px;height:90px;border:2px solid rgba(130,212,230,0.15);border-top:2px solid #82D4E6;border-radius:50%;animation:nexionSpin 1s linear infinite;margin-bottom:25px;"></div><p style="font-family:monospace;font-size:11px;letter-spacing:4px;color:#FFFFFF;text-transform:uppercase;">{m}</p></div><style>@keyframes nexionSpin{{100%{{transform:rotate(360deg);}}}}</style>'
 
         p.markdown(
             html_splash,
@@ -536,11 +526,14 @@ if not st.session_state.splash_completado:
 
     st.rerun()
 
+
 elif not st.session_state.autenticado:
 
     login_screen()
 
+
 else:
+
 
     # ========================================================
     # SI YA ESTÁ AUTENTICADO Y LLEGA DIRECTAMENTE A LOG
