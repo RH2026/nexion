@@ -155,7 +155,7 @@ def main():
     else:
         modo_edicion = False
 
-    # ── TÍTULO Y BOTÓN DE ACTUALIZACIÓN (SE RENDERIZAN AL INSTANTE) ──
+    # ── TÍTULO Y BOTÓN DE ACTUALIZACIÓN ────────────────────────
     col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
     with col_titulo:
         st.markdown(
@@ -227,10 +227,16 @@ def main():
             st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
             return False
 
-    # ── CONTENEDOR DE CARGA VISIBLE CON ST.SPINNER REAL ──
-    with st.spinner("🔄 Conectando con GitHub y cargando la matriz de envíos (últimos 10 días)... Por favor espera, amor."):
+    # ── BLOQUE DE ESTADO INTERACTIVO (ST.STATUS) ──
+    # Esto muestra una tarjeta desplegable de carga visible al instante antes de descargar
+    with st.status("🔄 Sincronizando datos de envíos...", expanded=True) as status_box:
+        st.write("Conectando con el repositorio remoto en GitHub...")
         df_raw = get_github_data()
+        
+        st.write("Cargando matriz maestra del dashboard...")
         df_dashboard_global = cargar_datos_dashboard()
+        
+        status_box.update(label="¡Datos cargados con éxito, procesando matriz de 10 días!", state="complete", expanded=False)
 
     df_t1_global = pd.DataFrame()
     try:
