@@ -43,113 +43,81 @@ def cargar_datos_dashboard():
 
 
 # ============================================================
-# 4. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS (CON FILTROS Y DESCARGA SIN GUÍA)
+# 4. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS
 # ============================================================
 def render_envios_flow_responsive(data):
     sorted_data = sorted(data, key=lambda x: str(x['factura']), reverse=True)
     
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-        <style>
-            body {{ font-family: 'Inter', sans-serif; background-color: #384A52; color: #e2e8f0; margin: 0; padding: 5px; width: 100%; }}
-            ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
-            ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
-            ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; }}
-            ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
-            .list-row {{ background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s ease; margin-bottom: 6px; border-radius: 8px; overflow: hidden; width: 100%; }}
-            .list-row:hover {{ background-color: #2c3b42; border-color: rgba(56, 189, 248, 0.3); }}
-            .label-mini {{ font-size: 8px; text-transform: uppercase; font-weight: 800; color: #BFBFBF; letter-spacing: 0.5px; margin-bottom: 2px; }}
-            
-            .table-scroll-container {{
-                width: 100%;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }}
+    html_items = []
+    for item in sorted_data:
+        est = str(item['estatus'])
+        if est in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or est == "ENVIADA":
+            color_estatus = "bg-emerald-500"
+            color_txt_estatus = "text-emerald-400"
+        elif "RETRASO" in est:
+            color_estatus = "bg-red-500"
+            color_txt_estatus = "text-red-400"
+        else:
+            color_estatus = "bg-amber-500"
+            color_txt_estatus = "text-amber-400"
 
-            .grid-envios {{
-                display: grid;
-                grid-template-columns: 70px 160px 140px 140px minmax(140px, 1fr) 160px 140px 140px;
-                gap: 10px;
-                align-items: center;
-                min-width: 860px;
-                padding: 10px 14px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="w-full space-y-1">
-            {"".join([f'''
-            <div class="list-row flex items-stretch">
-                <div class="w-2 shrink-0 {("bg-emerald-500" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("bg-red-500" if "RETRASO" in item['estatus'] else "bg-amber-500"))} shadow-[2px_0_10px_rgba(0,0,0,0.3)]"></div>
-                
-                <div class="table-scroll-container">
-                    <div class="grid-envios flex-1">
-                        
-                        <!-- FACTURA -->
-                        <div>
-                            <div class="label-mini">Factura</div>
-                            <div class="text-xs font-black text-white italic tracking-tighter">{item['factura']}</div>
-                        </div>
+        guia_val = str(item['numero_guia']) if item['numero_guia'] else 'PENDIENTE'
+        cliente_val = str(item['nombre_extran'] if str(item['nombre_extran']).strip() else item['nombre_cliente'])
+        fecha_envio_val = str(item['fecha_envio'] if item['fecha_envio'] and str(item['fecha_envio']) != 'nan' else 'SIN ENVIAR')
+        factura_val = str(item['factura'])
+        reco_val = str(item['recomendacion'])
+        fprog_val = str(item['fecha_programacion'] if item['fecha_programacion'] else 'N/A')
+        destino_val = str(item['destino'])
 
-                        <!-- RECOLECCIÓN -->
-                        <div>
-                            <div class="label-mini">Recolección</div>
-                            <div class="text-[10px] text-sky-400 font-bold uppercase truncate">{item['recomendacion']}</div>
-                        </div>
+        row_html = (
+            f"{chr(60)}div class=\"list-row flex items-stretch\"{chr(62)}"
+            f"{chr(60)}div class=\"w-2 shrink-0 {color_estatus}\"{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"table-scroll-container\"{chr(62)}"
+            f"{chr(60)}div class=\"grid-envios flex-1\"{chr(62)}"
+            f"{chr(60)}div{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Factura{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"text-xs font-black text-white italic tracking-tighter\"{chr(62)}{factura_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Recolección{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"text-[10px] text-sky-400 font-bold uppercase truncate\"{chr(62)}{reco_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}No. Guía{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"text-[10px] font-mono font-bold text-amber-300 truncate\"{chr(62)}{guia_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}F. Programación{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"text-[10px] font-bold text-slate-300 truncate\"{chr(62)}{fprog_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"min-w-0\"{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Cliente{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"text-[11px] font-semibold text-sky-200 truncate\"{chr(62)}{cliente_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"border-l border-white/5 pl-2\"{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Destino{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"text-[10px] font-bold text-white truncate\"{chr(62)}{destino_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"border-l border-white/5 pl-2\"{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Fecha Envío{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"text-[10px] font-bold text-sky-400\"{chr(62)}{fecha_envio_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"border-l border-white/5 pl-2\"{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Estatus{chr(60)}/div{chr(62)}"
+            f"{chr(60)}div class=\"text-[9px] font-black uppercase {color_txt_estatus} tracking-tighter\"{chr(62)}{est}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
+            f"{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
+        )
+        html_items.append(row_html)
 
-                        <!-- NO GUÍA -->
-                        <div>
-                            <div class="label-mini">No. Guía</div>
-                            <div class="text-[10px] font-mono font-bold text-amber-300 truncate">{item['numero_guia'] if item['numero_guia'] else 'PENDIENTE'}</div>
-                        </div>
-                        
-                        <!-- FECHA PROGRAMACIÓN -->
-                        <div>
-                            <div class="label-mini">F. Programación</div>
-                            <div class="text-[10px] font-bold text-slate-300 truncate">{item['fecha_programacion'] if item['fecha_programacion'] else 'N/A'}</div>
-                        </div>
-                        
-                        <!-- CLIENTE -->
-                        <div class="min-w-0">
-                            <div class="label-mini">Cliente</div>
-                            <div class="text-[11px] font-semibold text-sky-200 truncate">
-                                {(item['nombre_extran'] if str(item['nombre_extran']).strip() else item['nombre_cliente'])}
-                            </div>
-                        </div>
-
-                        <!-- DESTINO -->
-                        <div class="border-l border-white/5 pl-2">
-                            <div class="label-mini">Destino</div>
-                            <div class="text-[10px] font-bold text-white truncate">{item['destino']}</div>
-                        </div>
-
-                        <!-- FECHA DE ENVÍO -->
-                        <div class="border-l border-white/5 pl-2">
-                            <div class="label-mini">Fecha Envío</div>
-                            <div class="text-[10px] font-bold text-sky-400">{item['fecha_envio'] if item['fecha_envio'] and item['fecha_envio'] != 'nan' else 'SIN ENVIAR'}</div>
-                        </div>
-
-                        <!-- ESTATUS -->
-                        <div class="border-l border-white/5 pl-2">
-                            <div class="label-mini">Estatus</div>
-                            <div class="text-[9px] font-black uppercase {("text-emerald-400" if item['estatus'] in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or (item['estatus'] == "ENVIADA") else ("text-red-400" if "RETRASO" in item['estatus'] else "text-amber-400"))} tracking-tighter">
-                                {item['estatus']}
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-            ''' for item in sorted_data])}
-        </div>
-    </body>
-    </html>
-    """
+    rows_joined = "".join(html_items)
+    html_content = (
+        f"{chr(60)}!DOCTYPE html{chr(62)}"
+        f"{chr(60)}html lang=\"es\"{chr(62)}"
+        f"{chr(60)}head{chr(62)}"
+        f"{chr(60)}meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"{chr(62)}"
+        f"{chr(60)}script src=\"https://cdn.tailwindcss.com\"{chr(62)}{chr(60)}/script{chr(62)}"
+        f"{chr(60)}link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap\" rel=\"stylesheet\"{chr(62)}"
+        f"{chr(60)}style{chr(62)}"
+        "body { font-family: 'Inter', sans-serif; background-color: #384A52; color: #e2e8f0; margin: 0; padding: 5px; width: 100%; }"
+        ".list-row { background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s ease; margin-bottom: 6px; border-radius: 8px; overflow: hidden; width: 100%; }"
+        ".list-row:hover { background-color: #2c3b42; border-color: rgba(56, 189, 248, 0.3); }"
+        ".label-mini { font-size: 8px; text-transform: uppercase; font-weight: 800; color: #BFBFBF; letter-spacing: 0.5px; margin-bottom: 2px; }"
+        ".table-scroll-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }"
+        ".grid-envios { display: grid; grid-template-columns: 70px 160px 140px 140px minmax(140px, 1fr) 160px 140px 140px; gap: 10px; align-items: center; min-width: 860px; padding: 10px 14px; }"
+        f"{chr(60)}/style{chr(62)}"
+        f"{chr(60)}/head{chr(62)}"
+        f"{chr(60)}body{chr(62)}"
+        f"{chr(60)}div class=\"w-full space-y-1\"{chr(62)}"
+        f"{rows_joined}"
+        f"{chr(60)}/div{chr(62)}"
+        f"{chr(60)}/body{chr(62)}"
+        f"{chr(60)}/html{chr(62)}"
+    )
     return components.html(html_content, height=800, scrolling=True)
 
 
@@ -164,17 +132,14 @@ def main():
     if es_admin:
         with st.expander("🔐 Panel de Seguridad / Modo Edición Admin", expanded=False):
             st.markdown(
-                """
-                <div style='background: rgba(0, 255, 170, 0.08); border: 1px solid #00FFAA; border-left: 5px solid #00FFAA; padding: 12px 18px; border-radius: 6px; margin-bottom: 15px; font-family: "Inter", sans-serif; color: white;'>
-                    <div style='display: flex; align-items: center; gap: 8px; margin-bottom: 2px;'>
-                        <div style='width: 7px; height: 7px; background: #00FFAA; border-radius: 50%; box-shadow: 0 0 8px #00FFAA;'></div>
-                        <span style='font-size: 10px; font-weight: 800; color: #00FFAA; letter-spacing: 1.5px; text-transform: uppercase;'>ACCESS GRANTED // NIVEL 5 (ROOT)</span>
-                    </div>
-                    <div style='font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600; margin-left: 15px;'>
-                        Administrador Reconocido. Credenciales de seguridad validadas en el sistema central.
-                    </div>
-                </div>
-            """,
+                f"{chr(60)}div style=\"background: rgba(0, 255, 170, 0.08); border: 1px solid #00FFAA; border-left: 5px solid #00FFAA; padding: 12px 18px; border-radius: 6px; margin-bottom: 15px; font-family: 'Inter', sans-serif; color: white;\"{chr(62)}"
+                f"{chr(60)}div style=\"display: flex; align-items: center; gap: 8px; margin-bottom: 2px;\"{chr(62)}"
+                f"{chr(60)}div style=\"width: 7px; height: 7px; background: #00FFAA; border-radius: 50%; box-shadow: 0 0 8px #00FFAA;\"{chr(62)}{chr(60)}/div{chr(62)}"
+                f"{chr(60)}span style=\"font-size: 10px; font-weight: 800; color: #00FFAA; letter-spacing: 1.5px; text-transform: uppercase;\"{chr(62)}ACCESS GRANTED // NIVEL 5 (ROOT){chr(60)}/span{chr(62)}"
+                f"{chr(60)}/div{chr(62)}"
+                f"{chr(60)}div style=\"font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600; margin-left: 15px;\"{chr(62)}"
+                "Administrador Reconocido. Credenciales de seguridad validadas en el sistema central."
+                f"{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}",
                 unsafe_allow_html=True,
             )
 
@@ -189,13 +154,13 @@ def main():
     # ── TÍTULO Y BOTÓN DE ACTUALIZACIÓN ────────────────────────
     col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
     with col_titulo:
-        st.markdown("""
-            <div style='text-align:left; margin-top:15px; margin-bottom:10px;'>
-                <span style='color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;'>
-                    PANEL DE CONTROL DE ENVÍOS
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            f"{chr(60)}div style=\"text-align:left; margin-top:15px; margin-bottom:10px;\"{chr(62)}"
+            f"{chr(60)}span style=\"color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;\"{chr(62)}"
+            "PANEL DE CONTROL DE ENVÍOS"
+            f"{chr(60)}/span{chr(62)}{chr(60)}/div{chr(62)}",
+            unsafe_allow_html=True
+        )
     with col_btn_refrescar:
         if st.button("ACTUALIZAR DATOS", key="btn_refrescar_datos_envios", use_container_width=True):
             st.cache_data.clear()
@@ -273,17 +238,14 @@ def main():
 
         if modo_edicion:
             st.markdown(
-                f"""
-                <div style='background: rgba(234, 179, 8, 0.08); border: 1px solid #eab308; border-left: 5px solid #eab308; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-family: "Inter", sans-serif; color: white;'>
-                    <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 4px;'>
-                        <div style='width: 8px; height: 8px; background: #eab308; border-radius: 50%; box-shadow: 0 0 8px #eab308;'></div>
-                        <span style='font-size: 11px; font-weight: 800; color: #eab308; letter-spacing: 1.5px; text-transform: uppercase;'>NEXION SECURITY // MODO EDICIÓN ACTIVO</span>
-                    </div>
-                    <div style='font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; margin-left: 18px;'>
-                        Modifica los registros en la matriz inferior y ejecuta la sincronización para actualizar la base remota de forma segura.
-                    </div>
-                </div>
-            """,
+                f"{chr(60)}div style=\"background: rgba(234, 179, 8, 0.08); border: 1px solid #eab308; border-left: 5px solid #eab308; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-family: 'Inter', sans-serif; color: white;\"{chr(62)}"
+                f"{chr(60)}div style=\"display: flex; align-items: center; gap: 10px; margin-bottom: 4px;\"{chr(62)}"
+                f"{chr(60)}div style=\"width: 8px; height: 8px; background: #eab308; border-radius: 50%; box-shadow: 0 0 8px #eab308;\"{chr(62)}{chr(60)}/div{chr(62)}"
+                f"{chr(60)}span style=\"font-size: 11px; font-weight: 800; color: #eab308; letter-spacing: 1.5px; text-transform: uppercase;\"{chr(62)}NEXION SECURITY // MODO EDICIÓN ACTIVO{chr(60)}/span{chr(62)}"
+                f"{chr(60)}/div{chr(62)}"
+                f"{chr(60)}div style=\"font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; margin-left: 18px;\"{chr(62)}"
+                "Modifica los registros en la matriz inferior y ejecuta la sincronización para actualizar la base remota de forma segura."
+                f"{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}",
                 unsafe_allow_html=True,
             )
 
@@ -326,18 +288,39 @@ def main():
         dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
         df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
 
+        # ── FILTRADO RÁPIDO: 5 DÍAS O BÚSQUEDA DE FACTURA ──
+        facturas_opts_temp = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
+        
+        f1, f2, f3, f4, f5 = st.columns(5)
+
+        with f3:
+            filtro_factura = st.selectbox("FACTURA", facturas_opts_temp, key="filtro_factura_envios")
+
+        if filtro_factura == "TODAS":
+            tz_gdl = pytz.timezone("America/Mexico_City")
+            ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
+            hace_5_dias = ahora_gdl.date() - timedelta(days=5)
+            
+            mask_recientes = (dt_prog_temp.dt.date >= hace_5_dias) | (dt_prog_temp.isna())
+            df_raw_procesar = df_raw[mask_recientes].copy()
+            df_envios_procesar = df_envios[mask_recientes].copy()
+        else:
+            df_raw_procesar = df_raw[df_raw['Factura'].astype(str).str.strip() == filtro_factura].copy()
+            df_envios_procesar = df_envios[df_envios['factura'] == filtro_factura].copy()
+
+        # ── PROCESAMIENTO EXCLUSIVO DE LOS REGISTROS FILTRADOS ──
         lista_guias = []
         lista_fechas_envio = []
         
-        f_env_raw_list = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+        f_env_raw_list = df_raw_procesar.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
 
-        for idx, row in df_raw.iterrows():
+        for idx, row in df_raw_procesar.iterrows():
             fac = str(row.get('Factura', '')).strip()
             guia_encontrada = ""
             fecha_envio_encontrada = ""
             
             for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
-                if col_g in df_raw.columns and pd.notna(row.get(col_g)):
+                if col_g in df_raw_procesar.columns and pd.notna(row.get(col_g)):
                     val_g = str(row.get(col_g)).strip()
                     if val_g and val_g not in ['', 'nan', '0', '0.0']:
                         guia_encontrada = val_g
@@ -379,27 +362,27 @@ def main():
                                             dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
                                             fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
                                             break
-                                break
+                                    break
                         if guia_encontrada:
                             break
 
             if encontrado_en_t1 and fecha_envio_encontrada:
                 final_fecha_envio = fecha_envio_encontrada
             else:
-                orig_fe = str(f_env_raw_list.iloc[idx]).strip()
+                orig_fe = str(f_env_raw_list.loc[idx]).strip() if idx in f_env_raw_list.index else ''
                 final_fecha_envio = orig_fe
 
             lista_guias.append(guia_encontrada)
             lista_fechas_envio.append(final_fecha_envio)
 
-        df_envios['numero_guia'] = lista_guias
-        df_envios['fecha_envio_raw'] = lista_fechas_envio
+        df_envios_procesar['numero_guia'] = lista_guias
+        df_envios_procesar['fecha_envio_raw'] = lista_fechas_envio
 
-        dt_envio_temp = pd.to_datetime(df_envios['fecha_envio_raw'], errors='coerce', dayfirst=True)
-        df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios['fecha_envio_raw'])
+        dt_envio_temp = pd.to_datetime(df_envios_procesar['fecha_envio_raw'], errors='coerce', dayfirst=True)
+        df_envios_procesar['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios_procesar['fecha_envio_raw'])
         
-        df_envios['dt_prog_parsed'] = dt_prog_temp
-        df_envios['dt_envio_parsed'] = dt_envio_temp
+        df_envios_procesar['dt_prog_parsed'] = pd.to_datetime(df_envios_procesar['fecha_programacion'], errors='coerce', dayfirst=True)
+        df_envios_procesar['dt_envio_parsed'] = dt_envio_temp
 
         tz_gdl = pytz.timezone("America/Mexico_City")
         ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
@@ -408,7 +391,7 @@ def main():
         valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
         
         estatus_calculado = []
-        for f_prog, f_env, guia_val in zip(f_prog_input, lista_fechas_envio, lista_guias):
+        for f_prog, f_env, guia_val in zip(df_envios_procesar['fecha_programacion'], lista_fechas_envio, lista_guias):
             fp_str = str(f_prog).strip()
             fe_str = str(f_env).strip()
             g_str = str(guia_val).strip()
@@ -447,32 +430,26 @@ def main():
                 else:
                     estatus_calculado.append("RETRASO" if tarde else "SURTIENDO")
                     
-        df_envios['estatus'] = estatus_calculado
-        df_envios = df_envios.replace(r'(?i)^nan$', '', regex=True)
-        df_envios = df_envios.sort_values(by='factura', ascending=True, ignore_index=True)
+        df_envios_procesar['estatus'] = estatus_calculado
+        df_envios_procesar = df_envios_procesar.replace(r'(?i)^nan$', '', regex=True)
+        df_envios_procesar = df_envios_procesar.sort_values(by='factura', ascending=True, ignore_index=True)
 
-        # ── BÚNKER DE FILTROS TÁCTICOS ──
-        f1, f2, f3, f4, f5 = st.columns(5)
-
+        # ── RESTO DE LOS FILTROS TÁCTICOS ──
         with f1:
             filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=None, key="calendario_fprog_envios")
 
         with f2:
             filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=None, key="calendario_fenv_envios")
 
-        with f3:
-            facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
-            filtro_factura = st.selectbox("FACTURA", facturas_opts, key="filtro_factura_envios")
-
         with f4:
-            paq_opts = ["TODAS"] + sorted(list(df_envios['recomendacion'].loc[df_envios['recomendacion'] != ''].unique()))
+            paq_opts = ["TODAS"] + sorted(list(df_envios_procesar['recomendacion'].loc[df_envios_procesar['recomendacion'] != ''].unique()))
             filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
 
         with f5:
-            estatus_opts = ["TODOS"] + sorted(list(df_envios['estatus'].loc[df_envios['estatus'] != ''].unique()))
+            estatus_opts = ["TODOS"] + sorted(list(df_envios_procesar['estatus'].loc[df_envios_procesar['estatus'] != ''].unique()))
             filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
 
-        df_filtrado = df_envios.copy()
+        df_filtrado = df_envios_procesar.copy()
 
         if filtro_fprog is not None:
             df_filtrado = df_filtrado[df_filtrado['dt_prog_parsed'].dt.date == filtro_fprog]
@@ -491,7 +468,7 @@ def main():
 
         # ── BLOQUE EXCLUSIVO PARA RIGOBERTO: FILTRO Y DESCARGA SIN GUÍA ──
         if es_admin:
-            st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+            st.markdown(f"{chr(60)}div style=\"margin-top: 15px;\"{chr(62)}{chr(60)}/div{chr(62)}", unsafe_allow_html=True)
             col_switch_sin_guia, col_btn_descarga = st.columns([2.5, 1.5], vertical_alignment="center")
             
             with col_switch_sin_guia:
@@ -523,7 +500,7 @@ def main():
         data_completa = []
 
     render_envios_flow_responsive(data_completa)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(f"{chr(60)}/div{chr(62)}", unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
