@@ -1129,17 +1129,155 @@ with tab_registro:
         render_tabla_premium(tabla, moneda_cols=["Monto"], max_height=430)
 
 
+
 # ============================================================
 # TAB 4
 # ============================================================
 
 with tab_plan:
 
+    # ========================================================
+    # CONFIGURACIÓN DINÁMICA DEL FONDO DE PAGOS
+    # ========================================================
+
+    PAGO_TV = 900.00
+    PAGO_INTERNET = 1100.00
+    PAGO_PRESTAMO = 1600.00
+
+    META_PAGOS_MES = PAGO_TV + PAGO_INTERNET + PAGO_PRESTAMO
+
+    FECHA_TV = datetime(2026, 9, 25)
+    FECHA_INTERNET = datetime(2026, 9, 27)
+    FECHA_PRESTAMO = datetime(2026, 9, 28)
+
+    FECHA_INICIO_CICLO = datetime(2026, 8, 28)
+
+    hoy_sin_tz = hoy.replace(
+        tzinfo=None,
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0
+    )
+
+    dias_desde_inicio = (
+        hoy_sin_tz - FECHA_INICIO_CICLO
+    ).days
+
+    viernes_transcurridos = max(
+        0,
+        (dias_desde_inicio // 7) + 1
+    )
+
+    APARTADO_ACUMULADO = min(
+        viernes_transcurridos * TOTAL_AHORRO_MENSUAL_SEM,
+        META_PAGOS_MES
+    )
+
+    FALTA_META = max(
+        0,
+        META_PAGOS_MES - APARTADO_ACUMULADO
+    )
+
+    PORCENTAJE_META = (
+        APARTADO_ACUMULADO / META_PAGOS_MES * 100
+        if META_PAGOS_MES > 0
+        else 0
+    )
+
+    dias_tv = max(
+        0,
+        (FECHA_TV - hoy_sin_tz).days
+    )
+
+    dias_internet = max(
+        0,
+        (FECHA_INTERNET - hoy_sin_tz).days
+    )
+
+    dias_prestamo = max(
+        0,
+        (FECHA_PRESTAMO - hoy_sin_tz).days
+    )
+
+    proximo_viernes = hoy_sin_tz
+
+    while proximo_viernes.weekday() != 4:
+        proximo_viernes += timedelta(days=1)
+
+    dias_proximo_apartado = (
+        proximo_viernes.date() - hoy_sin_tz.date()
+    ).days
+
+    fecha_proximo_apartado = proximo_viernes.strftime("%d %b").upper()
+
+    progreso = min(
+        PORCENTAJE_META,
+        100
+    )
+
+    # ========================================================
+    # ENCABEZADO
+    # ========================================================
+
     st.markdown(
         "<div style='background:linear-gradient(135deg,#253441,#1D2830);border:1px solid #34495E;border-radius:8px;padding:18px 22px;margin-bottom:18px;'><div style='color:#00FFAA;font-size:11px;font-weight:800;letter-spacing:2px;'>NEXION // FINANZAS PERSONALES</div><div style='color:#FFFFFF;font-size:24px;font-weight:700;margin-top:4px;'>PLAN SEMANAL</div><div style='color:#8B9BB4;font-size:12px;margin-top:5px;'>Distribución del ingreso · Gastos · Ahorro · Disponible</div></div>",
         unsafe_allow_html=True
     )
 
+    # ========================================================
+    # ESTADO DEL FONDO DE PAGOS
+    # ========================================================
+
+    st.markdown(
+        f"<div style='background:linear-gradient(135deg,#202D36,#182229);border:1px solid #34495E;border-radius:8px;padding:18px 20px;margin-bottom:18px;box-shadow:0 8px 24px rgba(0,0,0,.18);'><div style='display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;'><div><div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;'>FONDO DE PAGOS · SEPTIEMBRE 2026</div><div style='color:#FFFFFF;font-size:27px;font-weight:800;margin-top:5px;'>${APARTADO_ACUMULADO:,.2f}</div><div style='color:#8B9BB4;font-size:10px;margin-top:2px;'>ACUMULADO ACTUAL</div></div><div style='text-align:right;'><div style='color:#00E5FF;font-size:24px;font-weight:800;'>{progreso:.0f}%</div><div style='color:#8B9BB4;font-size:10px;'>DE LA META</div></div></div><div style='height:8px;background:#182229;border-radius:6px;margin:18px 0 12px 0;overflow:hidden;border:1px solid #34495E;'><div style='height:100%;width:{progreso:.2f}%;background:linear-gradient(90deg,#00FFAA,#00D4FF);border-radius:6px;box-shadow:0 0 12px rgba(0,255,170,.25);'></div></div><div style='display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;'><div><div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1px;'>META TOTAL</div><div style='color:#FFFFFF;font-size:13px;font-weight:800;margin-top:3px;'>${META_PAGOS_MES:,.2f}</div></div><div><div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1px;'>FALTA</div><div style='color:#FFD166;font-size:13px;font-weight:800;margin-top:3px;'>${FALTA_META:,.2f}</div></div><div><div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1px;'>PRÓXIMO APARTADO</div><div style='color:#00FFAA;font-size:13px;font-weight:800;margin-top:3px;'>${TOTAL_AHORRO_MENSUAL_SEM:,.2f} · {fecha_proximo_apartado}</div></div></div></div>",
+        unsafe_allow_html=True
+    )
+
+    # ========================================================
+    # VENCIMIENTOS / CUENTA REGRESIVA
+    # ========================================================
+
+    f1, f2, f3 = st.columns(
+        3,
+        gap="small"
+    )
+
+    fondos = [
+        (
+            f1,
+            "TV",
+            PAGO_TV,
+            FECHA_TV,
+            dias_tv,
+            "#00E5FF"
+        ),
+        (
+            f2,
+            "INTERNET",
+            PAGO_INTERNET,
+            FECHA_INTERNET,
+            dias_internet,
+            "#00FFAA"
+        ),
+        (
+            f3,
+            "PRÉSTAMO",
+            PAGO_PRESTAMO,
+            FECHA_PRESTAMO,
+            dias_prestamo,
+            "#FFD166"
+        )
+    ]
+
+    for col, concepto, monto, fecha_pago, dias, color in fondos:
+
+        with col:
+
+            st.markdown(
+                f"<div class='plan-card' style='min-height:108px;'><div style='display:flex;justify-content:space-between;align-items:center;'><div style='color:#FFFFFF;font-size:10px;font-weight:800;letter-spacing:1.4px;'>{concepto}</div><div style='color:{color};font-size:10px;font-weight:800;'>{dias} DÍAS</div></div><div style='color:#FFFFFF;font-size:22px;font-weight:800;margin-top:8px;'>${monto:,.2f}</div><div style='color:#8B9BB4;font-size:10px;margin-top:4px;'>VENCE {fecha_pago.strftime("%d %b").upper()}</div></div>",
+                unsafe_allow_html=True
+            )
 
     # ========================================================
     # KPI PLAN
@@ -1182,10 +1320,9 @@ with tab_plan:
         with col:
 
             st.markdown(
-                f"""<div class="plan-card"><div class="plan-title">{titulo}</div><div class="plan-value">${valor:,.2f}</div><div class="plan-sub">{sub}</div></div>""",
+                f"<div class='plan-card'><div class='plan-title'>{titulo}</div><div class='plan-value'>${valor:,.2f}</div><div class='plan-sub'>{sub}</div></div>",
                 unsafe_allow_html=True
             )
-
 
     # ========================================================
     # PAGOS
@@ -1199,21 +1336,21 @@ with tab_plan:
     pagos = [
         (
             "ABONO TV",
-            900.00,
+            PAGO_TV,
             "25 SEP",
             "VIERNES",
             "Fondo asegurado con cobro del día"
         ),
         (
             "INTERNET",
-            1100.00,
+            PAGO_INTERNET,
             "27 SEP",
             "DOMINGO",
             "Asegurar desde el viernes 25"
         ),
         (
             "PRÉSTAMO",
-            1600.00,
+            PAGO_PRESTAMO,
             "28 SEP",
             "LUNES",
             "Asegurar desde el viernes 25"
@@ -1235,10 +1372,9 @@ with tab_plan:
             concepto, monto, fecha, dia, estado = pago
 
             st.markdown(
-                f"""<div class="plan-card" style="min-height:145px;"><div style="color:#00E5FF;font-size:10px;font-weight:800;letter-spacing:1.5px;">{concepto}</div><div style="color:#FFFFFF;font-size:25px;font-weight:700;margin-top:7px;">${monto:,.2f}</div><div style="color:#FFD700;font-size:11px;font-weight:700;margin-top:4px;">{fecha} · {dia}</div><div style="color:#8B9BB4;font-size:11px;margin-top:8px;">{estado}</div></div>""",
+                f"<div class='plan-card' style='min-height:145px;'><div style='color:#00E5FF;font-size:10px;font-weight:800;letter-spacing:1.5px;'>{concepto}</div><div style='color:#FFFFFF;font-size:25px;font-weight:700;margin-top:7px;'>${monto:,.2f}</div><div style='color:#FFD700;font-size:11px;font-weight:700;margin-top:4px;'>{fecha} · {dia}</div><div style='color:#8B9BB4;font-size:11px;margin-top:8px;'>{estado}</div></div>",
                 unsafe_allow_html=True
             )
-
 
     # ========================================================
     # DISTRIBUCIÓN
@@ -1273,7 +1409,10 @@ with tab_plan:
         max_height=330
     )
 
-    st.markdown("<div style='height:26px;border-top:1px solid rgba(52,73,94,.35);margin-top:6px;'></div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='height:26px;border-top:1px solid rgba(52,73,94,.35);margin-top:6px;'></div>",
+        unsafe_allow_html=True
+    )
 
     # ========================================================
     # RESUMEN
@@ -1309,10 +1448,9 @@ with tab_plan:
         with col:
 
             st.markdown(
-                f"""<div class="plan-card"><div class="plan-title">{titulo}</div><div class="plan-value">${valor:,.2f}</div><div class="plan-sub">{sub}</div></div>""",
+                f"<div class='plan-card'><div class='plan-title'>{titulo}</div><div class='plan-value'>${valor:,.2f}</div><div class='plan-sub'>{sub}</div></div>",
                 unsafe_allow_html=True
             )
-
 
     # ========================================================
     # REGISTRAR CORTE
@@ -1357,7 +1495,6 @@ with tab_plan:
                 "El corte se almacenará en plan_financiero_semanal.csv."
             )
 
-
     # ========================================================
     # GUARDAR CORTE
     # ========================================================
@@ -1371,9 +1508,11 @@ with tab_plan:
             lock_creado = crear_lock()
 
             if not lock_creado:
+
                 st.error(
                     "No fue posible tomar el control de escritura."
                 )
+
                 st.stop()
 
             repo = Github(TOKEN).get_repo(REPO_NAME)
@@ -1423,6 +1562,7 @@ with tab_plan:
                 st.warning(
                     f"Ya existe un corte registrado para {fecha_corte}."
                 )
+
                 st.stop()
 
             ahora = datetime.now(tz_gdl)
@@ -1484,6 +1624,7 @@ with tab_plan:
             )
 
             time.sleep(.7)
+
             st.rerun()
 
         except Exception as e:
@@ -1496,7 +1637,6 @@ with tab_plan:
 
             if lock_creado:
                 liberar_lock()
-
 
     # ========================================================
     # HISTORIAL
@@ -1520,6 +1660,7 @@ with tab_plan:
         df_hist = df_hist.copy()
 
         if "Fecha_Corte" in df_hist.columns:
+
             df_hist = df_hist.sort_values(
                 "Fecha_Corte",
                 ascending=False
@@ -1552,6 +1693,7 @@ with tab_plan:
         for col in monedas:
 
             if col in visual.columns:
+
                 visual[col] = pd.to_numeric(
                     visual[col],
                     errors="coerce"
@@ -1562,3 +1704,5 @@ with tab_plan:
             moneda_cols=monedas,
             max_height=430
         )
+
+
