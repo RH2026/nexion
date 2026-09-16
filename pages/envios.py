@@ -529,13 +529,10 @@ def main():
         
         def limpiar_destino_largo(val):
             v_str = str(val).strip()
-            if not v_str or v_str.lower() in ['nan', '0', 'none']:
+        
+            if not v_str or v_str.lower() in ["nan", "0", "none"]:
                 return "NACIONAL"
-            if len(v_str) > 25:
-                partes = [p.strip() for p in v_str.split(',')]
-                if len(partes) >= 2:
-                    return f"{partes[-2]} / {partes[-1]}" if len(partes[-2]) < 15 else partes[-1]
-                return v_str[:25] + "..."
+        
             return v_str
 
         df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).apply(limpiar_destino_largo)
