@@ -112,11 +112,11 @@ puede_editar = current_user.upper() == "RIGOBERTO"
 # ============================================================
 
 CUENTAS_MATRIX = {
-    "Caja de Ahorros": {"color": "#00E5FF", "fondo_base": 0.00},
-    "Scottiabank": {"color": "#00FFAA", "fondo_base": 0.00},
-    "Santander": {"color": "#FF4B4B", "fondo_base": 0.00},
-    "Cartera": {"color": "#8B9BB4", "fondo_base": 0.00},
-    "Ahorro Mensual": {"color": "#8B9BB8", "fondo_base": 0.00}
+    "Caja de Ahorros": {"color": "#305496", "fondo_base": 0.00},
+    "Scottiabank": {"color": "#0099CC", "fondo_base": 0.00},
+    "Santander": {"color": "#9BC2E6", "fondo_base": 0.00},
+    "Cartera": {"color": "#8497B0", "fondo_base": 0.00},
+    "Ahorro Mensual": {"color": "#2F75B5", "fondo_base": 0.00}
 }
 
 
