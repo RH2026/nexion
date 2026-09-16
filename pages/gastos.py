@@ -5,16 +5,25 @@ from github import Github
 import pandas as pd
 import pytz
 import streamlit as st
+from components.layout import render_layout
 
 # ── 1. CONFIGURACIÓN Y PERMISOS ──
 tz_gdl = pytz.timezone('America/Mexico_City')
 hoy = datetime.now(tz_gdl)
 
+# ============================================================
+# 1. CONFIGURACIÓN DE PÁGINA
+# ============================================================
 st.set_page_config(
-    page_title="NEXION // Control Financiero",
-    page_icon=chr(128184),
-    layout="wide"
+    page_title="JYPESA | Ahorros Personales",
+    layout="wide",
+    initial_sidebar_state="collapsed",
 )
+
+# ============================================================
+# 2. LLAMADA AL LAYOUT MAESTRO
+# ============================================================
+render_layout(modulo_actual="FINANZAS", submodulo_actual="GASTOS")
 
 # Estilo visual profesional estilo NEXION
 st.markdown("""
