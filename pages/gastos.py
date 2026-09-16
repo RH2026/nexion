@@ -3,7 +3,6 @@ import json
 import time
 import hashlib
 import hmac
-
 from datetime import datetime, timedelta
 
 from github import Github
@@ -17,7 +16,7 @@ from components.layout import render_layout
 
 
 # ============================================================
-# 1. CONFIGURACIÓN DE PÁGINA
+# CONFIG
 # ============================================================
 
 st.set_page_config(
@@ -26,18 +25,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-
-# ============================================================
-# 2. CONFIGURACIÓN DE TIEMPO
-# ============================================================
-
 tz_gdl = pytz.timezone("America/Mexico_City")
 hoy = datetime.now(tz_gdl)
-
-
-# ============================================================
-# 3. LAYOUT
-# ============================================================
 
 render_layout(
     modulo_actual="FINANZAS",
@@ -46,25 +35,19 @@ render_layout(
 
 
 # ============================================================
-# 🔐 SEGURIDAD PRIVADA NEXION
+# SEGURIDAD PRIVADA
 # ============================================================
 
 def validar_acceso_privado():
 
-    usuario = st.session_state.get(
-        "usuario_activo",
-        ""
-    )
+    usuario = st.session_state.get("usuario_activo", "")
 
     if usuario.upper() != "RIGOBERTO":
         st.error("ACCESO NO DISPONIBLE.")
         st.stop()
 
-    if st.session_state.get(
-        "wallet_private_access",
-        False
-    ):
-        return True
+    if st.session_state.get("wallet_private_access", False):
+        return
 
     hash_guardado = st.secrets.get(
         "NEXION_PRIVATE_GATE_HASH",
@@ -75,10 +58,12 @@ def validar_acceso_privado():
         st.error("MÓDULO BLOQUEADO.")
         st.stop()
 
-    if "wallet_gate_attempts" not in st.session_state:
-        st.session_state.wallet_gate_attempts = 0
+    intentos = st.session_state.get(
+        "wallet_gate_attempts",
+        0
+    )
 
-    if st.session_state.wallet_gate_attempts >= 5:
+    if intentos >= 5:
         st.error("ACCESO BLOQUEADO.")
         st.stop()
 
@@ -87,30 +72,20 @@ def validar_acceso_privado():
         <div style="
             max-width:420px;
             margin:90px auto 30px auto;
-            text-align:center;
-        ">
-            <div style="
-                font-size:34px;
-                margin-bottom:18px;
-            ">
-                🔐
-            </div>
-
+            text-align:center;">
+            <div style="font-size:34px;margin-bottom:18px;">🔐</div>
             <div style="
                 color:#FFFFFF;
                 font-size:16px;
                 font-weight:700;
-                letter-spacing:2px;
-                margin-bottom:8px;
-            ">
+                letter-spacing:2px;">
                 ACCESO RESTRINGIDO
             </div>
-
             <div style="
                 color:#8B9BB4;
                 font-size:11px;
                 letter-spacing:1px;
-            ">
+                margin-top:8px;">
                 AUTORIZACIÓN REQUERIDA
             </div>
         </div>
@@ -118,13 +93,11 @@ def validar_acceso_privado():
         unsafe_allow_html=True
     )
 
-    col_izq, col_centro, col_der = st.columns(
-        [2, 1, 2]
-    )
+    _, centro, _ = st.columns([2, 1, 2])
 
-    with col_centro:
+    with centro:
 
-        clave_ingresada = st.text_input(
+        clave = st.text_input(
             "Código de autorización",
             type="password",
             key="wallet_private_gate_input",
@@ -140,12 +113,12 @@ def validar_acceso_privado():
 
         if verificar:
 
-            if not clave_ingresada:
+            if not clave:
                 st.warning("Código requerido.")
                 st.stop()
 
             hash_ingresado = hashlib.sha256(
-                clave_ingresada.encode("utf-8")
+                clave.encode("utf-8")
             ).hexdigest()
 
             if hmac.compare_digest(
@@ -155,111 +128,75 @@ def validar_acceso_privado():
 
                 st.session_state.wallet_private_access = True
                 st.session_state.wallet_gate_attempts = 0
-
                 st.session_state.pop(
                     "wallet_private_gate_input",
                     None
                 )
-
                 st.rerun()
 
             else:
 
-                st.session_state.wallet_gate_attempts += 1
-
+                st.session_state.wallet_gate_attempts = intentos + 1
                 restantes = max(
                     0,
                     5 - st.session_state.wallet_gate_attempts
                 )
 
-                if restantes > 0:
-
+                if restantes:
                     st.error(
-                        f"Código no válido. "
-                        f"Intentos restantes: {restantes}"
+                        f"Código no válido. Intentos restantes: {restantes}"
                     )
-
                 else:
-
-                    st.error(
-                        "ACCESO BLOQUEADO."
-                    )
+                    st.error("ACCESO BLOQUEADO.")
 
                 st.stop()
 
     st.stop()
 
 
-# ============================================================
-# 🔐 ACTIVAR EL CANDADO
-# ============================================================
-
 validar_acceso_privado()
 
 
 # ============================================================
-# 🔒 DESDE AQUÍ COMIENZA EL CONTENIDO PRIVADO
+# GITHUB
 # ============================================================
 
-
-# ============================================================
-# 4. CONFIGURACIÓN GITHUB
-# ============================================================
-
-TOKEN = st.secrets.get(
-    "GITHUB_TOKEN",
-    None
-)
+TOKEN = st.secrets.get("GITHUB_TOKEN", None)
 
 REPO_NAME = "RH2026/nexion"
-
 FILE_PATH = "cartera.csv"
-
 LOCK_FILE_PATH = "lock_cartera.json"
-
 PLAN_FILE_PATH = "plan_financiero_semanal.csv"
-
-
-# ============================================================
-# 5. USUARIO ACTUAL
-# ============================================================
 
 current_user = st.session_state.get(
     "usuario_activo",
     "UNKNOWN"
 )
 
-puede_editar = (
-    current_user.upper() == "RIGOBERTO"
-)
+puede_editar = current_user.upper() == "RIGOBERTO"
 
 
 # ============================================================
-# 6. CUENTAS Y CATEGORÍAS
+# CUENTAS
 # ============================================================
 
 CUENTAS_MATRIX = {
-
     "Caja de Ahorros": {
         "color": "#00E5FF",
         "fondo_base": 0.00
     },
-
     "Scottiabank": {
         "color": "#00FFAA",
         "fondo_base": 0.00
     },
-
     "Santander": {
         "color": "#FF4B4B",
         "fondo_base": 0.00
     },
-
     "Cartera": {
         "color": "#8B9BB4",
         "fondo_base": 0.00
     },
-
     "Caja Jypesa": {
         "color": "#8B9BB8",
         "fondo_base": 0.00
@@ -267,44 +204,39 @@ CUENTAS_MATRIX = {
 }
 
 
-CATEGORIAS = [
+# ============================================================
+# CATEGORÍAS
+# ============================================================
 
+CATEGORIAS = [
     "Nómina",
     "Ahorros",
     "Ventas",
     "Freelance / Proyectos",
     "Rendimientos",
     "Reembolsos",
-
     "Renta",
     "Servicios Fijos",
     "Conectividad",
     "Mantenimiento",
-
     "Supermercado",
     "Restaurantes",
     "Cafeterías y Snacks",
-
     "Gasolina",
     "Mantenimiento Automotriz",
     "Trámites y Seguros",
     "Transporte Alternativo",
-
     "Mascotas",
     "Gastos Familiares",
     "Educación",
-
     "Deportes y Entrenamiento",
     "Cuidado Personal",
     "Gastos Médicos",
-
     "Suscripciones y Software",
     "Equipo y Gadgets",
-
     "Entretenimiento",
     "Ropa y Calzado",
     "Regalos",
-
     "Pago de Tarjetas",
     "Inversiones",
     "Ahorro",
@@ -314,19 +246,14 @@ CATEGORIAS = [
 
 
 # ============================================================
-# 7. CONFIGURACIÓN DEL PLAN SEMANAL
+# PLAN SEMANAL
 # ============================================================
 
 INGRESO_SEMANAL = 4450.00
-
 GASTO_CASA = 1500.00
-
 GASOLINA = 600.00
-
 CONSULTA = 350.00
-
 GASTOS_HIJA = 250.00
-
 
 TOTAL_GASTOS_SEMANALES = (
     GASTO_CASA
@@ -335,13 +262,9 @@ TOTAL_GASTOS_SEMANALES = (
     + GASTOS_HIJA
 )
 
-
 AHORRO_TV_SEM = 225.00
-
 AHORRO_PRESTAMO_SEM = 400.00
-
 AHORRO_INTERNET_SEM = 275.00
-
 
 TOTAL_AHORRO_MENSUAL_SEM = (
     AHORRO_TV_SEM
@@ -349,12 +272,10 @@ TOTAL_AHORRO_MENSUAL_SEM = (
     + AHORRO_INTERNET_SEM
 )
 
-
 TOTAL_APARTADO_SEMANAL = (
     TOTAL_GASTOS_SEMANALES
     + TOTAL_AHORRO_MENSUAL_SEM
 )
-
 
 DISPONIBLE_SEMANAL = (
     INGRESO_SEMANAL
@@ -363,135 +284,151 @@ DISPONIBLE_SEMANAL = (
 
 
 # ============================================================
-# 8. ESTILOS NEXION
+# CSS
 # ============================================================
 
 st.markdown(
     """
     <style>
 
-    div[data-testid="stBlock"] {
-        max-width: 100% !important;
-        padding: 0 !important;
+    div[data-testid="stBlock"]{
+        max-width:100%!important;
+        padding:0!important;
     }
 
-    header[data-testid="stHeader"] {
-        background-color: #1D2A35 !important;
-        border-bottom: 2px solid #34495E !important;
+    header[data-testid="stHeader"]{
+        background:#1D2A35!important;
+        border-bottom:2px solid #34495E!important;
     }
 
-    .kpi-card {
-        background-color: #253441 !important;
-        padding: 20px !important;
-        border-radius: 8px !important;
-        border: 1px solid #34495E !important;
-        text-align: center !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
-        margin-bottom: 15px;
+    /* ================= TARJETAS ================= */
+
+    .kpi-card,
+    .plan-card{
+        width:100%!important;
+        min-width:0!important;
+        box-sizing:border-box!important;
+        background:#253441!important;
+        border:1px solid #34495E!important;
+        border-radius:8px!important;
+        padding:16px!important;
+        margin:0 0 12px 0!important;
+        overflow:hidden!important;
     }
 
-    .kpi-label {
-        color: #8B9BB4 !important;
-        font-size: 12px !important;
-        font-weight: bold !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1.5px !important;
+    .kpi-card{
+        text-align:center!important;
+        box-shadow:0 4px 6px rgba(0,0,0,.20)!important;
     }
 
-    .kpi-value {
-        color: #FFFFFF !important;
-        font-size: 34px !important;
-        font-weight: bold !important;
-        margin: 10px 0 !important;
+    .kpi-label{
+        color:#8B9BB4!important;
+        font-size:11px!important;
+        font-weight:800!important;
+        text-transform:uppercase!important;
+        letter-spacing:1.4px!important;
     }
 
-    .kpi-trend {
-        font-size: 13px !important;
-        font-weight: bold !important;
+    .kpi-value{
+        color:#FFFFFF!important;
+        font-size:30px!important;
+        font-weight:800!important;
+        margin:8px 0!important;
+        white-space:nowrap!important;
     }
 
-    .neon-bar {
-        height: 4px !important;
-        border-radius: 2px !important;
-        margin-top: 10px !important;
-        width: 100% !important;
+    .kpi-trend{
+        font-size:12px!important;
+        font-weight:800!important;
+        white-space:nowrap!important;
     }
 
-    div.stButton > button {
-        background-color: #2B343B !important;
-        color: #FFFFFF !important;
-        border: 1px solid #34495E !important;
-        border-radius: 5px !important;
-        transition: all 0.3s ease !important;
-        width: 100% !important;
-        font-weight: normal !important;
-        font-size: 12px !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
+    .neon-bar{
+        height:3px!important;
+        border-radius:2px!important;
+        margin-top:9px!important;
+        width:100%!important;
     }
 
-    div.stButton > button:hover {
-        background-color: #00A3A3 !important;
-        color: #FFFFFF !important;
-        border-color: #00A3A3 !important;
-        box-shadow: 0 0 15px rgba(0,255,170,0.4) !important;
+    .plan-title{
+        color:#FFFFFF!important;
+        font-size:12px!important;
+        font-weight:800!important;
+        letter-spacing:1px!important;
+        text-transform:uppercase!important;
+        white-space:nowrap!important;
+        overflow:hidden!important;
+        text-overflow:ellipsis!important;
     }
 
-    div.stButton > button:active {
-        background-color: #00A3A3 !important;
-        border-color: #00A3A3 !important;
+    .plan-value{
+        color:#00FFAA!important;
+        font-size:25px!important;
+        font-weight:800!important;
+        margin-top:7px!important;
+        white-space:nowrap!important;
     }
 
-    div[data-baseweb="tab-list"] {
-        gap: 20px !important;
-        border-bottom: 2px solid #34495E !important;
-        margin-bottom: 15px !important;
+    .plan-sub{
+        color:#8B9BB4!important;
+        font-size:10px!important;
+        text-transform:uppercase!important;
+        letter-spacing:.8px!important;
+        margin-top:4px!important;
+        white-space:nowrap!important;
+        overflow:hidden!important;
+        text-overflow:ellipsis!important;
     }
 
-    div[data-baseweb="tab"] {
-        background-color: transparent !important;
-        color: #8B9BB4 !important;
-        font-weight: bold !important;
-        font-size: 13px !important;
-        border: none !important;
-        padding-top: 0px !important;
-        padding-bottom: 10px !important;
+    /* ================= BOTONES ================= */
+
+    div.stButton>button{
+        width:100%!important;
+        background:#2B343B!important;
+        color:#FFFFFF!important;
+        border:1px solid #34495E!important;
+        border-radius:5px!important;
+        font-size:12px!important;
+        font-weight:600!important;
+        text-transform:uppercase!important;
+        letter-spacing:1px!important;
     }
 
-    div[aria-selected="true"] {
-        color: #00FFAA !important;
-        border-bottom: 3px solid #00FFAA !important;
+    div.stButton>button:hover{
+        background:#00A3A3!important;
+        color:#FFFFFF!important;
+        border-color:#00A3A3!important;
+        box-shadow:0 0 15px rgba(0,255,170,.35)!important;
     }
 
-    .plan-card {
-        background-color: #253441;
-        border: 1px solid #34495E;
-        border-radius: 8px;
-        padding: 18px;
-        margin-bottom: 12px;
+    /* ================= TABS ================= */
+
+    div[data-baseweb="tab-list"]{
+        gap:18px!important;
+        border-bottom:2px solid #34495E!important;
+        margin-bottom:15px!important;
     }
 
-    .plan-title {
-        color: #FFFFFF;
-        font-size: 13px;
-        font-weight: 800;
-        letter-spacing: 1px;
-        text-transform: uppercase;
+    div[data-baseweb="tab"]{
+        background:transparent!important;
+        color:#8B9BB4!important;
+        font-weight:800!important;
+        font-size:12px!important;
+        border:none!important;
+        padding-top:0!important;
+        padding-bottom:10px!important;
     }
 
-    .plan-value {
-        color: #00FFAA;
-        font-size: 26px;
-        font-weight: 800;
-        margin-top: 8px;
+    div[aria-selected="true"]{
+        color:#00FFAA!important;
+        border-bottom:3px solid #00FFAA!important;
     }
 
-    .plan-sub {
-        color: #8B9BB4;
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 4px;
+    /* ================= DATAFRAMES ================= */
+
+    div[data-testid="stDataFrame"]{
+        border:1px solid #34495E!important;
+        border-radius:6px!important;
     }
 
     </style>
@@ -501,303 +438,298 @@ st.markdown(
 
 
 # ============================================================
-# 9. CANDADO DE ARCHIVO CARTERA
+# LOCK
+# SOLO SE CONSULTA. NO SE CREA AL ENTRAR.
 # ============================================================
 
-lock_info = None
-bloqueado_por_otro = False
+def leer_lock():
 
-
-if puede_editar and TOKEN:
+    if not TOKEN:
+        return None
 
     try:
 
-        repo = Github(TOKEN).get_repo(
-            REPO_NAME
+        repo = Github(TOKEN).get_repo(REPO_NAME)
+
+        contenido = repo.get_contents(
+            LOCK_FILE_PATH,
+            ref="main"
+        )
+
+        data = json.loads(
+            contenido.decoded_content.decode("utf-8")
+        )
+
+        timestamp = data.get("timestamp")
+
+        if not timestamp:
+            return None
+
+        momento = tz_gdl.localize(
+            datetime.strptime(
+                timestamp,
+                "%Y-%m-%d %H:%M:%S"
+            )
+        )
+
+        edad = (
+            datetime.now(tz_gdl) - momento
+        ).total_seconds()
+
+        if edad >= 600:
+            return None
+
+        return data
+
+    except:
+        return None
+
+
+def crear_lock():
+
+    if not TOKEN:
+        return False
+
+    try:
+
+        repo = Github(TOKEN).get_repo(REPO_NAME)
+
+        ahora = datetime.now(tz_gdl)
+
+        lock_data = {
+            "usuario": current_user,
+            "timestamp": ahora.strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+            "hora": ahora.strftime("%H:%M:%S")
+        }
+
+        contenido = json.dumps(
+            lock_data,
+            indent=4
         )
 
         try:
 
-            lock_info = json.loads(
-                repo.get_contents(
-                    LOCK_FILE_PATH,
-                    ref="main"
-                ).decoded_content.decode("utf-8")
+            archivo = repo.get_contents(
+                LOCK_FILE_PATH,
+                ref="main"
             )
 
-            diferencia = (
-                datetime.now(tz_gdl)
-                - tz_gdl.localize(
-                    datetime.strptime(
-                        lock_info["timestamp"],
-                        "%Y-%m-%d %H:%M:%S"
-                    )
-                )
-            ).total_seconds()
-
-            if diferencia < 600:
-
-                if lock_info["usuario"] != current_user:
-                    bloqueado_por_otro = True
-
-            else:
-
-                lock_info = None
+            repo.update_file(
+                path=LOCK_FILE_PATH,
+                message=f"LOCK // {current_user}",
+                content=contenido,
+                sha=archivo.sha,
+                branch="main"
+            )
 
         except:
 
-            pass
+            repo.create_file(
+                path=LOCK_FILE_PATH,
+                message=f"LOCK // {current_user}",
+                content=contenido,
+                branch="main"
+            )
+
+        return True
 
     except:
+        return False
 
+
+def liberar_lock():
+
+    if not TOKEN:
+        return
+
+    try:
+
+        repo = Github(TOKEN).get_repo(REPO_NAME)
+
+        archivo = repo.get_contents(
+            LOCK_FILE_PATH,
+            ref="main"
+        )
+
+        repo.delete_file(
+            path=LOCK_FILE_PATH,
+            message=f"UNLOCK // {current_user}",
+            sha=archivo.sha,
+            branch="main"
+        )
+
+    except:
         pass
 
+
+lock_info = leer_lock()
+
+bloqueado_por_otro = bool(
+    lock_info
+    and lock_info.get("usuario", "").upper()
+    != current_user.upper()
+)
+
+puede_editar_efectivo = (
+    puede_editar
+    and not bloqueado_por_otro
+    and bool(TOKEN)
+)
 
 st.session_state[
     "bloqueado_por_otro_efectivo"
 ] = bloqueado_por_otro
 
+st.session_state[
+    "puede_editar_efectivo"
+] = puede_editar_efectivo
 
 if bloqueado_por_otro:
 
     st.warning(
-        f"⚠️ MÓDULO PAUSADO: Sesión activa de "
-        f"**{lock_info['usuario']}**. "
-        f"No puedes registrar gastos ahora."
+        f"⚠️ MÓDULO PAUSADO: sesión activa de "
+        f"**{lock_info.get('usuario','OTRO USUARIO')}**."
     )
-
-    st.session_state[
-        "puede_editar_efectivo"
-    ] = False
-
-else:
-
-    st.session_state[
-        "puede_editar_efectivo"
-    ] = puede_editar
-
-    if (
-        puede_editar
-        and lock_info is None
-        and TOKEN
-    ):
-
-        try:
-
-            repo = Github(TOKEN).get_repo(
-                REPO_NAME
-            )
-
-            ahora_gdl = datetime.now(
-                tz_gdl
-            )
-
-            lock_string = json.dumps(
-                {
-                    "usuario": current_user,
-                    "timestamp": ahora_gdl.strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    ),
-                    "hora": ahora_gdl.strftime(
-                        "%H:%M:%S"
-                    )
-                },
-                indent=4
-            )
-
-            try:
-
-                repo.update_file(
-                    path=LOCK_FILE_PATH,
-                    message=f"LOCK // {current_user}",
-                    content=lock_string,
-                    sha=repo.get_contents(
-                        LOCK_FILE_PATH
-                    ).sha
-                )
-
-            except:
-
-                repo.create_file(
-                    path=LOCK_FILE_PATH,
-                    message=f"LOCK // {current_user}",
-                    content=lock_string,
-                    branch="main"
-                )
-
-        except:
-
-            pass
 
 
 # ============================================================
-# 10. MOTOR DE DATOS CARTERA
+# DATOS CARTERA
 # ============================================================
 
 def get_wallet_data_from_git():
 
     if (
-        "df_wallet" not in st.session_state
-        or st.session_state.get(
+        "df_wallet" in st.session_state
+        and not st.session_state.get(
             "force_reload",
             False
         )
     ):
+        return st.session_state.df_wallet
 
-        start_date = datetime.now(
-            tz_gdl
-        )
+    ahora = datetime.now(tz_gdl)
 
-        ejemplos = [
+    ejemplos = [
+        {
+            "Fecha": (
+                ahora - timedelta(days=10)
+            ).strftime("%Y-%m-%d %H:%M"),
+            "Tipo": "Ingreso",
+            "Categoria": "Nómina",
+            "Concepto": "Pago Quincena 1 JYPESA",
+            "Monto": 35000.0,
+            "Cuenta": "Caja Jypesa"
+        },
+        {
+            "Fecha": (
+                ahora - timedelta(days=8)
+            ).strftime("%Y-%m-%d %H:%M"),
+            "Tipo": "Gasto",
+            "Categoria": "Renta",
+            "Concepto": "Renta Oficinas",
+            "Monto": -18000.0,
+            "Cuenta": "Santander"
+        },
+        {
+            "Fecha": (
+                ahora - timedelta(days=5)
+            ).strftime("%Y-%m-%d %H:%M"),
+            "Tipo": "Ingreso",
+            "Categoria": "Freelance / Proyectos",
+            "Concepto": "Proyecto Xenocode UI",
+            "Monto": 15000.0,
+            "Cuenta": "Scottiabank"
+        },
+        {
+            "Fecha": (
+                ahora - timedelta(days=1)
+            ).strftime("%Y-%m-%d %H:%M"),
+            "Tipo": "Gasto",
+            "Categoria": "Supermercado",
+            "Concepto": "Compras Semanales",
+            "Monto": -3500.0,
+            "Cuenta": "Cartera"
+        }
+    ]
 
-            {
-                "Fecha": (
-                    start_date
-                    - timedelta(days=10)
-                ).strftime(
-                    "%Y-%m-%d %H:%M"
-                ),
-                "Tipo": "Ingreso",
-                "Categoria": "Nómina",
-                "Concepto": "Pago Quincena 1 JYPESA",
-                "Monto": 35000.0,
-                "Cuenta": "Caja Jypesa"
-            },
+    df = pd.DataFrame(ejemplos)
 
-            {
-                "Fecha": (
-                    start_date
-                    - timedelta(days=8)
-                ).strftime(
-                    "%Y-%m-%d %H:%M"
-                ),
-                "Tipo": "Gasto",
-                "Categoria": "Renta",
-                "Concepto": "Renta Oficinas",
-                "Monto": -18000.0,
-                "Cuenta": "Santander"
-            },
+    if TOKEN:
 
-            {
-                "Fecha": (
-                    start_date
-                    - timedelta(days=5)
-                ).strftime(
-                    "%Y-%m-%d %H:%M"
-                ),
-                "Tipo": "Ingreso",
-                "Categoria": "Freelance / Proyectos",
-                "Concepto": "Proyecto Xenocode UI",
-                "Monto": 15000.0,
-                "Cuenta": "Scottiabank"
-            },
+        try:
 
-            {
-                "Fecha": (
-                    start_date
-                    - timedelta(days=1)
-                ).strftime(
-                    "%Y-%m-%d %H:%M"
-                ),
-                "Tipo": "Gasto",
-                "Categoria": "Supermercado",
-                "Concepto": "Compras Semanales",
-                "Monto": -3500.0,
-                "Cuenta": "Cartera"
-            }
-        ]
-
-        df_load = pd.DataFrame(
-            ejemplos
-        )
-
-        if TOKEN:
+            repo = Github(TOKEN).get_repo(REPO_NAME)
 
             try:
 
-                repo = Github(
-                    TOKEN
-                ).get_repo(
-                    REPO_NAME
+                archivo = repo.get_contents(
+                    FILE_PATH,
+                    ref="main"
                 )
 
-                try:
-
-                    contenido = repo.get_contents(
-                        FILE_PATH,
-                        ref="main"
-                    )
-
-                    df_load = pd.read_csv(
-                        io.StringIO(
-                            contenido.decoded_content.decode(
-                                "utf-8"
-                            )
-                        ),
-                        keep_default_na=False
-                    )
-
-                except:
-
-                    repo.create_file(
-                        path=FILE_PATH,
-                        message="INITIALIZE WALLET MATRIX",
-                        content=df_load.to_csv(
-                            index=False
-                        ),
-                        branch="main"
-                    )
-
-            except Exception as e:
-
-                st.error(
-                    f"Error conexión GitHub: {e}. "
-                    f"Usando datos locales."
+                df = pd.read_csv(
+                    io.StringIO(
+                        archivo.decoded_content.decode(
+                            "utf-8"
+                        )
+                    ),
+                    keep_default_na=False
                 )
 
-        df_load["Fecha"] = pd.to_datetime(
-            df_load["Fecha"]
+            except:
+
+                repo.create_file(
+                    path=FILE_PATH,
+                    message="INITIALIZE WALLET MATRIX",
+                    content=df.to_csv(index=False),
+                    branch="main"
+                )
+
+        except Exception as e:
+
+            st.warning(
+                f"GitHub no disponible: {e}"
+            )
+
+    if "Fecha" in df.columns:
+        df["Fecha"] = pd.to_datetime(
+            df["Fecha"],
+            errors="coerce"
         )
 
-        st.session_state.df_wallet = (
-            df_load
-        )
+    if "Monto" in df.columns:
+        df["Monto"] = pd.to_numeric(
+            df["Monto"],
+            errors="coerce"
+        ).fillna(0)
 
-        st.session_state.force_reload = (
-            False
-        )
+    st.session_state.df_wallet = df
+    st.session_state.force_reload = False
 
-    return st.session_state.df_wallet
+    return df
 
 
 # ============================================================
-# 11. MOTOR DE DATOS PLAN SEMANAL
+# DATOS PLAN
 # ============================================================
 
-def get_plan_data_from_git(
-    force_reload=False
-):
+def get_plan_data_from_git(force_reload=False):
 
     if force_reload:
-
-        st.session_state[
-            "force_reload_plan"
-        ] = True
+        st.session_state.force_reload_plan = True
 
     if (
-        "df_plan_semanal"
-        in st.session_state
+        "df_plan_semanal" in st.session_state
         and not st.session_state.get(
             "force_reload_plan",
             False
         )
     ):
+        return st.session_state.df_plan_semanal
 
-        return st.session_state[
-            "df_plan_semanal"
-        ]
-
-    columnas_plan = [
+    columnas = [
         "Fecha_Corte",
         "Semana",
         "Ingreso_Semanal",
@@ -807,30 +739,24 @@ def get_plan_data_from_git(
         "Usuario"
     ]
 
-    df_plan = pd.DataFrame(
-        columns=columnas_plan
-    )
+    df = pd.DataFrame(columns=columnas)
 
     if TOKEN:
 
         try:
 
-            repo = Github(
-                TOKEN
-            ).get_repo(
-                REPO_NAME
-            )
+            repo = Github(TOKEN).get_repo(REPO_NAME)
 
             try:
 
-                contenido = repo.get_contents(
+                archivo = repo.get_contents(
                     PLAN_FILE_PATH,
                     ref="main"
                 )
 
-                df_plan = pd.read_csv(
+                df = pd.read_csv(
                     io.StringIO(
-                        contenido.decoded_content.decode(
+                        archivo.decoded_content.decode(
                             "utf-8"
                         )
                     ),
@@ -842,65 +768,44 @@ def get_plan_data_from_git(
                 repo.create_file(
                     path=PLAN_FILE_PATH,
                     message="INITIALIZE WEEKLY FINANCIAL PLAN",
-                    content=df_plan.to_csv(
-                        index=False
-                    ),
+                    content=df.to_csv(index=False),
                     branch="main"
                 )
 
         except Exception as e:
 
             st.warning(
-                f"No fue posible sincronizar "
-                f"el plan financiero: {e}"
+                f"No fue posible sincronizar el plan: {e}"
             )
 
-    st.session_state[
-        "df_plan_semanal"
-    ] = df_plan
+    st.session_state.df_plan_semanal = df
+    st.session_state.force_reload_plan = False
 
-    st.session_state[
-        "force_reload_plan"
-    ] = False
-
-    return df_plan
+    return df
 
 
 # ============================================================
-# 12. RENDERIZADO DE INTERFAZ WALLET
+# PREPARAR CARTERA
 # ============================================================
-
-puede_editar_efectivo = st.session_state.get(
-    "puede_editar_efectivo",
-    False
-)
 
 df_actual = get_wallet_data_from_git()
 
-
-# ============================================================
-# 13. PREPARAR DATOS
-# ============================================================
-
 if not df_actual.empty:
 
-    df_actual["Fecha"] = pd.to_datetime(
-        df_actual["Fecha"],
-        errors="coerce"
-    )
-
     df_actual["Mes"] = (
-        df_actual["Fecha"]
-        .dt.strftime("%Y-%m")
+        pd.to_datetime(
+            df_actual["Fecha"],
+            errors="coerce"
+        ).dt.strftime("%Y-%m")
     )
 
-    current_month = datetime.now(
+    mes_actual = datetime.now(
         tz_gdl
     ).strftime("%Y-%m")
 
     df_month = df_actual[
-        df_actual["Mes"] == current_month
-    ]
+        df_actual["Mes"] == mes_actual
+    ].copy()
 
 else:
 
@@ -908,7 +813,7 @@ else:
 
 
 # ============================================================
-# 14. CÁLCULOS DE SALDOS
+# SALDOS
 # ============================================================
 
 saldos_actuales = {
@@ -917,314 +822,208 @@ saldos_actuales = {
     in CUENTAS_MATRIX.items()
 }
 
-
 if not df_actual.empty:
 
-    for cuenta in CUENTAS_MATRIX.keys():
+    for cuenta in CUENTAS_MATRIX:
 
-        saldos_actuales[cuenta] += (
-            df_actual[
-                df_actual["Cuenta"] == cuenta
-            ]["Monto"].sum()
-        )
+        saldos_actuales[cuenta] += pd.to_numeric(
+            df_actual.loc[
+                df_actual["Cuenta"] == cuenta,
+                "Monto"
+            ],
+            errors="coerce"
+        ).fillna(0).sum()
 
 
 total_general = sum(
     saldos_actuales.values()
 )
 
-
 inc_month = (
-    df_month[
-        df_month["Tipo"] == "Ingreso"
-    ]["Monto"].sum()
+    df_month.loc[
+        df_month["Tipo"] == "Ingreso",
+        "Monto"
+    ].sum()
     if not df_month.empty
     else 0
 )
 
+exp_month = abs(
+    df_month.loc[
+        df_month["Tipo"] == "Gasto",
+        "Monto"
+    ].sum()
+) if not df_month.empty else 0
 
-exp_month = (
-    abs(
-        df_month[
-            df_month["Tipo"] == "Gasto"
-        ]["Monto"].sum()
-    )
-    if not df_month.empty
-    else 0
-)
-
-
-net_month = (
-    inc_month - exp_month
-)
+net_month = inc_month - exp_month
 
 
 # ============================================================
-# 15. SISTEMA DE 4 PESTAÑAS
+# TABS
 # ============================================================
 
-tab_kpi, tab_flujos, tab_registro, tab_plan = st.tabs(
-    [
-        "KPI'S WALLET",
-        "FLUJOS DE EFECTIVO",
-        "REGISTRO NUBE",
-        "PLAN SEMANAL"
-    ]
-)
+tab_kpi, tab_flujos, tab_registro, tab_plan = st.tabs([
+    "KPI'S WALLET",
+    "FLUJOS DE EFECTIVO",
+    "REGISTRO NUBE",
+    "PLAN SEMANAL"
+])
 
 
 # ============================================================
-# PESTAÑA 1: KPI'S WALLET
+# TAB 1
 # ============================================================
 
 with tab_kpi:
 
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    k1, k2, k3 = st.columns(
+        [1, 1, 1],
+        gap="small"
+    )
+
+    tarjetas_kpi = [
+        (
+            k1,
+            "PATRIMONIO NETO",
+            total_general,
+            "#00E5FF",
+            "BALANCE GLOBAL"
+        ),
+        (
+            k2,
+            "INGRESOS MTD",
+            inc_month,
+            "#00FFAA",
+            "FLUJO DE ENTRADA"
+        ),
+        (
+            k3,
+            "EGRESOS MTD",
+            exp_month,
+            "#FF4B4B",
+            "GASTOS DEL MES"
+        )
+    ]
+
+    for col, titulo, valor, color, sub in tarjetas_kpi:
+
+        with col:
+
+            st.markdown(
+                f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">{titulo}</div>
+                    <div class="kpi-value">${valor:,.2f}</div>
+                    <div class="kpi-trend"
+                         style="color:{color}">
+                        {sub}
+                    </div>
+                    <div class="neon-bar"
+                         style="background:
+                         linear-gradient(
+                         90deg,{color},transparent);">
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
     st.markdown(
-        "<br>",
+        "<hr style='border-color:#34495E;'>",
         unsafe_allow_html=True
     )
 
-    kpi1, kpi2, kpi3 = st.columns(3)
-
-    with kpi1:
-
-        st.markdown(
-            f"""
-            <div class='kpi-card'>
-                <div class='kpi-label'>
-                    PATRIMONIO NETO
-                </div>
-
-                <div class='kpi-value'>
-                    ${total_general:,.2f}
-                </div>
-
-                <div class='kpi-trend'
-                     style='color:#00E5FF'>
-                    BALANCE GLOBAL
-                </div>
-
-                <div class='neon-bar'
-                     style='background:
-                     linear-gradient(
-                         90deg,
-                         #00E5FF,
-                         transparent
-                     );'>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with kpi2:
-
-        st.markdown(
-            f"""
-            <div class='kpi-card'>
-                <div class='kpi-label'>
-                    INGRESOS MTD
-                </div>
-
-                <div class='kpi-value'>
-                    ${inc_month:,.2f}
-                </div>
-
-                <div class='kpi-trend'
-                     style='color:#00FFAA'>
-                    FLUJO DE ENTRADA
-                </div>
-
-                <div class='neon-bar'
-                     style='background:
-                     linear-gradient(
-                         90deg,
-                         #00FFAA,
-                         transparent
-                     );'>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with kpi3:
-
-        st.markdown(
-            f"""
-            <div class='kpi-card'>
-                <div class='kpi-label'>
-                    EGRESOS MTD
-                </div>
-
-                <div class='kpi-value'>
-                    ${exp_month:,.2f}
-                </div>
-
-                <div class='kpi-trend'
-                     style='color:#FF4B4B'>
-                    GASTOS DEL MES
-                </div>
-
-                <div class='neon-bar'
-                     style='background:
-                     linear-gradient(
-                         90deg,
-                         #FF4B4B,
-                         transparent
-                     );'>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
     st.markdown(
-        "<br><hr style='border-color:#34495E;'>",
+        """
+        <p class="kpi-label">
+            <span style="color:#00E5FF">🔍</span>
+            DISTRIBUCIÓN DE CAPITAL POR CUENTA
+        </p>
+        """,
         unsafe_allow_html=True
     )
 
-    col_chart, _ = st.columns(
-        [2, 1]
+    nombres = list(saldos_actuales.keys())
+    valores = list(saldos_actuales.values())
+    colores = [
+        CUENTAS_MATRIX[x]["color"]
+        for x in nombres
+    ]
+
+    fig = go.Figure(
+        go.Bar(
+            x=valores,
+            y=nombres,
+            orientation="h",
+            marker=dict(
+                color=colores,
+                line=dict(
+                    color="#1D2A35",
+                    width=2
+                )
+            ),
+            text=valores,
+            texttemplate="%{text:$,.2f}",
+            textposition="auto",
+            textfont=dict(
+                color="#FFFFFF",
+                size=12
+            ),
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                "Saldo: %{x:$,.2f}"
+                "<extra></extra>"
+            )
+        )
     )
 
-    with col_chart:
-
-        st.markdown(
-            """
-            <p class='kpi-label'
-               style='text-align:left;'>
-                <span style='color:#00E5FF'>
-                    🔍
-                </span>
-                DISTRIBUCIÓN DE CAPITAL POR CUENTA
-            </p>
-            """,
-            unsafe_allow_html=True
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        showlegend=False,
+        margin=dict(t=10, b=10, l=10, r=10),
+        height=350,
+        xaxis=dict(
+            showgrid=True,
+            gridcolor="#34495E",
+            color="#8B9BB4",
+            tickformat="$,.0f"
+        ),
+        yaxis=dict(
+            color="#E0E6ED",
+            autorange="reversed"
         )
+    )
 
-        nombres_cuentas = list(
-            saldos_actuales.keys()
-        )
-
-        valores_saldos = list(
-            saldos_actuales.values()
-        )
-
-        colores_barras = [
-            CUENTAS_MATRIX[c]["color"]
-            for c in nombres_cuentas
-        ]
-
-        fig_bars = go.Figure(
-            go.Bar(
-                x=valores_saldos,
-                y=nombres_cuentas,
-                orientation="h",
-
-                marker=dict(
-                    color=colores_barras,
-                    line=dict(
-                        color="#1D2A35",
-                        width=2
-                    )
-                ),
-
-                text=valores_saldos,
-
-                texttemplate=(
-                    "%{text:$,.2f}"
-                ),
-
-                textposition="auto",
-
-                textfont=dict(
-                    color="#FFFFFF",
-                    size=12,
-                    family="monospace"
-                ),
-
-                hovertemplate=(
-                    "<b>%{y}</b><br>"
-                    "Saldo: %{x:$,.2f}"
-                    "<extra></extra>"
-                )
-            )
-        )
-
-        fig_bars.update_layout(
-
-            paper_bgcolor="rgba(0,0,0,0)",
-
-            plot_bgcolor="rgba(0,0,0,0)",
-
-            showlegend=False,
-
-            margin=dict(
-                t=10,
-                b=10,
-                l=10,
-                r=10
-            ),
-
-            height=350,
-
-            xaxis=dict(
-                showgrid=True,
-                gridcolor="#34495E",
-                color="#8B9BB4",
-                tickformat="$,.0f",
-                title=None
-            ),
-
-            yaxis=dict(
-                color="#E0E6ED",
-                tickfont=dict(size=13),
-                title=None,
-                autorange="reversed"
-            ),
-
-            hoverlabel=dict(
-                bgcolor="#253441",
-                font=dict(
-                    size=13,
-                    family="monospace"
-                )
-            )
-        )
-
-        st.plotly_chart(
-            fig_bars,
-            use_container_width=True,
-            config={
-                "displayModeBar": False
-            }
-        )
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False}
+    )
 
 
 # ============================================================
-# PESTAÑA 2: FLUJOS DE EFECTIVO
+# TAB 2
 # ============================================================
 
 with tab_flujos:
 
-    st.markdown(
-        "<br>",
-        unsafe_allow_html=True
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    flujo1, flujo2 = st.columns(
+        [2, 1.5],
+        gap="small"
     )
 
-    gr_col1, gr_col2 = st.columns(
-        [2, 1.5]
-    )
-
-    with gr_col1:
+    with flujo1:
 
         st.markdown(
             """
-            <p class='kpi-label'
-               style='text-align:left;'>
+            <p class="kpi-label">
                 TENDENCIA DE FLUJO
-                <span style='color:#8B9BB4'>
+                <span style="color:#8B9BB4">
                     (MES ACTUAL)
                 </span>
             </p>
@@ -1236,148 +1035,96 @@ with tab_flujos:
 
             df_daily = (
                 df_month
-                .groupby(
-                    [
-                        df_month["Fecha"].dt.date,
-                        "Tipo"
-                    ]
-                )["Monto"]
+                .groupby([
+                    df_month["Fecha"].dt.date,
+                    "Tipo"
+                ])["Monto"]
                 .sum()
                 .unstack()
                 .fillna(0)
             )
 
-            if "Gasto" in df_daily:
+            if "Ingreso" not in df_daily:
+                df_daily["Ingreso"] = 0
 
-                df_daily["Gasto"] = (
-                    abs(df_daily["Gasto"])
-                )
-
-            else:
-
+            if "Gasto" not in df_daily:
                 df_daily["Gasto"] = 0
 
-            if "Ingreso" not in df_daily:
-
-                df_daily["Ingreso"] = 0
+            df_daily["Gasto"] = abs(
+                df_daily["Gasto"]
+            )
 
             fig_flow = go.Figure()
 
             fig_flow.add_trace(
                 go.Scatter(
-
                     x=df_daily.index,
-
                     y=df_daily["Ingreso"],
-
                     name="Ingresos",
-
                     mode="lines",
-
                     line=dict(
                         width=3,
                         color="#00FFAA"
                     ),
-
                     fill="tozeroy",
-
-                    fillcolor=(
-                        "rgba(0,255,170,0.05)"
-                    )
+                    fillcolor="rgba(0,255,170,.05)"
                 )
             )
 
             fig_flow.add_trace(
                 go.Scatter(
-
                     x=df_daily.index,
-
                     y=df_daily["Gasto"],
-
                     name="Egresos",
-
                     mode="lines",
-
                     line=dict(
                         width=3,
                         color="#FF4B4B"
                     ),
-
                     fill="tozeroy",
-
-                    fillcolor=(
-                        "rgba(255,75,75,0.05)"
-                    )
+                    fillcolor="rgba(255,75,75,.05)"
                 )
             )
 
             fig_flow.update_layout(
-
-                paper_bgcolor=(
-                    "rgba(0,0,0,0)"
-                ),
-
-                plot_bgcolor=(
-                    "rgba(0,0,0,0)"
-                ),
-
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
                 xaxis=dict(
                     showgrid=False,
-                    color="#8B9BB4",
-                    tickformat="%d %b"
+                    color="#8B9BB4"
                 ),
-
                 yaxis=dict(
                     showgrid=True,
                     gridcolor="#34495E",
-                    color="#8B9BB4",
-                    zeroline=False
+                    color="#8B9BB4"
                 ),
-
                 legend=dict(
                     orientation="h",
                     y=1.1,
-                    x=0.5,
+                    x=.5,
                     xanchor="center",
-                    font=dict(
-                        color="#E0E6ED"
-                    )
+                    font=dict(color="#E0E6ED")
                 ),
-
-                margin=dict(
-                    t=10,
-                    b=10,
-                    l=10,
-                    r=10
-                ),
-
+                margin=dict(t=10, b=10, l=10, r=10),
                 height=350,
-
                 hovermode="x unified"
             )
 
             st.plotly_chart(
                 fig_flow,
                 use_container_width=True,
-                config={
-                    "displayModeBar": False
-                }
+                config={"displayModeBar": False}
             )
 
         else:
+            st.info("Sin movimientos este mes.")
 
-            st.info(
-                "Sin movimientos este mes."
-            )
-
-    with gr_col2:
+    with flujo2:
 
         st.markdown(
             """
-            <p class='kpi-label'
-               style='text-align:left;'>
-                ANÁLISIS DE CONSUMO
-                POR CATEGORÍA
+            <p class="kpi-label">
+                ANÁLISIS DE CONSUMO POR CATEGORÍA
             </p>
             """,
             unsafe_allow_html=True
@@ -1385,88 +1132,47 @@ with tab_flujos:
 
         if not df_month.empty:
 
-            df_gastos_cat = (
+            gastos = (
                 df_month[
                     df_month["Tipo"] == "Gasto"
                 ]
-                .groupby("Categoria")[
-                    "Monto"
-                ]
+                .groupby("Categoria")["Monto"]
                 .sum()
                 .abs()
                 .reset_index()
+                .sort_values("Monto")
             )
 
-            if not df_gastos_cat.empty:
-
-                df_gastos_cat = (
-                    df_gastos_cat
-                    .sort_values(
-                        by="Monto",
-                        ascending=True
-                    )
-                )
+            if not gastos.empty:
 
                 fig_cat = px.bar(
-                    df_gastos_cat,
+                    gastos,
                     x="Monto",
                     y="Categoria",
                     orientation="h",
                     text_auto=",.0f"
                 )
 
-                num_bars = len(
-                    df_gastos_cat
-                )
+                n = len(gastos)
 
-                colors = []
-
-                for i in range(num_bars):
-
-                    if i == num_bars - 1:
-
-                        colors.append(
-                            "#44B3E1"
-                        )
-
-                    elif i >= num_bars - 3:
-
-                        colors.append(
-                            "#4D93D9"
-                        )
-
-                    else:
-
-                        colors.append(
-                            "#215C98"
-                        )
+                colors = [
+                    "#44B3E1"
+                    if i == n - 1
+                    else "#4D93D9"
+                    if i >= n - 3
+                    else "#215C98"
+                    for i in range(n)
+                ]
 
                 fig_cat.update_traces(
-
                     marker_color=colors,
-
-                    hovertemplate=(
-                        "%{y}: "
-                        "$%{x:,.2f}"
-                    ),
-
                     textposition="outside",
-
-                    textfont=dict(
-                        color="#E0E6ED"
-                    )
+                    hovertemplate="%{y}: $%{x:,.2f}"
                 )
 
                 fig_cat.update_layout(
-
-                    paper_bgcolor=(
-                        "rgba(0,0,0,0)"
-                    ),
-
-                    plot_bgcolor=(
-                        "rgba(0,0,0,0)"
-                    ),
-
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
                     xaxis=dict(
                         title=None,
                         showgrid=True,
@@ -1474,81 +1180,58 @@ with tab_flujos:
                         color="#8B9BB4",
                         tickformat="$,.0f"
                     ),
-
                     yaxis=dict(
                         title=None,
                         color="#E0E6ED"
                     ),
-
-                    margin=dict(
-                        t=10,
-                        b=10,
-                        l=10,
-                        r=10
-                    ),
-
+                    margin=dict(t=10, b=10, l=10, r=10),
                     height=350
                 )
 
                 st.plotly_chart(
                     fig_cat,
                     use_container_width=True,
-                    config={
-                        "displayModeBar": False
-                    }
+                    config={"displayModeBar": False}
                 )
 
             else:
-
-                st.info(
-                    "Sin gastos registrados "
-                    "este mes."
-                )
+                st.info("Sin gastos registrados este mes.")
 
         else:
-
-            st.info(
-                "Sin movimientos este mes."
-            )
+            st.info("Sin movimientos este mes.")
 
 
 # ============================================================
-# PESTAÑA 3: REGISTRO NUBE
+# TAB 3
 # ============================================================
 
 with tab_registro:
 
-    st.markdown(
-        "<br>",
-        unsafe_allow_html=True
-    )
-
-    if not TOKEN:
-
-        st.warning(
-            "⚠️ Modo de solo lectura local. "
-            "Configure GITHUB_TOKEN para "
-            "registrar operaciones."
-        )
+    st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown(
         """
-        <p class='kpi-label'
-           style='margin-bottom:10px;'>
-            <span style='color:#00E5FF'>
-                ⚡
-            </span>
+        <p class="kpi-label">
+            <span style="color:#00E5FF">⚡</span>
             EJECUTAR ORDEN DE REGISTRO
         </p>
         """,
         unsafe_allow_html=True
     )
 
-    in_col1, in_col2, in_col3, in_col4 = (
-        st.columns(4)
+    if not TOKEN:
+
+        st.warning(
+            "GITHUB_TOKEN no está configurado. "
+            "El módulo funciona en modo lectura."
+        )
+
+    f1, f2, f3, f4 = st.columns(
+        [1, 1, 1, 1],
+        gap="small"
     )
 
-    with in_col1:
+    with f1:
 
         f_monto = st.number_input(
             "Cantidad MXN",
@@ -1557,7 +1240,7 @@ with tab_registro:
             key="inp_monto_nube"
         )
 
-    with in_col2:
+    with f2:
 
         f_cat = st.selectbox(
             "Categoría",
@@ -1565,81 +1248,92 @@ with tab_registro:
             key="inp_cat_nube"
         )
 
-    with in_col3:
+    with f3:
 
         f_desc = st.text_input(
             "Concepto / Referencia",
-            placeholder=(
-                "Ej. Gastos de Operación"
-            ),
+            placeholder="Ej. Gastos de Operación",
             key="inp_desc_nube"
         )
 
-    with in_col4:
+    with f4:
 
         f_cuenta = st.selectbox(
             "Cuenta Destino/Origen",
-            list(
-                CUENTAS_MATRIX.keys()
-            ),
+            list(CUENTAS_MATRIX.keys()),
             key="inp_cuenta_nube"
         )
 
-    st.markdown(
-        "<br>",
-        unsafe_allow_html=True
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+    b1, b2 = st.columns(
+        [1, 1],
+        gap="small"
     )
 
-    btn_l, btn_r = st.columns(2)
-
-    block_submit = (
-
+    bloquear = (
         not puede_editar_efectivo
-
-        or st.session_state.get(
-            "bloqueado_por_otro_efectivo",
-            False
-        )
-
+        or bloqueado_por_otro
         or not TOKEN
     )
 
-    with btn_l:
+    with b1:
 
         ingreso_sub = st.button(
             "REGISTRAR INGRESO",
             icon=":material/save:",
             use_container_width=True,
             key="btn_ingreso_action",
-            disabled=block_submit
+            disabled=bloquear
         )
 
-    with btn_r:
+    with b2:
 
         gasto_sub = st.button(
             "REGISTRAR GASTO",
             icon=":material/remove:",
             use_container_width=True,
             key="btn_gasto_action",
-            disabled=block_submit
+            disabled=bloquear
         )
 
     if (
-        not block_submit
-        and (
-            ingreso_sub
-            or gasto_sub
-        )
-        and f_monto > 0
-        and f_desc
+        not bloquear
+        and (ingreso_sub or gasto_sub)
     ):
 
-        with st.status(
-            "Sincronizando con Nube Nexion...",
-            expanded=True
-        ):
+        if f_monto <= 0:
+
+            st.error(
+                "Captura una cantidad mayor a cero."
+            )
+
+        elif not f_desc.strip():
+
+            st.error(
+                "Captura el concepto o referencia."
+            )
+
+        else:
+
+            lock_creado = False
 
             try:
+
+                # --------------------------------------------
+                # TOMAR LOCK SOLO AL ESCRIBIR
+                # --------------------------------------------
+
+                lock_creado = crear_lock()
+
+                if not lock_creado:
+
+                    st.error(
+                        "No fue posible tomar el control "
+                        "de escritura en GitHub."
+                    )
+
+                    st.stop()
 
                 repo = Github(
                     TOKEN
@@ -1647,13 +1341,14 @@ with tab_registro:
                     REPO_NAME
                 )
 
-                contents = repo.get_contents(
-                    FILE_PATH
+                archivo = repo.get_contents(
+                    FILE_PATH,
+                    ref="main"
                 )
 
                 df_latest = pd.read_csv(
                     io.StringIO(
-                        contents.decoded_content.decode(
+                        archivo.decoded_content.decode(
                             "utf-8"
                         )
                     ),
@@ -1661,104 +1356,163 @@ with tab_registro:
                 )
 
                 nueva_fila = {
-
-                    "Fecha":
-                        datetime.now(
-                            tz_gdl
-                        ).strftime(
-                            "%Y-%m-%d %H:%M"
-                        ),
-
-                    "Tipo":
+                    "Fecha": datetime.now(
+                        tz_gdl
+                    ).strftime(
+                        "%Y-%m-%d %H:%M"
+                    ),
+                    "Tipo": (
                         "Ingreso"
                         if ingreso_sub
-                        else "Gasto",
-
-                    "Categoria":
-                        f_cat,
-
-                    "Concepto":
-                        f_desc,
-
-                    "Monto":
+                        else "Gasto"
+                    ),
+                    "Categoria": f_cat,
+                    "Concepto": f_desc.strip(),
+                    "Monto": (
                         f_monto
                         if ingreso_sub
-                        else -f_monto,
-
-                    "Cuenta":
-                        f_cuenta
+                        else -f_monto
+                    ),
+                    "Cuenta": f_cuenta
                 }
 
                 df_latest = pd.concat(
                     [
                         df_latest,
-                        pd.DataFrame(
-                            [nueva_fila]
-                        )
+                        pd.DataFrame([nueva_fila])
                     ],
                     ignore_index=True
                 )
 
                 repo.update_file(
-
                     path=FILE_PATH,
-
                     message=(
-                        f"UPDATE // "
-                        f"{current_user} // "
+                        f"UPDATE // {current_user} // "
                         f"{datetime.now(tz_gdl).strftime('%H:%M:%S')}"
                     ),
-
                     content=df_latest.to_csv(
                         index=False
                     ),
-
-                    sha=contents.sha
+                    sha=archivo.sha,
+                    branch="main"
                 )
 
-                try:
-
-                    repo.delete_file(
-
-                        path=LOCK_FILE_PATH,
-
-                        message=(
-                            f"UNLOCK // "
-                            f"{current_user}"
-                        ),
-
-                        sha=repo.get_contents(
-                            LOCK_FILE_PATH
-                        ).sha
-                    )
-
-                except:
-
-                    pass
-
-                st.session_state[
-                    "force_reload"
-                ] = True
+                st.session_state.force_reload = True
 
                 st.success(
-                    "OPERACIÓN CLASIFICADA "
-                    "EXITOSAMENTE."
+                    "OPERACIÓN CLASIFICADA EXITOSAMENTE."
                 )
 
-                time.sleep(1)
-
+                time.sleep(.7)
                 st.rerun()
 
             except Exception as e:
 
                 st.error(
-                    f"Error crítico de "
-                    f"sincronización: {e}"
+                    f"Error de sincronización: {e}"
                 )
+
+            finally:
+
+                if lock_creado:
+                    liberar_lock()
+
+    # ========================================================
+    # TABLA REAL DE CARTERA
+    # ========================================================
+
+    st.markdown(
+        """
+        <div style="
+            color:#00FFAA;
+            font-size:11px;
+            font-weight:800;
+            letter-spacing:1.5px;
+            margin:25px 0 10px 0;">
+            REGISTROS DE CARTERA
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    actualizar = st.button(
+        "ACTUALIZAR REGISTROS",
+        use_container_width=True,
+        key="btn_refresh_wallet"
+    )
+
+    if actualizar:
+
+        st.session_state.force_reload = True
+        st.rerun()
+
+    df_registros = get_wallet_data_from_git()
+
+    if df_registros.empty:
+
+        st.info(
+            "No existen movimientos registrados."
+        )
+
+    else:
+
+        tabla = df_registros.copy()
+
+        if "Fecha" in tabla.columns:
+
+            tabla["Fecha"] = pd.to_datetime(
+                tabla["Fecha"],
+                errors="coerce"
+            )
+
+            tabla = tabla.sort_values(
+                "Fecha",
+                ascending=False
+            )
+
+            tabla["Fecha"] = tabla[
+                "Fecha"
+            ].dt.strftime(
+                "%Y-%m-%d %H:%M"
+            )
+
+        if "Monto" in tabla.columns:
+
+            tabla["Monto"] = pd.to_numeric(
+                tabla["Monto"],
+                errors="coerce"
+            )
+
+        columnas = [
+            "Fecha",
+            "Tipo",
+            "Categoria",
+            "Concepto",
+            "Monto",
+            "Cuenta"
+        ]
+
+        columnas = [
+            c for c in columnas
+            if c in tabla.columns
+        ]
+
+        tabla = tabla[columnas]
+
+        st.dataframe(
+            tabla.style.format(
+                {
+                    "Monto": "${:,.2f}"
+                }
+            ),
+            use_container_width=True,
+            hide_index=True,
+            height=430
+        )
 
 
 # ============================================================
-# PESTAÑA 4: PLAN SEMANAL
+# TAB 4
 # ============================================================
 
 with tab_plan:
@@ -1766,158 +1520,89 @@ with tab_plan:
     st.markdown(
         """
         <div style="
-            background:linear-gradient(
-                135deg,
-                #253441,
-                #1D2830
-            );
+            background:linear-gradient(135deg,#253441,#1D2830);
             border:1px solid #34495E;
             border-radius:8px;
             padding:18px 22px;
-            margin-bottom:18px;
-        ">
-
+            margin-bottom:18px;">
             <div style="
                 color:#00FFAA;
                 font-size:11px;
                 font-weight:800;
-                letter-spacing:2px;
-                text-transform:uppercase;
-                margin-bottom:6px;
-            ">
+                letter-spacing:2px;">
                 NEXION // FINANZAS PERSONALES
             </div>
-
             <div style="
                 color:#FFFFFF;
                 font-size:24px;
                 font-weight:700;
-                letter-spacing:.3px;
-            ">
+                margin-top:4px;">
                 PLAN SEMANAL
             </div>
-
             <div style="
                 color:#8B9BB4;
                 font-size:12px;
-                margin-top:5px;
-            ">
+                margin-top:5px;">
                 Distribución del ingreso · Gastos · Ahorro · Disponible
             </div>
-
         </div>
         """,
         unsafe_allow_html=True
     )
 
-
     # ========================================================
-    # VALORES PRINCIPALES
+    # KPI PLAN
     # ========================================================
 
-    c1, c2, c3, c4 = st.columns(4)
-
-    with c1:
-
-        st.markdown(
-            f"""
-            <div class="plan-card">
-
-                <div class="plan-title">
-                    INGRESO SEMANAL
-                </div>
-
-                <div class="plan-value">
-                    ${INGRESO_SEMANAL:,.2f}
-                </div>
-
-                <div class="plan-sub">
-                    Ingreso disponible de la semana
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with c2:
-
-        st.markdown(
-            f"""
-            <div class="plan-card">
-
-                <div class="plan-title">
-                    GASTOS + AHORRO
-                </div>
-
-                <div class="plan-value">
-                    ${TOTAL_APARTADO_SEMANAL:,.2f}
-                </div>
-
-                <div class="plan-sub">
-                    Comprometido semanalmente
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with c3:
-
-        st.markdown(
-            f"""
-            <div class="plan-card">
-
-                <div class="plan-title">
-                    APARTADO MENSUAL
-                </div>
-
-                <div class="plan-value">
-                    ${TOTAL_AHORRO_MENSUAL_SEM:,.2f}
-                </div>
-
-                <div class="plan-sub">
-                    Ahorro proporcional semanal
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with c4:
-
-        st.markdown(
-            f"""
-            <div class="plan-card">
-
-                <div class="plan-title">
-                    DISPONIBLE
-                </div>
-
-                <div class="plan-value">
-                    ${DISPONIBLE_SEMANAL:,.2f}
-                </div>
-
-                <div class="plan-sub">
-                    Libre después de apartados
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-    st.markdown(
-        "<div style='height:10px'></div>",
-        unsafe_allow_html=True
+    c1, c2, c3, c4 = st.columns(
+        [1, 1, 1, 1],
+        gap="small"
     )
 
+    plan_cards = [
+        (
+            c1,
+            "INGRESO SEMANAL",
+            INGRESO_SEMANAL,
+            "Ingreso disponible de la semana"
+        ),
+        (
+            c2,
+            "GASTOS + AHORRO",
+            TOTAL_APARTADO_SEMANAL,
+            "Comprometido semanalmente"
+        ),
+        (
+            c3,
+            "APARTADO MENSUAL",
+            TOTAL_AHORRO_MENSUAL_SEM,
+            "Ahorro proporcional semanal"
+        ),
+        (
+            c4,
+            "DISPONIBLE",
+            DISPONIBLE_SEMANAL,
+            "Libre después de apartados"
+        )
+    ]
+
+    for col, titulo, valor, sub in plan_cards:
+
+        with col:
+
+            st.markdown(
+                f"""
+                <div class="plan-card">
+                    <div class="plan-title">{titulo}</div>
+                    <div class="plan-value">${valor:,.2f}</div>
+                    <div class="plan-sub">{sub}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
     # ========================================================
-    # CALENDARIO DE PAGOS MENSUALES
+    # PAGOS
     # ========================================================
 
     st.markdown(
@@ -1927,103 +1612,89 @@ with tab_plan:
             font-size:11px;
             font-weight:800;
             letter-spacing:1.5px;
-            text-transform:uppercase;
-            margin:18px 0 10px 0;
-        ">
+            margin:18px 0 10px 0;">
             CALENDARIO DE PAGOS MENSUALES
         </div>
         """,
         unsafe_allow_html=True
     )
 
-
-    pagos_mensuales = [
-
-        {
-            "concepto": "ABONO TV",
-            "monto": 900.00,
-            "fecha": "25 SEP",
-            "dia": "VIERNES",
-            "estado": "Fondo asegurado con cobro del día"
-        },
-
-        {
-            "concepto": "INTERNET",
-            "monto": 1100.00,
-            "fecha": "27 SEP",
-            "dia": "DOMINGO",
-            "estado": "Asegurar desde el viernes 25"
-        },
-
-        {
-            "concepto": "PRÉSTAMO",
-            "monto": 1600.00,
-            "fecha": "28 SEP",
-            "dia": "LUNES",
-            "estado": "Asegurar desde el viernes 25"
-        }
+    pagos = [
+        (
+            "ABONO TV",
+            900.00,
+            "25 SEP",
+            "VIERNES",
+            "Fondo asegurado con cobro del día"
+        ),
+        (
+            "INTERNET",
+            1100.00,
+            "27 SEP",
+            "DOMINGO",
+            "Asegurar desde el viernes 25"
+        ),
+        (
+            "PRÉSTAMO",
+            1600.00,
+            "28 SEP",
+            "LUNES",
+            "Asegurar desde el viernes 25"
+        )
     ]
 
+    p1, p2, p3 = st.columns(
+        [1, 1, 1],
+        gap="small"
+    )
 
-    p1, p2, p3 = st.columns(3)
-
-
-    for columna, pago in zip(
+    for col, pago in zip(
         [p1, p2, p3],
-        pagos_mensuales
+        pagos
     ):
 
-        with columna:
+        with col:
+
+            concepto, monto, fecha, dia, estado = pago
 
             st.markdown(
                 f"""
                 <div class="plan-card"
                      style="min-height:145px;">
-
                     <div style="
                         color:#00E5FF;
                         font-size:10px;
                         font-weight:800;
-                        letter-spacing:1.5px;
-                        margin-bottom:8px;
-                    ">
-                        {pago["concepto"]}
+                        letter-spacing:1.5px;">
+                        {concepto}
                     </div>
-
                     <div style="
                         color:#FFFFFF;
                         font-size:25px;
                         font-weight:700;
-                        margin-bottom:3px;
-                    ">
-                        ${pago["monto"]:,.2f}
+                        margin-top:7px;">
+                        ${monto:,.2f}
                     </div>
-
                     <div style="
                         color:#FFD700;
                         font-size:11px;
                         font-weight:700;
-                        margin-bottom:8px;
-                    ">
-                        {pago["fecha"]} · {pago["dia"]}
+                        margin-top:4px;">
+                        {fecha} · {dia}
                     </div>
-
                     <div style="
                         color:#8B9BB4;
                         font-size:11px;
-                        line-height:1.4;
-                    ">
-                        {pago["estado"]}
+                        margin-top:8px;">
+                        {estado}
                     </div>
-
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
-
     # ========================================================
-    # DISTRIBUCIÓN SEMANAL
+    # DISTRIBUCIÓN
     # ========================================================
 
     st.markdown(
@@ -2033,65 +1704,23 @@ with tab_plan:
             font-size:11px;
             font-weight:800;
             letter-spacing:1.5px;
-            text-transform:uppercase;
-            margin:24px 0 10px 0;
-        ">
+            margin:22px 0 10px 0;">
             DISTRIBUCIÓN DEL VIERNES DE PAGO
         </div>
         """,
         unsafe_allow_html=True
     )
 
-
     df_distribucion = pd.DataFrame(
         [
-            [
-                "Gastos de Casa / Despensa",
-                1500.00,
-                "Gasto Fijo"
-            ],
-
-            [
-                "Gasolina",
-                600.00,
-                "Gasto Fijo"
-            ],
-
-            [
-                "Consulta",
-                350.00,
-                "Gasto Fijo"
-            ],
-
-            [
-                "Gastos de tu Hija",
-                250.00,
-                "Gasto Fijo"
-            ],
-
-            [
-                "Ahorro Abono TV",
-                225.00,
-                "Ahorro Mensual"
-            ],
-
-            [
-                "Ahorro Abono Préstamo",
-                400.00,
-                "Ahorro Mensual"
-            ],
-
-            [
-                "Ahorro Internet",
-                275.00,
-                "Ahorro Mensual"
-            ],
-
-            [
-                "LIBRE / DISPONIBLE PARA TI",
-                850.00,
-                "Disponible"
-            ],
+            ["Gastos de Casa / Despensa", 1500, "Gasto Fijo"],
+            ["Gasolina", 600, "Gasto Fijo"],
+            ["Consulta", 350, "Gasto Fijo"],
+            ["Gastos de tu Hija", 250, "Gasto Fijo"],
+            ["Ahorro Abono TV", 225, "Ahorro Mensual"],
+            ["Ahorro Abono Préstamo", 400, "Ahorro Mensual"],
+            ["Ahorro Internet", 275, "Ahorro Mensual"],
+            ["LIBRE / DISPONIBLE PARA TI", 850, "Disponible"]
         ],
         columns=[
             "CONCEPTO",
@@ -2099,7 +1728,6 @@ with tab_plan:
             "TIPO"
         ]
     )
-
 
     st.dataframe(
         df_distribucion.style.format(
@@ -2112,113 +1740,61 @@ with tab_plan:
         height=330
     )
 
-
     # ========================================================
-    # RESUMEN MATEMÁTICO
+    # RESUMEN
     # ========================================================
 
-    st.markdown(
-        "<div style='height:5px'></div>",
-        unsafe_allow_html=True
+    r1, r2, r3 = st.columns(
+        [1, 1, 1],
+        gap="small"
     )
 
-
-    r1, r2, r3 = st.columns(3)
-
-
-    with r1:
-
-        st.markdown(
-            f"""
-            <div class="plan-card">
-
-                <div class="plan-title">
-                    GASTOS FIJOS
-                </div>
-
-                <div class="plan-value">
-                    ${
-                        GASTO_CASA
-                        + GASOLINA
-                        + CONSULTA
-                        + GASTOS_HIJA
-                    :,.2f}
-                </div>
-
-                <div class="plan-sub">
-                    Casa + gasolina + consulta + hija
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
+    resumen = [
+        (
+            r1,
+            "GASTOS FIJOS",
+            TOTAL_GASTOS_SEMANALES,
+            "Casa + gasolina + consulta + hija"
+        ),
+        (
+            r2,
+            "AHORRO SEMANAL",
+            TOTAL_AHORRO_MENSUAL_SEM,
+            "TV + préstamo + internet"
+        ),
+        (
+            r3,
+            "LIBRE",
+            DISPONIBLE_SEMANAL,
+            "Disponible después de apartados"
         )
+    ]
 
+    for col, titulo, valor, sub in resumen:
 
-    with r2:
+        with col:
 
-        st.markdown(
-            f"""
-            <div class="plan-card">
-
-                <div class="plan-title">
-                    AHORRO SEMANAL
+            st.markdown(
+                f"""
+                <div class="plan-card">
+                    <div class="plan-title">{titulo}</div>
+                    <div class="plan-value">${valor:,.2f}</div>
+                    <div class="plan-sub">{sub}</div>
                 </div>
-
-                <div class="plan-value">
-                    ${TOTAL_AHORRO_MENSUAL_SEM:,.2f}
-                </div>
-
-                <div class="plan-sub">
-                    TV + préstamo + internet
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-    with r3:
-
-        st.markdown(
-            f"""
-            <div class="plan-card">
-
-                <div class="plan-title">
-                    LIBRE
-                </div>
-
-                <div class="plan-value">
-                    ${DISPONIBLE_SEMANAL:,.2f}
-                </div>
-
-                <div class="plan-sub">
-                    Disponible después de apartados
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-    st.markdown(
-        "<div style='height:10px'></div>",
-        unsafe_allow_html=True
-    )
-
+                """,
+                unsafe_allow_html=True
+            )
 
     # ========================================================
     # REGISTRAR CORTE
     # ========================================================
 
-    col_btn, col_info = st.columns(
-        [1, 2]
+    btn_corte, info_corte = st.columns(
+        [1, 2],
+        gap="small"
     )
 
-
-    with col_btn:
+    with btn_corte:
 
         registrar_corte = st.button(
             "REGISTRAR CORTE DE ESTA SEMANA",
@@ -2232,51 +1808,53 @@ with tab_plan:
             )
         )
 
-
-    with col_info:
+    with info_corte:
 
         if bloqueado_por_otro:
 
             st.warning(
-                "La edición está temporalmente bloqueada porque otra sesión está escribiendo datos."
+                "Edición temporalmente bloqueada."
             )
 
         elif not TOKEN:
 
             st.warning(
-                "GITHUB_TOKEN no está configurado. "
-                "No se puede guardar el corte."
+                "GITHUB_TOKEN no está configurado."
             )
 
         else:
 
             st.caption(
-                "El corte se almacenará en GitHub dentro de "
-                "`plan_financiero_semanal.csv`."
+                "El corte se almacenará en "
+                "plan_financiero_semanal.csv."
             )
 
-
     # ========================================================
-    # GUARDADO DEL CORTE EN GITHUB
+    # GUARDAR CORTE
     # ========================================================
 
     if registrar_corte:
 
-        if not TOKEN:
+        lock_creado = False
 
-            st.error(
-                "No existe GITHUB_TOKEN en los Secrets "
-                "de Streamlit."
+        try:
+
+            lock_creado = crear_lock()
+
+            if not lock_creado:
+
+                st.error(
+                    "No fue posible tomar el control "
+                    "de escritura."
+                )
+
+                st.stop()
+
+            repo = Github(
+                TOKEN
+            ).get_repo(
+                REPO_NAME
             )
-
-        elif not puede_editar_efectivo:
-
-            st.error(
-                "No se puede registrar el corte mientras "
-                "la edición esté bloqueada."
-            )
-
-        else:
 
             fecha_corte = datetime.now(
                 tz_gdl
@@ -2286,260 +1864,122 @@ with tab_plan:
 
             try:
 
-                # ------------------------------------------------
-                # OBTENER SIEMPRE LA VERSIÓN ACTUAL DE GITHUB
-                # ------------------------------------------------
-
-                g = Github(TOKEN)
-
-                repo = g.get_repo(
-                    REPO_NAME
+                archivo = repo.get_contents(
+                    PLAN_FILE_PATH,
+                    ref="main"
                 )
 
-                try:
-
-                    archivo_plan = repo.get_contents(
-                        PLAN_FILE_PATH
-                    )
-
-                    contenido_plan = (
-                        archivo_plan
-                        .decoded_content
-                        .decode("utf-8")
-                    )
-
-                    df_plan_actual = pd.read_csv(
-                        io.StringIO(
-                            contenido_plan
+                df_plan = pd.read_csv(
+                    io.StringIO(
+                        archivo.decoded_content.decode(
+                            "utf-8"
                         )
-                    )
-
-                    sha_plan = archivo_plan.sha
-
-                except Exception:
-
-                    df_plan_actual = pd.DataFrame(
-                        columns=[
-                            "Fecha_Corte",
-                            "Semana",
-                            "Ingreso_Semanal",
-                            "Gastos_Fijos",
-                            "Ahorro_Semanal",
-                            "Disponible",
-                            "Usuario"
-                        ]
-                    )
-
-                    sha_plan = None
-
-
-                # ------------------------------------------------
-                # EVITAR DOBLE REGISTRO EL MISMO DÍA
-                # ------------------------------------------------
-
-                if (
-                    not df_plan_actual.empty
-                    and "Fecha_Corte"
-                    in df_plan_actual.columns
-                ):
-
-                    fechas_existentes = (
-                        df_plan_actual[
-                            "Fecha_Corte"
-                        ]
-                        .astype(str)
-                        .tolist()
-                    )
-
-                    if fecha_corte in fechas_existentes:
-
-                        st.warning(
-                            f"Ya existe un corte registrado "
-                            f"para {fecha_corte}."
-                        )
-
-                        st.stop()
-
-
-                # ------------------------------------------------
-                # NÚMERO DE SEMANA
-                # ------------------------------------------------
-
-                ahora_gdl = datetime.now(
-                    tz_gdl
+                    ),
+                    keep_default_na=False
                 )
 
-                numero_semana = (
-                    ahora_gdl
-                    .isocalendar()
-                    .week
-                )
+                sha_plan = archivo.sha
 
-                semana = (
-                    f"{ahora_gdl.year}"
-                    f"-W"
-                    f"{numero_semana:02d}"
-                )
+            except:
 
-
-                # ------------------------------------------------
-                # NUEVO CORTE
-                # ------------------------------------------------
-
-                nuevo_corte = pd.DataFrame(
-                    [
-                        {
-                            "Fecha_Corte":
-                                fecha_corte,
-
-                            "Semana":
-                                semana,
-
-                            "Ingreso_Semanal":
-                                INGRESO_SEMANAL,
-
-                            "Gastos_Fijos":
-                                GASTO_CASA
-                                + GASOLINA
-                                + CONSULTA
-                                + GASTOS_HIJA,
-
-                            "Ahorro_Semanal":
-                                TOTAL_AHORRO_MENSUAL_SEM,
-
-                            "Disponible":
-                                DISPONIBLE_SEMANAL,
-
-                            "Usuario":
-                                current_user
-                        }
+                df_plan = pd.DataFrame(
+                    columns=[
+                        "Fecha_Corte",
+                        "Semana",
+                        "Ingreso_Semanal",
+                        "Gastos_Fijos",
+                        "Ahorro_Semanal",
+                        "Disponible",
+                        "Usuario"
                     ]
                 )
 
+                sha_plan = None
 
-                df_plan_actual = pd.concat(
-                    [
-                        df_plan_actual,
-                        nuevo_corte
-                    ],
-                    ignore_index=True
+            if (
+                not df_plan.empty
+                and "Fecha_Corte" in df_plan.columns
+                and fecha_corte in
+                df_plan["Fecha_Corte"]
+                .astype(str)
+                .tolist()
+            ):
+
+                st.warning(
+                    f"Ya existe un corte registrado para {fecha_corte}."
                 )
 
+                st.stop()
 
-                # ------------------------------------------------
-                # NORMALIZAR NUMÉRICOS
-                # ------------------------------------------------
+            ahora = datetime.now(tz_gdl)
 
-                for columna in [
-                    "Ingreso_Semanal",
-                    "Gastos_Fijos",
-                    "Ahorro_Semanal",
-                    "Disponible"
-                ]:
+            semana = (
+                f"{ahora.year}-W"
+                f"{ahora.isocalendar().week:02d}"
+            )
 
-                    if columna in df_plan_actual.columns:
+            nuevo = pd.DataFrame([{
+                "Fecha_Corte": fecha_corte,
+                "Semana": semana,
+                "Ingreso_Semanal": INGRESO_SEMANAL,
+                "Gastos_Fijos": TOTAL_GASTOS_SEMANALES,
+                "Ahorro_Semanal": TOTAL_AHORRO_MENSUAL_SEM,
+                "Disponible": DISPONIBLE_SEMANAL,
+                "Usuario": current_user
+            }])
 
-                        df_plan_actual[
-                            columna
-                        ] = pd.to_numeric(
-                            df_plan_actual[
-                                columna
-                            ],
-                            errors="coerce"
-                        )
+            df_plan = pd.concat(
+                [df_plan, nuevo],
+                ignore_index=True
+            )
 
+            csv_plan = df_plan.to_csv(
+                index=False,
+                encoding="utf-8-sig"
+            )
 
-                # ------------------------------------------------
-                # CSV
-                # ------------------------------------------------
+            if sha_plan:
 
-                csv_plan = df_plan_actual.to_csv(
-                    index=False,
-                    encoding="utf-8-sig"
+                repo.update_file(
+                    path=PLAN_FILE_PATH,
+                    message=f"Registro corte semanal {fecha_corte}",
+                    content=csv_plan,
+                    sha=sha_plan,
+                    branch="main"
                 )
 
+            else:
 
-                # ------------------------------------------------
-                # ACTUALIZAR GITHUB
-                # ------------------------------------------------
-
-                if sha_plan:
-
-                    repo.update_file(
-                        PLAN_FILE_PATH,
-                        f"Registro corte semanal {fecha_corte}",
-                        csv_plan,
-                        sha_plan
-                    )
-
-                else:
-
-                    repo.create_file(
-                        PLAN_FILE_PATH,
-                        f"Creación plan financiero {fecha_corte}",
-                        csv_plan
-                    )
-
-
-                # ------------------------------------------------
-                # ACTUALIZAR SESIÓN
-                # ------------------------------------------------
-
-                st.session_state[
-                    "df_plan_semanal"
-                ] = df_plan_actual
-
-                st.session_state[
-                    "force_reload_plan"
-                ] = False
-
-
-                # ------------------------------------------------
-                # LIBERAR LOCK
-                # ------------------------------------------------
-
-                try:
-
-                    lock_actual = repo.get_contents(
-                        LOCK_FILE_PATH
-                    )
-
-                    repo.delete_file(
-                        path=LOCK_FILE_PATH,
-
-                        message=(
-                            f"UNLOCK PLAN // "
-                            f"{current_user}"
-                        ),
-
-                        sha=lock_actual.sha
-                    )
-
-                except:
-
-                    pass
-
-
-                st.success(
-                    f"Corte {semana} registrado "
-                    f"correctamente en GitHub."
+                repo.create_file(
+                    path=PLAN_FILE_PATH,
+                    message=f"Creación plan financiero {fecha_corte}",
+                    content=csv_plan,
+                    branch="main"
                 )
 
-                time.sleep(1)
+            st.session_state.df_plan_semanal = df_plan
+            st.session_state.force_reload_plan = False
 
-                st.rerun()
+            st.success(
+                f"Corte {semana} registrado correctamente."
+            )
 
+            time.sleep(.7)
+            st.rerun()
 
-            except Exception as e:
+        except Exception as e:
 
-                st.error(
-                    f"No fue posible guardar el corte "
-                    f"en GitHub: {e}"
-                )
+            st.error(
+                f"No fue posible guardar el corte: {e}"
+            )
 
+        finally:
+
+            if lock_creado:
+                liberar_lock()
 
     # ========================================================
-    # HISTORIAL DE CORTES
+    # HISTORIAL
     # ========================================================
 
     st.markdown(
@@ -2549,22 +1989,16 @@ with tab_plan:
             font-size:11px;
             font-weight:800;
             letter-spacing:1.5px;
-            text-transform:uppercase;
-            margin:25px 0 10px 0;
-        ">
+            margin:25px 0 10px 0;">
             HISTORIAL DE CORTES SEMANALES
         </div>
         """,
         unsafe_allow_html=True
     )
 
+    df_hist = get_plan_data_from_git()
 
-    df_hist_plan = get_plan_data_from_git(
-        force_reload=True
-    )
-
-
-    if df_hist_plan.empty:
+    if df_hist.empty:
 
         st.info(
             "Todavía no existen cortes registrados."
@@ -2572,113 +2006,56 @@ with tab_plan:
 
     else:
 
-        df_hist_plan = df_hist_plan.copy()
+        df_hist = df_hist.copy()
 
+        if "Fecha_Corte" in df_hist.columns:
 
-        if "Fecha_Corte" in df_hist_plan.columns:
-
-            df_hist_plan = df_hist_plan.sort_values(
+            df_hist = df_hist.sort_values(
                 "Fecha_Corte",
                 ascending=False
             )
 
-
-        columnas_mostrar = [
-
+        columnas = [
             "Fecha_Corte",
-
             "Semana",
-
             "Ingreso_Semanal",
-
             "Gastos_Fijos",
-
             "Ahorro_Semanal",
-
             "Disponible",
-
             "Usuario"
         ]
 
-
-        columnas_mostrar = [
-
-            c
-
-            for c in columnas_mostrar
-
-            if c in df_hist_plan.columns
-
+        columnas = [
+            c for c in columnas
+            if c in df_hist.columns
         ]
 
+        visual = df_hist[columnas].copy()
 
-        df_hist_plan_visual = (
-            df_hist_plan[
-                columnas_mostrar
-            ].copy()
-        )
-
-
-        for columna in [
-
+        monedas = [
             "Ingreso_Semanal",
-
             "Gastos_Fijos",
-
             "Ahorro_Semanal",
-
             "Disponible"
+        ]
 
-        ]:
+        for col in monedas:
 
-            if columna in df_hist_plan_visual.columns:
+            if col in visual.columns:
 
-                df_hist_plan_visual[
-                    columna
-                ] = pd.to_numeric(
-                    df_hist_plan_visual[
-                        columna
-                    ],
+                visual[col] = pd.to_numeric(
+                    visual[col],
                     errors="coerce"
                 )
 
+        formato = {
+            col: "${:,.2f}"
+            for col in monedas
+            if col in visual.columns
+        }
 
-        formato_monedas = {}
-
-
-        for columna in [
-
-            "Ingreso_Semanal",
-
-            "Gastos_Fijos",
-
-            "Ahorro_Semanal",
-
-            "Disponible"
-
-        ]:
-
-            if columna in df_hist_plan_visual.columns:
-
-                formato_monedas[
-                    columna
-                ] = "${:,.2f}"
-
-
-        if formato_monedas:
-
-            st.dataframe(
-                df_hist_plan_visual.style.format(
-                    formato_monedas
-                ),
-                use_container_width=True,
-                hide_index=True
-            )
-
-        else:
-
-            st.dataframe(
-                df_hist_plan_visual,
-                use_container_width=True,
-                hide_index=True
-            )
+        st.dataframe(
+            visual.style.format(formato),
+            use_container_width=True,
+            hide_index=True
+        )
