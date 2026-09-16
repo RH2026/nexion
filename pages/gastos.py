@@ -1,4 +1,3 @@
-```python
 import io
 import json
 import time
@@ -494,7 +493,6 @@ with tab_flujos:
 
         else:
             st.info("Sin movimientos este mes.")
-```python
 # ============================================================
 # TAB 3
 # ============================================================
