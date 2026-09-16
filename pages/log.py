@@ -287,7 +287,7 @@ div.stButton > button {{
 
 def login_screen():
 
-    _, col, _ = st.columns([2, 2, 2])
+    _, col, _ = st.columns([2, 1, 2])
 
     with col:
 
