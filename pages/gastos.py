@@ -93,7 +93,7 @@ def validar_acceso_privado():
     # --------------------------------------------------------
 
     st.markdown("""<div style="max-width:420px;margin:90px auto 30px auto;text-align:center;"><div style="font-size:34px;margin-bottom:18px;">🔐</div><div style="color:#FFFFFF;font-size:16px;font-weight:700;letter-spacing:2px;margin-bottom:8px;">ACCESO RESTRINGIDO</div><div style="color:#8B9BB4;font-size:11px;letter-spacing:1px;">AUTORIZACIÓN REQUERIDA</div></div>""", unsafe_allow_html=True)
-    )
+    
 
     clave_ingresada = st.text_input(
         "Código de autorización",
