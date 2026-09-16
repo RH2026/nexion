@@ -1,7 +1,11 @@
 import io
 import json
 import time
+import hashlib
+import hmac
+
 from datetime import datetime, timedelta
+
 from github import Github
 import pandas as pd
 import pytz
@@ -11,23 +15,192 @@ import plotly.express as px
 
 from components.layout import render_layout
 
-# ── 1. CONFIGURACIÓN Y PERMISOS ──
-tz_gdl = pytz.timezone('America/Mexico_City')
-hoy = datetime.now(tz_gdl)
 
 # ============================================================
 # 1. CONFIGURACIÓN DE PÁGINA
 # ============================================================
+
 st.set_page_config(
     page_title="JYPESA | Ahorros Personales",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
+
 # ============================================================
-# 2. LLAMADA AL LAYOUT MAESTRO
+# 2. CONFIGURACIÓN DE TIEMPO
 # ============================================================
-render_layout(modulo_actual="FINANZAS", submodulo_actual="GASTOS")
+
+tz_gdl = pytz.timezone("America/Mexico_City")
+hoy = datetime.now(tz_gdl)
+
+
+# ============================================================
+# 🔐 SEGURIDAD PRIVADA NEXION
+# ============================================================
+
+def validar_acceso_privado():
+
+    usuario = st.session_state.get(
+        "usuario_activo",
+        ""
+    )
+
+    # --------------------------------------------------------
+    # NADIE EXCEPTO RIGOBERTO PUEDE PASAR
+    # --------------------------------------------------------
+
+    if usuario.upper() != "RIGOBERTO":
+        st.error("ACCESO NO DISPONIBLE.")
+        st.stop()
+
+    # --------------------------------------------------------
+    # YA AUTORIZADO EN ESTA SESIÓN
+    # --------------------------------------------------------
+
+    if st.session_state.get(
+        "wallet_private_access",
+        False
+    ):
+        return True
+
+    # --------------------------------------------------------
+    # SECRET
+    # --------------------------------------------------------
+
+    hash_guardado = st.secrets.get(
+        "NEXION_PRIVATE_GATE_HASH",
+        ""
+    )
+
+    if not hash_guardado:
+        st.error("MÓDULO BLOQUEADO.")
+        st.stop()
+
+    # --------------------------------------------------------
+    # INTENTOS
+    # --------------------------------------------------------
+
+    if "wallet_gate_attempts" not in st.session_state:
+        st.session_state.wallet_gate_attempts = 0
+
+    if st.session_state.wallet_gate_attempts >= 5:
+        st.error("ACCESO BLOQUEADO.")
+        st.stop()
+
+    # --------------------------------------------------------
+    # PANTALLA PRIVADA
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div style="
+            max-width:420px;
+            margin:90px auto 30px auto;
+            text-align:center;
+        ">
+            <div style="
+                font-size:34px;
+                margin-bottom:18px;
+            ">🔐</div>
+
+            <div style="
+                color:#FFFFFF;
+                font-size:16px;
+                font-weight:700;
+                letter-spacing:2px;
+                margin-bottom:8px;
+            ">
+                ACCESO RESTRINGIDO
+            </div>
+
+            <div style="
+                color:#8B9BB4;
+                font-size:11px;
+                letter-spacing:1px;
+            ">
+                AUTORIZACIÓN REQUERIDA
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    clave_ingresada = st.text_input(
+        "Código de autorización",
+        type="password",
+        key="wallet_private_gate_input",
+        label_visibility="collapsed",
+        placeholder="Código de autorización"
+    )
+
+    verificar = st.button(
+        "AUTORIZAR ACCESO",
+        use_container_width=True,
+        key="wallet_private_gate_button"
+    )
+
+    if verificar:
+
+        if not clave_ingresada:
+            st.warning("Código requerido.")
+            st.stop()
+
+        hash_ingresado = hashlib.sha256(
+            clave_ingresada.encode("utf-8")
+        ).hexdigest()
+
+        if hmac.compare_digest(
+            hash_ingresado,
+            hash_guardado
+        ):
+
+            st.session_state.wallet_private_access = True
+            st.session_state.wallet_gate_attempts = 0
+
+            st.session_state.pop(
+                "wallet_private_gate_input",
+                None
+            )
+
+            st.rerun()
+
+        else:
+
+            st.session_state.wallet_gate_attempts += 1
+
+            restantes = max(
+                0,
+                5 - st.session_state.wallet_gate_attempts
+            )
+
+            if restantes > 0:
+                st.error(
+                    f"Código no válido. Intentos restantes: {restantes}"
+                )
+            else:
+                st.error("ACCESO BLOQUEADO.")
+
+            st.stop()
+
+    st.stop()
+
+
+# ============================================================
+# 🔐 ACTIVAR EL CANDADO
+# ============================================================
+
+validar_acceso_privado()
+
+
+# ============================================================
+# 3. LAYOUT
+# ============================================================
+
+render_layout(
+    modulo_actual="FINANZAS",
+    submodulo_actual="GASTOS"
+)
 
 # ==============================================================================
 # MOTOR DE DATOS (GITHUB O LOCAL FALLBACK)
