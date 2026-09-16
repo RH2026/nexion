@@ -46,83 +46,115 @@ def cargar_datos_dashboard():
 # 4. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS
 # ============================================================
 def render_envios_flow_responsive(data):
-    sorted_data = sorted(data, key=lambda x: str(x['factura']), reverse=True)
-    
-    html_items = []
+    sorted_data = sorted(data, key=lambda x: str(x.get("factura", "")), reverse=True)
+
+    if not sorted_data:
+        st.info("No existen registros para mostrar.")
+        return
+
+    html_table = '<div class="nx-table-wrap"><div class="nx-table-scroll"><table class="nx-table"><thead><tr>'
+
+    columnas = [
+        "FACTURA",
+        "RECOLECCIÓN",
+        "NO. GUÍA",
+        "F. PROGRAMACIÓN",
+        "CLIENTE",
+        "DESTINO",
+        "FECHA ENVÍO",
+        "ESTATUS"
+    ]
+
+    for col in columnas:
+        html_table += f"<th>{col}</th>"
+
+    html_table += "</tr></thead><tbody>"
+
     for item in sorted_data:
-        est = str(item['estatus'])
-        if est in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA"] or est == "ENVIADA":
-            color_estatus = "bg-emerald-500"
-            color_txt_estatus = "text-emerald-400"
+        est = str(item.get("estatus", "")).strip().upper()
+
+        if est in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA", "ENVIADA"]:
+            status_class = "nx-income"
         elif "RETRASO" in est:
-            color_estatus = "bg-red-500"
-            color_txt_estatus = "text-red-400"
+            status_class = "nx-expense"
         else:
-            color_estatus = "bg-amber-500"
-            color_txt_estatus = "text-amber-400"
+            status_class = "nx-fixed"
 
-        guia_val = str(item['numero_guia']) if item['numero_guia'] else 'PENDIENTE'
-        cliente_val = str(item['nombre_extran'] if str(item['nombre_extran']).strip() else item['nombre_cliente'])
-        fecha_envio_val = str(item['fecha_envio'] if item['fecha_envio'] and str(item['fecha_envio']) != 'nan' else 'SIN ENVIAR')
-        factura_val = str(item['factura'])
-        reco_val = str(item['recomendacion'])
-        fprog_val = str(item['fecha_programacion'] if item['fecha_programacion'] else 'N/A')
-        destino_val = str(item['destino'])
+        guia_val = str(item.get("numero_guia", "")).strip() if item.get("numero_guia") else "PENDIENTE"
+        if guia_val.lower() in ["", "nan", "none", "0", "0.0"]:
+            guia_val = "PENDIENTE"
 
-        row_html = (
-            f"{chr(60)}div class=\"list-row flex items-stretch\"{chr(62)}"
-            f"{chr(60)}div class=\"w-2 shrink-0 {color_estatus}\"{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"table-scroll-container\"{chr(62)}"
-            f"{chr(60)}div class=\"grid-envios flex-1\"{chr(62)}"
-            f"{chr(60)}div{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Factura{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"text-xs font-black text-white italic tracking-tighter\"{chr(62)}{factura_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Recolección{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"text-[10px] text-sky-400 font-bold uppercase truncate\"{chr(62)}{reco_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}No. Guía{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"text-[10px] font-mono font-bold text-amber-300 truncate\"{chr(62)}{guia_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}F. Programación{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"text-[10px] font-bold text-slate-300 truncate\"{chr(62)}{fprog_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"min-w-0\"{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Cliente{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"text-[11px] font-semibold text-sky-200 truncate\"{chr(62)}{cliente_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"border-l border-white/5 pl-2\"{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Destino{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"text-[10px] font-bold text-white truncate\"{chr(62)}{destino_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"border-l border-white/5 pl-2\"{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Fecha Envío{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"text-[10px] font-bold text-sky-400\"{chr(62)}{fecha_envio_val}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"border-l border-white/5 pl-2\"{chr(62)}{chr(60)}div class=\"label-mini\"{chr(62)}Estatus{chr(60)}/div{chr(62)}"
-            f"{chr(60)}div class=\"text-[9px] font-black uppercase {color_txt_estatus} tracking-tighter\"{chr(62)}{est}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
-            f"{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}"
+        cliente_val = str(
+            item.get("nombre_extran")
+            if str(item.get("nombre_extran", "")).strip()
+            else item.get("nombre_cliente", "")
         )
-        html_items.append(row_html)
 
-    rows_joined = "".join(html_items)
-    html_content = (
-        f"{chr(60)}!DOCTYPE html{chr(62)}"
-        f"{chr(60)}html lang=\"es\"{chr(62)}"
-        f"{chr(60)}head{chr(62)}"
-        f"{chr(60)}meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"{chr(62)}"
-        f"{chr(60)}script src=\"https://cdn.tailwindcss.com\"{chr(62)}{chr(60)}/script{chr(62)}"
-        f"{chr(60)}link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap\" rel=\"stylesheet\"{chr(62)}"
-        f"{chr(60)}style{chr(62)}"
-        "body { font-family: 'Inter', sans-serif; background-color: #384A52; color: #e2e8f0; margin: 0; padding: 5px; width: 100%; }"
-        "::-webkit-scrollbar { width: 8px; height: 8px; }"
-        "::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }"
-        "::-webkit-scrollbar-thumb { background: #3498db; border-radius: 10px; border: 2px solid #384A52; }"
-        "::-webkit-scrollbar-thumb:hover { background: #2ecc71; }"
-        ".list-row { background-color: #263238; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s ease; margin-bottom: 6px; border-radius: 8px; overflow: hidden; width: 100%; }"
-        ".list-row:hover { background-color: #2c3b42; border-color: rgba(56, 189, 248, 0.3); }"
-        ".label-mini { font-size: 8px; text-transform: uppercase; font-weight: 800; color: #BFBFBF; letter-spacing: 0.5px; margin-bottom: 2px; }"
-        ".table-scroll-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }"
-        ".grid-envios { display: grid; grid-template-columns: 70px 160px 140px 140px minmax(140px, 1fr) 160px 140px 140px; gap: 10px; align-items: center; min-width: 860px; padding: 10px 14px; }"
-        f"{chr(60)}/style{chr(62)}"
-        f"{chr(60)}/head{chr(62)}"
-        f"{chr(60)}body{chr(62)}"
-        f"{chr(60)}div class=\"w-full space-y-1\"{chr(62)}"
-        f"{rows_joined}"
-        f"{chr(60)}/div{chr(62)}"
-        f"{chr(60)}/body{chr(62)}"
-        f"{chr(60)}/html{chr(62)}"
+        fecha_envio_val = str(
+            item.get("fecha_envio")
+            if item.get("fecha_envio") and str(item.get("fecha_envio")) != "nan"
+            else "SIN ENVIAR"
+        )
+
+        factura_val = str(item.get("factura", ""))
+        reco_val = str(item.get("recomendacion", ""))
+        fprog_val = str(item.get("fecha_programacion") if item.get("fecha_programacion") else "N/A")
+        destino_val = str(item.get("destino", ""))
+
+        html_table += "<tr>"
+
+        html_table += f'<td class="nx-factura">{factura_val}</td>'
+
+        html_table += f'<td class="nx-cyan">{reco_val}</td>'
+
+        html_table += f'<td class="nx-guide">{guia_val}</td>'
+
+        html_table += f'<td class="nx-soft">{fprog_val}</td>'
+
+        html_table += f'<td class="nx-client">{cliente_val}</td>'
+
+        html_table += f'<td>{destino_val}</td>'
+
+        html_table += f'<td class="nx-cyan">{fecha_envio_val}</td>'
+
+        html_table += f'<td><span class="nx-badge {status_class}"><span class="nx-dot"></span>{est}</span></td>'
+
+        html_table += "</tr>"
+
+    html_table += "</tbody></table></div></div>"
+
+    st.markdown(
+        f"""
+        <style>
+        .nx-table-wrap{{width:100%;background:#202B33;border:1px solid #34495E;border-radius:8px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.18);}}
+        .nx-table-scroll{{width:100%;max-height:620px;overflow:auto;scrollbar-width:thin;scrollbar-color:#40525D #182229;}}
+        .nx-table-scroll::-webkit-scrollbar{{width:7px;height:7px;}}
+        .nx-table-scroll::-webkit-scrollbar-track{{background:#182229;}}
+        .nx-table-scroll::-webkit-scrollbar-thumb{{background:#40525D;border-radius:8px;}}
+        .nx-table-scroll::-webkit-scrollbar-thumb:hover{{background:#00A3A3;}}
+        .nx-table{{width:100%;min-width:1180px;border-collapse:separate;border-spacing:0;font-family:Inter,Arial,sans-serif;font-size:11px;color:#E8EEF2;}}
+        .nx-table thead{{position:sticky;top:0;z-index:20;}}
+        .nx-table th{{background:#182229;color:#8B9BB4;text-align:left;font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:12px 13px;border-bottom:1px solid #34495E;white-space:nowrap;position:sticky;top:0;z-index:21;}}
+        .nx-table td{{padding:11px 13px;border-bottom:1px solid rgba(52,73,94,.55);white-space:nowrap;vertical-align:middle;}}
+        .nx-table tbody tr{{background:#202B33;transition:background .15s ease,box-shadow .15s ease;}}
+        .nx-table tbody tr:nth-child(even){{background:#1E2930;}}
+        .nx-table tbody tr:hover{{background:#263740;box-shadow:inset 3px 0 0 #00FFAA;}}
+        .nx-table tbody tr:last-child td{{border-bottom:none;}}
+        .nx-table td:first-child{{color:#E8EEF2;font-weight:800;}}
+        .nx-cyan{{color:#00D4FF!important;font-weight:700!important;}}
+        .nx-guide{{color:#FFD166!important;font-family:monospace!important;font-weight:800!important;}}
+        .nx-soft{{color:#B9C5CD!important;}}
+        .nx-client{{color:#D9E8EE!important;font-weight:600!important;max-width:280px;overflow:hidden;text-overflow:ellipsis;}}
+        .nx-badge{{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:68px;padding:4px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:.6px;background:#2B343B;border:1px solid #465762;white-space:nowrap;}}
+        .nx-income{{color:#00FFAA!important;background:rgba(0,255,170,.08)!important;border-color:rgba(0,255,170,.28)!important;}}
+        .nx-expense{{color:#FF6B6B!important;background:rgba(255,75,75,.08)!important;border-color:rgba(255,75,75,.28)!important;}}
+        .nx-fixed{{color:#FFD166!important;background:rgba(255,209,102,.08)!important;border-color:rgba(255,209,102,.25)!important;}}
+        .nx-dot{{width:5px;height:5px;border-radius:50%;display:inline-block;background:currentColor;box-shadow:0 0 6px currentColor;}}
+        </style>
+        {html_table}
+        """,
+        unsafe_allow_html=True
     )
-    return components.html(html_content, height=800, scrolling=True)
 
 
 def main():    
