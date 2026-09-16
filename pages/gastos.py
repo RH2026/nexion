@@ -1192,7 +1192,7 @@ with tab_plan:
     # ========================================================
 
     st.markdown(
-        "<div style='color:#00FFAA;font-size:11px;font-weight:800;letter-spacing:1.5px;margin:18px 0 10px 0;'>CALENDARIO DE PAGOS MENSUALES</div>",
+        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;letter-spacing:1.5px;margin:18px 0 10px 0;'>CALENDARIO DE PAGOS MENSUALES</div>",
         unsafe_allow_html=True
     )
 
@@ -1245,7 +1245,7 @@ with tab_plan:
     # ========================================================
 
     st.markdown(
-        "<div style='color:#00FFAA;font-size:11px;font-weight:800;letter-spacing:1.5px;margin:22px 0 10px 0;'>DISTRIBUCIÓN DEL VIERNES DE PAGO</div>",
+        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;letter-spacing:1.5px;margin:22px 0 10px 0;'>DISTRIBUCIÓN DEL VIERNES DE PAGO</div>",
         unsafe_allow_html=True
     )
 
@@ -1503,7 +1503,7 @@ with tab_plan:
     # ========================================================
 
     st.markdown(
-        "<div style='color:#00FFAA;font-size:11px;font-weight:800;letter-spacing:1.5px;margin:25px 0 10px 0;'>HISTORIAL DE CORTES SEMANALES</div>",
+        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;letter-spacing:1.5px;margin:25px 0 10px 0;'>HISTORIAL DE CORTES SEMANALES</div>",
         unsafe_allow_html=True
     )
 
