@@ -1,11 +1,11 @@
 import io
+import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from github import Github
 import pandas as pd
 import pytz
 import streamlit as st
-from datetime import datetime, timedelta
 
 from components.layout import render_layout
 
@@ -27,13 +27,35 @@ st.set_page_config(
 # ============================================================
 render_layout(modulo_actual="FINANZAS", submodulo_actual="GASTOS")
 
-
+# ==============================================================================
+# MOTOR DE DATOS (GITHUB O LOCAL FALLBACK)
+# ==============================================================================
 def get_wallet_data_from_git():
-    # Define start_date aquí mismo si no depende de un input externo
-    start_date = datetime.now()  # o la fecha que corresponda a tu lógica
-    
-    # Tu diccionario o código donde usas start_date
-    {"Fecha": (start_date - timedelta(days=10)).strftime("%Y-%m-%d %H:%M"), ...}
+    if 'df_wallet' not in st.session_state or st.session_state.get('force_reload', False):
+        start_date = datetime.now(tz_gdl)
+        ejemplos = [
+            {"Fecha": (start_date - timedelta(days=10)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Nómina", "Concepto": "Pago Quincena 1 JYPESA", "Monto": 35000.0, "Cuenta": "Caja Jypesa"},
+            {"Fecha": (start_date - timedelta(days=8)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Renta", "Concepto": "Renta Oficinas", "Monto": -18000.0, "Cuenta": "Santander"},
+            {"Fecha": (start_date - timedelta(days=5)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Ingreso", "Categoria": "Freelance / Proyectos", "Concepto": "Proyecto Xenocode UI", "Monto": 15000.0, "Cuenta": "Scottiabank"},
+            {"Fecha": (start_date - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"), "Tipo": "Gasto", "Categoria": "Supermercado", "Concepto": "Compras Semanales", "Monto": -3500.0, "Cuenta": "Cartera"},
+        ]
+        df_load = pd.DataFrame(ejemplos)
+
+        if TOKEN:
+            try:
+                repo = Github(TOKEN).get_repo(REPO_NAME)
+                try:
+                    df_load = pd.read_csv(io.StringIO(repo.get_contents(FILE_PATH, ref="main").decoded_content.decode('utf-8')), keep_default_na=False)
+                except:
+                    repo.create_file(path=FILE_PATH, message="INITIALIZE WALLET MATRIX", content=df_load.to_csv(index=False), branch="main")
+            except Exception as e:
+                st.error(f"Error conexión GitHub: {e}. Usando datos locales.")
+
+        df_load['Fecha'] = pd.to_datetime(df_load['Fecha'])
+        st.session_state.df_wallet = df_load
+        st.session_state.force_reload = False
+        
+    return st.session_state.df_wallet
 
 
 # ==============================================================================
