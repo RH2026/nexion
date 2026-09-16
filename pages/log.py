@@ -55,6 +55,7 @@ DESTINOS_VALIDOS = {
     "analisis_mensual" : "pages/analisis_mensual.py",
     "cotizaciones" : "pages/cotizaciones.py",
     "alertas" : "pages/alertas.py",
+    "gastos" : "pages/gastos.py",
 }
 
 
