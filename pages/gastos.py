@@ -643,10 +643,7 @@ with tab_kpi:
             orientation="h",
             marker=dict(
                 color=colores,
-                line=dict(
-                    color="#1D2A35",
-                    width=2
-                )
+                line=dict(width=0)            
             ),
             text=valores,
             texttemplate="%{text:$,.2f}",
