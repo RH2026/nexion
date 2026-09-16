@@ -632,6 +632,10 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 st.session_state.menu_main = "FINANZAS"
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
+
+                                if s == "GASTOS":
+                                    st.switch_page("pages/gastos.py")
+                                
                                 st.rerun()
 
                 if permisos.get("ENFOQUE", False):
