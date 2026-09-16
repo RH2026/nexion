@@ -1128,7 +1128,6 @@ with tab_registro:
 
         render_tabla_premium(tabla, moneda_cols=["Monto"], max_height=430)
 
-
 # ============================================================
 # TAB 4 · PLAN SEMANAL
 # ============================================================
@@ -1182,11 +1181,11 @@ with tab_plan:
     dias_internet = (FECHA_INTERNET - hoy_sin_tz).days
     dias_prestamo = (FECHA_PRESTAMO - hoy_sin_tz).days
 
-    # Próximo viernes de apartado
-    dias_hasta_viernes = (4 - hoy_sin_tz.weekday()) % 7
+    # ========================================================
+    # PRÓXIMO VIERNES
+    # ========================================================
 
-    if dias_hasta_viernes == 0 and hoy_sin_tz.weekday() == 4:
-        dias_hasta_viernes = 0
+    dias_hasta_viernes = (4 - hoy_sin_tz.weekday()) % 7
 
     fecha_proximo_apartado = (
         hoy_sin_tz + timedelta(days=dias_hasta_viernes)
@@ -1210,7 +1209,7 @@ with tab_plan:
     )
 
     # ========================================================
-    # FONDO DE PAGOS · BLOQUE PRINCIPAL
+    # FONDO DE PAGOS
     # ========================================================
 
     color_progreso = "#00FFAA" if progreso >= 75 else "#00E5FF"
@@ -1223,21 +1222,13 @@ with tab_plan:
         "<div style='display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:16px;'>"
 
         "<div>"
-        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;'>"
-        "FONDO DE PAGOS"
-        "</div>"
-        "<div style='color:#8B9BB4;font-size:9px;font-weight:700;letter-spacing:1.3px;margin-top:4px;'>"
-        "SEPTIEMBRE 2026 · META MENSUAL"
-        "</div>"
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;'>FONDO DE PAGOS</div>"
+        "<div style='color:#8B9BB4;font-size:9px;font-weight:700;letter-spacing:1.3px;margin-top:4px;'>SEPTIEMBRE 2026 · META MENSUAL</div>"
         "</div>"
 
         "<div style='text-align:right;'>"
-        f"<div style='color:{color_progreso};font-size:24px;font-weight:900;line-height:1;'>"
-        f"{progreso:.0f}%"
-        "</div>"
-        "<div style='color:#70808B;font-size:8px;font-weight:700;letter-spacing:1px;margin-top:4px;'>"
-        "COBERTURA"
-        "</div>"
+        f"<div style='color:{color_progreso};font-size:24px;font-weight:900;line-height:1;'>{progreso:.0f}%</div>"
+        "<div style='color:#70808B;font-size:8px;font-weight:700;letter-spacing:1px;margin-top:4px;'>COBERTURA</div>"
         "</div>"
 
         "</div>"
@@ -1245,72 +1236,47 @@ with tab_plan:
         "<div style='display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:10px;'>"
 
         "<div>"
-        "<div style='color:#FFFFFF;font-size:28px;font-weight:900;line-height:1;'>"
-        f"${APARTADO_ACUMULADO:,.0f}"
-        "</div>"
-        "<div style='color:#70808B;font-size:9px;font-weight:700;letter-spacing:1px;margin-top:6px;'>"
-        f"DE ${META_PAGOS_MES:,.0f} PROGRAMADOS"
-        "</div>"
+        f"<div style='color:#FFFFFF;font-size:28px;font-weight:900;line-height:1;'>${APARTADO_ACUMULADO:,.0f}</div>"
+        f"<div style='color:#70808B;font-size:9px;font-weight:700;letter-spacing:1px;margin-top:6px;'>DE ${META_PAGOS_MES:,.0f} PROGRAMADOS</div>"
         "</div>"
 
         "<div style='text-align:right;'>"
-        "<div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1px;'>"
-        "FALTA"
-        "</div>"
-        f"<div style='color:#FFD166;font-size:17px;font-weight:900;margin-top:3px;'>"
-        f"${FALTA_META:,.0f}"
-        "</div>"
+        "<div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1px;'>FALTA</div>"
+        f"<div style='color:#FFD166;font-size:17px;font-weight:900;margin-top:3px;'>${FALTA_META:,.0f}</div>"
         "</div>"
 
         "</div>"
 
-        f"<div style='height:8px;background:#111A20;border-radius:8px;overflow:hidden;border:1px solid #2F404A;'>"
+        "<div style='height:8px;background:#111A20;border-radius:8px;overflow:hidden;border:1px solid #2F404A;'>"
         f"<div style='width:{progreso:.2f}%;height:100%;background:linear-gradient(90deg,#00A3A3,{color_progreso});border-radius:8px;box-shadow:0 0 12px rgba(0,255,170,.22);'></div>"
         "</div>"
 
         "<div style='display:flex;justify-content:space-between;align-items:center;margin-top:17px;padding-top:15px;border-top:1px solid rgba(52,73,94,.45);'>"
 
         "<div>"
-        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>"
-        "PRÓXIMO APARTADO"
-        "</div>"
-        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;margin-top:4px;'>"
-        f"{proximo_viernes} · ${TOTAL_AHORRO_MENSUAL_SEM:,.0f}"
-        "</div>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>PRÓXIMO APARTADO</div>"
+        f"<div style='color:#FFFFFF;font-size:13px;font-weight:800;margin-top:4px;'>{proximo_viernes} · ${TOTAL_AHORRO_MENSUAL_SEM:,.0f}</div>"
         "</div>"
 
         "<div style='display:flex;gap:22px;align-items:center;'>"
 
         "<div style='text-align:right;'>"
-        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>"
-        "TV"
-        "</div>"
-        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;margin-top:3px;'>"
-        f"{FECHA_TV.strftime('%d %b').upper()} · ${PAGO_TV:,.0f}"
-        "</div>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>TV</div>"
+        f"<div style='color:#FFFFFF;font-size:11px;font-weight:800;margin-top:3px;'>{FECHA_TV.strftime('%d %b').upper()} · ${PAGO_TV:,.0f}</div>"
         "</div>"
 
         "<div style='text-align:right;'>"
-        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>"
-        "INTERNET"
-        "</div>"
-        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;margin-top:3px;'>"
-        f"{FECHA_INTERNET.strftime('%d %b').upper()} · ${PAGO_INTERNET:,.0f}"
-        "</div>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>INTERNET</div>"
+        f"<div style='color:#FFFFFF;font-size:11px;font-weight:800;margin-top:3px;'>{FECHA_INTERNET.strftime('%d %b').upper()} · ${PAGO_INTERNET:,.0f}</div>"
         "</div>"
 
         "<div style='text-align:right;'>"
-        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>"
-        "PRÉSTAMO"
-        "</div>"
-        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;margin-top:3px;'>"
-        f"{FECHA_PRESTAMO.strftime('%d %b').upper()} · ${PAGO_PRESTAMO:,.0f}"
-        "</div>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>PRÉSTAMO</div>"
+        f"<div style='color:#FFFFFF;font-size:11px;font-weight:800;margin-top:3px;'>{FECHA_PRESTAMO.strftime('%d %b').upper()} · ${PAGO_PRESTAMO:,.0f}</div>"
         "</div>"
 
         "</div>"
         "</div>"
-
         "</div>"
     )
 
@@ -1321,9 +1287,7 @@ with tab_plan:
     # ========================================================
 
     st.markdown(
-        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>"
-        "DISTRIBUCIÓN DEL VIERNES DE PAGO"
-        "</div>",
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>DISTRIBUCIÓN DEL VIERNES DE PAGO</div>",
         unsafe_allow_html=True
     )
 
@@ -1334,30 +1298,22 @@ with tab_plan:
 
         "<div style='background:#202B33;border:1px solid #34495E;border-radius:7px;padding:13px 15px;'>"
         "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>INGRESO</div>"
-        "<div style='color:#FFFFFF;font-size:18px;font-weight:900;margin-top:5px;'>"
-        f"${INGRESO_SEMANAL:,.0f}"
-        "</div>"
+        f"<div style='color:#FFFFFF;font-size:18px;font-weight:900;margin-top:5px;'>${INGRESO_SEMANAL:,.0f}</div>"
         "</div>"
 
         "<div style='background:#202B33;border:1px solid #34495E;border-radius:7px;padding:13px 15px;'>"
         "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>GASTOS</div>"
-        "<div style='color:#FF6B6B;font-size:18px;font-weight:900;margin-top:5px;'>"
-        f"${TOTAL_GASTOS_SEMANALES:,.0f}"
-        "</div>"
+        f"<div style='color:#FF6B6B;font-size:18px;font-weight:900;margin-top:5px;'>${TOTAL_GASTOS_SEMANALES:,.0f}</div>"
         "</div>"
 
         "<div style='background:#202B33;border:1px solid #34495E;border-radius:7px;padding:13px 15px;'>"
         "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>APARTADO</div>"
-        "<div style='color:#00E5FF;font-size:18px;font-weight:900;margin-top:5px;'>"
-        f"${TOTAL_AHORRO_MENSUAL_SEM:,.0f}"
-        "</div>"
+        f"<div style='color:#00E5FF;font-size:18px;font-weight:900;margin-top:5px;'>${TOTAL_AHORRO_MENSUAL_SEM:,.0f}</div>"
         "</div>"
 
         "<div style='background:#202B33;border:1px solid #34495E;border-radius:7px;padding:13px 15px;'>"
         "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>DISPONIBLE</div>"
-        f"<div style='color:{disponible_color};font-size:18px;font-weight:900;margin-top:5px;'>"
-        f"${DISPONIBLE_SEMANAL:,.0f}"
-        "</div>"
+        f"<div style='color:{disponible_color};font-size:18px;font-weight:900;margin-top:5px;'>${DISPONIBLE_SEMANAL:,.0f}</div>"
         "</div>"
 
         "</div>"
@@ -1366,7 +1322,7 @@ with tab_plan:
     st.markdown(distribucion_html, unsafe_allow_html=True)
 
     # ========================================================
-    # TABLA DE DISTRIBUCIÓN
+    # TABLA DISTRIBUCIÓN
     # ========================================================
 
     df_distribucion = pd.DataFrame(
@@ -1399,9 +1355,7 @@ with tab_plan:
     # ========================================================
 
     st.markdown(
-        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>"
-        "CALENDARIO DE PAGOS MENSUALES"
-        "</div>",
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>CALENDARIO DE PAGOS MENSUALES</div>",
         unsafe_allow_html=True
     )
 
@@ -1415,35 +1369,11 @@ with tab_plan:
 
     calendario_pagos = pd.DataFrame(
         [
-            [
-                "TV",
-                FECHA_TV.strftime("%d/%m/%Y"),
-                PAGO_TV,
-                dias_tv,
-                estado_pago(FECHA_TV),
-            ],
-            [
-                "Internet",
-                FECHA_INTERNET.strftime("%d/%m/%Y"),
-                PAGO_INTERNET,
-                dias_internet,
-                estado_pago(FECHA_INTERNET),
-            ],
-            [
-                "Préstamo",
-                FECHA_PRESTAMO.strftime("%d/%m/%Y"),
-                PAGO_PRESTAMO,
-                dias_prestamo,
-                estado_pago(FECHA_PRESTAMO),
-            ],
+            ["TV", FECHA_TV.strftime("%d/%m/%Y"), PAGO_TV, dias_tv, estado_pago(FECHA_TV)],
+            ["Internet", FECHA_INTERNET.strftime("%d/%m/%Y"), PAGO_INTERNET, dias_internet, estado_pago(FECHA_INTERNET)],
+            ["Préstamo", FECHA_PRESTAMO.strftime("%d/%m/%Y"), PAGO_PRESTAMO, dias_prestamo, estado_pago(FECHA_PRESTAMO)],
         ],
-        columns=[
-            "Concepto",
-            "Fecha",
-            "Monto",
-            "Días",
-            "Estado",
-        ]
+        columns=["Concepto", "Fecha", "Monto", "Días", "Estado"]
     )
 
     render_tabla_premium(
@@ -1453,7 +1383,7 @@ with tab_plan:
     )
 
     # ========================================================
-    # RESUMEN DEL PLAN
+    # REGISTRAR CORTE SEMANAL
     # ========================================================
 
     st.markdown(
@@ -1462,42 +1392,7 @@ with tab_plan:
     )
 
     st.markdown(
-        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>"
-        "RESUMEN DEL PLAN"
-        "</div>",
-        unsafe_allow_html=True
-    )
-
-    resumen_plan = pd.DataFrame(
-        [
-            ["Ingreso semanal", INGRESO_SEMANAL],
-            ["Gastos semanales", TOTAL_GASTOS_SEMANALES],
-            ["Apartado semanal", TOTAL_AHORRO_MENSUAL_SEM],
-            ["Total comprometido", TOTAL_APARTADO_SEMANAL],
-            ["Disponible semanal", DISPONIBLE_SEMANAL],
-        ],
-        columns=["Concepto", "Monto"]
-    )
-
-    render_tabla_premium(
-        resumen_plan,
-        moneda_cols=["Monto"],
-        max_height=240
-    )
-
-    # ========================================================
-    # REGISTRO DE CORTE
-    # ========================================================
-
-    st.markdown(
-        "<div style='height:26px;border-top:1px solid rgba(52,73,94,.35);margin-top:6px;'></div>",
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>"
-        "REGISTRO DE CORTE SEMANAL"
-        "</div>",
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>REGISTRO DE CORTE SEMANAL</div>",
         unsafe_allow_html=True
     )
 
@@ -1536,6 +1431,183 @@ with tab_plan:
     )
 
     # ========================================================
+    # BOTÓN REGISTRAR CORTE
+    # ========================================================
+
+    st.markdown(
+        "<div style='height:8px'></div>",
+        unsafe_allow_html=True
+    )
+
+    if puede_editar:
+
+        if st.button(
+            "REGISTRAR CORTE SEMANAL",
+            key="btn_registrar_corte_semanal",
+            use_container_width=True
+        ):
+
+            try:
+
+                if TOKEN:
+
+                    github = Github(TOKEN)
+                    repo = github.get_repo(REPO_NAME)
+
+                    try:
+                        archivo_plan = repo.get_contents(PLAN_FILE_PATH)
+
+                        contenido_actual = archivo_plan.decoded_content.decode(
+                            "utf-8"
+                        )
+
+                        try:
+                            df_plan_existente = pd.read_csv(
+                                io.StringIO(contenido_actual)
+                            )
+                        except Exception:
+                            df_plan_existente = pd.DataFrame()
+
+                    except Exception:
+                        archivo_plan = None
+                        df_plan_existente = pd.DataFrame()
+
+                    nuevo_corte = pd.DataFrame(
+                        [
+                            {
+                                "Fecha": fecha_corte,
+                                "Semana": viernes_transcurridos,
+                                "Ingreso": INGRESO_SEMANAL,
+                                "Gastos": TOTAL_GASTOS_SEMANALES,
+                                "Apartado": TOTAL_AHORRO_MENSUAL_SEM,
+                                "Disponible": DISPONIBLE_SEMANAL,
+                            }
+                        ]
+                    )
+
+                    if not df_plan_existente.empty:
+
+                        columnas_plan = [
+                            "Fecha",
+                            "Semana",
+                            "Ingreso",
+                            "Gastos",
+                            "Apartado",
+                            "Disponible",
+                        ]
+
+                        for columna in columnas_plan:
+                            if columna not in df_plan_existente.columns:
+                                df_plan_existente[columna] = None
+
+                        df_plan_existente = df_plan_existente[
+                            columnas_plan
+                        ]
+
+                        existe_corte = (
+                            df_plan_existente["Fecha"]
+                            .astype(str)
+                            .eq(fecha_corte)
+                            & df_plan_existente["Semana"]
+                            .astype(str)
+                            .eq(str(viernes_transcurridos))
+                        ).any()
+
+                        if existe_corte:
+
+                            st.warning(
+                                "El corte de esta semana ya se encuentra registrado."
+                            )
+
+                        else:
+
+                            df_plan_final = pd.concat(
+                                [
+                                    df_plan_existente,
+                                    nuevo_corte
+                                ],
+                                ignore_index=True
+                            )
+
+                            contenido_nuevo = df_plan_final.to_csv(
+                                index=False
+                            )
+
+                            if archivo_plan:
+
+                                repo.update_file(
+                                    archivo_plan.path,
+                                    f"Registro corte semanal {fecha_corte}",
+                                    contenido_nuevo,
+                                    archivo_plan.sha
+                                )
+
+                            else:
+
+                                repo.create_file(
+                                    PLAN_FILE_PATH,
+                                    f"Creación plan semanal {fecha_corte}",
+                                    contenido_nuevo
+                                )
+
+                            st.success(
+                                "Corte semanal registrado correctamente."
+                            )
+
+                            time.sleep(1)
+
+                            st.rerun()
+
+                    else:
+
+                        contenido_nuevo = nuevo_corte.to_csv(
+                            index=False
+                        )
+
+                        if archivo_plan:
+
+                            repo.update_file(
+                                archivo_plan.path,
+                                f"Registro corte semanal {fecha_corte}",
+                                contenido_nuevo,
+                                archivo_plan.sha
+                            )
+
+                        else:
+
+                            repo.create_file(
+                                PLAN_FILE_PATH,
+                                f"Creación plan semanal {fecha_corte}",
+                                contenido_nuevo
+                            )
+
+                        st.success(
+                            "Corte semanal registrado correctamente."
+                        )
+
+                        time.sleep(1)
+
+                        st.rerun()
+
+                else:
+
+                    st.error(
+                        "No se encontró GITHUB_TOKEN en los secrets."
+                    )
+
+            except Exception as e:
+
+                st.error(
+                    f"No fue posible registrar el corte: {e}"
+                )
+
+    else:
+
+        st.info(
+            "Solo RIGOBERTO puede registrar cortes semanales."
+        )
+
+    # ========================================================
     # HISTORIAL DE CORTES SEMANALES
     # ========================================================
 
@@ -1545,40 +1617,37 @@ with tab_plan:
     )
 
     st.markdown(
-        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>"
-        "HISTORIAL DE CORTES SEMANALES"
-        "</div>",
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>HISTORIAL DE CORTES SEMANALES</div>",
         unsafe_allow_html=True
     )
 
-    historial_cortes = pd.DataFrame(
-        [
-            [
-                "Semana actual",
-                fecha_corte,
-                INGRESO_SEMANAL,
-                TOTAL_GASTOS_SEMANALES,
-                TOTAL_AHORRO_MENSUAL_SEM,
-                DISPONIBLE_SEMANAL,
-            ]
-        ],
-        columns=[
-            "Periodo",
-            "Fecha",
-            "Ingreso",
-            "Gastos",
-            "Apartado",
-            "Disponible",
-        ]
-    )
+    try:
 
-    render_tabla_premium(
-        historial_cortes,
-        moneda_cols=[
-            "Ingreso",
-            "Gastos",
-            "Apartado",
-            "Disponible",
-        ],
-        max_height=240
-    )
+        df_historial_plan = get_plan_data_from_git(
+            force_reload=True
+        )
+
+        if df_historial_plan is not None and not df_historial_plan.empty:
+
+            render_tabla_premium(
+                df_historial_plan,
+                moneda_cols=[
+                    "Ingreso",
+                    "Gastos",
+                    "Apartado",
+                    "Disponible",
+                ],
+                max_height=300
+            )
+
+        else:
+
+            st.info(
+                "Todavía no existen cortes semanales registrados."
+            )
+
+    except Exception as e:
+
+        st.warning(
+            f"No fue posible cargar el historial de cortes: {e}"
+        )
