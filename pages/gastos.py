@@ -5,6 +5,8 @@ from github import Github
 import pandas as pd
 import pytz
 import streamlit as st
+from datetime import datetime, timedelta
+
 from components.layout import render_layout
 
 # ── 1. CONFIGURACIÓN Y PERMISOS ──
@@ -24,6 +26,15 @@ st.set_page_config(
 # 2. LLAMADA AL LAYOUT MAESTRO
 # ============================================================
 render_layout(modulo_actual="FINANZAS", submodulo_actual="GASTOS")
+
+
+def get_wallet_data_from_git():
+    # Define start_date aquí mismo si no depende de un input externo
+    start_date = datetime.now()  # o la fecha que corresponda a tu lógica
+    
+    # Tu diccionario o código donde usas start_date
+    {"Fecha": (start_date - timedelta(days=10)).strftime("%Y-%m-%d %H:%M"), ...}
+
 
 # ==============================================================================
 # 1. CONFIGURACIÓN DE DATOS Y GITHUB PARA WALLET
