@@ -36,6 +36,16 @@ hoy = datetime.now(tz_gdl)
 
 
 # ============================================================
+# 3. LAYOUT
+# ============================================================
+
+render_layout(
+    modulo_actual="FINANZAS",
+    submodulo_actual="GASTOS"
+)
+
+
+# ============================================================
 # 🔐 SEGURIDAD PRIVADA NEXION
 # ============================================================
 
@@ -88,16 +98,16 @@ def validar_acceso_privado():
         st.error("ACCESO BLOQUEADO.")
         st.stop()
 
-    # ---------------------------------------------------------
+    # --------------------------------------------------------
     # PANTALLA PRIVADA
     # --------------------------------------------------------
-    
+
     st.markdown("""<div style="max-width:420px;margin:90px auto 30px auto;text-align:center;"><div style="font-size:34px;margin-bottom:18px;">🔐</div><div style="color:#FFFFFF;font-size:16px;font-weight:700;letter-spacing:2px;margin-bottom:8px;">ACCESO RESTRINGIDO</div><div style="color:#8B9BB4;font-size:11px;letter-spacing:1px;">AUTORIZACIÓN REQUERIDA</div></div>""", unsafe_allow_html=True)
-    
+
     col_izq, col_centro, col_der = st.columns([2, 1, 2])
-    
+
     with col_centro:
-    
+
         clave_ingresada = st.text_input(
             "Código de autorización",
             type="password",
@@ -105,56 +115,60 @@ def validar_acceso_privado():
             label_visibility="collapsed",
             placeholder="Código de autorización"
         )
-    
+
         verificar = st.button(
             "AUTORIZAR ACCESO",
             use_container_width=True,
             key="wallet_private_gate_button"
         )
-    
+
         if verificar:
-    
+
             if not clave_ingresada:
                 st.warning("Código requerido.")
                 st.stop()
-    
+
             hash_ingresado = hashlib.sha256(
                 clave_ingresada.encode("utf-8")
             ).hexdigest()
-    
+
             if hmac.compare_digest(
                 hash_ingresado,
                 hash_guardado
             ):
-    
+
                 st.session_state.wallet_private_access = True
                 st.session_state.wallet_gate_attempts = 0
-    
+
                 st.session_state.pop(
                     "wallet_private_gate_input",
                     None
                 )
-    
+
                 st.rerun()
-    
+
             else:
-    
+
                 st.session_state.wallet_gate_attempts += 1
-    
+
                 restantes = max(
                     0,
                     5 - st.session_state.wallet_gate_attempts
                 )
-    
+
                 if restantes > 0:
                     st.error(
                         f"Código no válido. Intentos restantes: {restantes}"
                     )
                 else:
                     st.error("ACCESO BLOQUEADO.")
-    
+
                 st.stop()
-    
+
+    # --------------------------------------------------------
+    # BLOQUEAR TODO LO QUE VIENE DESPUÉS
+    # --------------------------------------------------------
+
     st.stop()
 
 
@@ -166,14 +180,8 @@ validar_acceso_privado()
 
 
 # ============================================================
-# 3. LAYOUT
+# 🔒 DESDE AQUÍ COMIENZA EL CONTENIDO PRIVADO
 # ============================================================
-
-render_layout(
-    modulo_actual="FINANZAS",
-    submodulo_actual="GASTOS"
-)
-
 # ==============================================================================
 # MOTOR DE DATOS (GITHUB O LOCAL FALLBACK)
 # ==============================================================================
