@@ -2228,14 +2228,14 @@ with tab_plan:
             disabled=(
                 not TOKEN
                 or not puede_editar_efectivo
-                or bloqueado_por_otro_efectivo
+                or bloqueado_por_otro
             )
         )
 
 
     with col_info:
 
-        if bloqueado_por_otro_efectivo:
+        if bloqueado_por_otro:
 
             st.warning(
                 "La edición está temporalmente bloqueada porque otra sesión está escribiendo datos."
