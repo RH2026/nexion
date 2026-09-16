@@ -1129,15 +1129,14 @@ with tab_registro:
         render_tabla_premium(tabla, moneda_cols=["Monto"], max_height=430)
 
 
-
 # ============================================================
-# TAB 4
+# TAB 4 · PLAN SEMANAL
 # ============================================================
 
 with tab_plan:
 
     # ========================================================
-    # CONFIGURACIÓN DINÁMICA DEL FONDO DE PAGOS
+    # CÁLCULO DEL FONDO DE PAGOS
     # ========================================================
 
     PAGO_TV = 900.00
@@ -1152,22 +1151,14 @@ with tab_plan:
 
     FECHA_INICIO_CICLO = datetime(2026, 8, 28)
 
-    hoy_sin_tz = hoy.replace(
-        tzinfo=None,
-        hour=0,
-        minute=0,
-        second=0,
-        microsecond=0
-    )
+    hoy_sin_tz = hoy.replace(tzinfo=None)
 
-    dias_desde_inicio = (
-        hoy_sin_tz - FECHA_INICIO_CICLO
-    ).days
+    dias_desde_inicio = (hoy_sin_tz - FECHA_INICIO_CICLO).days
 
-    viernes_transcurridos = max(
-        0,
-        (dias_desde_inicio // 7) + 1
-    )
+    if dias_desde_inicio < 0:
+        viernes_transcurridos = 0
+    else:
+        viernes_transcurridos = (dias_desde_inicio // 7) + 1
 
     APARTADO_ACUMULADO = min(
         viernes_transcurridos * TOTAL_AHORRO_MENSUAL_SEM,
@@ -1185,227 +1176,216 @@ with tab_plan:
         else 0
     )
 
-    dias_tv = max(
-        0,
-        (FECHA_TV - hoy_sin_tz).days
+    progreso = min(PORCENTAJE_META, 100)
+
+    dias_tv = (FECHA_TV - hoy_sin_tz).days
+    dias_internet = (FECHA_INTERNET - hoy_sin_tz).days
+    dias_prestamo = (FECHA_PRESTAMO - hoy_sin_tz).days
+
+    # Próximo viernes de apartado
+    dias_hasta_viernes = (4 - hoy_sin_tz.weekday()) % 7
+
+    if dias_hasta_viernes == 0 and hoy_sin_tz.weekday() == 4:
+        dias_hasta_viernes = 0
+
+    fecha_proximo_apartado = (
+        hoy_sin_tz + timedelta(days=dias_hasta_viernes)
     )
 
-    dias_internet = max(
-        0,
-        (FECHA_INTERNET - hoy_sin_tz).days
-    )
-
-    dias_prestamo = max(
-        0,
-        (FECHA_PRESTAMO - hoy_sin_tz).days
-    )
-
-    proximo_viernes = hoy_sin_tz
-
-    while proximo_viernes.weekday() != 4:
-        proximo_viernes += timedelta(days=1)
-
-    dias_proximo_apartado = (
-        proximo_viernes.date() - hoy_sin_tz.date()
-    ).days
-
-    fecha_proximo_apartado = proximo_viernes.strftime("%d %b").upper()
-
-    progreso = min(
-        PORCENTAJE_META,
-        100
-    )
+    if dias_hasta_viernes == 0:
+        proximo_viernes = "HOY"
+    else:
+        proximo_viernes = fecha_proximo_apartado.strftime("%d %b").upper()
 
     # ========================================================
     # ENCABEZADO
     # ========================================================
 
     st.markdown(
-        "<div style='background:linear-gradient(135deg,#253441,#1D2830);border:1px solid #34495E;border-radius:8px;padding:18px 22px;margin-bottom:18px;'><div style='color:#00FFAA;font-size:11px;font-weight:800;letter-spacing:2px;'>NEXION // FINANZAS PERSONALES</div><div style='color:#FFFFFF;font-size:24px;font-weight:700;margin-top:4px;'>PLAN SEMANAL</div><div style='color:#8B9BB4;font-size:12px;margin-top:5px;'>Distribución del ingreso · Gastos · Ahorro · Disponible</div></div>",
+        "<div style='margin-bottom:18px;'>"
+        "<div style='color:#FFFFFF;font-size:19px;font-weight:800;letter-spacing:.3px;'>PLAN SEMANAL</div>"
+        "<div style='color:#8B9BB4;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;'>CONTROL DE FLUJO · APARTADOS · PAGOS PROGRAMADOS</div>"
+        "</div>",
         unsafe_allow_html=True
     )
 
     # ========================================================
-    # ESTADO DEL FONDO DE PAGOS
+    # FONDO DE PAGOS · BLOQUE PRINCIPAL
+    # ========================================================
+
+    color_progreso = "#00FFAA" if progreso >= 75 else "#00E5FF"
+
+    fondo_html = (
+        "<div style='background:linear-gradient(135deg,#202B33 0%,#182229 100%);"
+        "border:1px solid #34495E;border-radius:10px;padding:20px 22px;"
+        "box-shadow:0 10px 30px rgba(0,0,0,.20);margin-bottom:22px;'>"
+
+        "<div style='display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:16px;'>"
+
+        "<div>"
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;'>"
+        "FONDO DE PAGOS"
+        "</div>"
+        "<div style='color:#8B9BB4;font-size:9px;font-weight:700;letter-spacing:1.3px;margin-top:4px;'>"
+        "SEPTIEMBRE 2026 · META MENSUAL"
+        "</div>"
+        "</div>"
+
+        "<div style='text-align:right;'>"
+        f"<div style='color:{color_progreso};font-size:24px;font-weight:900;line-height:1;'>"
+        f"{progreso:.0f}%"
+        "</div>"
+        "<div style='color:#70808B;font-size:8px;font-weight:700;letter-spacing:1px;margin-top:4px;'>"
+        "COBERTURA"
+        "</div>"
+        "</div>"
+
+        "</div>"
+
+        "<div style='display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:10px;'>"
+
+        "<div>"
+        "<div style='color:#FFFFFF;font-size:28px;font-weight:900;line-height:1;'>"
+        f"${APARTADO_ACUMULADO:,.0f}"
+        "</div>"
+        "<div style='color:#70808B;font-size:9px;font-weight:700;letter-spacing:1px;margin-top:6px;'>"
+        f"DE ${META_PAGOS_MES:,.0f} PROGRAMADOS"
+        "</div>"
+        "</div>"
+
+        "<div style='text-align:right;'>"
+        "<div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1px;'>"
+        "FALTA"
+        "</div>"
+        f"<div style='color:#FFD166;font-size:17px;font-weight:900;margin-top:3px;'>"
+        f"${FALTA_META:,.0f}"
+        "</div>"
+        "</div>"
+
+        "</div>"
+
+        f"<div style='height:8px;background:#111A20;border-radius:8px;overflow:hidden;border:1px solid #2F404A;'>"
+        f"<div style='width:{progreso:.2f}%;height:100%;background:linear-gradient(90deg,#00A3A3,{color_progreso});border-radius:8px;box-shadow:0 0 12px rgba(0,255,170,.22);'></div>"
+        "</div>"
+
+        "<div style='display:flex;justify-content:space-between;align-items:center;margin-top:17px;padding-top:15px;border-top:1px solid rgba(52,73,94,.45);'>"
+
+        "<div>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>"
+        "PRÓXIMO APARTADO"
+        "</div>"
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;margin-top:4px;'>"
+        f"{proximo_viernes} · ${TOTAL_AHORRO_MENSUAL_SEM:,.0f}"
+        "</div>"
+        "</div>"
+
+        "<div style='display:flex;gap:22px;align-items:center;'>"
+
+        "<div style='text-align:right;'>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>"
+        "TV"
+        "</div>"
+        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;margin-top:3px;'>"
+        f"{FECHA_TV.strftime('%d %b').upper()} · ${PAGO_TV:,.0f}"
+        "</div>"
+        "</div>"
+
+        "<div style='text-align:right;'>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>"
+        "INTERNET"
+        "</div>"
+        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;margin-top:3px;'>"
+        f"{FECHA_INTERNET.strftime('%d %b').upper()} · ${PAGO_INTERNET:,.0f}"
+        "</div>"
+        "</div>"
+
+        "<div style='text-align:right;'>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>"
+        "PRÉSTAMO"
+        "</div>"
+        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;margin-top:3px;'>"
+        f"{FECHA_PRESTAMO.strftime('%d %b').upper()} · ${PAGO_PRESTAMO:,.0f}"
+        "</div>"
+        "</div>"
+
+        "</div>"
+        "</div>"
+
+        "</div>"
+    )
+
+    st.markdown(fondo_html, unsafe_allow_html=True)
+
+    # ========================================================
+    # DISTRIBUCIÓN DEL VIERNES DE PAGO
     # ========================================================
 
     st.markdown(
-        f"<div style='background:linear-gradient(135deg,#202D36,#182229);border:1px solid #34495E;border-radius:8px;padding:18px 20px;margin-bottom:18px;box-shadow:0 8px 24px rgba(0,0,0,.18);'><div style='display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;'><div><div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;'>FONDO DE PAGOS · SEPTIEMBRE 2026</div><div style='color:#FFFFFF;font-size:27px;font-weight:800;margin-top:5px;'>${APARTADO_ACUMULADO:,.2f}</div><div style='color:#8B9BB4;font-size:10px;margin-top:2px;'>ACUMULADO ACTUAL</div></div><div style='text-align:right;'><div style='color:#00E5FF;font-size:24px;font-weight:800;'>{progreso:.0f}%</div><div style='color:#8B9BB4;font-size:10px;'>DE LA META</div></div></div><div style='height:8px;background:#182229;border-radius:6px;margin:18px 0 12px 0;overflow:hidden;border:1px solid #34495E;'><div style='height:100%;width:{progreso:.2f}%;background:linear-gradient(90deg,#00FFAA,#00D4FF);border-radius:6px;box-shadow:0 0 12px rgba(0,255,170,.25);'></div></div><div style='display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;'><div><div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1px;'>META TOTAL</div><div style='color:#FFFFFF;font-size:13px;font-weight:800;margin-top:3px;'>${META_PAGOS_MES:,.2f}</div></div><div><div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1px;'>FALTA</div><div style='color:#FFD166;font-size:13px;font-weight:800;margin-top:3px;'>${FALTA_META:,.2f}</div></div><div><div style='color:#8B9BB4;font-size:9px;font-weight:800;letter-spacing:1px;'>PRÓXIMO APARTADO</div><div style='color:#00FFAA;font-size:13px;font-weight:800;margin-top:3px;'>${TOTAL_AHORRO_MENSUAL_SEM:,.2f} · {fecha_proximo_apartado}</div></div></div></div>",
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>"
+        "DISTRIBUCIÓN DEL VIERNES DE PAGO"
+        "</div>",
         unsafe_allow_html=True
     )
 
-    # ========================================================
-    # VENCIMIENTOS / CUENTA REGRESIVA
-    # ========================================================
+    disponible_color = "#00FFAA" if DISPONIBLE_SEMANAL >= 0 else "#FF6B6B"
 
-    f1, f2, f3 = st.columns(
-        3,
-        gap="small"
+    distribucion_html = (
+        "<div style='display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;'>"
+
+        "<div style='background:#202B33;border:1px solid #34495E;border-radius:7px;padding:13px 15px;'>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>INGRESO</div>"
+        "<div style='color:#FFFFFF;font-size:18px;font-weight:900;margin-top:5px;'>"
+        f"${INGRESO_SEMANAL:,.0f}"
+        "</div>"
+        "</div>"
+
+        "<div style='background:#202B33;border:1px solid #34495E;border-radius:7px;padding:13px 15px;'>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>GASTOS</div>"
+        "<div style='color:#FF6B6B;font-size:18px;font-weight:900;margin-top:5px;'>"
+        f"${TOTAL_GASTOS_SEMANALES:,.0f}"
+        "</div>"
+        "</div>"
+
+        "<div style='background:#202B33;border:1px solid #34495E;border-radius:7px;padding:13px 15px;'>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>APARTADO</div>"
+        "<div style='color:#00E5FF;font-size:18px;font-weight:900;margin-top:5px;'>"
+        f"${TOTAL_AHORRO_MENSUAL_SEM:,.0f}"
+        "</div>"
+        "</div>"
+
+        "<div style='background:#202B33;border:1px solid #34495E;border-radius:7px;padding:13px 15px;'>"
+        "<div style='color:#70808B;font-size:8px;font-weight:800;letter-spacing:1px;'>DISPONIBLE</div>"
+        f"<div style='color:{disponible_color};font-size:18px;font-weight:900;margin-top:5px;'>"
+        f"${DISPONIBLE_SEMANAL:,.0f}"
+        "</div>"
+        "</div>"
+
+        "</div>"
     )
 
-    fondos = [
-        (
-            f1,
-            "TV",
-            PAGO_TV,
-            FECHA_TV,
-            dias_tv,
-            "#00E5FF"
-        ),
-        (
-            f2,
-            "INTERNET",
-            PAGO_INTERNET,
-            FECHA_INTERNET,
-            dias_internet,
-            "#00FFAA"
-        ),
-        (
-            f3,
-            "PRÉSTAMO",
-            PAGO_PRESTAMO,
-            FECHA_PRESTAMO,
-            dias_prestamo,
-            "#FFD166"
-        )
-    ]
-
-    for col, concepto, monto, fecha_pago, dias, color in fondos:
-
-        with col:
-
-            st.markdown(
-                f"<div class='plan-card' style='min-height:108px;'><div style='display:flex;justify-content:space-between;align-items:center;'><div style='color:#FFFFFF;font-size:10px;font-weight:800;letter-spacing:1.4px;'>{concepto}</div><div style='color:{color};font-size:10px;font-weight:800;'>{dias} DÍAS</div></div><div style='color:#FFFFFF;font-size:22px;font-weight:800;margin-top:8px;'>${monto:,.2f}</div><div style='color:#8B9BB4;font-size:10px;margin-top:4px;'>VENCE {fecha_pago.strftime("%d %b").upper()}</div></div>",
-                unsafe_allow_html=True
-            )
+    st.markdown(distribucion_html, unsafe_allow_html=True)
 
     # ========================================================
-    # KPI PLAN
+    # TABLA DE DISTRIBUCIÓN
     # ========================================================
-
-    c1, c2, c3, c4 = st.columns(
-        [1, 1, 1, 1],
-        gap="small"
-    )
-
-    plan_cards = [
-        (
-            c1,
-            "INGRESO SEMANAL",
-            INGRESO_SEMANAL,
-            "Ingreso disponible de la semana"
-        ),
-        (
-            c2,
-            "GASTOS + AHORRO",
-            TOTAL_APARTADO_SEMANAL,
-            "Comprometido semanalmente"
-        ),
-        (
-            c3,
-            "APARTADO MENSUAL",
-            TOTAL_AHORRO_MENSUAL_SEM,
-            "Ahorro proporcional semanal"
-        ),
-        (
-            c4,
-            "DISPONIBLE",
-            DISPONIBLE_SEMANAL,
-            "Libre después de apartados"
-        )
-    ]
-
-    for col, titulo, valor, sub in plan_cards:
-
-        with col:
-
-            st.markdown(
-                f"<div class='plan-card'><div class='plan-title'>{titulo}</div><div class='plan-value'>${valor:,.2f}</div><div class='plan-sub'>{sub}</div></div>",
-                unsafe_allow_html=True
-            )
-
-    # ========================================================
-    # PAGOS
-    # ========================================================
-
-    st.markdown(
-        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;letter-spacing:1.5px;margin:18px 0 10px 0;'>CALENDARIO DE PAGOS MENSUALES</div>",
-        unsafe_allow_html=True
-    )
-
-    pagos = [
-        (
-            "ABONO TV",
-            PAGO_TV,
-            "25 SEP",
-            "VIERNES",
-            "Fondo asegurado con cobro del día"
-        ),
-        (
-            "INTERNET",
-            PAGO_INTERNET,
-            "27 SEP",
-            "DOMINGO",
-            "Asegurar desde el viernes 25"
-        ),
-        (
-            "PRÉSTAMO",
-            PAGO_PRESTAMO,
-            "28 SEP",
-            "LUNES",
-            "Asegurar desde el viernes 25"
-        )
-    ]
-
-    p1, p2, p3 = st.columns(
-        [1, 1, 1],
-        gap="small"
-    )
-
-    for col, pago in zip(
-        [p1, p2, p3],
-        pagos
-    ):
-
-        with col:
-
-            concepto, monto, fecha, dia, estado = pago
-
-            st.markdown(
-                f"<div class='plan-card' style='min-height:145px;'><div style='color:#00E5FF;font-size:10px;font-weight:800;letter-spacing:1.5px;'>{concepto}</div><div style='color:#FFFFFF;font-size:25px;font-weight:700;margin-top:7px;'>${monto:,.2f}</div><div style='color:#FFD700;font-size:11px;font-weight:700;margin-top:4px;'>{fecha} · {dia}</div><div style='color:#8B9BB4;font-size:11px;margin-top:8px;'>{estado}</div></div>",
-                unsafe_allow_html=True
-            )
-
-    # ========================================================
-    # DISTRIBUCIÓN
-    # ========================================================
-
-    st.markdown(
-        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;letter-spacing:1.5px;margin:22px 0 10px 0;'>DISTRIBUCIÓN DEL VIERNES DE PAGO</div>",
-        unsafe_allow_html=True
-    )
 
     df_distribucion = pd.DataFrame(
         [
-            ["Gastos de Casa / Despensa", 1500, "Gasto Fijo"],
-            ["Gasolina", 600, "Gasto Fijo"],
-            ["Consulta", 350, "Gasto Fijo"],
-            ["Gastos de tu Hija", 250, "Gasto Fijo"],
-            ["Ahorro Abono TV", 225, "Ahorro Mensual"],
-            ["Ahorro Abono Préstamo", 400, "Ahorro Mensual"],
-            ["Ahorro Internet", 275, "Ahorro Mensual"],
-            ["LIBRE / DISPONIBLE PARA TI", DISPONIBLE_SEMANAL, "Disponible"]
+            ["Gasto casa", GASTO_CASA],
+            ["Gasolina", GASOLINA],
+            ["Consulta", CONSULTA],
+            ["Gastos hija", GASTOS_HIJA],
+            ["TV", AHORRO_TV_SEM],
+            ["Préstamo", AHORRO_PRESTAMO_SEM],
+            ["Internet", AHORRO_INTERNET_SEM],
+            ["Disponible", DISPONIBLE_SEMANAL],
         ],
-        columns=[
-            "CONCEPTO",
-            "MONTO SEMANAL",
-            "TIPO"
-        ]
+        columns=["Concepto", "Monto"]
     )
 
     render_tabla_premium(
         df_distribucion,
-        moneda_cols=["MONTO SEMANAL"],
+        moneda_cols=["Monto"],
         max_height=330
     )
 
@@ -1415,294 +1395,190 @@ with tab_plan:
     )
 
     # ========================================================
-    # RESUMEN
-    # ========================================================
-
-    r1, r2, r3 = st.columns(
-        [1, 1, 1]
-    )
-
-    resumen = [
-        (
-            r1,
-            "GASTOS FIJOS",
-            TOTAL_GASTOS_SEMANALES,
-            "Casa + gasolina + consulta + hija"
-        ),
-        (
-            r2,
-            "AHORRO SEMANAL",
-            TOTAL_AHORRO_MENSUAL_SEM,
-            "TV + préstamo + internet"
-        ),
-        (
-            r3,
-            "LIBRE",
-            DISPONIBLE_SEMANAL,
-            "Disponible después de apartados"
-        )
-    ]
-
-    for col, titulo, valor, sub in resumen:
-
-        with col:
-
-            st.markdown(
-                f"<div class='plan-card'><div class='plan-title'>{titulo}</div><div class='plan-value'>${valor:,.2f}</div><div class='plan-sub'>{sub}</div></div>",
-                unsafe_allow_html=True
-            )
-
-    # ========================================================
-    # REGISTRAR CORTE
-    # ========================================================
-
-    btn_corte, info_corte = st.columns(
-        [1, 2],
-        gap="small"
-    )
-
-    with btn_corte:
-
-        registrar_corte = st.button(
-            "REGISTRAR CORTE DE ESTA SEMANA",
-            use_container_width=True,
-            type="primary",
-            key="btn_registrar_corte",
-            disabled=(
-                not TOKEN
-                or not puede_editar_efectivo
-                or bloqueado_por_otro
-            )
-        )
-
-    with info_corte:
-
-        if bloqueado_por_otro:
-
-            st.warning(
-                "Edición temporalmente bloqueada."
-            )
-
-        elif not TOKEN:
-
-            st.warning(
-                "GITHUB_TOKEN no está configurado."
-            )
-
-        else:
-
-            st.caption(
-                "El corte se almacenará en plan_financiero_semanal.csv."
-            )
-
-    # ========================================================
-    # GUARDAR CORTE
-    # ========================================================
-
-    if registrar_corte:
-
-        lock_creado = False
-
-        try:
-
-            lock_creado = crear_lock()
-
-            if not lock_creado:
-
-                st.error(
-                    "No fue posible tomar el control de escritura."
-                )
-
-                st.stop()
-
-            repo = Github(TOKEN).get_repo(REPO_NAME)
-
-            fecha_corte = datetime.now(
-                tz_gdl
-            ).strftime("%Y-%m-%d")
-
-            try:
-
-                archivo = repo.get_contents(
-                    PLAN_FILE_PATH,
-                    ref="main"
-                )
-
-                df_plan = pd.read_csv(
-                    io.StringIO(
-                        archivo.decoded_content.decode("utf-8")
-                    ),
-                    keep_default_na=False
-                )
-
-                sha_plan = archivo.sha
-
-            except:
-
-                df_plan = pd.DataFrame(
-                    columns=[
-                        "Fecha_Corte",
-                        "Semana",
-                        "Ingreso_Semanal",
-                        "Gastos_Fijos",
-                        "Ahorro_Semanal",
-                        "Disponible",
-                        "Usuario"
-                    ]
-                )
-
-                sha_plan = None
-
-            if (
-                not df_plan.empty
-                and "Fecha_Corte" in df_plan.columns
-                and fecha_corte in df_plan["Fecha_Corte"].astype(str).tolist()
-            ):
-
-                st.warning(
-                    f"Ya existe un corte registrado para {fecha_corte}."
-                )
-
-                st.stop()
-
-            ahora = datetime.now(tz_gdl)
-
-            semana = (
-                f"{ahora.year}-W"
-                f"{ahora.isocalendar().week:02d}"
-            )
-
-            nuevo = pd.DataFrame(
-                [{
-                    "Fecha_Corte": fecha_corte,
-                    "Semana": semana,
-                    "Ingreso_Semanal": INGRESO_SEMANAL,
-                    "Gastos_Fijos": TOTAL_GASTOS_SEMANALES,
-                    "Ahorro_Semanal": TOTAL_AHORRO_MENSUAL_SEM,
-                    "Disponible": DISPONIBLE_SEMANAL,
-                    "Usuario": current_user
-                }]
-            )
-
-            df_plan = pd.concat(
-                [
-                    df_plan,
-                    nuevo
-                ],
-                ignore_index=True
-            )
-
-            csv_plan = df_plan.to_csv(
-                index=False,
-                encoding="utf-8-sig"
-            )
-
-            if sha_plan:
-
-                repo.update_file(
-                    path=PLAN_FILE_PATH,
-                    message=f"Registro corte semanal {fecha_corte}",
-                    content=csv_plan,
-                    sha=sha_plan,
-                    branch="main"
-                )
-
-            else:
-
-                repo.create_file(
-                    path=PLAN_FILE_PATH,
-                    message=f"Creación plan financiero {fecha_corte}",
-                    content=csv_plan,
-                    branch="main"
-                )
-
-            st.session_state.df_plan_semanal = df_plan
-            st.session_state.force_reload_plan = False
-
-            st.success(
-                f"Corte {semana} registrado correctamente."
-            )
-
-            time.sleep(.7)
-
-            st.rerun()
-
-        except Exception as e:
-
-            st.error(
-                f"No fue posible guardar el corte: {e}"
-            )
-
-        finally:
-
-            if lock_creado:
-                liberar_lock()
-
-    # ========================================================
-    # HISTORIAL
+    # CALENDARIO DE PAGOS MENSUALES
     # ========================================================
 
     st.markdown(
-        "<div style='color:#FFFFFF;font-size:11px;font-weight:800;letter-spacing:1.5px;margin:25px 0 10px 0;'>HISTORIAL DE CORTES SEMANALES</div>",
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>"
+        "CALENDARIO DE PAGOS MENSUALES"
+        "</div>",
         unsafe_allow_html=True
     )
 
-    df_hist = get_plan_data_from_git()
+    def estado_pago(fecha_pago):
+        if hoy_sin_tz.date() > fecha_pago.date():
+            return "VENCIDO"
+        elif hoy_sin_tz.date() == fecha_pago.date():
+            return "HOY"
+        else:
+            return "PENDIENTE"
 
-    if df_hist.empty:
+    calendario_pagos = pd.DataFrame(
+        [
+            [
+                "TV",
+                FECHA_TV.strftime("%d/%m/%Y"),
+                PAGO_TV,
+                dias_tv,
+                estado_pago(FECHA_TV),
+            ],
+            [
+                "Internet",
+                FECHA_INTERNET.strftime("%d/%m/%Y"),
+                PAGO_INTERNET,
+                dias_internet,
+                estado_pago(FECHA_INTERNET),
+            ],
+            [
+                "Préstamo",
+                FECHA_PRESTAMO.strftime("%d/%m/%Y"),
+                PAGO_PRESTAMO,
+                dias_prestamo,
+                estado_pago(FECHA_PRESTAMO),
+            ],
+        ],
+        columns=[
+            "Concepto",
+            "Fecha",
+            "Monto",
+            "Días",
+            "Estado",
+        ]
+    )
 
-        st.info(
-            "Todavía no existen cortes registrados."
-        )
+    render_tabla_premium(
+        calendario_pagos,
+        moneda_cols=["Monto"],
+        max_height=220
+    )
 
-    else:
+    # ========================================================
+    # RESUMEN DEL PLAN
+    # ========================================================
 
-        df_hist = df_hist.copy()
+    st.markdown(
+        "<div style='height:26px;border-top:1px solid rgba(52,73,94,.35);margin-top:6px;'></div>",
+        unsafe_allow_html=True
+    )
 
-        if "Fecha_Corte" in df_hist.columns:
+    st.markdown(
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>"
+        "RESUMEN DEL PLAN"
+        "</div>",
+        unsafe_allow_html=True
+    )
 
-            df_hist = df_hist.sort_values(
-                "Fecha_Corte",
-                ascending=False
-            )
+    resumen_plan = pd.DataFrame(
+        [
+            ["Ingreso semanal", INGRESO_SEMANAL],
+            ["Gastos semanales", TOTAL_GASTOS_SEMANALES],
+            ["Apartado semanal", TOTAL_AHORRO_MENSUAL_SEM],
+            ["Total comprometido", TOTAL_APARTADO_SEMANAL],
+            ["Disponible semanal", DISPONIBLE_SEMANAL],
+        ],
+        columns=["Concepto", "Monto"]
+    )
 
-        columnas = [
-            "Fecha_Corte",
+    render_tabla_premium(
+        resumen_plan,
+        moneda_cols=["Monto"],
+        max_height=240
+    )
+
+    # ========================================================
+    # REGISTRO DE CORTE
+    # ========================================================
+
+    st.markdown(
+        "<div style='height:26px;border-top:1px solid rgba(52,73,94,.35);margin-top:6px;'></div>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>"
+        "REGISTRO DE CORTE SEMANAL"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
+    fecha_corte = hoy_sin_tz.strftime("%d/%m/%Y")
+
+    corte_actual = pd.DataFrame(
+        [
+            [
+                fecha_corte,
+                viernes_transcurridos,
+                INGRESO_SEMANAL,
+                TOTAL_GASTOS_SEMANALES,
+                TOTAL_AHORRO_MENSUAL_SEM,
+                DISPONIBLE_SEMANAL,
+            ]
+        ],
+        columns=[
+            "Fecha",
             "Semana",
-            "Ingreso_Semanal",
-            "Gastos_Fijos",
-            "Ahorro_Semanal",
+            "Ingreso",
+            "Gastos",
+            "Apartado",
             "Disponible",
-            "Usuario"
         ]
+    )
 
-        columnas = [
-            c for c in columnas
-            if c in df_hist.columns
+    render_tabla_premium(
+        corte_actual,
+        moneda_cols=[
+            "Ingreso",
+            "Gastos",
+            "Apartado",
+            "Disponible",
+        ],
+        max_height=160
+    )
+
+    # ========================================================
+    # HISTORIAL DE CORTES SEMANALES
+    # ========================================================
+
+    st.markdown(
+        "<div style='height:26px;border-top:1px solid rgba(52,73,94,.35);margin-top:6px;'></div>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        "<div style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:1px;margin:4px 0 12px 0;'>"
+        "HISTORIAL DE CORTES SEMANALES"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
+    historial_cortes = pd.DataFrame(
+        [
+            [
+                "Semana actual",
+                fecha_corte,
+                INGRESO_SEMANAL,
+                TOTAL_GASTOS_SEMANALES,
+                TOTAL_AHORRO_MENSUAL_SEM,
+                DISPONIBLE_SEMANAL,
+            ]
+        ],
+        columns=[
+            "Periodo",
+            "Fecha",
+            "Ingreso",
+            "Gastos",
+            "Apartado",
+            "Disponible",
         ]
+    )
 
-        visual = df_hist[columnas].copy()
-
-        monedas = [
-            "Ingreso_Semanal",
-            "Gastos_Fijos",
-            "Ahorro_Semanal",
-            "Disponible"
-        ]
-
-        for col in monedas:
-
-            if col in visual.columns:
-
-                visual[col] = pd.to_numeric(
-                    visual[col],
-                    errors="coerce"
-                )
-
-        render_tabla_premium(
-            visual,
-            moneda_cols=monedas,
-            max_height=430
-        )
-
-
+    render_tabla_premium(
+        historial_cortes,
+        moneda_cols=[
+            "Ingreso",
+            "Gastos",
+            "Apartado",
+            "Disponible",
+        ],
+        max_height=240
+    )
