@@ -650,7 +650,7 @@ with tab_kpi:
             textposition="auto",
             textfont=dict(
                 color="#FFFFFF",
-                size=12
+                size=14
             ),
             hovertemplate="<b>%{y}</b><br>Saldo: %{x:$,.2f}<extra></extra>"
         )
