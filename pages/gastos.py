@@ -1273,6 +1273,7 @@ with tab_plan:
         max_height=330
     )
 
+    st.markdown("<div style='height:26px;border-top:1px solid rgba(52,73,94,.35);margin-top:6px;'></div>", unsafe_allow_html=True)
 
     # ========================================================
     # RESUMEN
