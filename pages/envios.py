@@ -114,7 +114,10 @@ def render_envios_flow_responsive(data):
             and str(fecha_envio_raw).strip().lower()
             not in ["", "nan", "none", "nat", "0", "0.0"]
         ):
-            fecha_envio_val = str(fecha_envio_raw)
+            try:
+                fecha_envio_val = pd.to_datetime(fecha_envio_raw).strftime("%d/%m/%Y")
+            except:
+                fecha_envio_val = str(fecha_envio_raw).split(" ")[0]
         else:
             fecha_envio_val = "SIN ENVIAR"
 
