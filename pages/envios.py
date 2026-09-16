@@ -286,7 +286,7 @@ def render_envios_flow_responsive(data):
         }}
 
         .envios-premium-reco{{
-            color:#00D4FF!important;
+            color:#FFFFFF!important;
             font-weight:700!important;
         }}
 
@@ -315,7 +315,7 @@ def render_envios_flow_responsive(data):
         }}
 
         .envios-premium-fecha{{
-            color:#00D4FF!important;
+            color:#FFFFFF!important;
             font-weight:700!important;
         }}
 
