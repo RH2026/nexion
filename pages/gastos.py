@@ -3,6 +3,7 @@ import json
 import time
 import hashlib
 import hmac
+import html
 from datetime import datetime, timedelta
 
 from github import Github
@@ -301,7 +302,9 @@ st.markdown(
         border-bottom:2px solid #34495E!important;
     }
 
-    /* ================= TARJETAS ================= */
+    /* ========================================================
+       TARJETAS
+       ======================================================== */
 
     .kpi-card,
     .plan-card{
@@ -380,7 +383,10 @@ st.markdown(
         text-overflow:ellipsis!important;
     }
 
-    /* ================= BOTONES ================= */
+
+    /* ========================================================
+       BOTONES
+       ======================================================== */
 
     div.stButton>button{
         width:100%!important;
@@ -401,7 +407,10 @@ st.markdown(
         box-shadow:0 0 15px rgba(0,255,170,.35)!important;
     }
 
-    /* ================= TABS ================= */
+
+    /* ========================================================
+       TABS
+       ======================================================== */
 
     div[data-baseweb="tab-list"]{
         gap:18px!important;
@@ -424,17 +433,820 @@ st.markdown(
         border-bottom:3px solid #00FFAA!important;
     }
 
-    /* ================= DATAFRAMES ================= */
+
+    /* ========================================================
+       DATAFRAMES NATIVOS
+       ======================================================== */
 
     div[data-testid="stDataFrame"]{
         border:1px solid #34495E!important;
         border-radius:6px!important;
     }
 
+
+    /* ========================================================
+       NEXION PREMIUM TABLES
+       ======================================================== */
+
+    .nx-table-shell{
+        width:100%;
+        box-sizing:border-box;
+        background:#202C35;
+        border:1px solid #34495E;
+        border-radius:8px;
+        overflow:hidden;
+        margin:0 0 18px 0;
+        box-shadow:
+            0 8px 24px rgba(0,0,0,.16),
+            inset 0 1px 0 rgba(255,255,255,.015);
+    }
+
+    .nx-table-toolbar{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        min-height:42px;
+        padding:0 14px;
+        background:#1D2830;
+        border-bottom:1px solid #34495E;
+        box-sizing:border-box;
+    }
+
+    .nx-table-toolbar-left{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        color:#8B9BB4;
+        font-size:9px;
+        font-weight:800;
+        letter-spacing:1.6px;
+        text-transform:uppercase;
+        white-space:nowrap;
+    }
+
+    .nx-table-toolbar-right{
+        color:#00FFAA;
+        font-size:10px;
+        font-weight:800;
+        letter-spacing:1px;
+        white-space:nowrap;
+    }
+
+    .nx-live-dot{
+        width:6px;
+        height:6px;
+        display:inline-block;
+        border-radius:50%;
+        background:#00FFAA;
+        box-shadow:0 0 9px rgba(0,255,170,.75);
+    }
+
+    .nx-table-scroll{
+        width:100%;
+        overflow-x:auto;
+        overflow-y:auto;
+        max-height:455px;
+        scrollbar-width:thin;
+        scrollbar-color:#44555A #202C35;
+    }
+
+    .nx-table-scroll::-webkit-scrollbar{
+        width:7px;
+        height:7px;
+    }
+
+    .nx-table-scroll::-webkit-scrollbar-track{
+        background:#202C35;
+    }
+
+    .nx-table-scroll::-webkit-scrollbar-thumb{
+        background:#44555A;
+        border-radius:8px;
+    }
+
+    .nx-table-scroll::-webkit-scrollbar-thumb:hover{
+        background:#00A3A3;
+    }
+
+    .nx-premium-table{
+        width:100%;
+        min-width:850px;
+        border-collapse:separate;
+        border-spacing:0;
+        table-layout:auto;
+        font-family:
+            Inter,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+    }
+
+    .nx-premium-table thead th{
+        position:sticky;
+        top:0;
+        z-index:5;
+        background:#26343E;
+        color:#8B9BB4;
+        border-bottom:1px solid #44555A;
+        padding:11px 13px;
+        height:38px;
+        box-sizing:border-box;
+        font-size:9px;
+        line-height:1.2;
+        font-weight:800;
+        letter-spacing:1.2px;
+        text-transform:uppercase;
+        white-space:nowrap;
+        text-align:left;
+    }
+
+    .nx-premium-table tbody td{
+        padding:11px 13px;
+        border-bottom:1px solid rgba(68,85,90,.45);
+        color:#E7EDF2;
+        font-size:11px;
+        line-height:1.35;
+        font-weight:500;
+        background:#202C35;
+        white-space:nowrap;
+        vertical-align:middle;
+        transition:
+            background .15s ease,
+            color .15s ease;
+    }
+
+    .nx-premium-table tbody tr:nth-child(even) td{
+        background:#222F38;
+    }
+
+    .nx-premium-table tbody tr:hover td{
+        background:#293A44;
+        color:#FFFFFF;
+    }
+
+    .nx-premium-table tbody tr:last-child td{
+        border-bottom:none;
+    }
+
+    .nx-row-number{
+        width:35px;
+        min-width:35px;
+        color:#536673!important;
+        text-align:center;
+        font-size:9px!important;
+        font-weight:800!important;
+        letter-spacing:.5px;
+    }
+
+    .nx-wallet-date{
+        color:#AEBBC5!important;
+        font-variant-numeric:tabular-nums;
+    }
+
+    .nx-wallet-concept{
+        color:#FFFFFF!important;
+        font-weight:650!important;
+        min-width:260px;
+        max-width:430px;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+
+    .nx-wallet-category{
+        color:#8FA3B1!important;
+        font-size:10px!important;
+    }
+
+    .nx-wallet-account{
+        color:#D5DEE4!important;
+        font-size:10px!important;
+        font-weight:700!important;
+    }
+
+    .nx-money{
+        text-align:right!important;
+        font-variant-numeric:tabular-nums;
+        font-feature-settings:"tnum";
+        font-weight:800!important;
+        letter-spacing:.2px;
+    }
+
+    .nx-money-income{
+        color:#00FFAA!important;
+    }
+
+    .nx-money-expense{
+        color:#FF7272!important;
+    }
+
+    .nx-money-neutral{
+        color:#E6EDF2!important;
+    }
+
+    .nx-type-badge{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        min-width:72px;
+        padding:4px 7px;
+        border-radius:4px;
+        border:1px solid transparent;
+        font-size:8px;
+        font-weight:800;
+        letter-spacing:.8px;
+        text-transform:uppercase;
+        line-height:1;
+        white-space:nowrap;
+        box-sizing:border-box;
+    }
+
+    .nx-type-income{
+        color:#00FFAA;
+        background:rgba(0,255,170,.07);
+        border-color:rgba(0,255,170,.20);
+    }
+
+    .nx-type-expense{
+        color:#FF7272;
+        background:rgba(255,75,75,.07);
+        border-color:rgba(255,75,75,.20);
+    }
+
+    .nx-type-fixed{
+        color:#8FB9D0;
+        background:rgba(68,179,225,.07);
+        border-color:rgba(68,179,225,.20);
+    }
+
+    .nx-type-saving{
+        color:#00E5FF;
+        background:rgba(0,229,255,.07);
+        border-color:rgba(0,229,255,.20);
+    }
+
+    .nx-type-free{
+        color:#00FFAA;
+        background:rgba(0,255,170,.10);
+        border-color:rgba(0,255,170,.28);
+        box-shadow:0 0 12px rgba(0,255,170,.05);
+    }
+
+    .nx-available-row td{
+        background:rgba(0,255,170,.035)!important;
+        border-top:1px solid rgba(0,255,170,.16)!important;
+    }
+
+    .nx-available-row:hover td{
+        background:rgba(0,255,170,.07)!important;
+    }
+
+    .nx-distribution-concept{
+        color:#FFFFFF!important;
+        font-weight:650!important;
+    }
+
+    .nx-distribution-free{
+        color:#00FFAA!important;
+        font-weight:850!important;
+        letter-spacing:.2px;
+    }
+
+    .nx-table-footer{
+        display:flex;
+        align-items:center;
+        justify-content:flex-end;
+        gap:6px;
+        min-height:34px;
+        padding:0 14px;
+        background:#1D2830;
+        border-top:1px solid #34495E;
+        color:#536673;
+        font-size:8px;
+        font-weight:800;
+        letter-spacing:1px;
+        text-transform:uppercase;
+    }
+
+    .nx-table-footer strong{
+        color:#8B9BB4;
+        font-weight:800;
+    }
+
+    .nx-table-footer span{
+        color:#34495E;
+    }
+
+    .nx-distribution-shell .nx-table-scroll{
+        max-height:350px;
+    }
+
+    .nx-distribution-table{
+        min-width:680px;
+    }
+
+    .nx-distribution-table thead th:nth-child(2){
+        min-width:320px;
+    }
+
+    .nx-distribution-table thead th:nth-child(3){
+        min-width:150px;
+    }
+
+    .nx-distribution-table thead th:nth-child(4){
+        min-width:145px;
+    }
+
+
+    /* ========================================================
+       RESPONSIVE
+       ======================================================== */
+
+    @media (max-width: 900px){
+
+        .nx-table-toolbar{
+            min-height:40px;
+            padding:0 10px;
+        }
+
+        .nx-table-toolbar-left{
+            font-size:8px;
+        }
+
+        .nx-table-toolbar-right{
+            font-size:9px;
+        }
+
+        .nx-premium-table{
+            min-width:760px;
+        }
+
+        .nx-premium-table thead th{
+            padding:10px;
+        }
+
+        .nx-premium-table tbody td{
+            padding:10px;
+        }
+    }
+
     </style>
     """,
     unsafe_allow_html=True
 )
+
+
+# ============================================================
+# HELPERS TABLAS PREMIUM
+# ============================================================
+
+def nx_safe(value):
+
+    if value is None:
+        return ""
+
+    try:
+        if pd.isna(value):
+            return ""
+    except Exception:
+        pass
+
+    return html.escape(str(value))
+
+
+def nx_money(value):
+
+    try:
+        value = float(value)
+
+        if pd.isna(value):
+            value = 0.0
+
+    except Exception:
+
+        value = 0.0
+
+    if value < 0:
+        return f"-${abs(value):,.2f}"
+
+    return f"${value:,.2f}"
+
+
+def render_wallet_table(tabla):
+
+    total_registros = len(tabla)
+    filas = []
+
+    for indice, (_, row) in enumerate(
+        tabla.iterrows(),
+        start=1
+    ):
+
+        fecha = nx_safe(
+            row.get("Fecha", "")
+        )
+
+        tipo_raw = str(
+            row.get("Tipo", "")
+        )
+
+        tipo = nx_safe(
+            tipo_raw
+        )
+
+        categoria = nx_safe(
+            row.get("Categoria", "")
+        )
+
+        concepto = nx_safe(
+            row.get("Concepto", "")
+        )
+
+        cuenta = nx_safe(
+            row.get("Cuenta", "")
+        )
+
+        try:
+
+            monto = float(
+                pd.to_numeric(
+                    row.get("Monto", 0),
+                    errors="coerce"
+                )
+            )
+
+            if pd.isna(monto):
+                monto = 0.0
+
+        except Exception:
+
+            monto = 0.0
+
+        tipo_normalizado = (
+            tipo_raw.strip().lower()
+        )
+
+        if tipo_normalizado == "ingreso":
+
+            tipo_badge = (
+                '<span class="nx-type-badge nx-type-income">'
+                'INGRESO'
+                '</span>'
+            )
+
+            money_class = (
+                "nx-money-income"
+            )
+
+        else:
+
+            tipo_badge = (
+                '<span class="nx-type-badge nx-type-expense">'
+                'GASTO'
+                '</span>'
+            )
+
+            money_class = (
+                "nx-money-expense"
+            )
+
+        fila_html = f"""
+        <tr>
+            <td class="nx-row-number">
+                {indice:02d}
+            </td>
+
+            <td class="nx-wallet-date">
+                {fecha}
+            </td>
+
+            <td>
+                {tipo_badge}
+            </td>
+
+            <td class="nx-wallet-category">
+                {categoria}
+            </td>
+
+            <td class="nx-wallet-concept">
+                {concepto}
+            </td>
+
+            <td class="nx-money {money_class}">
+                {nx_money(monto)}
+            </td>
+
+            <td class="nx-wallet-account">
+                {cuenta}
+            </td>
+        </tr>
+        """
+
+        filas.append(
+            fila_html
+        )
+
+    filas_html = "".join(
+        filas
+    )
+
+    tabla_html = f"""
+    <div class="nx-table-shell nx-wallet-shell">
+
+        <div class="nx-table-toolbar">
+
+            <div class="nx-table-toolbar-left">
+                <span class="nx-live-dot"></span>
+                CLOUD WALLET LEDGER
+            </div>
+
+            <div class="nx-table-toolbar-right">
+                {total_registros} REGISTROS
+            </div>
+
+        </div>
+
+        <div class="nx-table-scroll">
+
+            <table class="nx-premium-table nx-wallet-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th style="width:35px;text-align:center;">
+                            #
+                        </th>
+
+                        <th>
+                            FECHA
+                        </th>
+
+                        <th>
+                            TIPO
+                        </th>
+
+                        <th>
+                            CATEGORÍA
+                        </th>
+
+                        <th>
+                            CONCEPTO / REFERENCIA
+                        </th>
+
+                        <th style="text-align:right;">
+                            MONTO
+                        </th>
+
+                        <th>
+                            CUENTA
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {filas_html}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="nx-table-footer">
+
+            NEXION WALLET
+            <span>·</span>
+            <strong>
+                {total_registros} MOVIMIENTOS
+            </strong>
+
+        </div>
+
+    </div>
+    """
+
+    st.markdown(
+        tabla_html,
+        unsafe_allow_html=True
+    )
+
+
+def render_distribution_table(df):
+
+    total_registros = len(df)
+    filas = []
+
+    for indice, (_, row) in enumerate(
+        df.iterrows(),
+        start=1
+    ):
+
+        concepto_raw = str(
+            row.get("CONCEPTO", "")
+        )
+
+        concepto = nx_safe(
+            concepto_raw
+        )
+
+        tipo_raw = str(
+            row.get("TIPO", "")
+        )
+
+        tipo = nx_safe(
+            tipo_raw
+        )
+
+        try:
+
+            monto = float(
+                pd.to_numeric(
+                    row.get("MONTO SEMANAL", 0),
+                    errors="coerce"
+                )
+            )
+
+            if pd.isna(monto):
+                monto = 0.0
+
+        except Exception:
+
+            monto = 0.0
+
+        tipo_normalizado = (
+            tipo_raw.strip().lower()
+        )
+
+        disponible = (
+            tipo_normalizado == "disponible"
+        )
+
+        ahorro = (
+            tipo_normalizado == "ahorro mensual"
+        )
+
+        if disponible:
+
+            tipo_badge = (
+                '<span class="nx-type-badge nx-type-free">'
+                'DISPONIBLE'
+                '</span>'
+            )
+
+            row_class = (
+                "nx-available-row"
+            )
+
+            concepto_class = (
+                "nx-distribution-free"
+            )
+
+            money_class = (
+                "nx-money-income"
+            )
+
+        elif ahorro:
+
+            tipo_badge = (
+                '<span class="nx-type-badge nx-type-saving">'
+                'AHORRO MENSUAL'
+                '</span>'
+            )
+
+            row_class = ""
+
+            concepto_class = (
+                "nx-distribution-concept"
+            )
+
+            money_class = (
+                "nx-money-neutral"
+            )
+
+        else:
+
+            tipo_badge = (
+                '<span class="nx-type-badge nx-type-fixed">'
+                'GASTO FIJO'
+                '</span>'
+            )
+
+            row_class = ""
+
+            concepto_class = (
+                "nx-distribution-concept"
+            )
+
+            money_class = (
+                "nx-money-neutral"
+            )
+
+        fila_html = f"""
+        <tr class="{row_class}">
+
+            <td class="nx-row-number">
+                {indice:02d}
+            </td>
+
+            <td class="{concepto_class}">
+                {concepto}
+            </td>
+
+            <td class="nx-money {money_class}">
+                {nx_money(monto)}
+            </td>
+
+            <td>
+                {tipo_badge}
+            </td>
+
+        </tr>
+        """
+
+        filas.append(
+            fila_html
+        )
+
+    filas_html = "".join(
+        filas
+    )
+
+    tabla_html = f"""
+    <div class="nx-table-shell nx-distribution-shell">
+
+        <div class="nx-table-toolbar">
+
+            <div class="nx-table-toolbar-left">
+                <span class="nx-live-dot"></span>
+                WEEKLY ALLOCATION
+            </div>
+
+            <div class="nx-table-toolbar-right">
+                INGRESO {nx_money(INGRESO_SEMANAL)}
+            </div>
+
+        </div>
+
+        <div class="nx-table-scroll">
+
+            <table class="nx-premium-table nx-distribution-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th style="width:35px;text-align:center;">
+                            #
+                        </th>
+
+                        <th>
+                            CONCEPTO
+                        </th>
+
+                        <th style="text-align:right;">
+                            MONTO SEMANAL
+                        </th>
+
+                        <th>
+                            TIPO
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {filas_html}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="nx-table-footer">
+
+            WEEKLY PLAN
+            <span>·</span>
+            <strong>
+                {total_registros} CONCEPTOS
+            </strong>
+
+        </div>
+
+    </div>
+    """
+
+    st.markdown(
+        tabla_html,
+        unsafe_allow_html=True
+    )
 
 
 # ============================================================
@@ -694,12 +1506,14 @@ def get_wallet_data_from_git():
             )
 
     if "Fecha" in df.columns:
+
         df["Fecha"] = pd.to_datetime(
             df["Fecha"],
             errors="coerce"
         )
 
     if "Monto" in df.columns:
+
         df["Monto"] = pd.to_numeric(
             df["Monto"],
             errors="coerce"
@@ -718,6 +1532,7 @@ def get_wallet_data_from_git():
 def get_plan_data_from_git(force_reload=False):
 
     if force_reload:
+
         st.session_state.force_reload_plan = True
 
     if (
@@ -739,13 +1554,17 @@ def get_plan_data_from_git(force_reload=False):
         "Usuario"
     ]
 
-    df = pd.DataFrame(columns=columnas)
+    df = pd.DataFrame(
+        columns=columnas
+    )
 
     if TOKEN:
 
         try:
 
-            repo = Github(TOKEN).get_repo(REPO_NAME)
+            repo = Github(TOKEN).get_repo(
+                REPO_NAME
+            )
 
             try:
 
@@ -876,7 +1695,10 @@ tab_kpi, tab_flujos, tab_registro, tab_plan = st.tabs([
 
 with tab_kpi:
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        "<br>",
+        unsafe_allow_html=True
+    )
 
     k1, k2, k3 = st.columns(
         [1, 1, 1],
@@ -914,17 +1736,26 @@ with tab_kpi:
             st.markdown(
                 f"""
                 <div class="kpi-card">
-                    <div class="kpi-label">{titulo}</div>
-                    <div class="kpi-value">${valor:,.2f}</div>
+
+                    <div class="kpi-label">
+                        {titulo}
+                    </div>
+
+                    <div class="kpi-value">
+                        ${valor:,.2f}
+                    </div>
+
                     <div class="kpi-trend"
                          style="color:{color}">
                         {sub}
                     </div>
+
                     <div class="neon-bar"
                          style="background:
                          linear-gradient(
                          90deg,{color},transparent);">
                     </div>
+
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -945,8 +1776,14 @@ with tab_kpi:
         unsafe_allow_html=True
     )
 
-    nombres = list(saldos_actuales.keys())
-    valores = list(saldos_actuales.values())
+    nombres = list(
+        saldos_actuales.keys()
+    )
+
+    valores = list(
+        saldos_actuales.values()
+    )
+
     colores = [
         CUENTAS_MATRIX[x]["color"]
         for x in nombres
@@ -983,7 +1820,12 @@ with tab_kpi:
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
-        margin=dict(t=10, b=10, l=10, r=10),
+        margin=dict(
+            t=10,
+            b=10,
+            l=10,
+            r=10
+        ),
         height=350,
         xaxis=dict(
             showgrid=True,
@@ -1000,7 +1842,9 @@ with tab_kpi:
     st.plotly_chart(
         fig,
         use_container_width=True,
-        config={"displayModeBar": False}
+        config={
+            "displayModeBar": False
+        }
     )
 
 
@@ -1010,7 +1854,10 @@ with tab_kpi:
 
 with tab_flujos:
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        "<br>",
+        unsafe_allow_html=True
+    )
 
     flujo1, flujo2 = st.columns(
         [2, 1.5],
@@ -1103,9 +1950,16 @@ with tab_flujos:
                     y=1.1,
                     x=.5,
                     xanchor="center",
-                    font=dict(color="#E0E6ED")
+                    font=dict(
+                        color="#E0E6ED"
+                    )
                 ),
-                margin=dict(t=10, b=10, l=10, r=10),
+                margin=dict(
+                    t=10,
+                    b=10,
+                    l=10,
+                    r=10
+                ),
                 height=350,
                 hovermode="x unified"
             )
@@ -1113,11 +1967,16 @@ with tab_flujos:
             st.plotly_chart(
                 fig_flow,
                 use_container_width=True,
-                config={"displayModeBar": False}
+                config={
+                    "displayModeBar": False
+                }
             )
 
         else:
-            st.info("Sin movimientos este mes.")
+
+            st.info(
+                "Sin movimientos este mes."
+            )
 
     with flujo2:
 
@@ -1184,21 +2043,34 @@ with tab_flujos:
                         title=None,
                         color="#E0E6ED"
                     ),
-                    margin=dict(t=10, b=10, l=10, r=10),
+                    margin=dict(
+                        t=10,
+                        b=10,
+                        l=10,
+                        r=10
+                    ),
                     height=350
                 )
 
                 st.plotly_chart(
                     fig_cat,
                     use_container_width=True,
-                    config={"displayModeBar": False}
+                    config={
+                        "displayModeBar": False
+                    }
                 )
 
             else:
-                st.info("Sin gastos registrados este mes.")
+
+                st.info(
+                    "Sin gastos registrados este mes."
+                )
 
         else:
-            st.info("Sin movimientos este mes.")
+
+            st.info(
+                "Sin movimientos este mes."
+            )
 
 
 # ============================================================
@@ -1207,7 +2079,10 @@ with tab_flujos:
 
 with tab_registro:
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        "<br>",
+        unsafe_allow_html=True
+    )
 
     st.markdown(
         """
@@ -1264,7 +2139,10 @@ with tab_registro:
             key="inp_cuenta_nube"
         )
 
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='height:8px'></div>",
+        unsafe_allow_html=True
+    )
 
     b1, b2 = st.columns(
         [1, 1],
@@ -1319,10 +2197,6 @@ with tab_registro:
             lock_creado = False
 
             try:
-
-                # --------------------------------------------
-                # TOMAR LOCK SOLO AL ESCRIBIR
-                # --------------------------------------------
 
                 lock_creado = crear_lock()
 
@@ -1379,7 +2253,9 @@ with tab_registro:
                 df_latest = pd.concat(
                     [
                         df_latest,
-                        pd.DataFrame([nueva_fila])
+                        pd.DataFrame(
+                            [nueva_fila]
+                        )
                     ],
                     ignore_index=True
                 )
@@ -1499,15 +2375,12 @@ with tab_registro:
 
         tabla = tabla[columnas]
 
-        st.dataframe(
-            tabla.style.format(
-                {
-                    "Monto": "${:,.2f}"
-                }
-            ),
-            use_container_width=True,
-            hide_index=True,
-            height=430
+        # ====================================================
+        # RENDER PREMIUM
+        # ====================================================
+
+        render_wallet_table(
+            tabla
         )
 
 
@@ -1525,6 +2398,7 @@ with tab_plan:
             border-radius:8px;
             padding:18px 22px;
             margin-bottom:18px;">
+
             <div style="
                 color:#00FFAA;
                 font-size:11px;
@@ -1532,6 +2406,7 @@ with tab_plan:
                 letter-spacing:2px;">
                 NEXION // FINANZAS PERSONALES
             </div>
+
             <div style="
                 color:#FFFFFF;
                 font-size:24px;
@@ -1539,12 +2414,14 @@ with tab_plan:
                 margin-top:4px;">
                 PLAN SEMANAL
             </div>
+
             <div style="
                 color:#8B9BB4;
                 font-size:12px;
                 margin-top:5px;">
                 Distribución del ingreso · Gastos · Ahorro · Disponible
             </div>
+
         </div>
         """,
         unsafe_allow_html=True
@@ -1593,9 +2470,19 @@ with tab_plan:
             st.markdown(
                 f"""
                 <div class="plan-card">
-                    <div class="plan-title">{titulo}</div>
-                    <div class="plan-value">${valor:,.2f}</div>
-                    <div class="plan-sub">{sub}</div>
+
+                    <div class="plan-title">
+                        {titulo}
+                    </div>
+
+                    <div class="plan-value">
+                        ${valor:,.2f}
+                    </div>
+
+                    <div class="plan-sub">
+                        {sub}
+                    </div>
+
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1661,6 +2548,7 @@ with tab_plan:
                 f"""
                 <div class="plan-card"
                      style="min-height:145px;">
+
                     <div style="
                         color:#00E5FF;
                         font-size:10px;
@@ -1668,6 +2556,7 @@ with tab_plan:
                         letter-spacing:1.5px;">
                         {concepto}
                     </div>
+
                     <div style="
                         color:#FFFFFF;
                         font-size:25px;
@@ -1675,6 +2564,7 @@ with tab_plan:
                         margin-top:7px;">
                         ${monto:,.2f}
                     </div>
+
                     <div style="
                         color:#FFD700;
                         font-size:11px;
@@ -1682,12 +2572,14 @@ with tab_plan:
                         margin-top:4px;">
                         {fecha} · {dia}
                     </div>
+
                     <div style="
                         color:#8B9BB4;
                         font-size:11px;
                         margin-top:8px;">
                         {estado}
                     </div>
+
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1713,14 +2605,46 @@ with tab_plan:
 
     df_distribucion = pd.DataFrame(
         [
-            ["Gastos de Casa / Despensa", 1500, "Gasto Fijo"],
-            ["Gasolina", 600, "Gasto Fijo"],
-            ["Consulta", 350, "Gasto Fijo"],
-            ["Gastos de tu Hija", 250, "Gasto Fijo"],
-            ["Ahorro Abono TV", 225, "Ahorro Mensual"],
-            ["Ahorro Abono Préstamo", 400, "Ahorro Mensual"],
-            ["Ahorro Internet", 275, "Ahorro Mensual"],
-            ["LIBRE / DISPONIBLE PARA TI", 850, "Disponible"]
+            [
+                "Gastos de Casa / Despensa",
+                1500,
+                "Gasto Fijo"
+            ],
+            [
+                "Gasolina",
+                600,
+                "Gasto Fijo"
+            ],
+            [
+                "Consulta",
+                350,
+                "Gasto Fijo"
+            ],
+            [
+                "Gastos de tu Hija",
+                250,
+                "Gasto Fijo"
+            ],
+            [
+                "Ahorro Abono TV",
+                225,
+                "Ahorro Mensual"
+            ],
+            [
+                "Ahorro Abono Préstamo",
+                400,
+                "Ahorro Mensual"
+            ],
+            [
+                "Ahorro Internet",
+                275,
+                "Ahorro Mensual"
+            ],
+            [
+                "LIBRE / DISPONIBLE PARA TI",
+                850,
+                "Disponible"
+            ]
         ],
         columns=[
             "CONCEPTO",
@@ -1729,15 +2653,12 @@ with tab_plan:
         ]
     )
 
-    st.dataframe(
-        df_distribucion.style.format(
-            {
-                "MONTO SEMANAL": "${:,.2f}"
-            }
-        ),
-        use_container_width=True,
-        hide_index=True,
-        height=330
+    # ========================================================
+    # RENDER PREMIUM
+    # ========================================================
+
+    render_distribution_table(
+        df_distribucion
     )
 
     # ========================================================
@@ -1777,9 +2698,19 @@ with tab_plan:
             st.markdown(
                 f"""
                 <div class="plan-card">
-                    <div class="plan-title">{titulo}</div>
-                    <div class="plan-value">${valor:,.2f}</div>
-                    <div class="plan-sub">{sub}</div>
+
+                    <div class="plan-title">
+                        {titulo}
+                    </div>
+
+                    <div class="plan-value">
+                        ${valor:,.2f}
+                    </div>
+
+                    <div class="plan-sub">
+                        {sub}
+                    </div>
+
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1911,7 +2842,9 @@ with tab_plan:
 
                 st.stop()
 
-            ahora = datetime.now(tz_gdl)
+            ahora = datetime.now(
+                tz_gdl
+            )
 
             semana = (
                 f"{ahora.year}-W"
@@ -1929,7 +2862,10 @@ with tab_plan:
             }])
 
             df_plan = pd.concat(
-                [df_plan, nuevo],
+                [
+                    df_plan,
+                    nuevo
+                ],
                 ignore_index=True
             )
 
@@ -1942,7 +2878,10 @@ with tab_plan:
 
                 repo.update_file(
                     path=PLAN_FILE_PATH,
-                    message=f"Registro corte semanal {fecha_corte}",
+                    message=(
+                        f"Registro corte semanal "
+                        f"{fecha_corte}"
+                    ),
                     content=csv_plan,
                     sha=sha_plan,
                     branch="main"
@@ -1952,7 +2891,10 @@ with tab_plan:
 
                 repo.create_file(
                     path=PLAN_FILE_PATH,
-                    message=f"Creación plan financiero {fecha_corte}",
+                    message=(
+                        f"Creación plan financiero "
+                        f"{fecha_corte}"
+                    ),
                     content=csv_plan,
                     branch="main"
                 )
@@ -2030,7 +2972,9 @@ with tab_plan:
             if c in df_hist.columns
         ]
 
-        visual = df_hist[columnas].copy()
+        visual = df_hist[
+            columnas
+        ].copy()
 
         monedas = [
             "Ingreso_Semanal",
