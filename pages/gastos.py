@@ -6,6 +6,8 @@ from github import Github
 import pandas as pd
 import pytz
 import streamlit as st
+import plotly.graph_objects as go
+import plotly.express as px
 
 from components.layout import render_layout
 
