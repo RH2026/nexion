@@ -282,12 +282,12 @@ def render_envios_flow_responsive(data):
 
         .envios-premium-factura{{
             color:#E8EEF2!important;
-            font-weight:800!important;
+            font-weight:500!important;
         }}
 
         .envios-premium-reco{{
             color:#E8EEF2!important;
-            font-weight:700!important;
+            font-weight:500!important;
         }}
 
         .envios-premium-guia{{
@@ -316,7 +316,7 @@ def render_envios_flow_responsive(data):
 
         .envios-premium-fecha{{
             color:#E8EEF2!important;
-            font-weight:700!important;
+            font-weight:500!important;
         }}
 
         .envios-premium-status-cell{{
