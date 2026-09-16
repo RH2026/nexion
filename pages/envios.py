@@ -46,13 +46,19 @@ def cargar_datos_dashboard():
 # 4. INTERFAZ PRINCIPAL Y RENDER DE ENVÍOS
 # ============================================================
 def render_envios_flow_responsive(data):
-    sorted_data = sorted(data, key=lambda x: str(x.get("factura", "")), reverse=True)
+    from html import escape
+
+    sorted_data = sorted(
+        data,
+        key=lambda x: str(x.get("factura", "")),
+        reverse=True
+    )
 
     if not sorted_data:
         st.info("No existen registros para mostrar.")
         return
 
-    html_table = '<div class="nx-table-wrap"><div class="nx-table-scroll"><table class="nx-table"><thead><tr>'
+    html_table = '<div class="envios-premium-wrap"><div class="envios-premium-scroll"><table class="envios-premium-table"><thead><tr>'
 
     columnas = [
         "FACTURA",
@@ -66,58 +72,113 @@ def render_envios_flow_responsive(data):
     ]
 
     for col in columnas:
-        html_table += f"<th>{col}</th>"
+        html_table += f"<th>{escape(col)}</th>"
 
     html_table += "</tr></thead><tbody>"
 
     for item in sorted_data:
         est = str(item.get("estatus", "")).strip().upper()
 
-        if est in ["EN TIEMPO", "ENVIADA EN TIEMPO", "ENVIADA EN ESPERA DE GUÍA", "ENVIADA"]:
-            status_class = "nx-income"
+        if est in [
+            "EN TIEMPO",
+            "ENVIADA EN TIEMPO",
+            "ENVIADA EN ESPERA DE GUÍA",
+            "ENVIADA"
+        ]:
+            status_class = "envios-premium-income"
         elif "RETRASO" in est:
-            status_class = "nx-expense"
+            status_class = "envios-premium-expense"
         else:
-            status_class = "nx-fixed"
+            status_class = "envios-premium-fixed"
 
-        guia_val = str(item.get("numero_guia", "")).strip() if item.get("numero_guia") else "PENDIENTE"
+        guia_val = (
+            str(item.get("numero_guia", "")).strip()
+            if item.get("numero_guia")
+            else "PENDIENTE"
+        )
+
         if guia_val.lower() in ["", "nan", "none", "0", "0.0"]:
             guia_val = "PENDIENTE"
 
-        cliente_val = str(
-            item.get("nombre_extran")
-            if str(item.get("nombre_extran", "")).strip()
-            else item.get("nombre_cliente", "")
-        )
+        nombre_extran = str(item.get("nombre_extran", "")).strip()
 
-        fecha_envio_val = str(
-            item.get("fecha_envio")
-            if item.get("fecha_envio") and str(item.get("fecha_envio")) != "nan"
-            else "SIN ENVIAR"
-        )
+        if nombre_extran:
+            cliente_val = nombre_extran
+        else:
+            cliente_val = str(item.get("nombre_cliente", ""))
+
+        fecha_envio_raw = item.get("fecha_envio")
+
+        if (
+            fecha_envio_raw
+            and str(fecha_envio_raw).strip().lower()
+            not in ["", "nan", "none", "nat", "0", "0.0"]
+        ):
+            fecha_envio_val = str(fecha_envio_raw)
+        else:
+            fecha_envio_val = "SIN ENVIAR"
 
         factura_val = str(item.get("factura", ""))
         reco_val = str(item.get("recomendacion", ""))
-        fprog_val = str(item.get("fecha_programacion") if item.get("fecha_programacion") else "N/A")
+        fprog_val = str(
+            item.get("fecha_programacion")
+            if item.get("fecha_programacion")
+            else "N/A"
+        )
         destino_val = str(item.get("destino", ""))
 
         html_table += "<tr>"
 
-        html_table += f'<td class="nx-factura">{factura_val}</td>'
+        html_table += (
+            f'<td class="envios-premium-factura">'
+            f'{escape(factura_val)}'
+            f'</td>'
+        )
 
-        html_table += f'<td class="nx-cyan">{reco_val}</td>'
+        html_table += (
+            f'<td class="envios-premium-reco">'
+            f'{escape(reco_val)}'
+            f'</td>'
+        )
 
-        html_table += f'<td class="nx-guide">{guia_val}</td>'
+        html_table += (
+            f'<td class="envios-premium-guia">'
+            f'{escape(guia_val)}'
+            f'</td>'
+        )
 
-        html_table += f'<td class="nx-soft">{fprog_val}</td>'
+        html_table += (
+            f'<td class="envios-premium-soft">'
+            f'{escape(fprog_val)}'
+            f'</td>'
+        )
 
-        html_table += f'<td class="nx-client">{cliente_val}</td>'
+        html_table += (
+            f'<td class="envios-premium-client">'
+            f'{escape(cliente_val)}'
+            f'</td>'
+        )
 
-        html_table += f'<td>{destino_val}</td>'
+        html_table += (
+            f'<td class="envios-premium-destino">'
+            f'{escape(destino_val)}'
+            f'</td>'
+        )
 
-        html_table += f'<td class="nx-cyan">{fecha_envio_val}</td>'
+        html_table += (
+            f'<td class="envios-premium-fecha">'
+            f'{escape(fecha_envio_val)}'
+            f'</td>'
+        )
 
-        html_table += f'<td><span class="nx-badge {status_class}"><span class="nx-dot"></span>{est}</span></td>'
+        html_table += (
+            f'<td class="envios-premium-status-cell">'
+            f'<span class="envios-premium-badge {status_class}">'
+            f'<span class="envios-premium-dot"></span>'
+            f'{escape(est)}'
+            f'</span>'
+            f'</td>'
+        )
 
         html_table += "</tr>"
 
@@ -126,30 +187,184 @@ def render_envios_flow_responsive(data):
     st.markdown(
         f"""
         <style>
-        .nx-table-wrap{{width:100%;background:#202B33;border:1px solid #34495E;border-radius:8px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.18);}}
-        .nx-table-scroll{{width:100%;max-height:620px;overflow:auto;scrollbar-width:thin;scrollbar-color:#40525D #182229;}}
-        .nx-table-scroll::-webkit-scrollbar{{width:7px;height:7px;}}
-        .nx-table-scroll::-webkit-scrollbar-track{{background:#182229;}}
-        .nx-table-scroll::-webkit-scrollbar-thumb{{background:#40525D;border-radius:8px;}}
-        .nx-table-scroll::-webkit-scrollbar-thumb:hover{{background:#00A3A3;}}
-        .nx-table{{width:100%;min-width:1180px;border-collapse:separate;border-spacing:0;font-family:Inter,Arial,sans-serif;font-size:11px;color:#E8EEF2;}}
-        .nx-table thead{{position:sticky;top:0;z-index:20;}}
-        .nx-table th{{background:#182229;color:#8B9BB4;text-align:left;font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:12px 13px;border-bottom:1px solid #34495E;white-space:nowrap;position:sticky;top:0;z-index:21;}}
-        .nx-table td{{padding:11px 13px;border-bottom:1px solid rgba(52,73,94,.55);white-space:nowrap;vertical-align:middle;}}
-        .nx-table tbody tr{{background:#202B33;transition:background .15s ease,box-shadow .15s ease;}}
-        .nx-table tbody tr:nth-child(even){{background:#1E2930;}}
-        .nx-table tbody tr:hover{{background:#263740;box-shadow:inset 3px 0 0 #00FFAA;}}
-        .nx-table tbody tr:last-child td{{border-bottom:none;}}
-        .nx-table td:first-child{{color:#E8EEF2;font-weight:800;}}
-        .nx-cyan{{color:#00D4FF!important;font-weight:700!important;}}
-        .nx-guide{{color:#FFD166!important;font-family:monospace!important;font-weight:800!important;}}
-        .nx-soft{{color:#B9C5CD!important;}}
-        .nx-client{{color:#D9E8EE!important;font-weight:600!important;max-width:280px;overflow:hidden;text-overflow:ellipsis;}}
-        .nx-badge{{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:68px;padding:4px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:.6px;background:#2B343B;border:1px solid #465762;white-space:nowrap;}}
-        .nx-income{{color:#00FFAA!important;background:rgba(0,255,170,.08)!important;border-color:rgba(0,255,170,.28)!important;}}
-        .nx-expense{{color:#FF6B6B!important;background:rgba(255,75,75,.08)!important;border-color:rgba(255,75,75,.28)!important;}}
-        .nx-fixed{{color:#FFD166!important;background:rgba(255,209,102,.08)!important;border-color:rgba(255,209,102,.25)!important;}}
-        .nx-dot{{width:5px;height:5px;border-radius:50%;display:inline-block;background:currentColor;box-shadow:0 0 6px currentColor;}}
+        .envios-premium-wrap{{
+            width:100%;
+            background:#202B33;
+            border:1px solid #34495E;
+            border-radius:8px;
+            overflow:hidden;
+            box-shadow:0 8px 24px rgba(0,0,0,.18);
+            margin-top:4px;
+        }}
+
+        .envios-premium-scroll{{
+            width:100%;
+            max-height:620px;
+            overflow:auto;
+            scrollbar-width:thin;
+            scrollbar-color:#40525D #182229;
+        }}
+
+        .envios-premium-scroll::-webkit-scrollbar{{
+            width:7px;
+            height:7px;
+        }}
+
+        .envios-premium-scroll::-webkit-scrollbar-track{{
+            background:#182229;
+        }}
+
+        .envios-premium-scroll::-webkit-scrollbar-thumb{{
+            background:#40525D;
+            border-radius:8px;
+        }}
+
+        .envios-premium-scroll::-webkit-scrollbar-thumb:hover{{
+            background:#00A3A3;
+        }}
+
+        .envios-premium-table{{
+            width:100%;
+            min-width:1180px;
+            border-collapse:separate;
+            border-spacing:0;
+            font-family:Inter,Arial,sans-serif;
+            font-size:11px;
+            color:#E8EEF2;
+        }}
+
+        .envios-premium-table thead{{
+            position:sticky;
+            top:0;
+            z-index:50;
+        }}
+
+        .envios-premium-table th{{
+            background:#182229!important;
+            color:#8B9BB4!important;
+            text-align:left;
+            font-size:9px;
+            font-weight:800;
+            letter-spacing:1.2px;
+            text-transform:uppercase;
+            padding:12px 13px;
+            border-bottom:1px solid #34495E;
+            white-space:nowrap;
+            position:sticky;
+            top:0;
+            z-index:51;
+        }}
+
+        .envios-premium-table td{{
+            padding:11px 13px;
+            border-bottom:1px solid rgba(52,73,94,.55);
+            white-space:nowrap;
+            vertical-align:middle;
+        }}
+
+        .envios-premium-table tbody tr{{
+            background:#202B33!important;
+            transition:background .15s ease,box-shadow .15s ease;
+        }}
+
+        .envios-premium-table tbody tr:nth-child(even){{
+            background:#1E2930!important;
+        }}
+
+        .envios-premium-table tbody tr:hover{{
+            background:#263740!important;
+            box-shadow:inset 3px 0 0 #00FFAA;
+        }}
+
+        .envios-premium-table tbody tr:last-child td{{
+            border-bottom:none;
+        }}
+
+        .envios-premium-factura{{
+            color:#FFFFFF!important;
+            font-weight:800!important;
+        }}
+
+        .envios-premium-reco{{
+            color:#00D4FF!important;
+            font-weight:700!important;
+        }}
+
+        .envios-premium-guia{{
+            color:#FFD166!important;
+            font-family:monospace!important;
+            font-weight:800!important;
+        }}
+
+        .envios-premium-soft{{
+            color:#B9C5CD!important;
+            font-weight:500!important;
+        }}
+
+        .envios-premium-client{{
+            color:#D9E8EE!important;
+            font-weight:600!important;
+            max-width:280px;
+            overflow:hidden;
+            text-overflow:ellipsis;
+        }}
+
+        .envios-premium-destino{{
+            color:#E8EEF2!important;
+            font-weight:500!important;
+        }}
+
+        .envios-premium-fecha{{
+            color:#00D4FF!important;
+            font-weight:700!important;
+        }}
+
+        .envios-premium-status-cell{{
+            text-align:left;
+        }}
+
+        .envios-premium-badge{{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:6px;
+            min-width:68px;
+            padding:4px 8px;
+            border-radius:4px;
+            font-size:9px;
+            font-weight:800;
+            letter-spacing:.6px;
+            background:#2B343B;
+            border:1px solid #465762;
+            white-space:nowrap;
+        }}
+
+        .envios-premium-income{{
+            color:#00FFAA!important;
+            background:rgba(0,255,170,.08)!important;
+            border-color:rgba(0,255,170,.28)!important;
+        }}
+
+        .envios-premium-expense{{
+            color:#FF6B6B!important;
+            background:rgba(255,75,75,.08)!important;
+            border-color:rgba(255,75,75,.28)!important;
+        }}
+
+        .envios-premium-fixed{{
+            color:#FFD166!important;
+            background:rgba(255,209,102,.08)!important;
+            border-color:rgba(255,209,102,.25)!important;
+        }}
+
+        .envios-premium-dot{{
+            width:5px;
+            height:5px;
+            border-radius:50%;
+            display:inline-block;
+            background:currentColor;
+            box-shadow:0 0 6px currentColor;
+        }}
         </style>
         {html_table}
         """,
