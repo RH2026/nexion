@@ -124,9 +124,10 @@ def main():
     REPO_NAME = "RH2026/nexion"
     DASHBOARD_NAME = "Matriz_Excel_Dashboard.csv"
     CONSIGNAS_FILE = "consignas.csv" 
-    PEDIDOS_FILE = "pedidos.csv" 
+    PEDIDOS_FILE = "pedidos.csv"
+    AGC_FILE = "agc.csv"
     MATRICES_EXCEL = ["T1.xlsx", "T2.xlsx", "T3.xlsx", "TGG.xlsx"]
-    TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME, CONSIGNAS_FILE, PEDIDOS_FILE] + MATRICES_EXCEL
+    TODOS_LOS_PERMITIDOS = [DASHBOARD_NAME, CONSIGNAS_FILE, AGC_FILE, PEDIDOS_FILE] + MATRICES_EXCEL
 
     # Header Visual
     st.markdown('''
@@ -178,7 +179,7 @@ def main():
     # Área de Carga Múltiple
     with st.container(border=True):
         st.markdown("<h4 style='color: white; font-weight: 700; font-size: 16px; letter-spacing: 1px;'>SECURE MULTI-UPLINK</h4>", unsafe_allow_html=True)
-        st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}`, `{PEDIDOS_FILE}` and `T1, T2, T3, TGG` (XLSX)")
+        st.caption(f"Accepted Assets: `{DASHBOARD_NAME}`, `{CONSIGNAS_FILE}`, `{AGC_FILE}` `{PEDIDOS_FILE}` and `T1, T2, T3, TGG` (XLSX)")
 
         uploaded_files = st.file_uploader("", type=["csv", "xlsx"], accept_multiple_files=True, key="multi_uploader")
 
