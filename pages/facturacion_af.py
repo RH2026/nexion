@@ -389,9 +389,9 @@ def guardar_archivo_rigoberto_github(df_datos, nombre_archivo):
     r = requests.get(url, headers=headers)
     sha = r.json().get("sha") if r.status_code == 200 else None
     
-    # 🔹 FILTRAR ESTRICTAMENTE LAS 6 COLUMNAS PEDIDAS ANTES DE GUARDAR EN LOTES
+    # 🔹 INCLUIR LA COLUMNA DIRECCIÓN ADEMÁS DE LAS OTRAS 6 PARA GITHUB
     cols_a_guardar = []
-    for c_buscada in ['Factura', 'Fecha_Conta', 'Nombre_Cliente', 'Nombre_Extran', 'Transporte', 'DESTINO']:
+    for c_buscada in ['Factura', 'Fecha_Conta', 'Nombre_Cliente', 'Nombre_Extran', 'Transporte', 'DESTINO', 'DIRECCION']:
         match_col = next((c for c in df_datos.columns if c.strip().lower() == c_buscada.lower()), None)
         if match_col:
             cols_a_guardar.append(match_col)
@@ -403,7 +403,7 @@ def guardar_archivo_rigoberto_github(df_datos, nombre_archivo):
     content_base64 = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
     
     data = {
-        "message": f"Subida de archivo personalizado para Rigoberto: {nombre_archivo}",
+        "message": f"Subida de archivo personalizado para Rigoberto con Dirección: {nombre_archivo}",
         "content": content_base64,
         "branch": "main"
     }
@@ -1045,14 +1045,14 @@ def main():
 
                 st.markdown("---")
 
-                # PASO 2: SELECCIÓN Y FILTRADO ESTRICTO DE LAS 6 COLUMNAS PARA VISTA, LOTES Y DESCARGA LOCAL
+                # PASO 2: SELECCIÓN Y FILTRADO (VISTA MANTIENE COLUMNAS Y DESCARGA LOCAL SIN DIRECCION)
                 st.markdown("<p><b>PASO 2: SELECCIÓN DE FACTURAS (UNA PARTIDA POR FACTURA)</b></p>", unsafe_allow_html=True)
                 if not df_rango.empty:
                     df_unico_factura = df_rango.drop_duplicates(subset=[col_folio]).copy()
                     df_unico_factura = df_unico_factura.rename(columns={col_folio: "Factura"})
                     
-                    # 🔹 FILTRAR EN PANTALLA Y EN LOS LOTES ÚNICAMENTE LAS 6 COLUMNAS SOLICITADAS
-                    cols_deseadas_cynthia = ["Factura", "Fecha_Conta", "Nombre_Cliente", "Nombre_Extran", "Transporte", "DESTINO"]
+                    # 🔹 PARA LA VISTA Y GITHUB INCLUIMOS DIRECCION, PERO PARA LA DESCARGA LOCAL OMITIMOS DIRECCION
+                    cols_deseadas_cynthia = ["Factura", "Fecha_Conta", "Nombre_Cliente", "Nombre_Extran", "Transporte", "DESTINO", "DIRECCION"]
                     cols_existentes_cynthia = []
                     for c_buscada in cols_deseadas_cynthia:
                         match_c = next((c for c in df_unico_factura.columns if c.strip().lower() == c_buscada.lower()), None)
@@ -1086,12 +1086,18 @@ def main():
                             else:
                                 ok_gh = guardar_archivo_rigoberto_github(df_filtrado_final, nombre_archivo_custom.strip())
                                 if ok_gh:
-                                    st.success(f"¡Archivo '{nombre_archivo_custom.strip()}' guardado con éxito en GitHub (filtrado a 6 columnas)!")
+                                    st.success(f"¡Archivo '{nombre_archivo_custom.strip()}' guardado con éxito en GitHub (con Dirección)!")
                                 else:
                                     st.error("Error al guardar en GitHub.")
                     with col_btn2:
+                        # 🔹 DESCARGA LOCAL SIN LA COLUMNA DIRECCIÓN (EXACTAMENTE COMO LO PEDISTE)
+                        df_local_sin_dir = df_filtrado_final.copy()
+                        cols_a_quitar = [c for c in df_local_sin_dir.columns if c.strip().upper() == "DIRECCION"]
+                        if cols_a_quitar:
+                            df_local_sin_dir = df_local_sin_dir.drop(columns=cols_a_quitar)
+
                         towrite = io.BytesIO()
-                        df_filtrado_final.to_excel(towrite, index=False, engine="openpyxl")
+                        df_local_sin_dir.to_excel(towrite, index=False, engine="openpyxl")
                         towrite.seek(0)
                         
                         nombre_limpio = nombre_archivo_custom.strip()
