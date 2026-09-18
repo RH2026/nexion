@@ -513,8 +513,10 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
             
                 if permisos.get("SEGUIMIENTO", False):
                     with st.expander("SEGUIMIENTO", expanded=(st.session_state.menu_main == "SEGUIMIENTO")):
-                        opciones_seg_posibles = ["ALERTAS", "GANTT", "INCIDENCIAS"]
+                        # Agregamos "RECOLECCIONES" a las opciones posibles del submenú
+                        opciones_seg_posibles = ["RECOLECCIONES", "ALERTAS", "GANTT", "INCIDENCIAS"]
                         opciones_seg = [s for s in opciones_seg_posibles if permisos.get(s, False)]
+                        
                         for s in opciones_seg:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
                             if st.button(label, use_container_width=True, key=f"pop_sub_{s}2"):
@@ -524,7 +526,9 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 st.session_state.busqueda_activa = False
                                 
                                 # Redirección dinámica según la opción seleccionada
-                                if s == "ALERTAS":
+                                if s == "RECOLECCIONES":
+                                    st.switch_page("pages/recolecciones.py")
+                                elif s == "ALERTAS":
                                     st.switch_page("pages/alertas.py")
                                 elif s == "INCIDENCIAS":
                                     st.switch_page("pages/incidencias_tr.py")
