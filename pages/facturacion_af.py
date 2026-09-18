@@ -1102,7 +1102,7 @@ def main():
                         nombre_limpio_xlsx = nombre_archivo_auto.replace(".csv", ".xlsx")
 
                         st.download_button(
-                            label="📥 DESCARGAR EXCEL",
+                            label="📥 DESCARGAR EN EXCEL",
                             data=towrite.getvalue(),
                             file_name=nombre_limpio_xlsx,
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
