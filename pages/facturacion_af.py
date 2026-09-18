@@ -389,7 +389,6 @@ def guardar_archivo_rigoberto_github(df_datos, nombre_archivo):
     r = requests.get(url, headers=headers)
     sha = r.json().get("sha") if r.status_code == 200 else None
     
-    # 🔹 INCLUIR LA COLUMNA DIRECCIÓN ADEMÁS DE LAS OTRAS 6 PARA GITHUB
     cols_a_guardar = []
     for c_buscada in ['Factura', 'Fecha_Conta', 'Nombre_Cliente', 'Nombre_Extran', 'Transporte', 'DESTINO', 'DIRECCION']:
         match_col = next((c for c in df_datos.columns if c.strip().lower() == c_buscada.lower()), None)
@@ -981,7 +980,7 @@ def main():
     if "FLUJO DE CYNTHIA" in modo_operacion:
         st.markdown("<p style='font-size: 12px; font-weight: 600;'></p>", unsafe_allow_html=True)
         
-        # 🔹 SECCIÓN DE DESCARGA LIBRE DE LOTES EXISTENTES EN EL ÁREA DE CYNTHIA
+        # 🔹 SECCIÓN DE DESCARGA LIBRE DE LOTES EXISTENTES (SOLO PARA CYNTHIA)
         archivos_disponibles_cynthia = listar_archivos_rigoberto_github()
         if archivos_disponibles_cynthia:
             st.markdown("<p style='font-size: 11px; font-weight: 700; color: #82D4E6; letter-spacing: 1px;'>📥 DESCARGAR LOTE GUARDADO EN CUALQUIER MOMENTO</p>", unsafe_allow_html=True)
@@ -1045,13 +1044,12 @@ def main():
 
                 st.markdown("---")
 
-                # PASO 2: SELECCIÓN Y FILTRADO (VISTA MANTIENE COLUMNAS Y DESCARGA LOCAL SIN DIRECCION)
+                # PASO 2: SELECCIÓN Y FILTRADO
                 st.markdown("<p><b>PASO 2: SELECCIÓN DE FACTURAS (UNA PARTIDA POR FACTURA)</b></p>", unsafe_allow_html=True)
                 if not df_rango.empty:
                     df_unico_factura = df_rango.drop_duplicates(subset=[col_folio]).copy()
                     df_unico_factura = df_unico_factura.rename(columns={col_folio: "Factura"})
                     
-                    # 🔹 PARA LA VISTA Y GITHUB INCLUIMOS DIRECCION, PERO PARA LA DESCARGA LOCAL OMITIMOS DIRECCION
                     cols_deseadas_cynthia = ["Factura", "Fecha_Conta", "Nombre_Cliente", "Nombre_Extran", "Transporte", "DESTINO", "DIRECCION"]
                     cols_existentes_cynthia = []
                     for c_buscada in cols_deseadas_cynthia:
@@ -1074,23 +1072,24 @@ def main():
                     df_filtrado_final = edited_df[edited_df["Incluir_Factura"] == True].drop(columns=["Incluir_Factura"])
 
                     st.markdown("---")
-                    st.markdown("<p style='font-size: 16px; font-weight: 400;'>GUARDAR ARCHIVO PERSONALIZADO EN GITHUB PARA RIGOBERTO</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='font-size: 16px; font-weight: 400;'>GUARDAR ARCHIVO EN GITHUB PARA RIGOBERTO</p>", unsafe_allow_html=True)
                     
-                    nombre_archivo_custom = st.text_input("Nombre del archivo (ej. lote_matutino.csv):", value="lote_rigoberto.csv")
+                    # 🔹 NOMBRE AUTOMÁTICO BASADO EN FECHA Y HORA (INVIOLABLE / NUNCA SE REPITE)
+                    tz_gdl = pytz.timezone("America/Mexico_City")
+                    timestamp_lote = datetime.now(tz_gdl).strftime("%Y%m%d_%H%M%S")
+                    nombre_archivo_auto = f"lote_{timestamp_lote}.csv"
+                    
+                    st.info(f"📁 Nombre de lote generado automáticamente: **{nombre_archivo_auto}**")
 
                     col_btn1, col_btn2 = st.columns(2, gap="medium")
                     with col_btn1:
                         if st.button("SUBIR A GITHUB", type="primary", use_container_width=True):
-                            if not nombre_archivo_custom.strip():
-                                st.error("Ingresa un nombre de archivo válido.")
+                            ok_gh = guardar_archivo_rigoberto_github(df_filtrado_final, nombre_archivo_auto)
+                            if ok_gh:
+                                st.success(f"¡Lote '{nombre_archivo_auto}' guardado con éxito en GitHub!")
                             else:
-                                ok_gh = guardar_archivo_rigoberto_github(df_filtrado_final, nombre_archivo_custom.strip())
-                                if ok_gh:
-                                    st.success(f"¡Archivo '{nombre_archivo_custom.strip()}' guardado con éxito en GitHub (con Dirección)!")
-                                else:
-                                    st.error("Error al guardar en GitHub.")
+                                st.error("Error al guardar en GitHub.")
                     with col_btn2:
-                        # 🔹 DESCARGA LOCAL SIN LA COLUMNA DIRECCIÓN (EXACTAMENTE COMO LO PEDISTE)
                         df_local_sin_dir = df_filtrado_final.copy()
                         cols_a_quitar = [c for c in df_local_sin_dir.columns if c.strip().upper() == "DIRECCION"]
                         if cols_a_quitar:
@@ -1100,14 +1099,12 @@ def main():
                         df_local_sin_dir.to_excel(towrite, index=False, engine="openpyxl")
                         towrite.seek(0)
                         
-                        nombre_limpio = nombre_archivo_custom.strip()
-                        if not nombre_limpio.lower().endswith(".xlsx"):
-                            nombre_limpio = nombre_limpio.split(".")[0] + ".xlsx"
+                        nombre_limpio_xlsx = nombre_archivo_auto.replace(".csv", ".xlsx")
 
                         st.download_button(
                             label="📥 DESCARGAR LOCAL",
                             data=towrite.getvalue(),
-                            file_name=nombre_limpio,
+                            file_name=nombre_limpio_xlsx,
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             use_container_width=True
                         )
@@ -1118,30 +1115,8 @@ def main():
     else:
         st.markdown("")
         
+        # 🔹 NOTA: Se eliminó completamente la sección de descarga libre de lotes en la pestaña de Rigoberto
         archivos_disponibles = listar_archivos_rigoberto_github()
-        
-        # ── SECCIÓN DE DESCARGA LIBRE DE LOTES EXISTENTES EN EL ÁREA DE RIGOBERTO ──
-        if archivos_disponibles:
-            st.markdown("<p style='font-size: 11px; font-weight: 700; color: #82D4E6; letter-spacing: 1px;'>📥 DESCARGAR LOTE GUARDADO EN CUALQUIER MOMENTO</p>", unsafe_allow_html=True)
-            col_sel_lote, col_btn_lote = st.columns([3, 1], vertical_alignment="bottom")
-            with col_sel_lote:
-                lote_a_descargar = st.selectbox("Selecciona un lote existente:", archivos_disponibles, key="select_descarga_lote_libre")
-            with col_btn_lote:
-                if lote_a_descargar:
-                    df_lote_temp = cargar_archivo_rigoberto_github(lote_a_descargar)
-                    if not df_lote_temp.empty:
-                        out_lote_bytes = io.BytesIO()
-                        df_lote_temp.to_excel(out_lote_bytes, index=False, engine="openpyxl")
-                        out_lote_bytes.seek(0)
-                        st.download_button(
-                            label="BAJAR LOTE",
-                            data=out_lote_bytes.getvalue(),
-                            file_name=lote_a_descargar.replace(".csv", ".xlsx"),
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            use_container_width=True,
-                            key="btn_bajar_lote_libre_val"
-                        )
-            st.markdown("---")
 
         if archivos_disponibles:
             archivo_elegido = st.selectbox("Seleccionar archivo preparado por Cynthia desde GitHub:", archivos_disponibles, key="select_trabajo_activo_rigoberto")
