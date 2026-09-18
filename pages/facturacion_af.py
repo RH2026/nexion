@@ -973,9 +973,9 @@ def main():
     st.markdown(f"<p style='letter-spacing:3px; color:{vars_css['sub']}; font-size:10px; font-weight:700;'></p>", unsafe_allow_html=True)
 
     if es_rigoberto:
-        modo_operacion = st.radio("SELECCIONAR MODO DE TRABAJO:", ["FLUJO DE CYNTHIA (CARGA Y FILTRADO)", "MOTOR DE ASIGNACIÓN Y SELLADO (RIGOBERTO)"], horizontal=True)
+        modo_operacion = st.radio("SELECCIONAR MODO DE TRABAJO:", ["FLUJO DE CYNTHIA (CARGA Y FILTRADO)", "MOTOR DE ASIGNACIÓN Y SELLADO (LOGISTICA)"], horizontal=True)
     else:
-        modo_operacion = "FLUJO DE CYNTHIA (CARGA Y FILTRADO)"
+        modo_operacion = "FLUJO DE AAC / FACTURACION (CARGA Y FILTRADO)"
 
     if "FLUJO DE CYNTHIA" in modo_operacion:
         st.markdown("<p style='font-size: 12px; font-weight: 600;'></p>", unsafe_allow_html=True)
@@ -983,7 +983,7 @@ def main():
         # 🔹 SECCIÓN DE DESCARGA LIBRE DE LOTES EXISTENTES (SOLO PARA CYNTHIA)
         archivos_disponibles_cynthia = listar_archivos_rigoberto_github()
         if archivos_disponibles_cynthia:
-            st.markdown("<p style='font-size: 11px; font-weight: 700; color: #82D4E6; letter-spacing: 1px;'>📥 DESCARGAR LOTE GUARDADO EN CUALQUIER MOMENTO</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 11px; font-weight: 700; color: #82D4E6; letter-spacing: 1px;'>📥 DESCARGAR LOTES GUARDADOS</p>", unsafe_allow_html=True)
             col_sel_cyn, col_btn_cyn = st.columns([3, 1], vertical_alignment="bottom")
             with col_sel_cyn:
                 lote_elegido_cyn = st.selectbox("Selecciona un lote existente:", archivos_disponibles_cynthia, key="select_descarga_lote_cynthia_libre")
@@ -1072,7 +1072,7 @@ def main():
                     df_filtrado_final = edited_df[edited_df["Incluir_Factura"] == True].drop(columns=["Incluir_Factura"])
 
                     st.markdown("---")
-                    st.markdown("<p style='font-size: 16px; font-weight: 400;'>GUARDAR ARCHIVO EN GITHUB PARA RIGOBERTO</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='font-size: 16px; font-weight: 400;'>GUARDAR ARCHIVO EN LA NUBE PARA LOGISTICA</p>", unsafe_allow_html=True)
                     
                     # 🔹 NOMBRE AUTOMÁTICO BASADO EN FECHA Y HORA (INVIOLABLE / NUNCA SE REPITE)
                     tz_gdl = pytz.timezone("America/Mexico_City")
@@ -1086,7 +1086,7 @@ def main():
                         if st.button("SUBIR A GITHUB", type="primary", use_container_width=True):
                             ok_gh = guardar_archivo_rigoberto_github(df_filtrado_final, nombre_archivo_auto)
                             if ok_gh:
-                                st.success(f"¡Lote '{nombre_archivo_auto}' guardado con éxito en GitHub!")
+                                st.success(f"¡Lote '{nombre_archivo_auto}' guardado con éxito en en la nube!")
                             else:
                                 st.error("Error al guardar en GitHub.")
                     with col_btn2:
@@ -1102,7 +1102,7 @@ def main():
                         nombre_limpio_xlsx = nombre_archivo_auto.replace(".csv", ".xlsx")
 
                         st.download_button(
-                            label="📥 DESCARGAR LOCAL",
+                            label="📥 DESCARGAR EXCEL",
                             data=towrite.getvalue(),
                             file_name=nombre_limpio_xlsx,
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1119,11 +1119,11 @@ def main():
         archivos_disponibles = listar_archivos_rigoberto_github()
 
         if archivos_disponibles:
-            archivo_elegido = st.selectbox("Seleccionar archivo preparado por Cynthia desde GitHub:", archivos_disponibles, key="select_trabajo_activo_rigoberto")
+            archivo_elegido = st.selectbox("Seleccionar archivo preparado por AAA / FACTURACIÓN:", archivos_disponibles, key="select_trabajo_activo_rigoberto")
             if archivo_elegido:
                 df_trabajo = cargar_archivo_rigoberto_github(archivo_elegido)
         else:
-            st.info("No hay archivos en la carpeta de GitHub de Cynthia. Puedes subir uno localmente si lo prefieres:")
+            st.info("No hay archivos en la carpeta de Cynthia. Puedes subir uno localmente si lo prefieres:")
             uploaded_rigoberto = st.file_uploader("Subir archivo preparado", type=["xlsx", "csv"], key="uploader_rigoberto")
             if uploaded_rigoberto is not None:
                 df_trabajo = pd.read_csv(uploaded_rigoberto, sep=None, engine="python") if uploaded_rigoberto.name.endswith(".csv") else pd.read_excel(uploaded_rigoberto)
