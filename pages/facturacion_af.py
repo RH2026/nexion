@@ -222,7 +222,7 @@ def verificar_permiso_pagina(modulo, submodulo=None):
             if st.button("REGRESAR AL INICIO", key="btn_regresar_modulo", use_container_width=True):
                 st.switch_page("dashboard.py")
         st.stop()
-            
+        
     if submodulo and not permisos.get(submodulo.upper(), False):
         st.markdown(
             f"""
@@ -389,8 +389,17 @@ def guardar_archivo_rigoberto_github(df_datos, nombre_archivo):
     r = requests.get(url, headers=headers)
     sha = r.json().get("sha") if r.status_code == 200 else None
     
+    # 🔹 FILTRAR ESTRICTAMENTE LAS 6 COLUMNAS PEDIDAS ANTES DE GUARDAR EN LOTES
+    cols_a_guardar = []
+    for c_buscada in ['Factura', 'Fecha_Conta', 'Nombre_Cliente', 'Nombre_Extran', 'Transporte', 'DESTINO']:
+        match_col = next((c for c in df_datos.columns if c.strip().lower() == c_buscada.lower()), None)
+        if match_col:
+            cols_a_guardar.append(match_col)
+    
+    df_filtrado_lote = df_datos[cols_a_guardar].copy() if cols_a_guardar else df_datos.copy()
+
     csv_buffer = io.StringIO()
-    df_datos.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
+    df_filtrado_lote.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
     content_base64 = base64.b64encode(csv_buffer.getvalue().encode("utf-8")).decode("utf-8")
     
     data = {
@@ -980,10 +989,9 @@ def main():
                 col_folio = next((c for c in df.columns if "factura" in c.lower() or "docnum" in c.lower() or "folio" in c.lower()), df.columns[0])
                 df[col_folio] = pd.to_numeric(df[col_folio], errors="coerce")
 
-                # PASO 1: SELECCIÓN Y GUARDADO EN FACTURACION.CSV
+                # PASO 1: SELECCIÓN Y GUARDADO EN FACTURACION.CSV (COMPLETO)
                 st.markdown("<p><b>PASO 1: SELECCIÓN Y GUARDADO EN FACTURACION.CSV</b></p>", unsafe_allow_html=True)
                 
-                # 3 controles de selección arriba en línea
                 col_i1, col_i2, col_i3 = st.columns(3, gap="medium")
                 with col_i1:
                     folios_manuales = st.text_input("Folios específicos (separados por coma):", placeholder="Ej: 1001, 1002, 1005")
@@ -1001,7 +1009,6 @@ def main():
 
                 st.markdown("")
 
-                # Botón grande de guardar en facturacion.csv abarcando todo el ancho
                 if st.button("GUARDAR EN FACTURACION.CSV (SIN DUPLICADOS)", type="primary", use_container_width=True):
                     if df_rango.empty:
                         st.error("El rango está vacío.")
@@ -1013,13 +1020,28 @@ def main():
 
                 st.markdown("---")
 
-                # PASO 2: SELECCIÓN DE FACTURAS (TABLA ABAJO)
+                # PASO 2: SELECCIÓN Y FILTRADO ESTRICTO DE LAS 6 COLUMNAS PARA VISTA, LOTES Y DESCARGA LOCAL
                 st.markdown("<p><b>PASO 2: SELECCIÓN DE FACTURAS (UNA PARTIDA POR FACTURA)</b></p>", unsafe_allow_html=True)
                 if not df_rango.empty:
                     df_unico_factura = df_rango.drop_duplicates(subset=[col_folio]).copy()
-                    df_unico_factura.insert(0, "Incluir_Factura", True)
+                    df_unico_factura = df_unico_factura.rename(columns={col_folio: "Factura"})
                     
-                    edited_df = st.data_editor(df_unico_factura, hide_index=True, use_container_width=True, key="ed_v_cynthia")
+                    # 🔹 FILTRAR EN PANTALLA Y EN LOS LOTES ÚNICAMENTE LAS 6 COLUMNAS SOLICITADAS
+                    cols_deseadas_cynthia = ["Factura", "Fecha_Conta", "Nombre_Cliente", "Nombre_Extran", "Transporte", "DESTINO"]
+                    cols_existentes_cynthia = []
+                    for c_buscada in cols_deseadas_cynthia:
+                        match_c = next((c for c in df_unico_factura.columns if c.strip().lower() == c_buscada.lower()), None)
+                        if match_c:
+                            cols_existentes_cynthia.append(match_c)
+                        else:
+                            # Si alguna columna no viene en el ERP, la creamos vacía para mantener la estructura limpia
+                            df_unico_factura[c_buscada] = ""
+                            cols_existentes_cynthia.append(c_buscada)
+
+                    df_filtrado_columnas = df_unico_factura[cols_existentes_cynthia].copy()
+                    df_filtrado_columnas.insert(0, "Incluir_Factura", True)
+                    
+                    edited_df = st.data_editor(df_filtrado_columnas, hide_index=True, use_container_width=True, key="ed_v_cynthia")
                 else:
                     st.warning("Rango vacío")
                     edited_df = pd.DataFrame()
@@ -1030,7 +1052,6 @@ def main():
                     st.markdown("---")
                     st.markdown("<p style='font-size: 16px; font-weight: 400;'>GUARDAR ARCHIVO PERSONALIZADO EN GITHUB PARA RIGOBERTO</p>", unsafe_allow_html=True)
                     
-                    # Nombre del archivo y los dos botones abajo de la tabla
                     nombre_archivo_custom = st.text_input("Nombre del archivo (ej. lote_matutino.csv):", value="lote_rigoberto.csv")
 
                     col_btn1, col_btn2 = st.columns(2, gap="medium")
@@ -1041,7 +1062,7 @@ def main():
                             else:
                                 ok_gh = guardar_archivo_rigoberto_github(df_filtrado_final, nombre_archivo_custom.strip())
                                 if ok_gh:
-                                    st.success(f"¡Archivo '{nombre_archivo_custom.strip()}' guardado con éxito en GitHub!")
+                                    st.success(f"¡Archivo '{nombre_archivo_custom.strip()}' guardado con éxito en GitHub (filtrado a 6 columnas)!")
                                 else:
                                     st.error("Error al guardar en GitHub.")
                     with col_btn2:
@@ -1114,7 +1135,6 @@ def main():
                     df_trabajo["COSTO"] = [r[1] for r in res]
                     df_trabajo["FECHA DE PROGRAMACION"] = calcular_fecha_programacion()
 
-                    # 🔹 AQUÍ SE APLICÓ EL CAMBIO: Se agregó "Quantity" y se cambió "Nombre_Cliente" por "Nombre_Extran"
                     cols_deseadas = ["Factura", "FECHA DE PROGRAMACION", "RECOMENDACION", "Transporte", "DIRECCION", "COSTO", "Nombre_Extran", "Quantity", "DESTINO"]
                     cols_finales = [c for c in cols_deseadas if c in df_trabajo.columns]
 
