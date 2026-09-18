@@ -49,16 +49,7 @@ st.markdown("""
     box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
 }
-.metric-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: linear-gradient(180deg, #FFFFFF 0%, #A4B9C8 100%);
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
-}
+
 /* Etiqueta superior compacta */
 .metric-label {
     color: #8398AB;
