@@ -980,6 +980,31 @@ def main():
 
     if "FLUJO DE CYNTHIA" in modo_operacion:
         st.markdown("<p style='font-size: 12px; font-weight: 600;'></p>", unsafe_allow_html=True)
+        
+        # 🔹 SECCIÓN DE DESCARGA LIBRE DE LOTES EXISTENTES EN EL ÁREA DE CYNTHIA
+        archivos_disponibles_cynthia = listar_archivos_rigoberto_github()
+        if archivos_disponibles_cynthia:
+            st.markdown("<p style='font-size: 11px; font-weight: 700; color: #82D4E6; letter-spacing: 1px;'>📥 DESCARGAR LOTE GUARDADO EN CUALQUIER MOMENTO</p>", unsafe_allow_html=True)
+            col_sel_cyn, col_btn_cyn = st.columns([3, 1], vertical_alignment="bottom")
+            with col_sel_cyn:
+                lote_elegido_cyn = st.selectbox("Selecciona un lote existente:", archivos_disponibles_cynthia, key="select_descarga_lote_cynthia_libre")
+            with col_btn_cyn:
+                if lote_elegido_cyn:
+                    df_lote_cyn = cargar_archivo_rigoberto_github(lote_elegido_cyn)
+                    if not df_lote_cyn.empty:
+                        out_bytes_cyn = io.BytesIO()
+                        df_lote_cyn.to_excel(out_bytes_cyn, index=False, engine="openpyxl")
+                        out_bytes_cyn.seek(0)
+                        st.download_button(
+                            label="BAJAR LOTE",
+                            data=out_bytes_cyn.getvalue(),
+                            file_name=lote_elegido_cyn.replace(".csv", ".xlsx"),
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True,
+                            key="btn_bajar_lote_cynthia_val"
+                        )
+            st.markdown("---")
+
         uploaded_file = st.file_uploader("Subir archivo ERP completo en Excel o CSV", type=["xlsx", "csv"], key="erp_file_uploader_cynthia")
 
         if uploaded_file is not None:
@@ -1034,7 +1059,6 @@ def main():
                         if match_c:
                             cols_existentes_cynthia.append(match_c)
                         else:
-                            # Si alguna columna no viene en el ERP, la creamos vacía para mantener la estructura limpia
                             df_unico_factura[c_buscada] = ""
                             cols_existentes_cynthia.append(c_buscada)
 
@@ -1090,8 +1114,31 @@ def main():
         
         archivos_disponibles = listar_archivos_rigoberto_github()
         
+        # ── SECCIÓN DE DESCARGA LIBRE DE LOTES EXISTENTES EN EL ÁREA DE RIGOBERTO ──
         if archivos_disponibles:
-            archivo_elegido = st.selectbox("Seleccionar archivo preparado por Cynthia desde GitHub:", archivos_disponibles)
+            st.markdown("<p style='font-size: 11px; font-weight: 700; color: #82D4E6; letter-spacing: 1px;'>📥 DESCARGAR LOTE GUARDADO EN CUALQUIER MOMENTO</p>", unsafe_allow_html=True)
+            col_sel_lote, col_btn_lote = st.columns([3, 1], vertical_alignment="bottom")
+            with col_sel_lote:
+                lote_a_descargar = st.selectbox("Selecciona un lote existente:", archivos_disponibles, key="select_descarga_lote_libre")
+            with col_btn_lote:
+                if lote_a_descargar:
+                    df_lote_temp = cargar_archivo_rigoberto_github(lote_a_descargar)
+                    if not df_lote_temp.empty:
+                        out_lote_bytes = io.BytesIO()
+                        df_lote_temp.to_excel(out_lote_bytes, index=False, engine="openpyxl")
+                        out_lote_bytes.seek(0)
+                        st.download_button(
+                            label="BAJAR LOTE",
+                            data=out_lote_bytes.getvalue(),
+                            file_name=lote_a_descargar.replace(".csv", ".xlsx"),
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True,
+                            key="btn_bajar_lote_libre_val"
+                        )
+            st.markdown("---")
+
+        if archivos_disponibles:
+            archivo_elegido = st.selectbox("Seleccionar archivo preparado por Cynthia desde GitHub:", archivos_disponibles, key="select_trabajo_activo_rigoberto")
             if archivo_elegido:
                 df_trabajo = cargar_archivo_rigoberto_github(archivo_elegido)
         else:
