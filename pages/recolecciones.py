@@ -1,44 +1,12 @@
 import base64
-import calendar
-from datetime import date, datetime, timedelta
+from datetime import datetime
+from io import BytesIO
 import io
-from io import BytesIO, StringIO
 import json
-import math
-import os
-import random
 import re
 import time
-import unicodedata
-import zipfile
 
-import altair as alt
-from fpdf import FPDF
-from github import Github
-import google.generativeai as genai
-import numpy as np
 import pandas as pd
-
-# CAMBIO 1: Pillow con alias para no chocar con ReportLab
-from PIL import Image as PILImage, ImageDraw, ImageFont
-
-import plotly.express as px
-import plotly.graph_objects as go
-from pypdf import PdfReader, PdfWriter
-import pytz
-import qrcode
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import cm
-from reportlab.lib.utils import ImageReader, simpleSplit
-from reportlab.pdfgen import canvas
-
-# CAMBIO 2: Importamos platypus completo para usar platypus.Image sin perder ningún elemento
-import reportlab.platypus as platypus
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, Image
-
-
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
@@ -122,18 +90,6 @@ def cargar_datos_dashboard():
         return None
 
 
-def limpiar_texto(texto):
-    if pd.isna(texto):
-        return ""
-    texto = "".join(
-        c
-        for c in unicodedata.normalize("NFD", str(texto))
-        if unicodedata.category(c) != "Mn"
-    ).upper()
-    texto = re.sub(r"[^A-Z0-9\s]", " ", texto)
-    return " ".join(texto.split())
-
-
 # Inicialización segura de estados de menú
 if "menu_main" not in st.session_state:
     st.session_state.menu_main = "SEGUIMIENTO"
@@ -183,6 +139,21 @@ def main():
             background-color: #00A3A3 !important;
             border-color: #00A3A3 !important;
             color: #FFFFFF !important;
+        }
+
+        /* --- TARJETAS DE KPI ESTILO WAR ROOM --- */
+        .base-card-alerta {
+            background-color: #2B343B;
+            border: 1px solid #4B5D67;
+            border-left: 5px solid #38bdf8;
+            padding: 16px 20px;
+            border-radius: 6px;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            box-sizing: border-box;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
         }
     </style>
 """, unsafe_allow_html=True)
