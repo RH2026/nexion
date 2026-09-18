@@ -315,8 +315,44 @@ def main():
             if not df_render.empty:
                 data_render = df_render.to_dict('records')
                 
-                html_render_cards = f"""
-                <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                # --- CONSTRUCCIÓN DE LA TABLA ESTILO MATRIZ CON ENCABEZADO STICKY ---
+                filas_html = ""
+                for item in data_render:
+                    estatus_val = str(item.get('ESTATUS', 'PENDIENTE')).upper()
+                    
+                    # Colores de badge según estatus
+                    if "ENTREGADO" in estatus_val:
+                        badge_color = "#00FFAA"
+                        badge_bg = "rgba(0, 255, 170, 0.1)"
+                    elif "PENDIENTE" in estatus_val or "PROCESO" in estatus_val:
+                        badge_color = "#FDE047"
+                        badge_bg = "rgba(253, 224, 71, 0.1)"
+                    elif "CANCELADO" in estatus_val or "INCIDENCIA" in estatus_val:
+                        badge_color = "#FF4B4B"
+                        badge_bg = "rgba(255, 75, 75, 0.1)"
+                    else:
+                        badge_color = "#38bdf8"
+                        badge_bg = "rgba(56, 189, 248, 0.1)"
+
+                    filas_html += f"""
+                    <tr>
+                        <td style="font-family: monospace; font-weight: 800; color: #FFFFFF;">{item.get('FOLIO', 'N/A')}</td>
+                        <td>{item.get('FECHA_RECOLECCION', 'N/A')}</td>
+                        <td style="font-family: monospace; color: #38bdf8; font-weight: 700;">{item.get('NUMERO DE GUIA', 'N/A')}</td>
+                        <td style="text-transform: uppercase; font-weight: 700;">{str(item.get('CLIENTE', 'N/A'))}</td>
+                        <td style="text-transform: uppercase;">{str(item.get('PROVEEDOR', 'N/A'))}</td>
+                        <td style="color: #00FFAA; font-weight: 700; text-align: right;">{float(item.get('PESO_TOTAL', 0.0)):,.2f} KG</td>
+                        <td style="text-align: right; font-family: monospace; color: #FFD700;">$ {float(item.get('COSTO DE LA GUIA', 0.0)):,.2f}</td>
+                        <td style="text-align: center;">
+                            <span style="background-color: {badge_bg}; color: {badge_color}; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid {badge_color}; display: inline-block; letter-spacing: 0.5px;">
+                                {estatus_val}
+                            </span>
+                        </td>
+                    </tr>
+                    """
+
+                html_tabla_matriz = f"""
+                <div style="font-family: 'Inter', sans-serif; width: 100%;">
                     <style>
                         body {{ background: transparent; margin: 0; padding: 0; }}
                         
@@ -332,73 +368,74 @@ def main():
                             box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); 
                         }}
 
-                        .card-excepcion {{
-                            background: #263238;
-                            border: 1px solid rgba(56, 189, 248, 0.15);
-                            border-left: 6px solid #38bdf8;
-                            border-radius: 12px;
-                            margin-bottom: 12px;
-                            padding: 18px 25px;
-                            display: flex;
-                            flex-wrap: wrap;
-                            gap: 15px;
-                            justify-content: space-between;
-                            align-items: center;
-                            transition: all 0.3s ease;
-                            width: 100%;
-                            box-sizing: border-box;
-                        }}
-                        .card-excepcion:hover {{ 
-                            border-color: #38bdf8; 
-                            background: #2d3b42;
-                            transform: translateX(5px);
-                        }}
-                        .badge-estatus {{
-                            background: rgba(56, 189, 248, 0.1);
-                            color: #38bdf8;
-                            padding: 8px 14px;
+                        .table-container {{
+                            max-height: 580px;
+                            overflow-y: auto;
+                            border: 1px solid #4B5D67;
                             border-radius: 8px;
-                            font-weight: 800;
-                            font-family: monospace;
-                            font-size: 13px;
-                            text-align: center;
-                            border: 1px solid rgba(56, 189, 248, 0.3);
+                            background-color: #2B343B;
                         }}
-                        .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }}
-                        .factura-destacada {{ color: #FFFFFF; font-size: 18px; font-weight: 800; letter-spacing: 1px; font-family: monospace; }}
-                        .info-main {{ color: #FFFFFF; font-size: 13px; font-weight: 700; }}
-                        .info-sub {{ color: #94a3b8; font-size: 11px; }}
+
+                        .matriz-table {{
+                            width: 100%;
+                            border-collapse: collapse;
+                            text-align: left;
+                            font-size: 12px;
+                            color: white;
+                        }}
+
+                        .matriz-table th {{
+                            position: sticky;
+                            top: 0;
+                            background-color: #1E252B;
+                            color: rgba(255, 255, 255, 0.7);
+                            font-size: 10px;
+                            font-weight: 800;
+                            letter-spacing: 1px;
+                            text-transform: uppercase;
+                            padding: 14px 16px;
+                            border-bottom: 2px solid #4B5D67;
+                            z-index: 10;
+                        }}
+
+                        .matriz-table td {{
+                            padding: 12px 16px;
+                            border-bottom: 1px solid rgba(75, 93, 103, 0.4);
+                            vertical-align: middle;
+                        }}
+
+                        .matriz-table tbody tr {{
+                            transition: background 0.2s ease;
+                        }}
+
+                        .matriz-table tbody tr:hover {{
+                            background-color: rgba(56, 189, 248, 0.08);
+                        }}
                     </style>
-                    {"".join([f'''
-                    <div class="card-excepcion">
-                        <div style="flex: 1.5; min-width: 180px;">
-                            <div class="label-mini">Folio / Factura</div>
-                            <div class="factura-destacada">{item.get('FOLIO', 'N/A')}</div>
-                            <div class="info-sub" style="margin-top:4px;">Fecha: {item.get('FECHA_RECOLECCION', 'N/A')}</div>
-                        </div>
 
-                        <div style="flex: 2; min-width: 220px; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
-                            <div class="label-mini">Cliente / Destino</div>
-                            <div class="info-main">{str(item.get('CLIENTE', 'N/A'))[:40]}</div>
-                            <div class="info-sub" style="color: #FFFFFF !important;">Proveedor: {str(item.get('PROVEEDOR', 'N/A'))[:35]}</div>
-                        </div>
-
-                        <div style="flex: 1; min-width: 120px; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
-                            <div class="label-mini">Peso Total</div>
-                            <div class="info-main" style="color: #00FFAA;">{float(item.get('PESO_TOTAL', 0.0)):,.2f} KG</div>
-                            <div class="info-sub">Observación registrada</div>
-                        </div>
-
-                        <div style="flex: 1.2; min-width: 160px; text-align: right;">
-                            <div class="label-mini" style="text-align:center;">Estatus Actual</div>
-                            <div class="badge-estatus">{item.get('ESTATUS', 'PENDIENTE')}</div>
-                        </div>
+                    <div class="table-container">
+                        <table class="matriz-table">
+                            <thead>
+                                <tr>
+                                    <th>FACTURA / FOLIO</th>
+                                    <th>RECOLECCIÓN</th>
+                                    <th>NO. GUÍA</th>
+                                    <th>CLIENTE</th>
+                                    <th>PROVEEDOR</th>
+                                    <th style="text-align: right;">PESO TOTAL</th>
+                                    <th style="text-align: right;">COSTO GUÍA</th>
+                                    <th style="text-align: center;">ESTATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filas_html}
+                            </tbody>
+                        </table>
                     </div>
-                    ''' for item in data_render])}
                 </div>
                 """
                 
-                components.html(html_render_cards, height=600, scrolling=True)
+                components.html(html_tabla_matriz, height=620, scrolling=False)
             else:
                 st.markdown(f"""
                     <div style="background: rgba(56, 189, 248, 0.05); border: 1px dashed #38bdf8; border-radius: 10px; padding: 25px; text-align: center; margin-top: 20px;">
