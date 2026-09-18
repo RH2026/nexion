@@ -28,6 +28,7 @@ PAGINAS = {
     "cotizaciones" : "pages/cotizaciones.py",
     "alertas" : "pages/alertas.py",
     "gastos" : "pages/gastos.py",
+    "recolecciones" : "pages/recolecciones.py",
 }
 
 # ============================================================
