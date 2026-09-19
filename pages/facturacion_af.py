@@ -557,8 +557,8 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
 
 def generar_sellos_emergencia(df_datos, x_pos, y_pos):
     """
-    Tacha el sello original en (x_pos, y_pos) y coloca el nuevo sello correcto
-    más hacia el centro/izquierda para evitar amontonarse en la esquina.
+    Tacha con líneas horizontales las coordenadas (x_pos, y_pos) donde está el sello viejo,
+    sin volver a imprimirlo, y coloca el nuevo sello correcto más hacia el centro/izquierda.
     """
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(612, 792)) 
@@ -569,30 +569,18 @@ def generar_sellos_emergencia(df_datos, x_pos, y_pos):
         fletera = str(row.get('RECOMENDACION', 'N/A'))
         factura = str(row.get('Factura', 'S/N'))
         
-        # --- 1. DIBUJAR EL SELLO ORIGINAL EN SU POSICIÓN ---
-        c.setFont("Helvetica-Bold", 12)
-        c.setFillColor(colors.black)
-        c.drawString(x_pos, y_pos, f"{fletera}")
-        
-        texto_qr_viejo = f"FLETERA: {fletera} | FACTURA: {factura}"
-        qr_viejo_io = crear_imagen_qr(texto_qr_viejo)
-        c.drawImage(ImageReader(qr_viejo_io), x_pos + 130, y_pos - 37, width=55, height=55)
-        
-        # --- 2. TACHADO HORIZONTAL EXACTO SOBRE EL VIEJO ---
+        # --- 1. ÚNICAMENTE EL TACHADO HORIZONTAL SOBRE EL VIEJO IMPRESO ---
         c.saveState()
         c.setStrokeColor(colors.black)
         c.setLineWidth(2.5)
-        # Tacha el texto del transporte viejo
+        # Tacha el texto del transporte viejo en (x_pos, y_pos)
         c.line(x_pos - 5, y_pos + 5, x_pos + 110, y_pos + 5)
         # Tacha el cuadro del QR viejo horizontalmente
         c.line(x_pos + 125, y_pos - 10, x_pos + 195, y_pos - 10)
         c.restoreState()
         
-        # --- 3. NUEVO SELLO CORRECTO MÁS HACIA EL CENTRO ---
-        # Lo recorremos hacia la izquierda (por ejemplo, 210 puntos antes) para que quede al centro de la hoja
+        # --- 2. NUEVO SELLO CORRECTO MÁS HACIA EL CENTRO ---
         x_nuevo = x_pos - 210
-        
-        # Si por alguna razón el usuario puso el sello original muy a la izquierda, aseguramos que no sea negativo
         if x_nuevo < 40:
             x_nuevo = 40  # Margen mínimo de seguridad
             
