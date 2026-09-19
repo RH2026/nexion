@@ -532,7 +532,11 @@ def crear_imagen_qr(contenido_qr):
     return buffer
 
 
-def generar_sellos_fisicos(df_datos, x_pos, y_pos):
+def generar_sellos_emergencia(df_datos, x_pos, y_pos):
+    """
+    Tacha con una X roja el sello anterior (transporte y QR) y coloca 
+    el sello correcto actualizado al lado o en la posición correspondiente.
+    """
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(612, 792)) 
     tz_gdl = pytz.timezone("America/Mexico_City")
@@ -542,13 +546,28 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
         fletera = str(row.get('RECOMENDACION', 'N/A'))
         factura = str(row.get('Factura', 'S/N'))
         
+        # --- 1. TACHADO ROJO DE EMERGENCIA (Sobre el sello anterior) ---
+        c.saveState()
+        c.setStrokeColor(colors.HexColor("#ff4b4b"))  # Rojo alerta
+        c.setLineWidth(2.5)
+        # Tacha tanto la zona del texto del transporte como el cuadro del QR anterior
+        c.line(x_pos - 5, y_pos - 8, x_pos + 190, y_pos + 48)  # Diagonal 1
+        c.line(x_pos - 5, y_pos + 48, x_pos + 190, y_pos - 8)  # Diagonal 2 (Cruz de tachado)
+        c.restoreState()
+        
+        # --- 2. NUEVO SELLADO CORRECTO (Desplazado hacia abajo para evitar encimar) ---
+        y_nuevo = y_pos - 65
+        
         c.setFont("Helvetica-Bold", 12)
-        c.drawString(x_pos, y_pos, f"{fletera}")
+        c.setFillColor(colors.black)
+        c.drawString(x_pos, y_nuevo, f"{fletera}")
         
         texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
         qr_io = crear_imagen_qr(texto_qr)
-        c.drawImage(ImageReader(qr_io), x_pos + 130, y_pos - 37, width=55, height=55)
+        c.drawImage(ImageReader(qr_io), x_pos + 130, y_nuevo - 37, width=55, height=55)
+        
         c.showPage()
+        
     c.save()
     buffer.seek(0)
     return buffer.getvalue()
@@ -1200,12 +1219,14 @@ def main():
                 ax = cx.slider("X", 0, 612, 399)
                 ay = cy.slider("Y", 0, 792, 760)
                 
-                s1, s2 = st.columns(2)
+                s1, s2, s3 = st.columns(3)
                 with s1:
-                    st.download_button("GENERAR SELLOS NORMAL", data=generar_sellos_fisicos(p_editado, ax, ay), file_name="Sellos_Normales.pdf", use_container_width=True, type="primary")
+                    st.download_button("SELLOS NORMAL", data=generar_sellos_fisicos(p_editado, ax, ay), file_name="Sellos_Normales.pdf", use_container_width=True, type="primary")
                 with s2:
                     p_invertido = p_editado.iloc[::-1].reset_index(drop=True)
-                    st.download_button("GENERAR SELLOS MODO INVERSO", data=generar_sellos_fisicos(p_invertido, ax, ay), file_name="Sellos_Inversos.pdf", use_container_width=True, type="primary")
+                    st.download_button("SELLOS INVERSOS", data=generar_sellos_fisicos(p_invertido, ax, ay), file_name="Sellos_Inversos.pdf", use_container_width=True, type="primary")
+                with s3:
+                    st.download_button("🚨 EMERGENCIA (TACHADO + RE-SELLO)", data=generar_sellos_emergencia(p_editado, ax, ay), file_name="Sellos_Emergencia.pdf", use_container_width=True)
 
 
 if __name__ == "__main__":
