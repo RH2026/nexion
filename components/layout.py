@@ -203,7 +203,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
         height: 2px !important;
     }}
     
-    /*FOOTER FIJO */
+    /* FOOTER FIJO */
     .footer {{ 
         position: fixed; 
         bottom: 0 !important; 
@@ -217,6 +217,14 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
         letter-spacing: 2px; 
         border-top: 1px solid {vars_css['border']} !important; 
         z-index: 999999 !important; 
+        opacity: 0;
+        animation: fadeInFooter 0.4s ease-out 0.3s forwards;
+    }}
+
+    @keyframes fadeInFooter {{
+        to {{
+            opacity: 1;
+        }}
     }}
     </style>
     """,
