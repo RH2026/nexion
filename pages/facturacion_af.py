@@ -557,8 +557,8 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
 
 def generar_sellos_emergencia(df_datos, x_pos, y_pos):
     """
-    Tacha con una X roja el sello anterior (transporte y QR) y coloca 
-    el sello correcto actualizado abajito, sin textos de cancelación.
+    Tacha el sello original en sus coordenadas (x_pos, y_pos) con una línea horizontal
+    y coloca el nuevo sello correcto a un lado (desplazado en el eje X).
     """
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(612, 792)) 
@@ -569,24 +569,37 @@ def generar_sellos_emergencia(df_datos, x_pos, y_pos):
         fletera = str(row.get('RECOMENDACION', 'N/A'))
         factura = str(row.get('Factura', 'S/N'))
         
-        # --- 1. TACHADO ROJO DE EMERGENCIA (Sobre el sello anterior) ---
+        # --- 1. DIBUJAR EL SELLO ORIGINAL (QUE QUEDARÁ TACHADO) ---
+        c.setFont("Helvetica-Bold", 12)
+        c.setFillColor(colors.black)
+        c.drawString(x_pos, y_pos, f"{fletera}")
+        
+        # QR del sello viejo (para simular el ejemplo que me mandaste)
+        texto_qr_viejo = f"FLETERA: {fletera} | FACTURA: {factura}"
+        qr_viejo_io = crear_imagen_qr(texto_qr_viejo)
+        c.drawImage(ImageReader(qr_viejo_io), x_pos + 130, y_pos - 37, width=55, height=55)
+        
+        # --- 2. TACHADO HORIZONTAL EXACTO SOBRE EL VIEJO ---
         c.saveState()
-        c.setStrokeColor(colors.HexColor("#ff4b4b"))  # Rojo alerta
+        c.setStrokeColor(colors.black)  # O rojo si prefieres, en la imagen se ve negro/oscuro
         c.setLineWidth(2.5)
-        c.line(x_pos - 5, y_pos - 8, x_pos + 190, y_pos + 48)  # Diagonal 1
-        c.line(x_pos - 5, y_pos + 48, x_pos + 190, y_pos - 8)  # Diagonal 2 (Cruz de tachado)
+        # Tacha el texto del transporte viejo
+        c.line(x_pos - 5, y_pos + 5, x_pos + 110, y_pos + 5)
+        # Tacha el cuadro del QR viejo horizontalmente a la altura del centro
+        c.line(x_pos + 125, y_pos - 10, x_pos + 195, y_pos - 10)
         c.restoreState()
         
-        # --- 2. NUEVO SELLADO CORRECTO (Desplazado hacia abajo) ---
-        y_nuevo = y_pos - 65
+        # --- 3. NUEVO SELLO CORRECTO A UN LADO ---
+        # Desplazamos la posición X hacia la derecha (ej. 220 puntos más allá)
+        x_nuevo = x_pos + 220
         
         c.setFont("Helvetica-Bold", 12)
         c.setFillColor(colors.black)
-        c.drawString(x_pos, y_nuevo, f"{fletera}")
+        c.drawString(x_nuevo, y_pos, f"{fletera}")
         
-        texto_qr = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
-        qr_io = crear_imagen_qr(texto_qr)
-        c.drawImage(ImageReader(qr_io), x_pos + 130, y_nuevo - 37, width=55, height=55)
+        texto_qr_nuevo = f"FLETERA: {fletera} | FACTURA: {factura} | PROG: {fecha_programacion}"
+        qr_nuevo_io = crear_imagen_qr(texto_qr_nuevo)
+        c.drawImage(ImageReader(qr_nuevo_io), x_nuevo + 130, y_pos - 37, width=55, height=55)
         
         c.showPage()
         
