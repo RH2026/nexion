@@ -114,54 +114,57 @@ def main():
         st.session_state.animacion_cargada = True
     
     st.markdown("""
-    <style>        
-        /* --- ESTILOS GENERALES Y HOVER PARA BOTONES (INCLUIDO EL FORMULARIO) --- */
-        div.stButton > button,
-        div.stFormSubmitButton > button {
-            background-color: #2B343B !important; 
-            color: #FFFFFF !important;             
-            border: 1px solid #4B5D67 !important; 
-            border-radius: 6px !important;
-            transition: all 0.3s ease !important;
-            width: 100% !important;
-            box-shadow: none !important;
-            font-weight: 700 !important;
-            letter-spacing: 0.5px !important;
-        }
-        
-        div.stButton > button:hover,
-        div.stButton > button:focus,
-        div.stFormSubmitButton > button:hover,
-        div.stFormSubmitButton > button:focus {
-            background-color: #00A3A3 !important; 
-            color: #FFFFFF !important;             
-            border-color: #00A3A3 !important;
-            box-shadow: 0 4px 12px rgba(0, 163, 163, 0.3) !important;
-        }
-        
-        div.stButton > button:active,
-        div.stFormSubmitButton > button:active {
-            background-color: #008B8B !important;
-            border-color: #008B8B !important;
-            color: #FFFFFF !important;
-        }
-
-        /* --- TARJETAS DE KPI ESTILO WAR ROOM --- */
-        .base-card-alerta {
-            background-color: #2B343B;
-            border: 1px solid #4B5D67;
-            border-left: 5px solid #38bdf8;
-            padding: 16px 20px;
-            border-radius: 6px;
-            width: 100%;
-            font-family: 'Inter', sans-serif;
-            color: white;
-            box-sizing: border-box;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin-bottom: 10px;
-        }
-    </style>
-""", unsafe_allow_html=True)
+        <style>        
+            /* --- ESTILOS GENERALES Y HOVER PARA BOTONES (INCLUIDO EL FORMULARIO) --- */
+            div.stButton > button,
+            div.stFormSubmitButton > button {
+                background-color: #628290 !important; 
+                color: #FFFFFF !important;             
+                border: 1px solid #628290 !important; 
+                border-radius: 7px !important;
+                transition: all 0.3s ease !important;
+                width: 100% !important;
+                box-shadow: none !important;
+                font-weight: 700 !important;
+                font-size: 10px !important;
+                height: 32px !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.5px !important;
+            }
+            
+            div.stButton > button:hover,
+            div.stButton > button:focus,
+            div.stFormSubmitButton > button:hover,
+            div.stFormSubmitButton > button:focus {
+                background-color: #4E6772 !important; 
+                color: #FFFFFF !important;             
+                border-color: #4E6772 !important;
+                box-shadow: none !important;
+            }
+            
+            div.stButton > button:active,
+            div.stFormSubmitButton > button:active {
+                background-color: #3f555f !important;
+                border-color: #3f555f !important;
+                color: #FFFFFF !important;
+            }
+    
+            /* --- TARJETAS DE KPI ESTILO WAR ROOM --- */
+            .base-card-alerta {
+                background-color: #2B343B;
+                border: 1px solid #4B5D67;
+                border-left: 5px solid #38bdf8;
+                padding: 16px 20px;
+                border-radius: 6px;
+                width: 100%;
+                font-family: 'Inter', sans-serif;
+                color: white;
+                box-sizing: border-box;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                margin-bottom: 10px;
+            }
+        </style>
+    """, unsafe_allow_html=True)
     
     # --- FUNCIONES DE GITHUB PARA EL CONTROL DE ESTATUS Y EDICIÓN ---
     GITHUB_REPO = "RH2026/nexion"
