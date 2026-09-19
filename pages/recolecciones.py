@@ -236,7 +236,15 @@ def main():
 
     # --- TAB 1: RENDER DE ESTATUS ---
     with tab1:
-        
+
+        st.markdown(
+            "<div style='margin-bottom:18px;'>"
+            "<div style='color:#FFFFFF;font-size:19px;font-weight:800;letter-spacing:.3px;'>RENDER DE ESTATUS</div>"
+            "<div style='color:#8B9BB4;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;'>MONITOREO DE RECOLECCIONES · GITHUB EN TIEMPO REAL</div>"
+            "</div>",
+            unsafe_allow_html=True
+        )
+
         df_estatus = cargar_estatus_github()
 
         if not df_estatus.empty:
@@ -448,7 +456,15 @@ def main():
 
     # --- TAB 2: EDICIÓN Y ACTUALIZACIÓN ---
     with tab2:
-        st.markdown("")
+
+        st.markdown(
+            "<div style='margin-bottom:18px;'>"
+            "<div style='color:#FFFFFF;font-size:19px;font-weight:800;letter-spacing:.3px;'>EDICIÓN Y ACTUALIZACIÓN</div>"
+            "<div style='color:#8B9BB4;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;'>MODIFICAR ESTATUS Y DATOS DE FOLIOS</div>"
+            "</div>",
+            unsafe_allow_html=True
+        )
+
         df_estatus_edit = cargar_estatus_github()
 
         if not df_estatus_edit.empty:
