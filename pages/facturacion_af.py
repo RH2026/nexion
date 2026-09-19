@@ -575,7 +575,7 @@ def generar_sellos_emergencia(df_datos, x_pos, y_pos):
         c.setLineWidth(2.2)
         
         # Línea horizontal tachando el texto del transporte viejo
-        c.line(x_pos - 5, y_pos + 2, x_pos + 110, y_pos + 2)
+        c.line(x_pos - 5, y_pos + 1, x_pos + 110, y_pos + 2)
         
         # Cruz / X tachando la zona del QR viejo (aproximadamente de 55x55 píxeles)
         qr_x_inicio = x_pos + 130
