@@ -463,8 +463,8 @@ def main():
                     
                     nuevo_estatus = st.selectbox(
                         "Estatus de la Recolección", 
-                        ["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"],
-                        index=["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"].index(fila_actual.get("Estatus", "PENDIENTE DE RECOLECCION")) if fila_actual.get("Estatus", "PENDIENTE DE RECOLECCION") in ["PENDIENTE DE RECOLECCION", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"] else 0
+                        ["PENDIENTE", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"],
+                        index=["PENDIENTE", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"].index(fila_actual.get("Estatus", "PENDIENTE")) if fila_actual.get("Estatus", "PENDIENTE") in ["PENDIENTE", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"] else 0
                     )
                     
                     col_e1, col_e2 = st.columns(2)
