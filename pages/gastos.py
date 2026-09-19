@@ -581,7 +581,13 @@ tab_kpi, tab_flujos, tab_registro, tab_plan = st.tabs(
 
 with tab_kpi:
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='margin-bottom:18px;'>"
+        "<div style='color:#FFFFFF;font-size:19px;font-weight:800;letter-spacing:.3px;'>KPI'S WALLET</div>"
+        "<div style='color:#8B9BB4;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;'>BALANCE GLOBAL · INGRESOS · EGRESOS</div>"
+        "</div>",
+        unsafe_allow_html=True
+    )
 
     k1, k2, k3 = st.columns(
         [1, 1, 1],
@@ -694,7 +700,13 @@ with tab_kpi:
 
 with tab_flujos:
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='margin-bottom:18px;'>"
+        "<div style='color:#FFFFFF;font-size:19px;font-weight:800;letter-spacing:.3px;'>FLUJOS DE EFECTIVO</div>"
+        "<div style='color:#8B9BB4;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;'>TENDENCIA DE FLUJO · CONSUMO POR CATEGORÍA</div>"
+        "</div>",
+        unsafe_allow_html=True
+    )
 
     flujo1, flujo2 = st.columns(
         [2, 1.5],
@@ -894,7 +906,13 @@ with tab_flujos:
 
 with tab_registro:
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='margin-bottom:18px;'>"
+        "<div style='color:#FFFFFF;font-size:19px;font-weight:800;letter-spacing:.3px;'>REGISTRO NUBE</div>"
+        "<div style='color:#8B9BB4;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;'>ALTA DE MOVIMIENTOS · TRANSFERENCIAS · HISTORIAL</div>"
+        "</div>",
+        unsafe_allow_html=True
+    )
 
     st.markdown(
         "<p class='kpi-label'><span style='color:#00E5FF'>⚡</span> EJECUTAR ORDEN DE REGISTRO</p>",
