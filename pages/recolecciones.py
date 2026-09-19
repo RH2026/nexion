@@ -115,6 +115,37 @@ def main():
     
     st.markdown("""
     <style>        
+        /* --- ESTILOS GENERALES Y HOVER PARA BOTONES (INCLUIDO EL FORMULARIO) --- */
+        div.stButton > button,
+        div.stFormSubmitButton > button {
+            background-color: #2B343B !important; 
+            color: #FFFFFF !important;             
+            border: 1px solid #4B5D67 !important; 
+            border-radius: 6px !important;
+            transition: all 0.3s ease !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.5px !important;
+        }
+        
+        div.stButton > button:hover,
+        div.stButton > button:focus,
+        div.stFormSubmitButton > button:hover,
+        div.stFormSubmitButton > button:focus {
+            background-color: #00A3A3 !important; 
+            color: #FFFFFF !important;             
+            border-color: #00A3A3 !important;
+            box-shadow: 0 4px 12px rgba(0, 163, 163, 0.3) !important;
+        }
+        
+        div.stButton > button:active,
+        div.stFormSubmitButton > button:active {
+            background-color: #008B8B !important;
+            border-color: #008B8B !important;
+            color: #FFFFFF !important;
+        }
+
         /* --- TARJETAS DE KPI ESTILO WAR ROOM --- */
         .base-card-alerta {
             background-color: #2B343B;
