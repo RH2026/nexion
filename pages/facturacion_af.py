@@ -14,6 +14,7 @@ from pypdf import PdfReader, PdfWriter
 import qrcode
 import streamlit as st
 import pytz
+from reportlab.lib import colors
 from auth import exigir_autenticacion
 
 exigir_autenticacion("facturacion")
