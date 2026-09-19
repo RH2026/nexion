@@ -405,8 +405,9 @@ def main():
     else:
         modo_edicion = False
 
-    # ── TÍTULO Y BOTÓN DE ACTUALIZACIÓN (SE RENDERIZAN AL INSTANTE) ──
-    col_titulo, col_btn_refrescar = st.columns([4, 1.2], vertical_alignment="center")
+    # ── TÍTULO Y MENSAJE CHIC DE ACTUALIZACIÓN ──
+    col_titulo, col_indicador = st.columns([4, 1.8], vertical_alignment="center")
+    
     with col_titulo:
         st.markdown(
             f"{chr(60)}div style=\"text-align:left; margin-top:15px; margin-bottom:10px;\"{chr(62)}"
@@ -415,12 +416,24 @@ def main():
             f"{chr(60)}/span{chr(62)}{chr(60)}/div{chr(62)}",
             unsafe_allow_html=True
         )
-    with col_btn_refrescar:
-        if st.button("ACTUALIZAR DATOS", key="btn_refrescar_datos_envios", use_container_width=True):
-            st.cache_data.clear()
-            st.session_state["editor_version"] = st.session_state.get("editor_version", 1) + 1
-            st.session_state.pop("df_envios_cache_v", None)
-            st.rerun()
+        
+    with col_indicador:
+        # Obtenemos la hora actual de Guadalajara para el indicador
+        tz_gdl = pytz.timezone("America/Mexico_City")
+        ahora = datetime.now(tz_gdl)
+        fecha_str = ahora.strftime("%d/%m")
+        hora_str = ahora.strftime("%H:%M:%S")
+
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 10px; padding: 6px 12px; background: #182229; border: 1px solid #34495E; border-radius: 6px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">
+                <div style="width: 6px; height: 6px; background: #00FFAA; border-radius: 50%; box-shadow: 0 0 8px #00FFAA;"></div>
+                <span style="color: #8B9BB4; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Última Sync:</span>
+                <span style="color: #E8EEF2; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;">{fecha_str} &bull; <span style="color:#00FFAA;">{hora_str}</span></span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     TOKEN = st.secrets.get("GITHUB_TOKEN", None)
     REPO_NAME = "RH2026/nexion"
