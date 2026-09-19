@@ -187,7 +187,7 @@ DISPONIBLE_SEMANAL = INGRESO_SEMANAL - TOTAL_APARTADO_SEMANAL
 # CSS
 # ============================================================
 
-st.markdown("""<style>div[data-testid="stBlock"]{max-width:100%!important;padding:0!important;}header[data-testid="stHeader"]{background:#1D2A35!important;border-bottom:2px solid #34495E!important;}.kpi-card,.plan-card{width:100%!important;min-width:0!important;box-sizing:border-box!important;background:#253441!important;border:1px solid #34495E!important;border-radius:8px!important;padding:16px!important;margin:0 0 12px 0!important;overflow:hidden!important;}.kpi-card{text-align:center!important;box-shadow:0 4px 6px rgba(0,0,0,.20)!important;}.kpi-label{color:#8B9BB4!important;font-size:11px!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:1.4px!important;}.kpi-value{color:#FFFFFF!important;font-size:30px!important;font-weight:800!important;margin:8px 0!important;white-space:nowrap!important;}.kpi-trend{font-size:12px!important;font-weight:800!important;white-space:nowrap!important;}.neon-bar{height:3px!important;border-radius:2px!important;margin-top:9px!important;width:100%!important;}.plan-title{color:#FFFFFF!important;font-size:12px!important;font-weight:800!important;letter-spacing:1px!important;text-transform:uppercase!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}.plan-value{color:#00FFAA!important;font-size:25px!important;font-weight:800!important;margin-top:7px!important;white-space:nowrap!important;}.plan-sub{color:#8B9BB4!important;font-size:10px!important;text-transform:uppercase!important;letter-spacing:.8px!important;margin-top:4px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}div.stButton>button{width:100%!important;background:#2B343B!important;color:#FFFFFF!important;border:1px solid #34495E!important;border-radius:5px!important;font-size:12px!important;font-weight:600!important;text-transform:uppercase!important;letter-spacing:1px!important;}div.stButton>button:hover{background:#00A3A3!important;color:#FFFFFF!important;border-color:#00A3A3!important;box-shadow:0 0 15px rgba(0,255,170,.35)!important;}div[data-baseweb="tab-list"]{gap:18px!important;border-bottom:2px solid #34495E!important;margin-bottom:15px!important;}div[data-baseweb="tab"]{background:transparent!important;color:#8B9BB4!important;font-weight:800!important;font-size:12px!important;border:none!important;padding-top:0!important;padding-bottom:10px!important;}div[aria-selected="true"]{color:#00FFAA!important;border-bottom:3px solid #00FFAA!important;}.nx-table-wrap{width:100%;background:#202B33;border:1px solid #34495E;border-radius:8px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.18);}.nx-table-scroll{width:100%;overflow:auto;scrollbar-width:thin;scrollbar-color:#40525D #182229;}.nx-table-scroll::-webkit-scrollbar{width:7px;height:7px;}.nx-table-scroll::-webkit-scrollbar-track{background:#182229;}.nx-table-scroll::-webkit-scrollbar-thumb{background:#40525D;border-radius:8px;}.nx-table-scroll::-webkit-scrollbar-thumb:hover{background:#00A3A3;}.nx-table{width:100%;border-collapse:separate;border-spacing:0;font-family:Inter,Arial,sans-serif;font-size:11px;color:#E8EEF2;}.nx-table thead{position:sticky;top:0;z-index:3;}.nx-table th{background:#182229;color:#8B9BB4;text-align:left;font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:12px 13px;border-bottom:1px solid #34495E;white-space:nowrap;}.nx-table td{padding:11px 13px;border-bottom:1px solid rgba(52,73,94,.55);white-space:nowrap;vertical-align:middle;}.nx-table tbody tr{background:#202B33;transition:background .15s ease,box-shadow .15s ease;}.nx-table tbody tr:nth-child(even){background:#1E2930;}.nx-table tbody tr:hover{background:#263740;box-shadow:inset 3px 0 0 #00FFAA;}.nx-table tbody tr:last-child td{border-bottom:none;}.nx-table td:first-child{color:#B9C5CD;font-weight:600;}.nx-badge{display:inline-flex;align-items:center;justify-content:center;min-width:68px;padding:4px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:.6px;background:#2B343B;border:1px solid #465762;color:#B9C5CD;}.nx-income{color:#00FFAA;background:rgba(0,255,170,.08);border-color:rgba(0,255,170,.28);}.nx-expense{color:#FF6B6B;background:rgba(255,75,75,.08);border-color:rgba(255,75,75,.28);}.nx-fixed{color:#FFD166;background:rgba(255,209,102,.08);border-color:rgba(255,209,102,.25);}.nx-saving{color:#00E5FF;background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.25);}.nx-free{color:#00FFAA;background:rgba(0,255,170,.08);border-color:rgba(0,255,170,.25);}.nx-neutral{color:#B9C5CD;background:#2B343B;border-color:#465762;}.nx-money-pos{color:#00FFAA!important;font-weight:800!important;text-align:right;}.nx-money-neg{color:#FF6B6B!important;font-weight:800!important;text-align:right;}</style>""", unsafe_allow_html=True)
+st.markdown("""<style>div[data-testid="stBlock"]{max-width:100%!important;padding:0!important;}header[data-testid="stHeader"]{background:#1D2A35!important;border-bottom:2px solid #34495E!important;}.kpi-card,.plan-card{width:100%!important;min-width:0!important;box-sizing:border-box!important;background:#253441!important;border:1px solid #34495E!important;border-radius:8px!important;padding:16px!important;margin:0 0 12px 0!important;overflow:hidden!important;}.kpi-card{text-align:center!important;box-shadow:0 4px 6px rgba(0,0,0,.20)!important;}.kpi-label{color:#8B9BB4!important;font-size:11px!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:1.4px!important;}.kpi-value{color:#FFFFFF!important;font-size:30px!important;font-weight:800!important;margin:8px 0!important;white-space:nowrap!important;}.kpi-trend{font-size:12px!important;font-weight:800!important;white-space:nowrap!important;}.neon-bar{height:3px!important;border-radius:2px!important;margin-top:9px!important;width:100%!important;}.plan-title{color:#FFFFFF!important;font-size:12px!important;font-weight:800!important;letter-spacing:1px!important;text-transform:uppercase!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}.plan-value{color:#00FFAA!important;font-size:25px!important;font-weight:800!important;margin-top:7px!important;white-space:nowrap!important;}.plan-sub{color:#8B9BB4!important;font-size:10px!important;text-transform:uppercase!important;letter-spacing:.8px!important;margin-top:4px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}div.stButton>button{width:100%!important;background:#2B343B!important;color:#FFFFFF!important;border:1px solid #34495E!important;border-radius:5px!important;font-size:12px!important;font-weight:600!important;text-transform:uppercase!important;letter-spacing:1px!important;}div.stButton>button:hover{background:#00A3A3!important;color:#FFFFFF!important;border-color:#00A3A3!important;box-shadow:0 0 15px rgba(0,255,170,.35)!important;}div[data-baseweb="tab-list"]{gap:18px!important;border-bottom:2px solid #34495E!important;margin-bottom:15px!important;}div[data-baseweb="tab"]{background:transparent!important;color:#8B9BB4!important;font-weight:800!important;font-size:12px!important;border:none!important;padding-top:0!important;padding-bottom:10px!important;}div[aria-selected="true"]{color:#00FFAA!important;border-bottom:3px solid #00FFAA!important;}.nx-table-wrap{width:100%;background:#202B33;border:1px solid #34495E;border-radius:8px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.18);}.nx-table-scroll{width:100%;overflow:auto;scrollbar-width:thin;scrollbar-color:#40525D #182229;}.nx-table-scroll::-webkit-scrollbar{width:7px;height:7px;}.nx-table-scroll::-webkit-scrollbar-track{background:#182229;}.nx-table-scroll::-webkit-scrollbar-thumb{background:#40525D;border-radius:8px;}.nx-table-scroll::-webkit-scrollbar-thumb:hover{background:#00A3A3;}.nx-table{width:100%;border-collapse:separate;border-spacing:0;font-family:Inter,Arial,sans-serif;font-size:11px;color:#E8EEF2;}.nx-table thead{position:sticky;top:0;z-index:3;}.nx-table th{background:#182229;color:#8B9BB4;text-align:left;font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:12px 13px;border-bottom:1px solid #34495E;white-space:nowrap;}.nx-table td{padding:11px 13px;border-bottom:1px solid rgba(52,73,94,.55);white-space:nowrap;vertical-align:middle;}.nx-table tbody tr{background:#202B33;transition:background .15s ease,box-shadow .15s ease;}.nx-table tbody tr:nth-child(even){background:#1E2930;}.nx-table tbody tr:hover{background:#263740;box-shadow:inset 3px 0 0 #00FFAA;}.nx-table tbody tr:last-child td{border-bottom:none;}.nx-table td:first-child{color:#B9C5CD;font-weight:600;}.nx-badge{display:inline-flex;align-items:center;justify-content:center;min-width:68px;padding:4px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:.6px;background:#2B343B;border:1px solid #465762;color:#B9C5CD;}.nx-income{color:#00FFAA;background:rgba(0,255,170,.08);border-color:rgba(0,255,170,.28);}.nx-expense{color:#FF6B6B;background:rgba(255,75,75,.08);border-color:rgba(255,75,75,.28);}.nx-fixed{color:#FFD166;background:rgba(255,209,102,.08);border-color:rgba(255,209,102,.25);}.nx-saving{color:#00E5FF;background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.25);}.nx-free{color:#00FFAA;background:rgba(0,255,170,.08);border-color:rgba(0,255,170,.25);}.nx-transfer{color:#B388FF;background:rgba(179,136,255,.10);border-color:rgba(179,136,255,.30);}.nx-neutral{color:#B9C5CD;background:#2B343B;border-color:#465762;}.nx-money-pos{color:#00FFAA!important;font-weight:800!important;text-align:right;}.nx-money-neg{color:#FF6B6B!important;font-weight:800!important;text-align:right;}</style>""", unsafe_allow_html=True)
 
 
 # ============================================================
@@ -237,6 +237,8 @@ def render_tabla_premium(df, moneda_cols=None, max_height=430):
                     clase = "nx-saving"
                 elif tipo_lower == "disponible":
                     clase = "nx-free"
+                elif tipo_lower == "transferencia":
+                    clase = "nx-transfer"
                 else:
                     clase = "nx-neutral"
 
@@ -1039,6 +1041,180 @@ with tab_registro:
 
                 st.success(
                     "OPERACIÓN CLASIFICADA EXITOSAMENTE."
+                )
+
+                time.sleep(.7)
+                st.rerun()
+
+            except Exception as e:
+
+                st.error(
+                    f"Error de sincronización: {e}"
+                )
+
+            finally:
+
+                if lock_creado:
+                    liberar_lock()
+
+
+    # ========================================================
+    # TRANSFERENCIA ENTRE CUENTAS
+    # ========================================================
+
+    st.markdown(
+        "<div style='height:22px;border-top:1px solid rgba(52,73,94,.35);margin-top:18px;'></div>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        "<p class='kpi-label'><span style='color:#B388FF'>🔁</span> TRANSFERENCIA ENTRE CUENTAS</p>",
+        unsafe_allow_html=True
+    )
+
+    t1, t2, t3, t4 = st.columns(
+        [1, 1, 1, 1],
+        gap="small"
+    )
+
+    with t1:
+        t_origen = st.selectbox(
+            "Cuenta Origen",
+            list(CUENTAS_MATRIX.keys()),
+            key="inp_origen_transferencia"
+        )
+
+    with t2:
+        opciones_destino = [
+            c for c in CUENTAS_MATRIX.keys()
+            if c != t_origen
+        ]
+
+        t_destino = st.selectbox(
+            "Cuenta Destino",
+            opciones_destino,
+            key="inp_destino_transferencia"
+        )
+
+    with t3:
+        t_monto = st.number_input(
+            "Cantidad MXN",
+            min_value=0.0,
+            step=100.0,
+            key="inp_monto_transferencia"
+        )
+
+    with t4:
+        t_desc = st.text_input(
+            "Referencia (opcional)",
+            placeholder="Ej. Reacomodo de fondos",
+            key="inp_desc_transferencia"
+        )
+
+    st.caption(
+        f"Saldo actual en {t_origen}: ${saldos_actuales.get(t_origen, 0):,.2f}"
+        f"  ·  Saldo actual en {t_destino}: ${saldos_actuales.get(t_destino, 0):,.2f}"
+    )
+
+    st.markdown(
+        "<div style='height:8px'></div>",
+        unsafe_allow_html=True
+    )
+
+    bloquear_transferencia = (
+        not puede_editar_efectivo
+        or bloqueado_por_otro
+        or not TOKEN
+    )
+
+    transferir_sub = st.button(
+        "REALIZAR TRANSFERENCIA",
+        icon=":material/sync_alt:",
+        use_container_width=True,
+        key="btn_transferencia_action",
+        disabled=bloquear_transferencia
+    )
+
+    if not bloquear_transferencia and transferir_sub:
+
+        if t_monto <= 0:
+            st.error("Captura una cantidad mayor a cero.")
+
+        elif t_origen == t_destino:
+            st.error("La cuenta origen y la cuenta destino no pueden ser la misma.")
+
+        else:
+
+            lock_creado = False
+
+            try:
+
+                lock_creado = crear_lock()
+
+                if not lock_creado:
+                    st.error(
+                        "No fue posible tomar el control de escritura en GitHub."
+                    )
+                    st.stop()
+
+                repo = Github(TOKEN).get_repo(REPO_NAME)
+
+                archivo = repo.get_contents(
+                    FILE_PATH,
+                    ref="main"
+                )
+
+                df_latest = pd.read_csv(
+                    io.StringIO(
+                        archivo.decoded_content.decode("utf-8")
+                    ),
+                    keep_default_na=False
+                )
+
+                fecha_movimiento = datetime.now(tz_gdl).strftime(
+                    "%Y-%m-%d %H:%M"
+                )
+
+                referencia = t_desc.strip() or "Transferencia entre cuentas"
+
+                fila_salida = {
+                    "Fecha": fecha_movimiento,
+                    "Tipo": "Transferencia",
+                    "Categoria": "Transferencia entre Cuentas",
+                    "Concepto": f"Transferencia a {t_destino} · {referencia}",
+                    "Monto": -t_monto,
+                    "Cuenta": t_origen
+                }
+
+                fila_entrada = {
+                    "Fecha": fecha_movimiento,
+                    "Tipo": "Transferencia",
+                    "Categoria": "Transferencia entre Cuentas",
+                    "Concepto": f"Transferencia de {t_origen} · {referencia}",
+                    "Monto": t_monto,
+                    "Cuenta": t_destino
+                }
+
+                df_latest = pd.concat(
+                    [
+                        df_latest,
+                        pd.DataFrame([fila_salida, fila_entrada])
+                    ],
+                    ignore_index=True
+                )
+
+                repo.update_file(
+                    path=FILE_PATH,
+                    message=f"TRANSFER // {current_user} // {t_origen} -> {t_destino} // {datetime.now(tz_gdl).strftime('%H:%M:%S')}",
+                    content=df_latest.to_csv(index=False),
+                    sha=archivo.sha,
+                    branch="main"
+                )
+
+                st.session_state.force_reload = True
+
+                st.success(
+                    f"TRANSFERENCIA REGISTRADA: ${t_monto:,.2f} de {t_origen} a {t_destino}."
                 )
 
                 time.sleep(.7)
