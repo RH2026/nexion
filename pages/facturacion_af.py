@@ -557,8 +557,8 @@ def generar_sellos_fisicos(df_datos, x_pos, y_pos):
 
 def generar_sellos_emergencia(df_datos, x_pos, y_pos):
     """
-    Tacha con líneas horizontales las coordenadas (x_pos, y_pos) donde está el sello viejo,
-    sin volver a imprimirlo, y coloca el nuevo sello correcto más hacia el centro/izquierda.
+    Tacha con línea horizontal el texto viejo y con una cruz (X) el QR viejo,
+    dejando el nuevo sello correcto limpio más hacia el centro/izquierda.
     """
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(612, 792)) 
@@ -569,14 +569,25 @@ def generar_sellos_emergencia(df_datos, x_pos, y_pos):
         fletera = str(row.get('RECOMENDACION', 'N/A'))
         factura = str(row.get('Factura', 'S/N'))
         
-        # --- 1. ÚNICAMENTE EL TACHADO HORIZONTAL SOBRE EL VIEJO IMPRESO ---
+        # --- 1. TACHADO DE EMERGENCIA SOBRE EL SELLO VIEJO ---
         c.saveState()
         c.setStrokeColor(colors.black)
-        c.setLineWidth(2.5)
-        # Tacha el texto del transporte viejo en (x_pos, y_pos)
+        c.setLineWidth(2.2)
+        
+        # Línea horizontal tachando el texto del transporte viejo
         c.line(x_pos - 5, y_pos + 5, x_pos + 110, y_pos + 5)
-        # Tacha el cuadro del QR viejo horizontalmente
-        c.line(x_pos + 125, y_pos - 10, x_pos + 195, y_pos - 10)
+        
+        # Cruz / X tachando la zona del QR viejo (aproximadamente de 55x55 píxeles)
+        qr_x_inicio = x_pos + 130
+        qr_y_inicio = y_pos - 37
+        qr_ancho = 55
+        qr_alto = 55
+        
+        # Diagonal 1 del QR
+        c.line(qr_x_inicio, qr_y_inicio, qr_x_inicio + qr_ancho, qr_y_inicio + qr_alto)
+        # Diagonal 2 del QR (forma la X perfecta de anulación)
+        c.line(qr_x_inicio, qr_y_inicio + qr_alto, qr_x_inicio + qr_ancho, qr_y_inicio)
+        
         c.restoreState()
         
         # --- 2. NUEVO SELLO CORRECTO MÁS HACIA EL CENTRO ---
