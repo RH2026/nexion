@@ -114,33 +114,7 @@ def main():
         st.session_state.animacion_cargada = True
     
     st.markdown("""
-    <style>
-        div.stButton > button,
-        div.stButton > button:link,
-        div.stButton > button:visited {
-            background-color: #2B343B !important; 
-            color: #FFFFFF !important;             
-            border: 1px solid #2B343B !important; 
-            border-radius: 5px !important;
-            transition: all 0.3s ease !important;
-            width: 100% !important;
-            box-shadow: none !important;
-        }
-        
-        div.stButton > button:hover,
-        div.stButton > button:focus {
-            background-color: #00A3A3 !important; 
-            color: #FFFFFF !important;             
-            border-color: #00A3A3 !important;
-            box-shadow: none !important;
-        }
-        
-        div.stButton > button:active {
-            background-color: #00A3A3 !important;
-            border-color: #00A3A3 !important;
-            color: #FFFFFF !important;
-        }
-
+    <style>        
         /* --- TARJETAS DE KPI ESTILO WAR ROOM --- */
         .base-card-alerta {
             background-color: #2B343B;
