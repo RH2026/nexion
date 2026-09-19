@@ -3,3 +3,4 @@ Fecha,Tipo,Categoria,Concepto,Monto,Cuenta
 2026-09-19 11:08,Ingreso,Nómina,SALARIO Y SALDO DE FONDO DE AHORRO,7500.0,Santander
 2026-09-19 11:40,Transferencia,Transferencia entre Cuentas,Transferencia a Ahorro Mensual · AHORRO GASTOS FIJOS MENSUALES,-3600.0,Santander
 2026-09-19 11:40,Transferencia,Transferencia entre Cuentas,Transferencia de Santander · AHORRO GASTOS FIJOS MENSUALES,3600.0,Ahorro Mensual
+2026-09-19 11:42,Gasto,Gastos Médicos,CITA PAULINA,-400.0,Santander
