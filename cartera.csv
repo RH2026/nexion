@@ -6,3 +6,4 @@ Fecha,Tipo,Categoria,Concepto,Monto,Cuenta
 2026-09-19 11:42,Gasto,Gastos Médicos,CITA PAULINA,-400.0,Santander
 2026-09-20 00:30,Gasto,Supermercado,Gasto Semanal,-1500.0,Santander
 2026-09-20 00:32,Ingreso,Gastos Familiares,Gasto Semanal  Personal,500.0,Santander
+2026-09-20 00:32,Gasto,Gastos Familiares,Gasto Semanal  Personal,-500.0,Santander
