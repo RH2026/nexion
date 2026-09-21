@@ -122,33 +122,54 @@ def main():
         st.session_state.animacion_cargada = True
     
     st.markdown("""
-    <style>
-        div.stButton > button,
-        div.stButton > button:link,
-        div.stButton > button:visited {
-            background-color: #2B343B !important; 
-            color: #FFFFFF !important;             
-            border: 1px solid #2B343B !important; 
-            border-radius: 5px !important;
-            transition: all 0.3s ease !important;
-            width: 100% !important;
-            box-shadow: none !important;
-        }
-        
-        div.stButton > button:hover,
-        div.stButton > button:focus {
-            background-color: #00A3A3 !important; 
-            color: #FFFFFF !important;             
-            border-color: #00A3A3 !important;
-            box-shadow: none !important;
-        }
-        
-        div.stButton > button:active {
-            background-color: #00A3A3 !important;
-            border-color: #00A3A3 !important;
-            color: #FFFFFF !important;
-        }
-    </style>
+<style>
+    div.stButton > button,
+    div.stButton > button:link,
+    div.stButton > button:visited {
+        background-color: #2B343B !important; 
+        color: #FFFFFF !important;             
+        border: 1px solid #2B343B !important; 
+        border-radius: 5px !important;
+        transition: all 0.3s ease !important;
+        width: 100% !important;
+        box-shadow: none !important;
+    }
+    div.stButton > button:hover,
+    div.stButton > button:focus {
+        background-color: #00A3A3 !important; 
+        color: #FFFFFF !important;             
+        border-color: #00A3A3 !important;
+        box-shadow: none !important;
+    }
+    div.stButton > button:active {
+        background-color: #00A3A3 !important;
+        border-color: #00A3A3 !important;
+        color: #FFFFFF !important;
+    }
+
+    /* NUEVO: mismo estilo corporativo pero para el botón de enlace (link_button) */
+    div.stLinkButton > a,
+    div.stLinkButton > a:link,
+    div.stLinkButton > a:visited {
+        background-color: #2B343B !important;
+        color: #FFFFFF !important;
+        border: 1px solid #2B343B !important;
+        border-radius: 5px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: none !important;
+        text-decoration: none !important;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+    div.stLinkButton > a:hover,
+    div.stLinkButton > a:focus {
+        background-color: #00A3A3 !important;
+        color: #FFFFFF !important;
+        border-color: #00A3A3 !important;
+    }
+</style>
 """, unsafe_allow_html=True)
 
     @st.cache_data(ttl=300)
@@ -192,8 +213,12 @@ def main():
         if col_cliente_num:
             df_facturacion[col_cliente_num] = df_facturacion[col_cliente_num].astype(str)
 
+        col_regresar, col_espacio = st.columns([1, 5])
+        with col_regresar:
+            st.link_button("⬅️ Formatos", "https://jypesa.streamlit.app/recoleccion_3g", use_container_width=True)
+
         top_col1, top_col2, top_col3, top_col4 = st.columns(4)
-        
+               
         with top_col1:
             fecha_recoleccion_deseada = st.date_input("📅 Fecha Recolección", value=datetime.now(), key="tg_fecha_rec")
         fecha_rec_str = fecha_recoleccion_deseada.strftime("%d/%m/%Y")
