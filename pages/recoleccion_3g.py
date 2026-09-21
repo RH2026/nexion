@@ -73,13 +73,22 @@ def registrar_acceso_github(usuario, modulo):
 # 3. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
 # ==========================================
 def cargar_estatus_github():
+    # ============================================================
+    # >>> FIX: se cambió raw.githubusercontent.com (cacheado por CDN)
+    # por la API de GitHub (api.github.com/.../contents/...), que
+    # siempre devuelve el contenido más reciente del archivo.
+    # Esto evita que al guardar dos folios seguidos se lea una
+    # versión vieja del CSV y termine "borrando" registros anteriores.
+    # ============================================================
     try:
-        url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/main/recolecciones_estatus.csv"
         token = st.secrets["GITHUB_TOKEN"]
-        headers = {"Authorization": f"token {token}"}
+        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/recolecciones_estatus.csv"
+        headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
+            file_data = response.json()
+            content_decoded = base64.b64decode(file_data.get("content", "")).decode("utf-8-sig")
+            df = pd.read_csv(io.StringIO(content_decoded))
             df.columns = df.columns.astype(str).str.strip()
             return df
         else:
@@ -147,7 +156,7 @@ def main():
         color: #FFFFFF !important;
     }
 
-    /* NUEVO: mismo estilo corporativo pero para el botón de enlace (link_button) */
+    /* mismo estilo corporativo pero para el botón de enlace (link_button) */
     div.stLinkButton > a,
     div.stLinkButton > a:link,
     div.stLinkButton > a:visited {
@@ -350,7 +359,7 @@ def main():
         st.info(f"⚖️ **Peso Total Calculado:** {total_peso_calc:,.2f} KG")
 
         # ============================================================
-        # >>> NUEVO: CAMPO DE COMENTARIOS ADICIONALES <<<
+        # CAMPO DE COMENTARIOS ADICIONALES
         # ============================================================
         st.markdown("---")
         titulo_seccion("📝 COMENTARIOS ADICIONALES", color_fondo="#37474f")
@@ -614,7 +623,7 @@ def main():
             story.append(Spacer(1, 2))
 
             # ============================================================
-            # >>> NUEVO: CONSTRUCCIÓN DEL TEXTO DE OBSERVACIONES <<<
+            # CONSTRUCCIÓN DEL TEXTO DE OBSERVACIONES
             # Se conserva el texto fijo original y, si el usuario escribió
             # algo en "Comentarios Adicionales", se agrega debajo.
             # ============================================================
@@ -678,7 +687,7 @@ def main():
             if st.button("Registrar Folio en Estatus GitHub", use_container_width=True, key="btn_guardar_gh_tab1"):
                 df_estatus_actual = cargar_estatus_github()
 
-                # >>> NUEVO: se agrega el comentario también al registro de GitHub (si existe)
+                # se agrega el comentario también al registro de GitHub (si existe)
                 observaciones_registro = "Creado desde solicitud Tresguerras"
                 if comentarios_extra.strip():
                     observaciones_registro += f". Comentarios: {comentarios_extra.strip()}"
