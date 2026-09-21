@@ -213,9 +213,10 @@ def main():
         if col_cliente_num:
             df_facturacion[col_cliente_num] = df_facturacion[col_cliente_num].astype(str)
 
-        col_regresar, col_espacio = st.columns([1, 5])
+        col_espacio, col_regresar = st.columns([5, 1])
         with col_regresar:
-            st.link_button("⬅️ Formatos", "https://jypesa.streamlit.app/recoleccion_3g", use_container_width=True)
+            if st.button("⬅️ Formatos", use_container_width=True, key="btn_ir_formatos"):
+                st.switch_page("pages/recoleccion_3g.py") 
 
         top_col1, top_col2, top_col3, top_col4 = st.columns(4)
                
