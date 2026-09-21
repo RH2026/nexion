@@ -241,7 +241,7 @@ def main():
 
     col_espacio, col_regresar = st.columns([5, 1])
     with col_regresar:
-        if st.button("⬅️ Formatos", use_container_width=True, key="btn_ir_formatos"):
+        if st.button("⬅️ Formatos", use_container_width=True, key="btn_ir_forrecolecciones"):
             st.switch_page("pages/recoleccion_3G.py") 
     
     # --- DEFINICIÓN DE TABS (SOLO RENDER DE ESTATUS Y EDICIÓN) ---
