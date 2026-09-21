@@ -411,15 +411,18 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
             )
 
         with c3:
-            es_atencion3g = st.session_state.get("usuario_activo", "").upper() == "Cinthia"
+            # Validamos si el usuario activo es Cinthia o AGC (ignorando mayúsculas/minúsculas)
+            usuario_actual = st.session_state.get("usuario_activo", "").strip()
+            bloquear_busqueda = usuario_actual.upper() in ["CINTHIA", "AGC"]
+            
             key_actual = f"main_search_v{st.session_state.search_key_version}"
 
             query = st.text_input(
                 "Buscar",
-                placeholder="🔍 BUSCADOR DESACTIVADO" if es_Cinthia else "🔍 Buscar...",
+                placeholder="🔍 BUSCADOR DESACTIVADO" if bloquear_busqueda else "🔍 Buscar...",
                 label_visibility="collapsed",
                 key=key_actual,
-                disabled=es_Cinthia,
+                disabled=bloquear_busqueda,
             )
 
             if query:
