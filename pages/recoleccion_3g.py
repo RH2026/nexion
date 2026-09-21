@@ -323,6 +323,19 @@ def main():
         total_peso_calc = sum(l["peso"] * l["cantidad"] for l in st.session_state.lineas_embarque)
         st.info(f"⚖️ **Peso Total Calculado:** {total_peso_calc:,.2f} KG")
 
+        # ============================================================
+        # >>> NUEVO: CAMPO DE COMENTARIOS ADICIONALES <<<
+        # ============================================================
+        st.markdown("---")
+        titulo_seccion("📝 COMENTARIOS ADICIONALES", color_fondo="#37474f")
+        comentarios_extra = st.text_area(
+            "Instrucciones u observaciones adicionales (se agregarán al texto fijo de OBSERVACIONES)",
+            value="",
+            key="tg_comentarios_extra",
+            height=80
+        )
+        # ============================================================
+
         def generar_pdf_tresguerras_oficial():
             buffer = BytesIO()
             doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=15, leftMargin=15, topMargin=15, bottomMargin=15)
@@ -574,6 +587,20 @@ def main():
             story.append(t_mid)
             story.append(Spacer(1, 2))
 
+            # ============================================================
+            # >>> NUEVO: CONSTRUCCIÓN DEL TEXTO DE OBSERVACIONES <<<
+            # Se conserva el texto fijo original y, si el usuario escribió
+            # algo en "Comentarios Adicionales", se agrega debajo.
+            # ============================================================
+            texto_obs_fijo = "<b>LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCIÓN,</b> SI NO QUIEREN ENTREGAR LLAMAR AL TELÉFONO<br/>Cel. 33 19 75 31 22 Rigoberto Hernandez"
+
+            if comentarios_extra.strip():
+                comentarios_pdf = comentarios_extra.strip().replace("\n", "<br/>")
+                texto_obs_final = f"{texto_obs_fijo}<br/><br/><b>Comentarios:</b> {comentarios_pdf}"
+            else:
+                texto_obs_final = texto_obs_fijo
+            # ============================================================
+
             t_final_block = Table([
                 [Paragraph("<b>DATOS DE QUIEN SOLICITA EL SERVICIO</b>", th_style), Paragraph("<b>OBSERVACIONES</b>", th_style)],
                 [
@@ -589,7 +616,7 @@ def main():
                         ("TOPPADDING", (0,0), (-1,-1), 1.5),
                         ("BOTTOMPADDING", (0,0), (-1,-1), 1.5),
                     ]),
-                    Paragraph("<b>LLAMAR AL REMITENTE UNA HORA ANTES DE LA RECOLECCIÓN,</b> SI NO QUIEREN ENTREGAR LLAMAR AL TELÉFONO<br/>Cel. 33 19 75 31 22 Rigoberto Hernandez", cell_normal)
+                    Paragraph(texto_obs_final, cell_normal)
                 ]
             ], colWidths=[300, 302])
             t_final_block.setStyle(TableStyle([
@@ -624,6 +651,12 @@ def main():
         with col_gen2:
             if st.button("Registrar Folio en Estatus GitHub", use_container_width=True, key="btn_guardar_gh_tab1"):
                 df_estatus_actual = cargar_estatus_github()
+
+                # >>> NUEVO: se agrega el comentario también al registro de GitHub (si existe)
+                observaciones_registro = "Creado desde solicitud Tresguerras"
+                if comentarios_extra.strip():
+                    observaciones_registro += f". Comentarios: {comentarios_extra.strip()}"
+
                 nuevo_registro = pd.DataFrame([{
                     "Folio": str(num_factura),
                     "Fecha_Recoleccion": fecha_rec_str,
@@ -631,7 +664,7 @@ def main():
                     "Proveedor": str(rem_cliente),
                     "Peso_Total": float(total_peso_calc),
                     "Estatus": "PENDIENTE DE RECOLECCION",
-                    "Observaciones": "Creado desde solicitud Tresguerras",
+                    "Observaciones": observaciones_registro,
                     "Solicitante": "RIGOBERTO HERNANDEZ",
                     "Numero de Guia": "",
                     "Costo de la Guia": 0.0
