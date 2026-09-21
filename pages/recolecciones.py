@@ -242,6 +242,12 @@ def main():
     # --- DEFINICIÓN DE TABS (SOLO RENDER DE ESTATUS Y EDICIÓN) ---
     tab1, tab2 = st.tabs(["Render de Estatus", "Edición y Actualización"])
 
+    col_espacio, col_regresar = st.columns([5, 1])
+        with col_regresar:
+            if st.button("⬅️ Formatos", use_container_width=True, key="btn_ir_formatos"):
+                st.switch_page("pages/recoleccion_3G.py") 
+    
+    
     # --- TAB 1: RENDER DE ESTATUS ---
     with tab1:
 
