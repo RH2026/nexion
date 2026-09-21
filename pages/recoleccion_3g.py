@@ -215,7 +215,7 @@ def main():
 
         col_espacio, col_regresar = st.columns([5, 1])
         with col_regresar:
-            if st.button("⬅️ Formatos", use_container_width=True, key="btn_ir_formatos"):
+            if st.button("⬅️ Seguimiento", use_container_width=True, key="btn_ir_formatos"):
                 st.switch_page("pages/recolecciones.py") 
 
         top_col1, top_col2, top_col3, top_col4 = st.columns(4)
