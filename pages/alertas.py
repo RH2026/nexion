@@ -76,23 +76,26 @@ with st.container():
         )
     
     with f_col3:
-        opciones_raw = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
-        
-        if es_atencion3g:
-            opciones_f = ["TRES GUERRAS"]
-            indice_defecto = 0
-            habilitado = False
-        else:
-            opciones_f = ["TODOS"] + opciones_raw
-            indice_defecto = 0
-            habilitado = True
-        
-        filtro_global_fletera = st.selectbox(
-            "FILTRAR PAQUETERÍA", 
-            options=opciones_f, 
-            index=indice_defecto,
-            disabled=not habilitado
-        )
+    opciones_raw = sorted(df_seguimiento["FLETERA"].unique()) if "FLETERA" in df_seguimiento.columns else []
+    
+    # Validamos si el usuario activo es Cinthia
+    es_atencion3g = st.session_state.get("usuario_activo", "").strip().upper() == "CINTHIA"
+    
+    if es_atencion3g:
+        opciones_f = ["TRES GUERRAS"]
+        indice_defecto = 0
+        habilitado = False
+    else:
+        opciones_f = ["TODOS"] + opciones_raw
+        indice_defecto = 0
+        habilitado = True
+    
+    filtro_global_fletera = st.selectbox(
+        "FILTRAR PAQUETERÍA", 
+        options=opciones_f, 
+        index=indice_defecto,
+        disabled=not habilitado
+    )
 
 # ============================================================
 # 6. PROCESAMIENTO DE DATOS KPI
