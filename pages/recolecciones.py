@@ -241,8 +241,10 @@ def main():
 
     col_espacio, col_regresar = st.columns([5, 1])
     with col_regresar:
-        if st.button("⬅️ Formatos", use_container_width=True, key="btn_ir_forrecolecciones"):
-            st.switch_page("pages/recoleccion_3g.py") 
+        # Verificas que la variable de sesión exista y que el usuario sea Rigoberto
+        if st.session_state.get("usuario") == "Rigoberto":
+            if st.button("⬅️ Formatos", use_container_width=True, key="btn_ir_forrecolecciones"):
+                st.switch_page("pages/recoleccion_3g.py")
     
     # --- DEFINICIÓN DE TABS (SOLO RENDER DE ESTATUS Y EDICIÓN) ---
     tab1, tab2 = st.tabs(["Render de Estatus", "Edición y Actualización"])
