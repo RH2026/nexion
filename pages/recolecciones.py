@@ -473,6 +473,10 @@ def main():
     # --- TAB 2: EDICIÓN Y ACTUALIZACIÓN ---
     with tab2:
 
+        if st.session_state.get("mensaje_guardado"):
+            st.success(st.session_state.mensaje_guardado)
+            del st.session_state.mensaje_guardado
+
         st.markdown(
             "<div style='margin-bottom:18px;'>"
             "<div style='color:#FFFFFF;font-size:19px;font-weight:800;letter-spacing:.3px;'>EDICIÓN Y ACTUALIZACIÓN</div>"
@@ -525,7 +529,7 @@ def main():
                         df_estatus_edit.loc[idx_match, "Costo de la Guia"] = float(nuevo_costo_guia)
                     
                         if guardar_estatus_github(df_estatus_edit, f"Actualización de estatus y datos para folio {folio_a_editar}"):
-                            st.success(f"¡Cambios guardados correctamente en GitHub para el folio {folio_a_editar}!")
+                            st.session_state.mensaje_guardado = f"¡Cambios guardados correctamente en GitHub para el folio {folio_a_editar}!"
                             st.rerun()
         else:
             st.warning("No hay registros disponibles para editar en GitHub.")
