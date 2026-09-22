@@ -114,7 +114,9 @@ def main():
     df_envios = pd.DataFrame()
     df_envios['factura'] = df_raw.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
     df_envios['recomendacion'] = df_raw.get('RECOMENDACION', pd.Series(dtype=str)).fillna('SIN ASIGNAR').astype(str)
-    df_envios['nombre_cliente'] = df_raw.get('Nombre_Cliente', df_raw.get('Nombre_Extran', pd.Series(dtype=str))).fillna('').astype(str)
+    extran_s = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
+    cliente_s = df_raw.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
+    df_envios['nombre_cliente'] = extran_s.where(extran_s.str.strip() != '', cliente_s)
     df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).fillna('NACIONAL').astype(str)
     
     f_prog_input = df_raw.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
