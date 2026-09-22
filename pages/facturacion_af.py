@@ -390,8 +390,10 @@ def guardar_archivo_rigoberto_github(df_datos, nombre_archivo):
     r = requests.get(url, headers=headers)
     sha = r.json().get("sha") if r.status_code == 200 else None
     
+    # 🔹 FIX: se agregó 'Quantity' para que viaje desde el lote de Cynthia
+    # hasta el análisis final de Rigoberto (antes se perdía aquí).
     cols_a_guardar = []
-    for c_buscada in ['Factura', 'Fecha_Conta', 'Nombre_Cliente', 'Nombre_Extran', 'Transporte', 'DESTINO', 'DIRECCION']:
+    for c_buscada in ['Factura', 'Fecha_Conta', 'Nombre_Cliente', 'Nombre_Extran', 'Transporte', 'DESTINO', 'DIRECCION', 'Quantity']:
         match_col = next((c for c in df_datos.columns if c.strip().lower() == c_buscada.lower()), None)
         if match_col:
             cols_a_guardar.append(match_col)
@@ -1035,6 +1037,31 @@ def main():
 
     if "FLUJO DE CYNTHIA" in modo_operacion:
         st.markdown("<p style='font-size: 12px; font-weight: 600;'></p>", unsafe_allow_html=True)
+
+        # 🔹 BADGE: ÚLTIMO FOLIO CARGADO (SOLO VISIBLE EN LA SECCIÓN DE CYNTHIA)
+        try:
+            df_fact_badge = cargar_facturacion_github()
+            col_folio_badge = next(
+                (c for c in df_fact_badge.columns if "factura" in c.lower() or "folio" in c.lower() or "docnum" in c.lower()),
+                None,
+            )
+            if col_folio_badge is not None and not df_fact_badge.empty:
+                ultimo_folio_num = pd.to_numeric(df_fact_badge[col_folio_badge], errors="coerce").dropna().max()
+                ultimo_folio_txt = str(int(ultimo_folio_num)) if pd.notna(ultimo_folio_num) else "N/A"
+            else:
+                ultimo_folio_txt = "N/A"
+        except Exception:
+            ultimo_folio_txt = "N/A"
+
+        st.markdown(
+            f"""
+            <div style="display:inline-flex; align-items:center; gap:8px; background: rgba(0,212,255,0.08); border: 1px solid #00D4FF; border-radius: 20px; padding: 6px 16px; margin-bottom: 16px;">
+                <span style="color:#00D4FF; font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase;">📌 ÚLTIMO FOLIO CARGADO</span>
+                <span style="color:white; font-size:13px; font-weight:800; font-family:monospace;">{ultimo_folio_txt}</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         
         # 🔹 SECCIÓN DE DESCARGA LIBRE DE LOTES EXISTENTES (SOLO PARA CYNTHIA)
         archivos_disponibles_cynthia = listar_archivos_rigoberto_github()
@@ -1106,7 +1133,9 @@ def main():
                     df_unico_factura = df_rango.drop_duplicates(subset=[col_folio]).copy()
                     df_unico_factura = df_unico_factura.rename(columns={col_folio: "Factura"})
                     
-                    cols_deseadas_cynthia = ["Factura", "Fecha_Conta", "Nombre_Cliente", "Nombre_Extran", "Transporte", "DESTINO", "DIRECCION"]
+                    # 🔹 FIX: se agregó 'Quantity' a las columnas que Cynthia filtra y guarda,
+                    # para que llegue completa hasta el análisis final de Rigoberto.
+                    cols_deseadas_cynthia = ["Factura", "Fecha_Conta", "Nombre_Cliente", "Nombre_Extran", "Transporte", "Quantity", "DESTINO", "DIRECCION"]
                     cols_existentes_cynthia = []
                     for c_buscada in cols_deseadas_cynthia:
                         match_c = next((c for c in df_unico_factura.columns if c.strip().lower() == c_buscada.lower()), None)
