@@ -23,7 +23,7 @@ st.set_page_config(
 # ============================================================
 # 2. LLAMADA AL LAYOUT MAESTRO
 # ============================================================
-render_layout(modulo_actual="REPORTES", submodulo_actual="KPI SURTIDO")
+render_layout(modulo_actual="KPI SURTIDO", submodulo_actual="ANALITICA")
 
 # ============================================================
 # 3. CARGA DE DATOS MAESTRA
@@ -43,6 +43,11 @@ def cargar_datos_envios():
 # 4. INTERFAZ PRINCIPAL DEL KPI DASHBOARD
 # ============================================================
 def main():
+    # Zona horaria de GDL
+    tz_gdl = pytz.timezone("America/Mexico_City")
+    ahora = datetime.now(tz_gdl)
+    hoy_gdl = ahora.date()
+
     # Título y Reloj Sincronizado en GDL
     col_titulo, col_indicador = st.columns([4, 1.8], vertical_alignment="center")
     
@@ -59,9 +64,7 @@ def main():
         )
         
     with col_indicador:
-        tz_gdl = pytz.timezone("America/Mexico_City")
-        ahora = datetime.now(tz_gdl)
-        fecha_str = ahora.strftime("%d/%m")
+        fecha_str = ahora.strftime("%d/%m/%Y")
         hora_str = ahora.strftime("%H:%M:%S")
 
         st.markdown(
@@ -101,7 +104,6 @@ def main():
     df_envios['dt_envio_parsed'] = dt_env_temp
 
     # Cálculo automático de estatus operativo
-    hoy_gdl = ahora.date()
     estatus_calculado = []
     
     for idx, row in df_envios.iterrows():
@@ -133,43 +135,51 @@ def main():
     df_envios['estatus'] = estatus_calculado
 
     # ============================================================
-    # 5. FILTROS TÁCTICOS AVANZADOS
+    # 5. FILTROS TÁCTICOS AVANZADOS (CON FECHA DE PROGRAMACIÓN)
     # ============================================================
     st.markdown("<div style='font-size: 11px; font-weight: 800; color: #8B9BB4; letter-spacing: 1px; margin-bottom: 8px;'>FILTROS DE ANÁLISIS</div>", unsafe_allow_html=True)
     
-    f1, f2, f3, f4 = st.columns(4)
+    f1, f2, f3, f4, f5 = st.columns(5)
     
     with f1:
+        # Por defecto muestra el día de hoy (ej. 22/09/2026) pero se puede cambiar o limpiar
+        filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=hoy_gdl, key="kpi_filtro_fprog")
+
+    with f2:
         facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
         filtro_factura = st.selectbox("FACTURA", facturas_opts, key="kpi_filtro_factura")
 
-    with f2:
+    with f3:
         paq_opts = ["TODAS"] + sorted(list(df_envios['recomendacion'].loc[df_envios['recomendacion'] != ''].unique()))
         filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="kpi_filtro_paq")
 
-    with f3:
+    with f4:
         estatus_opts = ["TODOS"] + sorted(list(df_envios['estatus'].unique()))
         filtro_estatus = st.selectbox("ESTATUS DE SURTIDO", estatus_opts, key="kpi_filtro_estatus")
 
-    with f4:
-        rango_dias = st.selectbox("VENTANA DE TIEMPO", ["Últimos 7 días", "Últimos 30 días", "Histórico Completo"], index=0, key="kpi_filtro_ventana")
+    with f5:
+        rango_dias = st.selectbox("VENTANA", ["Día Actual", "Últimos 7 días", "Histórico Completo"], index=0, key="kpi_filtro_ventana")
 
     # Aplicar filtros
     df_filtrado = df_envios.copy()
     
+    if filtro_fprog is not None:
+        df_filtrado = df_filtrado[df_filtrado['dt_prog_parsed'].dt.date == filtro_fprog]
+
     if filtro_factura != "TODAS":
         df_filtrado = df_filtrado[df_filtrado['factura'] == filtro_factura]
+        
     if filtro_paqueteria != "TODAS":
         df_filtrado = df_filtrado[df_filtrado['recomendacion'] == filtro_paqueteria]
+        
     if filtro_estatus != "TODOS":
         df_filtrado = df_filtrado[df_filtrado['estatus'] == filtro_estatus]
         
-    if rango_dias == "Últimos 7 días":
+    if rango_dias == "Día Actual":
+        df_filtrado = df_filtrado[df_filtrado['dt_prog_parsed'].dt.date == hoy_gdl]
+    elif rango_dias == "Últimos 7 días":
         hace_7 = hoy_gdl - timedelta(days=7)
         df_filtrado = df_filtrado[(df_filtrado['dt_prog_parsed'].dt.date >= hace_7) | (df_filtrado['dt_prog_parsed'].isna())]
-    elif rango_dias == "Últimos 30 días":
-        hace_30 = hoy_gdl - timedelta(days=30)
-        df_filtrado = df_filtrado[(df_filtrado['dt_prog_parsed'].dt.date >= hace_30) | (df_filtrado['dt_prog_parsed'].isna())]
 
     st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
 
