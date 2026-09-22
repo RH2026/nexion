@@ -26,16 +26,32 @@ st.set_page_config(
 render_layout(modulo_actual="KPI SURTIDO", submodulo_actual="ANALITICA")
 
 # ============================================================
-# 3. CARGA DE DATOS MAESTRA
+# 3. FUNCIONES DE CARGA DE DATOS MAESTRA Y FUENTES AUXILIARES
 # ============================================================
 @st.cache_data(ttl=60)
-def cargar_datos_envios():
+def cargar_datos_dashboard_global():
     t = int(time.time())
-    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/envios.csv?v={t}"
+    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv?v={t}"
     try:
         df = pd.read_csv(url, encoding="utf-8-sig")
-        df.columns = df.columns.str.strip()
+        df.columns = df.columns.str.strip().str.upper()
         return df
+    except Exception as e:
+        return pd.DataFrame()
+
+@st.cache_data(ttl=60)
+def cargar_datos_envios():
+    token = st.secrets.get("GITHUB_TOKEN", None)
+    headers = {"Authorization": f"token {token}"} if token else {}
+    t = int(time.time() * 1000)
+    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/envios.csv?_t={t}"
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            df = pd.read_csv(io.StringIO(response.text))
+            df.columns = df.columns.str.strip()
+            return df
+        return pd.DataFrame()
     except Exception as e:
         return pd.DataFrame()
 
@@ -43,7 +59,6 @@ def cargar_datos_envios():
 # 4. INTERFAZ PRINCIPAL DEL KPI DASHBOARD
 # ============================================================
 def main():
-    # Zona horaria de GDL
     tz_gdl = pytz.timezone("America/Mexico_City")
     ahora = datetime.now(tz_gdl)
     hoy_gdl = ahora.date()
@@ -78,41 +93,123 @@ def main():
             unsafe_allow_html=True
         )
 
-    with st.spinner("🔄 Conectando con la base central y procesando métricas de surtido..."):
+    with st.spinner("🔄 Conectando con bases remotas y cruzando guías y métricas de surtido..."):
         df_raw = cargar_datos_envios()
+        df_dashboard_global = cargar_datos_dashboard_global()
+        
+        df_t1_global = pd.DataFrame()
+        try:
+            df_t1_global = pd.read_excel("T1.xlsx")
+            df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
+        except Exception:
+            pass
 
     if df_raw.empty:
         st.warning("No se encontraron registros en la base de datos de envíos.")
         return
 
-    # Normalización de columnas clave
+    df_raw.columns = df_raw.columns.str.strip()
+
+    # Normalización de estructura base
     df_envios = pd.DataFrame()
     df_envios['factura'] = df_raw.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
     df_envios['recomendacion'] = df_raw.get('RECOMENDACION', pd.Series(dtype=str)).fillna('SIN ASIGNAR').astype(str)
     df_envios['nombre_cliente'] = df_raw.get('Nombre_Cliente', df_raw.get('Nombre_Extran', pd.Series(dtype=str))).fillna('').astype(str)
     df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).fillna('NACIONAL').astype(str)
-    df_envios['numero_guia'] = df_raw.get('NÚMERO DE GUÍA', df_raw.get('NUMERO DE GUIA', pd.Series(dtype=str))).fillna('PENDIENTE').astype(str)
     
     f_prog_input = df_raw.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
     dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
     df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
     df_envios['dt_prog_parsed'] = dt_prog_temp
 
-    f_env_input = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
-    dt_env_temp = pd.to_datetime(f_env_input, errors='coerce', dayfirst=True)
-    df_envios['fecha_envio'] = dt_env_temp.dt.strftime('%d/%m/%Y').fillna(f_env_input)
-    df_envios['dt_envio_parsed'] = dt_env_temp
+    # ============================================================
+    # 5. EXTRACCIÓN ROBUSTA DE GUÍAS Y FECHAS (CRUCE MULTI-FUENTE)
+    # ============================================================
+    lista_guias = []
+    lista_fechas_envio = []
+    f_env_raw_list = df_raw.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+
+    for idx, row in df_raw.iterrows():
+        fac = str(row.get('Factura', '')).strip()
+        guia_encontrada = ""
+        fecha_envio_encontrada = ""
+        
+        # 1. Buscar en df_raw (envios.csv)
+        for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON', 'Nro Guia']:
+            if col_g in df_raw.columns and pd.notna(row.get(col_g)):
+                val_g = str(row.get(col_g)).strip()
+                if val_g and val_g.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                    guia_encontrada = val_g
+                    break
+        
+        # 2. Si no hay guía, buscar en Matriz_Excel_Dashboard.csv
+        if not guia_encontrada and not df_dashboard_global.empty:
+            for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
+                if col_ped in df_dashboard_global.columns:
+                    match_dash = df_dashboard_global[df_dashboard_global[col_ped].astype(str).str.strip() == fac]
+                    if not match_dash.empty:
+                        for cg_dash in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
+                            if cg_dash in match_dash.columns:
+                                vg = str(match_dash.iloc[0][cg_dash]).strip()
+                                if vg and vg.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                    guia_encontrada = vg
+                                    break
+                    if guia_encontrada:
+                        break
+
+        # 3. Si aún no hay guía, buscar en T1.xlsx
+        encontrado_en_t1 = False
+        if not guia_encontrada and not df_t1_global.empty:
+            for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
+                if col_t1_ped in df_t1_global.columns:
+                    match_t1 = df_t1_global[df_t1_global[col_t1_ped].astype(str).str.strip() == fac]
+                    if not match_t1.empty:
+                        for cg_t1 in ['TALON', 'GUIA', 'NÚMERO DE GUÍA']:
+                            if cg_t1 in match_t1.columns:
+                                vg = str(match_t1.iloc[0][cg_t1]).strip()
+                                if vg and vg.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                    guia_encontrada = vg
+                                    encontrado_en_t1 = True
+                                    break
+                        if encontrado_en_t1:
+                            for col_fdoc in ['F.DOC', 'FECHA', 'FECHA DOC']:
+                                if col_fdoc in match_t1.columns:
+                                    fdoc_val = str(match_t1.iloc[0][col_fdoc]).strip()
+                                    if fdoc_val and fdoc_val.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                        dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
+                                        fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
+                                        break
+                            break
+
+        if not guia_encontrada:
+            guia_encontrada = "PENDIENTE"
+
+        if encontrado_en_t1 and fecha_envio_encontrada:
+            final_fecha_envio = fecha_envio_encontrada
+        else:
+            final_fecha_envio = str(f_env_raw_list.loc[idx]).strip() if idx in f_env_raw_list.index else ''
+
+        lista_guias.append(guia_encontrada)
+        lista_fechas_envio.append(final_fecha_envio)
+
+    df_envios['numero_guia'] = lista_guias
+    df_envios['fecha_envio_raw'] = lista_fechas_envio
+
+    dt_envio_temp = pd.to_datetime(df_envios['fecha_envio_raw'], errors='coerce', dayfirst=True)
+    df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios['fecha_envio_raw'])
+    df_envios['dt_envio_parsed'] = dt_envio_temp
 
     # Cálculo automático de estatus operativo
     estatus_calculado = []
-    
+    valores_nulos = ['', 'nan', '0', '0.0', '-', 'nat', 'none', 'pendiente']
+
     for idx, row in df_envios.iterrows():
         fp = str(row['fecha_programacion']).strip()
         fe = str(row['fecha_envio']).strip()
         guia = str(row['numero_guia']).strip()
         
-        tiene_g = guia and guia.lower() not in ['', 'nan', '0', '0.0', 'pendiente', 'none']
-        tiene_fe = fe and fe.lower() not in ['', 'nan', '0', '0.0', 'nat', 'none', '-']
+        tiene_g = guia and guia.lower() not in valores_nulos
+        tiene_fe = fe and fe.lower() not in valores_nulos
         
         dt_p = row['dt_prog_parsed']
         dt_e = row['dt_envio_parsed']
@@ -135,14 +232,14 @@ def main():
     df_envios['estatus'] = estatus_calculado
 
     # ============================================================
-    # 5. FILTROS TÁCTICOS AVANZADOS (CON FECHA DE PROGRAMACIÓN)
+    # 6. FILTROS TÁCTICOS AVANZADOS (CON FECHA DE PROGRAMACIÓN)
     # ============================================================
     st.markdown("<div style='font-size: 11px; font-weight: 800; color: #8B9BB4; letter-spacing: 1px; margin-bottom: 8px;'>FILTROS DE ANÁLISIS</div>", unsafe_allow_html=True)
     
     f1, f2, f3, f4, f5 = st.columns(5)
     
     with f1:
-        # Por defecto muestra el día de hoy (ej. 22/09/2026) pero se puede cambiar o limpiar
+        # Por defecto muestra el día de hoy pero permite seleccionarlo/limpiarlo
         filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=hoy_gdl, key="kpi_filtro_fprog")
 
     with f2:
@@ -184,7 +281,7 @@ def main():
     st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
 
     # ============================================================
-    # 6. CÁLCULO DE KPIs EJECUTIVOS
+    # 7. CÁLCULO DE KPIs EJECUTIVOS
     # ============================================================
     total_facturas = len(df_filtrado)
     hoy_str = ahora.strftime('%d/%m/%Y')
@@ -242,7 +339,7 @@ def main():
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
 
     # ============================================================
-    # 7. GRÁFICAS DE DONA INTERACTIVAS (PLOTLY)
+    # 8. GRÁFICAS DE DONA INTERACTIVAS (PLOTLY)
     # ============================================================
     if not df_filtrado.empty:
         col_c1, col_c2 = st.columns(2)
@@ -288,7 +385,7 @@ def main():
             st.plotly_chart(fig_donita2, use_container_width=True, config={'displayModeBar': False})
 
     # ============================================================
-    # 8. TABLA DE PEDIDOS CON ENCABEZADO STICKY
+    # 9. TABLA DE PEDIDOS CON ENCABEZADO STICKY
     # ============================================================
     st.markdown("<div style='font-size: 11px; font-weight: 800; color: #8B9BB4; letter-spacing: 1px; margin-top: 15px; margin-bottom: 8px;'>DETALLE DE PEDIDOS Y SURTIDO</div>", unsafe_allow_html=True)
 
