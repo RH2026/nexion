@@ -1055,9 +1055,10 @@ def main():
 
         st.markdown(
             f"""
-            <div style="display:inline-flex; align-items:center; gap:8px; background: rgba(0,212,255,0.08); border: 1px solid #00D4FF; border-radius: 20px; padding: 6px 16px; margin-bottom: 16px;">
-                <span style="color:#00D4FF; font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase;">📌 ÚLTIMO FOLIO CARGADO</span>
-                <span style="color:white; font-size:13px; font-weight:800; font-family:monospace;">{ultimo_folio_txt}</span>
+            <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-radius: 8px; padding: 10px 18px; margin-bottom: 16px; width:100%; box-sizing:border-box;">
+                <div style="width:8px; height:8px; background:#00FFAA; border-radius:50%; box-shadow:0 0 8px #00FFAA; flex-shrink:0;"></div>
+                <span style="color:#82D4E6; font-size:10px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase;">ÚLTIMO FOLIO CARGADO:</span>
+                <span style="color:white; font-size:13px; font-weight:800; font-family:monospace; letter-spacing:0.5px;">{ultimo_folio_txt}</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1308,3 +1309,4 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
