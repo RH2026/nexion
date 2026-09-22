@@ -29,6 +29,7 @@ PAGINAS = {
     "alertas" : "pages/alertas.py",
     "gastos" : "pages/gastos.py",
     "recolecciones" : "pages/recolecciones.py",
+    "kpi_surtido.py" : "pages/kpi_surtido.py",
 }
 
 # ============================================================
