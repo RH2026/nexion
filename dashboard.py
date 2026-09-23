@@ -500,7 +500,7 @@ def main():
 
                     for item in sorted_table_data:
                         est = str(item.get("estatus", "")).strip().upper()
-                        if "TIEMPO" in est:
+                        if "TIEMPO" in est or est == "ENVIADA":
                             s_class = "envios-premium-income"
                         elif "RETRASO" in est:
                             s_class = "envios-premium-expense"
