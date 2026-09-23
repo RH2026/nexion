@@ -348,6 +348,8 @@ def main():
                         estatus_calculado.append("SURTIDA / EN TIEMPO" if not tarde else "CON RETRASO")
                     elif not tiene_g and not tiene_fe:
                         estatus_calculado.append("PENDIENTE / SURTIENDO")
+                    elif tiene_fe and not tiene_g:
+                        estatus_calculado.append("ENVIADA")
                     else:
                         estatus_calculado.append("ENVIADA PARCIAL")
 
