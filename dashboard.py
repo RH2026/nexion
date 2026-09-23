@@ -238,23 +238,24 @@ def main():
                     st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin pedidos en este período</div>", unsafe_allow_html=True)
 
             with col_d2:
-                st.markdown("<div class='donut-section-title'>VOLUMEN OPERATIVO POR FLETERA</div>", unsafe_allow_html=True)
-                df_fletera_counts = df_mes.groupby("FLETERA").size().reset_index(name="Cantidad")
-                df_fletera_counts.columns = ["Fletera", "Cantidad"]
+                st.markdown("<div class='donut-section-title'>PORCENTAJE DE PEDIDOS CON RETRASO POR FLETERA</div>", unsafe_allow_html=True)
+                df_retraso = df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt]
+                df_retraso_fletera = df_retraso.groupby("FLETERA").size().reset_index(name="Cantidad")
+                df_retraso_fletera.columns = ["Fletera", "Cantidad"]
 
-                if not df_fletera_counts.empty:
+                if not df_retraso_fletera.empty:
                     fig_donita2 = px.pie(
-                        df_fletera_counts,
+                        df_retraso_fletera,
                         names="Fletera",
                         values="Cantidad",
                         hole=0.6,
-                        color_discrete_sequence=['#00A3A3', '#3B82F6', '#8B5CF6', '#EC4899', '#64748B'],
+                        color_discrete_sequence=['#FF6B6B', '#F97316', '#EC4899', '#8B5CF6', '#64748B'],
                     )
                     fig_donita2.update_traces(textposition='inside', textinfo='percent+value')
                     fig_donita2.update_layout(**config_layout)
                     st.plotly_chart(fig_donita2, use_container_width=True, config={'displayModeBar': False})
                 else:
-                    st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin pedidos en este período</div>", unsafe_allow_html=True)
+                    st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Sin pedidos con retraso en este período</div>", unsafe_allow_html=True)
 
         # ----------------------------------------------------------
         # TAB 2: PESTAÑA 2 (Espacio reservado para futuro contenido)
