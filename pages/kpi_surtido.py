@@ -62,6 +62,9 @@ def main():
     tz_gdl = pytz.timezone("America/Mexico_City")
     ahora = datetime.now(tz_gdl)
     hoy_gdl = ahora.date()
+    # Día base por defecto: AYER. Lo de hoy apenas se está surtiendo/programando,
+    # así que para ver el cierre real (qué sí tiene guía y qué no) usamos ayer.
+    ayer_gdl = hoy_gdl - timedelta(days=1)
 
     # Título y Reloj Sincronizado en GDL
     col_titulo, col_indicador = st.columns([4, 1.8], vertical_alignment="center")
@@ -241,8 +244,9 @@ def main():
     f1, f2, f3, f4, f5 = st.columns(5)
     
     with f1:
-        # Por defecto muestra el día de hoy pero permite seleccionarlo/limpiarlo
-        filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=hoy_gdl, key="kpi_filtro_fprog")
+        # Por defecto muestra el día ANTERIOR (ayer), ya que lo de hoy aún se está
+        # surtiendo/programando y no refleja el cierre real. Se puede cambiar libremente.
+        filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=ayer_gdl, key="kpi_filtro_fprog")
 
     with f2:
         facturas_opts = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
@@ -257,7 +261,7 @@ def main():
         filtro_estatus = st.selectbox("ESTATUS DE SURTIDO", estatus_opts, key="kpi_filtro_estatus")
 
     with f5:
-        rango_dias = st.selectbox("VENTANA", ["Día Actual", "Últimos 7 días", "Histórico Completo"], index=0, key="kpi_filtro_ventana")
+        rango_dias = st.selectbox("VENTANA", ["Día Anterior", "Últimos 7 días", "Histórico Completo"], index=0, key="kpi_filtro_ventana")
 
     # Aplicar filtros
     df_filtrado = df_envios.copy()
@@ -274,10 +278,10 @@ def main():
     if filtro_estatus != "TODOS":
         df_filtrado = df_filtrado[df_filtrado['estatus'] == filtro_estatus]
         
-    if rango_dias == "Día Actual":
-        df_filtrado = df_filtrado[df_filtrado['dt_prog_parsed'].dt.date == hoy_gdl]
+    if rango_dias == "Día Anterior":
+        df_filtrado = df_filtrado[df_filtrado['dt_prog_parsed'].dt.date == ayer_gdl]
     elif rango_dias == "Últimos 7 días":
-        hace_7 = hoy_gdl - timedelta(days=7)
+        hace_7 = ayer_gdl - timedelta(days=7)
         df_filtrado = df_filtrado[(df_filtrado['dt_prog_parsed'].dt.date >= hace_7) | (df_filtrado['dt_prog_parsed'].isna())]
 
     st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
