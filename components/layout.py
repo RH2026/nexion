@@ -159,7 +159,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     /* TEXTO INTERNO DE LAS PESTAÑAS (IGUALADO A TÍTULOS DINÁMICOS: 13px y 5px de espacio) */
     div[data-testid="stTabs"] [role="tab"] p,
     div[data-testid="stTabs"] [role="tab"] span {{
-        color: rgba(255, 255, 255, 0.6) !important;
+        color: #FFFFFF !important;
         font-size: 13px !important;
         font-weight: 400 !important;
         letter-spacing: 0px !important;
