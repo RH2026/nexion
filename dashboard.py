@@ -408,23 +408,18 @@ def main():
                 total_facturas = len(df_filtrado)
                 hoy_str_s = ahora_surtido.strftime('%d/%m/%Y')
 
-                # ENVIADAS: cuenta todo lo que ya tenga fecha de envío registrada,
-                # sin importar si aún no tiene número de guía asignado.
+                # ENVIADAS / SURTIDAS: si la factura ya tiene fecha de envío registrada,
+                # entonces ya se surtió y ya se envió (es el mismo hecho, no dos cosas
+                # distintas), sin importar si aún no tiene número de guía asignado.
                 enviadas = len(df_filtrado[df_filtrado['fecha_envio'].astype(str).str.strip().str.lower().apply(lambda v: v not in valores_nulos)])
-                surtidas_tiempo = len(df_filtrado[df_filtrado['estatus'] == "SURTIDA / EN TIEMPO"])
+                surtidas_tiempo = enviadas
                 con_retraso = len(df_filtrado[df_filtrado['estatus'] == "CON RETRASO"])
                 pendientes = len(df_filtrado[df_filtrado['estatus'].str.contains("PENDIENTE", na=False)])
 
-                # EFECTIVIDAD: sólo cuenta como efectivo lo que se envió/surtió el
-                # MISMO día que estaba programado. Si la fecha de envío quedó
-                # registrada al día siguiente (o después), ya no entra en la efectividad.
-                mask_mismo_dia_s = (
-                    df_filtrado['dt_prog_parsed'].notna()
-                    & df_filtrado['dt_envio_parsed'].notna()
-                    & (df_filtrado['dt_prog_parsed'].dt.date == df_filtrado['dt_envio_parsed'].dt.date)
-                )
-                efectivas_mismo_dia = int(mask_mismo_dia_s.sum())
-                porcentaje_exito = (efectivas_mismo_dia / total_facturas * 100) if total_facturas > 0 else 0
+                # EFECTIVIDAD: del total de facturas, cuántas se enviaron/surtieron
+                # (tienen fecha de envío). Enviadas + Surtidas es el mismo número,
+                # combinado se divide entre el total para sacar el porcentaje.
+                porcentaje_exito = (enviadas / total_facturas * 100) if total_facturas > 0 else 0
 
                 kpi_cols_s = st.columns(5)
                 with kpi_cols_s[0]:
@@ -466,7 +461,7 @@ def main():
                             hole=0.6,
                             color_discrete_sequence=['#00FFAA', '#FFD166', '#FF6B6B', '#3B82F6']
                         )
-                        fig_donita_s1.update_traces(textposition='inside', textinfo='percent+value')
+                        fig_donita_s1.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=13, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=13))
                         fig_donita_s1.update_layout(**config_layout_s)
                         st.plotly_chart(fig_donita_s1, use_container_width=True, config={'displayModeBar': False})
 
@@ -482,7 +477,7 @@ def main():
                             hole=0.6,
                             color_discrete_sequence=['#00A3A3', '#3B82F6', '#8B5CF6', '#EC4899', '#64748B']
                         )
-                        fig_donita_s2.update_traces(textposition='inside', textinfo='percent+value')
+                        fig_donita_s2.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=13, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=13))
                         fig_donita_s2.update_layout(**config_layout_s)
                         st.plotly_chart(fig_donita_s2, use_container_width=True, config={'displayModeBar': False})
 
@@ -636,7 +631,7 @@ def main():
                             "EN TRÁNSITO CON RETRASO": "#FF6B6B",
                         },
                     )
-                    fig_donita1.update_traces(textposition='inside', textinfo='percent+value')
+                    fig_donita1.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=13, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=13))
                     fig_donita1.update_layout(**config_layout)
                     st.plotly_chart(fig_donita1, use_container_width=True, config={'displayModeBar': False})
                 else:
@@ -656,7 +651,7 @@ def main():
                         hole=0.6,
                         color_discrete_sequence=['#FF6B6B', '#F97316', '#EC4899', '#8B5CF6', '#64748B'],
                     )
-                    fig_donita2.update_traces(textposition='inside', textinfo='percent+value')
+                    fig_donita2.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=13, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=13))
                     fig_donita2.update_layout(**config_layout)
                     st.plotly_chart(fig_donita2, use_container_width=True, config={'displayModeBar': False})
                 else:
