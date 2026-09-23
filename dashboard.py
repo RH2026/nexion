@@ -406,18 +406,29 @@ def main():
                 total_facturas = len(df_filtrado)
                 hoy_str_s = ahora_surtido.strftime('%d/%m/%Y')
 
-                enviadas_hoy = len(df_filtrado[df_filtrado['fecha_envio'] == hoy_str_s])
+                # ENVIADAS: cuenta todo lo que ya tenga fecha de envío registrada,
+                # sin importar si aún no tiene número de guía asignado.
+                enviadas = len(df_filtrado[df_filtrado['fecha_envio'].astype(str).str.strip().str.lower().apply(lambda v: v not in valores_nulos)])
                 surtidas_tiempo = len(df_filtrado[df_filtrado['estatus'] == "SURTIDA / EN TIEMPO"])
                 con_retraso = len(df_filtrado[df_filtrado['estatus'] == "CON RETRASO"])
                 pendientes = len(df_filtrado[df_filtrado['estatus'].str.contains("PENDIENTE", na=False)])
 
-                porcentaje_exito = (surtidas_tiempo / total_facturas * 100) if total_facturas > 0 else 0
+                # EFECTIVIDAD: sólo cuenta como efectivo lo que se envió/surtió el
+                # MISMO día que estaba programado. Si la fecha de envío quedó
+                # registrada al día siguiente (o después), ya no entra en la efectividad.
+                mask_mismo_dia_s = (
+                    df_filtrado['dt_prog_parsed'].notna()
+                    & df_filtrado['dt_envio_parsed'].notna()
+                    & (df_filtrado['dt_prog_parsed'].dt.date == df_filtrado['dt_envio_parsed'].dt.date)
+                )
+                efectivas_mismo_dia = int(mask_mismo_dia_s.sum())
+                porcentaje_exito = (efectivas_mismo_dia / total_facturas * 100) if total_facturas > 0 else 0
 
                 kpi_cols_s = st.columns(5)
                 with kpi_cols_s[0]:
                     render_flat_card("Facturas Totales", total_facturas, "#E8EEF2")
                 with kpi_cols_s[1]:
-                    render_flat_card("Se Fueron Hoy", enviadas_hoy, "#00FFAA", border_alpha="0,255,170")
+                    render_flat_card("Enviadas", enviadas, "#00FFAA", border_alpha="0,255,170")
                 with kpi_cols_s[2]:
                     render_flat_card("Sí Surtidas", surtidas_tiempo, "#FFD166")
                 with kpi_cols_s[3]:
