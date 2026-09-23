@@ -17,6 +17,8 @@ import streamlit.components.v1 as components
 import streamlit as st
 from auth import exigir_autenticacion
 import math
+import plotly.graph_objects as go
+import plotly.express as px
 
 from components.layout import render_layout
 
@@ -100,48 +102,81 @@ def main():
         except Exception as e:
             st.error(f"Error al cargar datos: {e}")
             return None         
-    
-    def render_kpi(valor, total, titulo, color):
-        porc = (valor / total * 100) if total > 0 else 0
-        circunferencia = 238.76
-        offset = circunferencia - (porc / 100 * circunferencia)
-        
+
+    # --------------------------------------------------------
+    # NUEVA TARJETA "STAT CARD" (para Pedidos / Entregados)
+    # --------------------------------------------------------
+    def render_stat_card(valor, titulo, subtitulo, color, icono):
         st.markdown(f"""
-            <div class="metric-container">
-                <div class="metric-title">{titulo}</div>
-                <div style="position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;">
-                    <svg class="stat-circle" viewBox="0 0 100 100">
-                        <circle class="stat-bg" cx="50" cy="50" r="38"></circle>
-                        <circle class="stat-progress" cx="50" cy="50" r="38" 
-                                style="stroke: {color}; 
-                                       stroke-dasharray: {circunferencia}; 
-                                       stroke-dashoffset: {offset};">
-                        </circle>
-                    </svg>
-                    <div class="stat-value">{valor}</div>
+            <div class="stat-card-mini">
+                <div class="stat-card-mini-top">
+                    <div class="stat-card-mini-icon" style="background:{color}22; color:{color};">{icono}</div>
+                    <div class="stat-card-mini-title">{titulo}</div>
                 </div>
-                <div class="stat-percent" style="color: {color};">{porc:.1f}%</div>
+                <div class="stat-card-mini-value" style="color:{color};">{valor}</div>
+                <div class="stat-card-mini-sub">{subtitulo}</div>
             </div>
         """, unsafe_allow_html=True)
+
+    # --------------------------------------------------------
+    # NUEVA DONA (para Tránsito / En Tiempo / Retraso)
+    # --------------------------------------------------------
+    def render_donut_kpi(valor, total, titulo, color):
+        restante = max(total - valor, 0)
+        porc = (valor / total * 100) if total > 0 else 0
+
+        fig = go.Figure(data=[go.Pie(
+            values=[valor, restante] if total > 0 else [1],
+            hole=0.74,
+            marker=dict(colors=[color, "#20292F"] if total > 0 else ["#20292F"], line=dict(color="#2B343B", width=2)),
+            textinfo="none",
+            sort=False,
+            direction="clockwise",
+            rotation=0,
+        )])
+        fig.update_layout(
+            showlegend=False,
+            margin=dict(t=0, b=0, l=0, r=0),
+            height=150,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            annotations=[dict(
+                text=f"<b style='font-size:20px;color:white;'>{valor}</b><br><span style='font-size:11px;color:{color};'>{porc:.0f}%</span>",
+                showarrow=False,
+                font=dict(family="Inter, sans-serif"),
+            )],
+        )
+        st.markdown(f"<div class='donut-mini-title'>{titulo}</div>", unsafe_allow_html=True)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"donut_{titulo}")
 
     st.markdown(f"""
     <style>
         .stApp {{ background-color: {vars_css['bg']} !important; }}
         .spacer-menu {{ margin-top: 30px; }}
-        .metric-container {{
+
+        /* --- Tarjetas grandes (Pedidos / Entregados) --- */
+        .stat-card-mini {{
+            background: linear-gradient(160deg, #2B343B 0%, #232A30 100%);
+            border: 1px solid {vars_css['border']};
+            border-radius: 14px;
+            padding: 18px 20px;
+            height: 150px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
+            justify-content: space-between;
         }}
-        .metric-title {{ color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-weight: 600; }}
-        .stat-circle {{ transform: rotate(-90deg); width: 160px; height: 160px; overflow: visible; }}
-        .stat-circle circle {{ fill: none; stroke-width: 15; }}
-        .stat-bg {{ stroke: #2F3E45; }}
-        .stat-progress {{ transition: stroke-dashoffset 0.8s ease-in-out; stroke-linecap: butt; }}
-        .stat-value {{ position: absolute; color: white; font-size: 22px; font-weight: 800; top: 50%; left: 50%; transform: translate(-50%, -50%); }}
-        .stat-percent {{ font-size: 16px; margin-top: 5px; font-weight: 700; }}
+        .stat-card-mini-top {{ display: flex; align-items: center; gap: 10px; }}
+        .stat-card-mini-icon {{
+            width: 30px; height: 30px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+        }}
+        .stat-card-mini-title {{ color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }}
+        .stat-card-mini-value {{ font-size: 40px; font-weight: 900; line-height: 1; margin-top: 4px; }}
+        .stat-card-mini-sub {{ color: rgba(255,255,255,0.45); font-size: 10px; font-weight: 600; letter-spacing: 0.5px; }}
+
+        /* --- Donas mini --- */
+        .donut-mini-title {{ color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; text-align: center; margin-bottom: -6px; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -167,7 +202,7 @@ def main():
         ])
 
         # ----------------------------------------------------------
-        # TAB 1: KPIS (Donitas, Gráficos y el selector de Período integrado)
+        # TAB 1: KPIS (Tarjetas + Donas, y el selector de Período integrado)
         # ----------------------------------------------------------
         with tab1:
             st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
@@ -201,11 +236,16 @@ def main():
 
             st.markdown("<br>", unsafe_allow_html=True)
             c1, c2, c3, c4, c5 = st.columns(5)
-            with c1: render_kpi(total_p, total_p, "Pedidos", "#f6c23e")
-            with c2: render_kpi(entregados, total_p, "Entregados", "#1cc88a")
-            with c3: render_kpi(total_t, total_p, "Tránsito", "#4e73df")
-            with c4: render_kpi(en_tiempo, total_p, "En Tiempo", "#36b9cc")
-            with c5: render_kpi(retrasados, total_p, "Retraso", "#fb7185")
+            with c1:
+                render_stat_card(total_p, "Pedidos", f"Período: {mes_sel}", "#f6c23e", "📦")
+            with c2:
+                render_stat_card(entregados, "Entregados", f"{(entregados/total_p*100 if total_p>0 else 0):.0f}% del total", "#1cc88a", "✅")
+            with c3:
+                render_donut_kpi(total_t, total_p, "Tránsito", "#4e73df")
+            with c4:
+                render_donut_kpi(en_tiempo, total_p, "En Tiempo", "#36b9cc")
+            with c5:
+                render_donut_kpi(retrasados, total_p, "Retraso", "#fb7185")
                     
             st.markdown("<br>", unsafe_allow_html=True)
         
@@ -225,55 +265,72 @@ def main():
             
             color_transito = "#36b9cc"
             color_retraso = "#fb7185"
-            
-            col_graf1, col_graf2 = st.columns(2)
-            
-            with col_graf1:
-                df_t = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] >= hoy_dt)].copy()
-                df_t_count = df_t.groupby("FLETERA").size().reset_index(name="CANTIDAD")
-                total_t_graf = df_t_count["CANTIDAD"].sum()
-            
+
+            # --- Header resumen (se mantiene, con leve retoque visual) ---
+            col_h1, col_h2 = st.columns(2)
+            with col_h1:
                 st.markdown(f"""
-                    <div style='background: linear-gradient(90deg, {color_transito}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_transito};'>
+                    <div style='background: linear-gradient(90deg, {color_transito}18 0%, transparent 100%); padding: 15px; border-radius: 8px; border-left: 4px solid {color_transito};'>
                         <p style='margin:0; color:{color_transito}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔵 En tránsito en tiempo</p>
-                        <h2 style='margin:0; color:white; font-size:28px;'>{total_t_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
+                        <h2 style='margin:0; color:white; font-size:28px;'>{en_tiempo} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
                     </div>
                 """, unsafe_allow_html=True)
-            
-                import altair as alt
-                if not df_t_count.empty:
-                    h_t = len(df_t_count) * 35 + 50
-                    chart_t = alt.Chart(df_t_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_transito).encode(
-                        x=alt.X("CANTIDAD:Q", title=None, axis=None),
-                        y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
-                    )
-                    text_t = chart_t.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
-                    st.altair_chart((chart_t + text_t).properties(height=h_t).configure_view(strokeOpacity=0), use_container_width=True)
-                else:
-                    st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin carga en tránsito</div>", unsafe_allow_html=True)
-            
-            with col_graf2:
-                df_r = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] < hoy_dt)].copy()
-                df_r_count = df_r.groupby("FLETERA").size().reset_index(name="CANTIDAD")
-                total_r_graf = df_r_count["CANTIDAD"].sum()
-            
+            with col_h2:
                 st.markdown(f"""
-                    <div style='background: linear-gradient(90deg, {color_retraso}15 0%, transparent 100%); padding: 15px; border-radius: 4px; border-left: 4px solid {color_retraso};'>
-                        <p style='margin:0; color:{color_retraso}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔴 En tránsito con Retraso</p>
-                        <h2 style='margin:0; color:white; font-size:28px;'>{total_r_graf} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
+                    <div style='background: linear-gradient(90deg, {color_retraso}18 0%, transparent 100%); padding: 15px; border-radius: 8px; border-left: 4px solid {color_retraso};'>
+                        <p style='margin:0; color:{color_retraso}; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;'>🔴 En tránsito con retraso</p>
+                        <h2 style='margin:0; color:white; font-size:28px;'>{retrasados} <span style='font-size:14px; color:#94a3b8;'>pedidos</span></h2>
                     </div>
                 """, unsafe_allow_html=True)
-            
-                if not df_r_count.empty:
-                    h_r = len(df_r_count) * 35 + 50
-                    chart_r = alt.Chart(df_r_count).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3, size=18, color=color_retraso).encode(
-                        x=alt.X("CANTIDAD:Q", title=None, axis=None),
-                        y=alt.Y("FLETERA:N", title=None, sort='-x', axis=alt.Axis(labelColor='#94a3b8', labelFontSize=11))
-                    )
-                    text_r = chart_r.mark_text(align='left', baseline='middle', dx=8, color='white', fontWeight=700).encode(text="CANTIDAD:Q")
-                    st.altair_chart((chart_r + text_r).properties(height=h_r).configure_view(strokeOpacity=0), use_container_width=True)
-                else:
-                    st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Todo entregado a tiempo</div>", unsafe_allow_html=True)
+
+            st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
+
+            # --------------------------------------------------------
+            # NUEVO GRÁFICO: BARRAS DIVERGENTES POR FLETERA
+            # (a la derecha lo que va en tiempo, a la izquierda lo que va con retraso)
+            # --------------------------------------------------------
+            df_t = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] >= hoy_dt)].copy()
+            df_r = df_mes[df_mes["FECHA DE ENTREGA REAL"].isna() & (df_mes["PROMESA DE ENTREGA"] < hoy_dt)].copy()
+
+            t_count = df_t.groupby("FLETERA").size().rename("EN_TIEMPO")
+            r_count = df_r.groupby("FLETERA").size().rename("RETRASO")
+            df_div = pd.concat([t_count, r_count], axis=1).fillna(0).reset_index()
+
+            if not df_div.empty:
+                df_div["TOTAL"] = df_div["EN_TIEMPO"] + df_div["RETRASO"]
+                df_div = df_div.sort_values("TOTAL", ascending=True)
+
+                fig_div = go.Figure()
+                fig_div.add_trace(go.Bar(
+                    y=df_div["FLETERA"], x=-df_div["RETRASO"],
+                    orientation="h", name="Con retraso",
+                    marker=dict(color=color_retraso, line=dict(width=0)),
+                    text=df_div["RETRASO"].astype(int).astype(str),
+                    textposition="outside",
+                ))
+                fig_div.add_trace(go.Bar(
+                    y=df_div["FLETERA"], x=df_div["EN_TIEMPO"],
+                    orientation="h", name="En tiempo",
+                    marker=dict(color=color_transito, line=dict(width=0)),
+                    text=df_div["EN_TIEMPO"].astype(int).astype(str),
+                    textposition="outside",
+                ))
+                max_val = max(df_div["RETRASO"].max(), df_div["EN_TIEMPO"].max(), 1)
+                fig_div.update_layout(
+                    barmode="relative",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(color="#E8EEF2", family="Inter, sans-serif", size=11),
+                    height=max(280, len(df_div) * 42),
+                    margin=dict(t=10, b=10, l=10, r=10),
+                    legend=dict(orientation="h", y=1.08, x=0.5, xanchor="center", font=dict(size=10)),
+                    xaxis=dict(visible=False, range=[-max_val * 1.3, max_val * 1.3], zeroline=False),
+                    yaxis=dict(title=None, showgrid=False, tickfont=dict(size=11, color="#94a3b8")),
+                    bargap=0.35,
+                )
+                st.plotly_chart(fig_div, use_container_width=True, config={'displayModeBar': False})
+            else:
+                st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Sin carga pendiente por fletera este período</div>", unsafe_allow_html=True)
 
         # ----------------------------------------------------------
         # TAB 2: PESTAÑA 2 (Espacio reservado para futuro contenido)
@@ -478,4 +535,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
