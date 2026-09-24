@@ -233,7 +233,7 @@ def main():
             if df_raw_surtido.empty:
                 st.warning("No se encontraron registros en la base de datos de envíos.")
             else:
-                with st.spinner("🔗 Cruzando guías, facturas y fechas de programación contra las bases remotas..."):
+                with st.spinner("🔗 Ejecutando cruce inteligente de guías, facturas y programación contra las bases remotas..."):
                     df_raw_surtido.columns = df_raw_surtido.columns.str.strip()
 
                     # Normalización de estructura base
