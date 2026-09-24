@@ -490,21 +490,23 @@ def main():
             st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
             return False
 
-    # ── CARGA INICIAL: MISMO COMPORTAMIENTO QUE KPI'S SURTIDO ──
-    # El spinner nativo de Streamlit permanece visible durante TODA
-    # la carga inicial, incluyendo T1.xlsx.
-    with st.spinner("🔄 Conectando con GitHub y cargando la matriz de envíos (últimos 10 días)... Por favor espera."):
+    # ── CARGA INICIAL UNIFICADA ──
+    # Un solo spinner nativo que abarca todo el proceso pesado inicial.
+    with st.spinner("🔄 Conectando con GitHub, cargando bases y cruzando información... Por favor espera."):
+        
+        # 1. Carga de datos base
         df_raw = get_github_data()
         df_dashboard_global = cargar_datos_dashboard()
-
+    
+        # 2. Carga de archivo local T1.xlsx
         df_t1_global = pd.DataFrame()
         try:
             df_t1_global = pd.read_excel("T1.xlsx")
             df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
         except Exception:
             pass
-
-    with st.spinner("🔗 Cruzando guías, facturas y fechas de programación contra las bases remotas..."):
+    
+        # 3. Limpieza y cruce de columnas
         if not df_raw.empty:
             df_raw.columns = df_raw.columns.str.strip()
 
