@@ -490,379 +490,283 @@ def main():
             st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
             return False
 
-    # ============================================================
-    # CARGA INICIAL | SPINNER NEXION CENTRADO
-    # Mantiene visible el indicador durante TODA la carga pesada.
-    # ============================================================
-    loading_placeholder = st.empty()
-
-    loading_placeholder.markdown("""
-    <style>
-    .nexion-loading-overlay {
-        position: fixed;
-        inset: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 999999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(20, 27, 32, 0.82);
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
-    }
-
-    .nexion-loading-card {
-        min-width: 330px;
-        padding: 28px 34px;
-        border: 1px solid rgba(0, 255, 170, 0.28);
-        border-radius: 16px;
-        background: rgba(43, 52, 59, 0.96);
-        box-shadow: 0 18px 55px rgba(0, 0, 0, 0.48);
-        text-align: center;
-        font-family: Inter, Arial, sans-serif;
-    }
-
-    .nexion-loading-spinner {
-        width: 46px;
-        height: 46px;
-        margin: 0 auto 18px auto;
-        border: 4px solid rgba(255, 255, 255, 0.13);
-        border-top: 4px solid #00FFAA;
-        border-right: 4px solid #00D4FF;
-        border-radius: 50%;
-        animation: nexion-spin 0.85s linear infinite;
-    }
-
-    .nexion-loading-title {
-        color: #FFFFFF;
-        font-size: 14px;
-        font-weight: 800;
-        letter-spacing: 1.5px;
-        margin-bottom: 8px;
-    }
-
-    .nexion-loading-text {
-        color: #B8C3C9;
-        font-size: 12px;
-        line-height: 1.5;
-    }
-
-    .nexion-loading-dot {
-        display: inline-block;
-        width: 6px;
-        height: 6px;
-        margin-left: 4px;
-        border-radius: 50%;
-        background: #00FFAA;
-        animation: nexion-pulse 1s infinite ease-in-out;
-    }
-
-    @keyframes nexion-spin {
-        to { transform: rotate(360deg); }
-    }
-
-    @keyframes nexion-pulse {
-        0%, 100% { opacity: 0.25; transform: scale(0.75); }
-        50% { opacity: 1; transform: scale(1); }
-    }
-    </style>
-
-    <div class="nexion-loading-overlay">
-        <div class="nexion-loading-card">
-            <div class="nexion-loading-spinner"></div>
-            <div class="nexion-loading-title">NEXION | LOGISTICS</div>
-            <div class="nexion-loading-text">
-                CONECTANDO CON GITHUB Y CARGANDO MATRIZ DE ENVÍOS
-                <span class="nexion-loading-dot"></span>
-                <span class="nexion-loading-dot"></span>
-                <span class="nexion-loading-dot"></span>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Pequeña pausa para permitir que el navegador pinte el spinner
-    # antes de comenzar las operaciones pesadas.
-    time.sleep(0.12)
-
-    try:
+    # ── CARGA INICIAL: MISMO COMPORTAMIENTO QUE KPI'S SURTIDO ──
+    # El spinner nativo de Streamlit permanece visible durante TODA
+    # la carga inicial, incluyendo T1.xlsx.
+    with st.spinner("🔄 Conectando con GitHub y cargando la matriz de envíos (últimos 10 días)... Por favor espera, amor."):
         df_raw = get_github_data()
         df_dashboard_global = cargar_datos_dashboard()
 
-        # T1.xlsx queda dentro del mismo estado visual de carga
         df_t1_global = pd.DataFrame()
         try:
             df_t1_global = pd.read_excel("T1.xlsx")
             df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
         except Exception:
             pass
-    finally:
-        # El overlay desaparece cuando termina TODA la carga inicial.
-        loading_placeholder.empty()
 
-    if not df_raw.empty:
-        df_raw.columns = df_raw.columns.str.strip()
+    with st.spinner("🔗 Cruzando guías, facturas y fechas de programación contra las bases remotas..."):
+        if not df_raw.empty:
+            df_raw.columns = df_raw.columns.str.strip()
 
-        if modo_edicion:
-            st.markdown(
-                f"{chr(60)}div style=\"background: rgba(234, 179, 8, 0.08); border: 1px solid #eab308; border-left: 5px solid #eab308; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-family: 'Inter', sans-serif; color: white;\"{chr(62)}"
-                f"{chr(60)}div style=\"display: flex; align-items: center; gap: 10px; margin-bottom: 4px;\"{chr(62)}"
-                f"{chr(60)}div style=\"width: 8px; height: 8px; background: #eab308; border-radius: 50%; box-shadow: 0 0 8px #eab308;\"{chr(62)}{chr(60)}/div{chr(62)}"
-                f"{chr(60)}span style=\"font-size: 11px; font-weight: 800; color: #eab308; letter-spacing: 1.5px; text-transform: uppercase;\"{chr(62)}NEXION SECURITY // MODO EDICIÓN ACTIVO{chr(60)}/span{chr(62)}"
-                f"{chr(60)}/div{chr(62)}"
-                f"{chr(60)}div style=\"font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; margin-left: 18px;\"{chr(62)}"
-                "Modifica los registros en la matriz inferior y ejecuta la sincronización para actualizar la base remota de forma segura."
-                f"{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}",
-                unsafe_allow_html=True,
-            )
-
-            editor_key = f"editor_envios_admin_session_{st.session_state.get('editor_version', 1)}"
-
-            df_editado = st.data_editor(
-                df_raw,
-                use_container_width=True,
-                num_rows="dynamic",
-                key=editor_key,
-            )
-
-            if st.button(
-                ":material/save: Guardar Cambios en GitHub", key="btn_guardar_github_envios_session"
-            ):
-                if guardar_cambios_github(df_editado):
-                    st.rerun()
-            st.markdown("---")
-
-        df_envios = pd.DataFrame()
-        df_envios['factura'] = df_raw.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
-        df_envios['recomendacion'] = df_raw.get('RECOMENDACION', pd.Series(dtype=str)).fillna('').astype(str)
-        df_envios['nombre_cliente'] = df_raw.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
-        df_envios['nombre_extran'] = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
-        
-        def limpiar_destino_largo(val):
-            v_str = str(val).strip()
-        
-            if not v_str or v_str.lower() in ["nan", "0", "none"]:
-                return "NACIONAL"
-        
-            return v_str
-
-        df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).apply(limpiar_destino_largo)
-        
-        f_prog_input = df_raw.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
-        dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
-        df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
-
-        # ── SELECTOR DE FACTURA Y FILTROS RÁPIDOS ──
-        facturas_opts_temp = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
-        
-        f1, f2, f3, f4, f5 = st.columns(5)
-
-        with f3:
-            filtro_factura = st.selectbox("FACTURA", facturas_opts_temp, key="filtro_factura_envios")
-
-        if filtro_factura == "TODAS":
-            tz_gdl = pytz.timezone("America/Mexico_City")
-            ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
-            hace_10_dias = ahora_gdl.date() - timedelta(days=10)
-            
-            mask_recientes = (dt_prog_temp.dt.date >= hace_10_dias) | (dt_prog_temp.isna())
-            df_raw_procesar = df_raw[mask_recientes].copy()
-            df_envios_procesar = df_envios[mask_recientes].copy()
-        else:
-            df_raw_procesar = df_raw[df_raw['Factura'].astype(str).str.strip() == filtro_factura].copy()
-            df_envios_procesar = df_envios[df_envios['factura'] == filtro_factura].copy()
-
-        # ── PROCESAMIENTO DE REGISTROS FILTRADOS ──
-        lista_guias = []
-        lista_fechas_envio = []
-        
-        f_env_raw_list = df_raw_procesar.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
-
-        for idx, row in df_raw_procesar.iterrows():
-            fac = str(row.get('Factura', '')).strip()
-            guia_encontrada = ""
-            fecha_envio_encontrada = ""
-            
-            for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
-                if col_g in df_raw_procesar.columns and pd.notna(row.get(col_g)):
-                    val_g = str(row.get(col_g)).strip()
-                    if val_g and val_g not in ['', 'nan', '0', '0.0']:
-                        guia_encontrada = val_g
-                        break
-            
-            if not guia_encontrada and df_dashboard_global is not None and not df_dashboard_global.empty:
-                for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
-                    if col_ped in df_dashboard_global.columns:
-                        match_dash = df_dashboard_global[df_dashboard_global[col_ped].astype(str).str.strip() == fac]
-                        if not match_dash.empty:
-                            for cg_dash in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA']:
-                                if cg_dash in match_dash.columns:
-                                    vg = str(match_dash.iloc[0][cg_dash]).strip()
-                                    if vg and vg not in ['', 'nan', '0', '0.0']:
-                                        guia_encontrada = vg
-                                        break
-                        if guia_encontrada:
-                            break
-
-            encontrado_en_t1 = False
-            if not df_t1_global.empty:
-                for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
-                    if col_t1_ped in df_t1_global.columns:
-                        match_t1 = df_t1_global[df_t1_global[col_t1_ped].astype(str).str.strip() == fac]
-                        if not match_t1.empty:
-                            for cg_t1 in ['TALON', 'GUIA', 'NÚMERO DE GUÍA']:
-                                if cg_t1 in match_t1.columns:
-                                    vg = str(match_t1.iloc[0][cg_t1]).strip()
-                                    if vg and vg not in ['', 'nan', '0', '0.0']:
-                                        guia_encontrada = vg
-                                        encontrado_en_t1 = True
-                                        break
-                            
-                            if encontrado_en_t1:
-                                for col_fdoc in ['F.DOC', 'FECHA', 'FECHA DOC']:
-                                    if col_fdoc in match_t1.columns:
-                                        fdoc_val = str(match_t1.iloc[0][col_fdoc]).strip()
-                                        if fdoc_val and fdoc_val not in ['', 'nan', '0', '0.0']:
-                                            dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
-                                            fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
-                                            break
-                                    break
-                        if guia_encontrada:
-                            break
-
-            if encontrado_en_t1 and fecha_envio_encontrada:
-                final_fecha_envio = fecha_envio_encontrada
-            else:
-                orig_fe = str(f_env_raw_list.loc[idx]).strip() if idx in f_env_raw_list.index else ''
-                final_fecha_envio = orig_fe
-
-            lista_guias.append(guia_encontrada)
-            lista_fechas_envio.append(final_fecha_envio)
-
-        df_envios_procesar['numero_guia'] = lista_guias
-        df_envios_procesar['fecha_envio_raw'] = lista_fechas_envio
-
-        dt_envio_temp = pd.to_datetime(df_envios_procesar['fecha_envio_raw'], errors='coerce', dayfirst=True)
-        df_envios_procesar['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios_procesar['fecha_envio_raw'])
-        
-        df_envios_procesar['dt_prog_parsed'] = pd.to_datetime(df_envios_procesar['fecha_programacion'], errors='coerce', dayfirst=True)
-        df_envios_procesar['dt_envio_parsed'] = dt_envio_temp
-
-        tz_gdl = pytz.timezone("America/Mexico_City")
-        ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
-        hoy_gdl = ahora_gdl.date()
-        
-        valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
-        
-        estatus_calculado = []
-        for f_prog, f_env, guia_val in zip(df_envios_procesar['fecha_programacion'], lista_fechas_envio, lista_guias):
-            fp_str = str(f_prog).strip()
-            fe_str = str(f_env).strip()
-            g_str = str(guia_val).strip()
-            
-            tiene_g = g_str and g_str.lower() not in valores_nulos_fecha
-            tiene_fe = fe_str.lower() not in valores_nulos_fecha
-            
-            if tiene_g and not tiene_fe and fp_str and fp_str.lower() not in valores_nulos_fecha:
-                fe_str = fp_str
-                tiene_fe = True
-
-            dt_prog = pd.to_datetime(fp_str, dayfirst=True, errors='coerce')
-            dt_env = pd.to_datetime(fe_str, dayfirst=True, errors='coerce')
-            
-            tarde = False
-            if pd.notna(dt_prog):
-                limite_24h = dt_prog + timedelta(hours=24)
-                fecha_prog_date = dt_prog.date()
-                
-                if tiene_fe and pd.notna(dt_env) and dt_env > limite_24h:
-                    tarde = True
-                elif not tiene_fe and not tiene_g and ahora_gdl > limite_24h:
-                    tarde = True
-            else:
-                fecha_prog_date = None
-
-            if tiene_g and tiene_fe:
-                estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
-            elif not tiene_g and tiene_fe:
-                estatus_calculado.append("ENVIADA")
-            elif tiene_g and not tiene_fe:
-                estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
-            else:
-                if fecha_prog_date is not None and fecha_prog_date > hoy_gdl:
-                    estatus_calculado.append("SURTIENDO")
-                else:
-                    estatus_calculado.append("RETRASO" if tarde else "SURTIENDO")
-                    
-        df_envios_procesar['estatus'] = estatus_calculado
-        df_envios_procesar = df_envios_procesar.replace(r'(?i)^nan$', '', regex=True)
-        df_envios_procesar = df_envios_procesar.sort_values(by='factura', ascending=True, ignore_index=True)
-
-        # ── RESTO DE LOS FILTROS TÁCTICOS ──
-        with f1:
-            filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=None, key="calendario_fprog_envios")
-
-        with f2:
-            filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=None, key="calendario_fenv_envios")
-
-        with f4:
-            paq_opts = ["TODAS"] + sorted(list(df_envios_procesar['recomendacion'].loc[df_envios_procesar['recomendacion'] != ''].unique()))
-            filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
-
-        with f5:
-            estatus_opts = ["TODOS"] + sorted(list(df_envios_procesar['estatus'].loc[df_envios_procesar['estatus'] != ''].unique()))
-            filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
-
-        df_filtrado = df_envios_procesar.copy()
-
-        if filtro_fprog is not None:
-            df_filtrado = df_filtrado[df_filtrado['dt_prog_parsed'].dt.date == filtro_fprog]
-
-        if filtro_fenvio is not None:
-            df_filtrado = df_filtrado[df_filtrado['dt_envio_parsed'].dt.date == filtro_fenvio]
-
-        if filtro_factura != "TODAS":
-            df_filtrado = df_filtrado[df_filtrado['factura'] == filtro_factura]
-
-        if filtro_paqueteria != "TODAS":
-            df_filtrado = df_filtrado[df_filtrado['recomendacion'] == filtro_paqueteria]
-
-        if filtro_estatus != "TODOS":
-            df_filtrado = df_filtrado[df_filtrado['estatus'] == filtro_estatus]
-
-        # ── BLOQUE EXCLUSIVO PARA RIGOBERTO: FILTRO Y DESCARGA SIN GUÍA ──
-        if es_admin:
-            st.markdown(f"{chr(60)}div style=\"margin-top: 15px;\"{chr(62)}{chr(60)}/div{chr(62)}", unsafe_allow_html=True)
-            col_switch_sin_guia, col_btn_descarga = st.columns([2.5, 1.5], vertical_alignment="center")
-            
-            with col_switch_sin_guia:
-                solo_sin_guia = st.toggle("🔍 Filtrar únicamente registros pendientes sin número de guía", value=False, key="toggle_solo_sin_guia_admin")
-            
-            if solo_sin_guia:
-                mask_sin_guia = df_filtrado['numero_guia'].astype(str).str.strip().isin(['', 'nan', '0', '0.0', 'PENDIENTE'])
-                df_filtrado = df_filtrado[mask_sin_guia]
-
-            with col_btn_descarga:
-                df_excel_export = df_filtrado.drop(columns=['dt_prog_parsed', 'dt_envio_parsed'], errors='ignore')
-                
-                output_buffer = io.BytesIO()
-                with pd.ExcelWriter(output_buffer, engine='xlsxwriter') as writer:
-                    df_excel_export.to_excel(writer, index=False, sheet_name='Envios_Seguimiento')
-                excel_data = output_buffer.getvalue()
-
-                st.download_button(
-                    label="📥 Descargar Reporte en Excel",
-                    data=excel_data,
-                    file_name=f"seguimiento_envios_sin_guia_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                    key="btn_download_excel_sin_guia"
+            if modo_edicion:
+                st.markdown(
+                    f"{chr(60)}div style=\"background: rgba(234, 179, 8, 0.08); border: 1px solid #eab308; border-left: 5px solid #eab308; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-family: 'Inter', sans-serif; color: white;\"{chr(62)}"
+                    f"{chr(60)}div style=\"display: flex; align-items: center; gap: 10px; margin-bottom: 4px;\"{chr(62)}"
+                    f"{chr(60)}div style=\"width: 8px; height: 8px; background: #eab308; border-radius: 50%; box-shadow: 0 0 8px #eab308;\"{chr(62)}{chr(60)}/div{chr(62)}"
+                    f"{chr(60)}span style=\"font-size: 11px; font-weight: 800; color: #eab308; letter-spacing: 1.5px; text-transform: uppercase;\"{chr(62)}NEXION SECURITY // MODO EDICIÓN ACTIVO{chr(60)}/span{chr(62)}"
+                    f"{chr(60)}/div{chr(62)}"
+                    f"{chr(60)}div style=\"font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; margin-left: 18px;\"{chr(62)}"
+                    "Modifica los registros en la matriz inferior y ejecuta la sincronización para actualizar la base remota de forma segura."
+                    f"{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}",
+                    unsafe_allow_html=True,
                 )
 
-        data_completa = df_filtrado.to_dict('records')
-    else:
-        data_completa = []
+                editor_key = f"editor_envios_admin_session_{st.session_state.get('editor_version', 1)}"
+
+                df_editado = st.data_editor(
+                    df_raw,
+                    use_container_width=True,
+                    num_rows="dynamic",
+                    key=editor_key,
+                )
+
+                if st.button(
+                    ":material/save: Guardar Cambios en GitHub", key="btn_guardar_github_envios_session"
+                ):
+                    if guardar_cambios_github(df_editado):
+                        st.rerun()
+                st.markdown("---")
+
+            df_envios = pd.DataFrame()
+            df_envios['factura'] = df_raw.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
+            df_envios['recomendacion'] = df_raw.get('RECOMENDACION', pd.Series(dtype=str)).fillna('').astype(str)
+            df_envios['nombre_cliente'] = df_raw.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
+            df_envios['nombre_extran'] = df_raw.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
+        
+            def limpiar_destino_largo(val):
+                v_str = str(val).strip()
+        
+                if not v_str or v_str.lower() in ["nan", "0", "none"]:
+                    return "NACIONAL"
+        
+                return v_str
+
+            df_envios['destino'] = df_raw.get('DESTINO', pd.Series(dtype=str)).apply(limpiar_destino_largo)
+        
+            f_prog_input = df_raw.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+            dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
+            df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
+
+            # ── SELECTOR DE FACTURA Y FILTROS RÁPIDOS ──
+            facturas_opts_temp = ["TODAS"] + sorted(list(df_envios['factura'].loc[df_envios['factura'] != ''].unique()))
+        
+            f1, f2, f3, f4, f5 = st.columns(5)
+
+            with f3:
+                filtro_factura = st.selectbox("FACTURA", facturas_opts_temp, key="filtro_factura_envios")
+
+            if filtro_factura == "TODAS":
+                tz_gdl = pytz.timezone("America/Mexico_City")
+                ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
+                hace_10_dias = ahora_gdl.date() - timedelta(days=10)
+            
+                mask_recientes = (dt_prog_temp.dt.date >= hace_10_dias) | (dt_prog_temp.isna())
+                df_raw_procesar = df_raw[mask_recientes].copy()
+                df_envios_procesar = df_envios[mask_recientes].copy()
+            else:
+                df_raw_procesar = df_raw[df_raw['Factura'].astype(str).str.strip() == filtro_factura].copy()
+                df_envios_procesar = df_envios[df_envios['factura'] == filtro_factura].copy()
+
+            # ── PROCESAMIENTO DE REGISTROS FILTRADOS ──
+            lista_guias = []
+            lista_fechas_envio = []
+        
+            f_env_raw_list = df_raw_procesar.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+
+            for idx, row in df_raw_procesar.iterrows():
+                fac = str(row.get('Factura', '')).strip()
+                guia_encontrada = ""
+                fecha_envio_encontrada = ""
+            
+                for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
+                    if col_g in df_raw_procesar.columns and pd.notna(row.get(col_g)):
+                        val_g = str(row.get(col_g)).strip()
+                        if val_g and val_g not in ['', 'nan', '0', '0.0']:
+                            guia_encontrada = val_g
+                            break
+            
+                if not guia_encontrada and df_dashboard_global is not None and not df_dashboard_global.empty:
+                    for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
+                        if col_ped in df_dashboard_global.columns:
+                            match_dash = df_dashboard_global[df_dashboard_global[col_ped].astype(str).str.strip() == fac]
+                            if not match_dash.empty:
+                                for cg_dash in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA']:
+                                    if cg_dash in match_dash.columns:
+                                        vg = str(match_dash.iloc[0][cg_dash]).strip()
+                                        if vg and vg not in ['', 'nan', '0', '0.0']:
+                                            guia_encontrada = vg
+                                            break
+                            if guia_encontrada:
+                                break
+
+                encontrado_en_t1 = False
+                if not df_t1_global.empty:
+                    for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
+                        if col_t1_ped in df_t1_global.columns:
+                            match_t1 = df_t1_global[df_t1_global[col_t1_ped].astype(str).str.strip() == fac]
+                            if not match_t1.empty:
+                                for cg_t1 in ['TALON', 'GUIA', 'NÚMERO DE GUÍA']:
+                                    if cg_t1 in match_t1.columns:
+                                        vg = str(match_t1.iloc[0][cg_t1]).strip()
+                                        if vg and vg not in ['', 'nan', '0', '0.0']:
+                                            guia_encontrada = vg
+                                            encontrado_en_t1 = True
+                                            break
+                            
+                                if encontrado_en_t1:
+                                    for col_fdoc in ['F.DOC', 'FECHA', 'FECHA DOC']:
+                                        if col_fdoc in match_t1.columns:
+                                            fdoc_val = str(match_t1.iloc[0][col_fdoc]).strip()
+                                            if fdoc_val and fdoc_val not in ['', 'nan', '0', '0.0']:
+                                                dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
+                                                fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
+                                                break
+                                        break
+                            if guia_encontrada:
+                                break
+
+                if encontrado_en_t1 and fecha_envio_encontrada:
+                    final_fecha_envio = fecha_envio_encontrada
+                else:
+                    orig_fe = str(f_env_raw_list.loc[idx]).strip() if idx in f_env_raw_list.index else ''
+                    final_fecha_envio = orig_fe
+
+                lista_guias.append(guia_encontrada)
+                lista_fechas_envio.append(final_fecha_envio)
+
+            df_envios_procesar['numero_guia'] = lista_guias
+            df_envios_procesar['fecha_envio_raw'] = lista_fechas_envio
+
+            dt_envio_temp = pd.to_datetime(df_envios_procesar['fecha_envio_raw'], errors='coerce', dayfirst=True)
+            df_envios_procesar['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios_procesar['fecha_envio_raw'])
+        
+            df_envios_procesar['dt_prog_parsed'] = pd.to_datetime(df_envios_procesar['fecha_programacion'], errors='coerce', dayfirst=True)
+            df_envios_procesar['dt_envio_parsed'] = dt_envio_temp
+
+            tz_gdl = pytz.timezone("America/Mexico_City")
+            ahora_gdl = datetime.now(tz_gdl).replace(tzinfo=None)
+            hoy_gdl = ahora_gdl.date()
+        
+            valores_nulos_fecha = ['', 'nan', '0', '0.0', '-', 'nat', 'none']
+        
+            estatus_calculado = []
+            for f_prog, f_env, guia_val in zip(df_envios_procesar['fecha_programacion'], lista_fechas_envio, lista_guias):
+                fp_str = str(f_prog).strip()
+                fe_str = str(f_env).strip()
+                g_str = str(guia_val).strip()
+            
+                tiene_g = g_str and g_str.lower() not in valores_nulos_fecha
+                tiene_fe = fe_str.lower() not in valores_nulos_fecha
+            
+                if tiene_g and not tiene_fe and fp_str and fp_str.lower() not in valores_nulos_fecha:
+                    fe_str = fp_str
+                    tiene_fe = True
+
+                dt_prog = pd.to_datetime(fp_str, dayfirst=True, errors='coerce')
+                dt_env = pd.to_datetime(fe_str, dayfirst=True, errors='coerce')
+            
+                tarde = False
+                if pd.notna(dt_prog):
+                    limite_24h = dt_prog + timedelta(hours=24)
+                    fecha_prog_date = dt_prog.date()
+                
+                    if tiene_fe and pd.notna(dt_env) and dt_env > limite_24h:
+                        tarde = True
+                    elif not tiene_fe and not tiene_g and ahora_gdl > limite_24h:
+                        tarde = True
+                else:
+                    fecha_prog_date = None
+
+                if tiene_g and tiene_fe:
+                    estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
+                elif not tiene_g and tiene_fe:
+                    estatus_calculado.append("ENVIADA")
+                elif tiene_g and not tiene_fe:
+                    estatus_calculado.append("ENVIADA CON RETRASO" if tarde else "ENVIADA EN TIEMPO")
+                else:
+                    if fecha_prog_date is not None and fecha_prog_date > hoy_gdl:
+                        estatus_calculado.append("SURTIENDO")
+                    else:
+                        estatus_calculado.append("RETRASO" if tarde else "SURTIENDO")
+                    
+            df_envios_procesar['estatus'] = estatus_calculado
+            df_envios_procesar = df_envios_procesar.replace(r'(?i)^nan$', '', regex=True)
+            df_envios_procesar = df_envios_procesar.sort_values(by='factura', ascending=True, ignore_index=True)
+
+            # ── RESTO DE LOS FILTROS TÁCTICOS ──
+            with f1:
+                filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=None, key="calendario_fprog_envios")
+
+            with f2:
+                filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=None, key="calendario_fenv_envios")
+
+            with f4:
+                paq_opts = ["TODAS"] + sorted(list(df_envios_procesar['recomendacion'].loc[df_envios_procesar['recomendacion'] != ''].unique()))
+                filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
+
+            with f5:
+                estatus_opts = ["TODOS"] + sorted(list(df_envios_procesar['estatus'].loc[df_envios_procesar['estatus'] != ''].unique()))
+                filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
+
+            df_filtrado = df_envios_procesar.copy()
+
+            if filtro_fprog is not None:
+                df_filtrado = df_filtrado[df_filtrado['dt_prog_parsed'].dt.date == filtro_fprog]
+
+            if filtro_fenvio is not None:
+                df_filtrado = df_filtrado[df_filtrado['dt_envio_parsed'].dt.date == filtro_fenvio]
+
+            if filtro_factura != "TODAS":
+                df_filtrado = df_filtrado[df_filtrado['factura'] == filtro_factura]
+
+            if filtro_paqueteria != "TODAS":
+                df_filtrado = df_filtrado[df_filtrado['recomendacion'] == filtro_paqueteria]
+
+            if filtro_estatus != "TODOS":
+                df_filtrado = df_filtrado[df_filtrado['estatus'] == filtro_estatus]
+
+            # ── BLOQUE EXCLUSIVO PARA RIGOBERTO: FILTRO Y DESCARGA SIN GUÍA ──
+            if es_admin:
+                st.markdown(f"{chr(60)}div style=\"margin-top: 15px;\"{chr(62)}{chr(60)}/div{chr(62)}", unsafe_allow_html=True)
+                col_switch_sin_guia, col_btn_descarga = st.columns([2.5, 1.5], vertical_alignment="center")
+            
+                with col_switch_sin_guia:
+                    solo_sin_guia = st.toggle("🔍 Filtrar únicamente registros pendientes sin número de guía", value=False, key="toggle_solo_sin_guia_admin")
+            
+                if solo_sin_guia:
+                    mask_sin_guia = df_filtrado['numero_guia'].astype(str).str.strip().isin(['', 'nan', '0', '0.0', 'PENDIENTE'])
+                    df_filtrado = df_filtrado[mask_sin_guia]
+
+                with col_btn_descarga:
+                    df_excel_export = df_filtrado.drop(columns=['dt_prog_parsed', 'dt_envio_parsed'], errors='ignore')
+                
+                    output_buffer = io.BytesIO()
+                    with pd.ExcelWriter(output_buffer, engine='xlsxwriter') as writer:
+                        df_excel_export.to_excel(writer, index=False, sheet_name='Envios_Seguimiento')
+                    excel_data = output_buffer.getvalue()
+
+                    st.download_button(
+                        label="📥 Descargar Reporte en Excel",
+                        data=excel_data,
+                        file_name=f"seguimiento_envios_sin_guia_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key="btn_download_excel_sin_guia"
+                    )
+
+            data_completa = df_filtrado.to_dict('records')
+        else:
+            data_completa = []
 
     render_envios_flow_responsive(data_completa)
     st.markdown(f"{chr(60)}/div{chr(62)}", unsafe_allow_html=True)
@@ -870,3 +774,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
