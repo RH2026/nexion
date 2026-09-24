@@ -490,17 +490,116 @@ def main():
             st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
             return False
 
-    # ── CONTENEDOR DE CARGA VISIBLE CON ST.SPINNER REAL ──
-    with st.spinner("🔄 Conectando con GitHub y cargando la matriz de envíos (últimos 10 días)... Por favor espera, amor."):
+    # ============================================================
+    # CARGA INICIAL | SPINNER NEXION CENTRADO
+    # Mantiene visible el indicador durante TODA la carga pesada.
+    # ============================================================
+    loading_placeholder = st.empty()
+
+    loading_placeholder.markdown("""
+    <style>
+    .nexion-loading-overlay {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(20, 27, 32, 0.82);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+    }
+
+    .nexion-loading-card {
+        min-width: 330px;
+        padding: 28px 34px;
+        border: 1px solid rgba(0, 255, 170, 0.28);
+        border-radius: 16px;
+        background: rgba(43, 52, 59, 0.96);
+        box-shadow: 0 18px 55px rgba(0, 0, 0, 0.48);
+        text-align: center;
+        font-family: Inter, Arial, sans-serif;
+    }
+
+    .nexion-loading-spinner {
+        width: 46px;
+        height: 46px;
+        margin: 0 auto 18px auto;
+        border: 4px solid rgba(255, 255, 255, 0.13);
+        border-top: 4px solid #00FFAA;
+        border-right: 4px solid #00D4FF;
+        border-radius: 50%;
+        animation: nexion-spin 0.85s linear infinite;
+    }
+
+    .nexion-loading-title {
+        color: #FFFFFF;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin-bottom: 8px;
+    }
+
+    .nexion-loading-text {
+        color: #B8C3C9;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .nexion-loading-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin-left: 4px;
+        border-radius: 50%;
+        background: #00FFAA;
+        animation: nexion-pulse 1s infinite ease-in-out;
+    }
+
+    @keyframes nexion-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @keyframes nexion-pulse {
+        0%, 100% { opacity: 0.25; transform: scale(0.75); }
+        50% { opacity: 1; transform: scale(1); }
+    }
+    </style>
+
+    <div class="nexion-loading-overlay">
+        <div class="nexion-loading-card">
+            <div class="nexion-loading-spinner"></div>
+            <div class="nexion-loading-title">NEXION | LOGISTICS</div>
+            <div class="nexion-loading-text">
+                CONECTANDO CON GITHUB Y CARGANDO MATRIZ DE ENVÍOS
+                <span class="nexion-loading-dot"></span>
+                <span class="nexion-loading-dot"></span>
+                <span class="nexion-loading-dot"></span>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Pequeña pausa para permitir que el navegador pinte el spinner
+    # antes de comenzar las operaciones pesadas.
+    time.sleep(0.12)
+
+    try:
         df_raw = get_github_data()
         df_dashboard_global = cargar_datos_dashboard()
 
-    df_t1_global = pd.DataFrame()
-    try:
-        df_t1_global = pd.read_excel("T1.xlsx")
-        df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
-    except Exception:
-        pass
+        # T1.xlsx queda dentro del mismo estado visual de carga
+        df_t1_global = pd.DataFrame()
+        try:
+            df_t1_global = pd.read_excel("T1.xlsx")
+            df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
+        except Exception:
+            pass
+    finally:
+        # El overlay desaparece cuando termina TODA la carga inicial.
+        loading_placeholder.empty()
 
     if not df_raw.empty:
         df_raw.columns = df_raw.columns.str.strip()
