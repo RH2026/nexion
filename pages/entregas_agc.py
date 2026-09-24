@@ -438,7 +438,7 @@ def main():
         
         r_get = requests.get(api_url, headers=headers)
         if r_get.status_code != 200:
-            st.error("No se pudo obtener el identificador actual del archivo en GitHub.")
+            st.error("No se pudo obtener el identificador actual del archivo en la base remota.")
             return False
         sha_actual = r_get.json().get("sha")
         
@@ -456,7 +456,7 @@ def main():
         
         r_put = requests.put(api_url, json=payload, headers=headers)
         if r_put.status_code in [200, 201]:
-            st.success("¡Citas y cambios guardados en GitHub con éxito, mi amor! 🚀")
+            st.success("¡Citas y cambios guardados en la base remota! 🚀")
             st.cache_data.clear()
             return True
         else:
@@ -492,7 +492,7 @@ def main():
             )
 
             if st.button(
-                "Guardar Cambios en GitHub", key="btn_guardar_github_session"
+                "Guardar Cambios en la base remota", key="btn_guardar_github_session"
             ):
                 if guardar_cambios_github(df_editado):
                     st.rerun()
