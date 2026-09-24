@@ -677,6 +677,188 @@ def main():
                 else:
                     st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Sin pedidos con retraso en este período</div>", unsafe_allow_html=True)
 
+            # ==========================================================
+            # INTELIGENCIA DE NEGOCIO — CONSULTA DETALLADA DEL PERÍODO
+            # ==========================================================
+            st.markdown(f"""
+                <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 30px 0; opacity: 0.3;">
+            """, unsafe_allow_html=True)
+
+            render_subtitulo("INTELIGENCIA DE NEGOCIO // CONSULTA DETALLADA DEL PERÍODO")
+
+            def _limpiar_moneda_bi(serie):
+                return pd.to_numeric(
+                    serie.astype(str).str.replace(r"[^\d\.\-]", "", regex=True).replace("", "0"),
+                    errors="coerce"
+                ).fillna(0.0)
+
+            df_bi = df_mes.copy()
+            for col_num in ["COSTO DE LA GUÍA", "FACTURACION", "VALUACION", "COSTOS ADICIONALES", "CANTIDAD DE CAJAS"]:
+                df_bi[col_num] = _limpiar_moneda_bi(df_bi[col_num]) if col_num in df_bi.columns else 0.0
+            for col_txt in ["FLETERA", "FORMA DE ENVIO", "TRANSPORTE", "DESTINO", "NOMBRE DEL CLIENTE",
+                             "INCIDENCIAS", "COMENTARIOS", "TRIGGER", "CONCEPTO", "EMISION",
+                             "NÚMERO DE PEDIDO", "NÚMERO DE GUÍA", "NO CLIENTE", "DOMICILIO", "CAJAS"]:
+                if col_txt not in df_bi.columns:
+                    df_bi[col_txt] = ""
+                df_bi[col_txt] = df_bi[col_txt].fillna("")
+
+            # --- FILTROS RÁPIDOS DE NEGOCIO ---
+            bf1, bf2, bf3, bf4 = st.columns([1.3, 1.3, 1.1, 2])
+            with bf1:
+                op_fletera_bi = sorted([x for x in df_bi["FLETERA"].unique().tolist() if str(x).strip() != ""])
+                filtro_fletera_bi = st.multiselect("FLETERA", op_fletera_bi, default=[], key="bi_filtro_fletera")
+            with bf2:
+                op_envio_bi = sorted([x for x in df_bi["FORMA DE ENVIO"].unique().tolist() if str(x).strip() != ""])
+                filtro_envio_bi = st.multiselect("FORMA DE ENVÍO", op_envio_bi, default=[], key="bi_filtro_envio")
+            with bf3:
+                st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+                solo_incidencias_bi = st.checkbox("SOLO CON INCIDENCIAS", value=False, key="bi_solo_incidencias")
+            with bf4:
+                busq_bi = st.text_input("BUSCAR CLIENTE / PEDIDO / GUÍA", value="", key="bi_busqueda", placeholder="Escribe para filtrar...")
+
+            df_bi_f = df_bi.copy()
+            if filtro_fletera_bi:
+                df_bi_f = df_bi_f[df_bi_f["FLETERA"].isin(filtro_fletera_bi)]
+            if filtro_envio_bi:
+                df_bi_f = df_bi_f[df_bi_f["FORMA DE ENVIO"].isin(filtro_envio_bi)]
+            if solo_incidencias_bi:
+                df_bi_f = df_bi_f[df_bi_f["INCIDENCIAS"].astype(str).str.strip() != ""]
+            if busq_bi:
+                _b = busq_bi.upper()
+                _mask_bi = (
+                    df_bi_f["NOMBRE DEL CLIENTE"].astype(str).str.upper().str.contains(_b, na=False)
+                    | df_bi_f["NÚMERO DE PEDIDO"].astype(str).str.upper().str.contains(_b, na=False)
+                    | df_bi_f["NÚMERO DE GUÍA"].astype(str).str.upper().str.contains(_b, na=False)
+                )
+                df_bi_f = df_bi_f[_mask_bi]
+
+            st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+
+            # --- KPIs FINANCIEROS Y OPERATIVOS ---
+            total_facturacion_bi = df_bi_f["FACTURACION"].sum()
+            total_costo_guias_bi = df_bi_f["COSTO DE LA GUÍA"].sum()
+            total_costos_adic_bi = df_bi_f["COSTOS ADICIONALES"].sum()
+            total_valuacion_bi = df_bi_f["VALUACION"].sum()
+            total_cajas_bi = df_bi_f["CANTIDAD DE CAJAS"].sum()
+            total_incidencias_bi = int((df_bi_f["INCIDENCIAS"].astype(str).str.strip() != "").sum())
+
+            bi_kpi_cols = st.columns(6)
+            with bi_kpi_cols[0]:
+                render_flat_card("Facturación", f"${total_facturacion_bi:,.0f}", "#00FFAA", border_alpha="0,255,170")
+            with bi_kpi_cols[1]:
+                render_flat_card("Costo Guías", f"${total_costo_guias_bi:,.0f}", "#38bdf8")
+            with bi_kpi_cols[2]:
+                render_flat_card("Costos Adic.", f"${total_costos_adic_bi:,.0f}", "#FFD166")
+            with bi_kpi_cols[3]:
+                render_flat_card("Valuación", f"${total_valuacion_bi:,.0f}", "#8B5CF6")
+            with bi_kpi_cols[4]:
+                render_flat_card("Cajas Enviadas", f"{total_cajas_bi:,.0f}", "#E8EEF2")
+            with bi_kpi_cols[5]:
+                render_flat_card("Incidencias", total_incidencias_bi, "#FF6B6B", border_alpha="255,75,75")
+
+            st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+
+            # --- GRÁFICOS DE NEGOCIO ---
+            config_layout_bi = {
+                "paper_bgcolor": "rgba(0,0,0,0)",
+                "plot_bgcolor": "rgba(0,0,0,0)",
+                "font": {"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 11},
+                "margin": {"t": 20, "b": 10, "l": 10, "r": 10},
+                "height": 340,
+            }
+
+            bg1, bg2 = st.columns(2)
+
+            with bg1:
+                st.markdown("<div class='donut-section-title-s'>FACTURACIÓN POR FLETERA</div>", unsafe_allow_html=True)
+                df_fact_fletera = df_bi_f.groupby("FLETERA", as_index=False)["FACTURACION"].sum()
+                df_fact_fletera = df_fact_fletera[df_fact_fletera["FLETERA"] != ""].sort_values("FACTURACION", ascending=False).head(8)
+                if not df_fact_fletera.empty:
+                    fig_bi1 = px.bar(df_fact_fletera, x="FLETERA", y="FACTURACION", text_auto=".2s", color_discrete_sequence=["#38bdf8"])
+                    fig_bi1.update_traces(textfont=dict(color="#E8EEF2"))
+                    fig_bi1.update_layout(**config_layout_bi, xaxis_title=None, yaxis_title=None)
+                    st.plotly_chart(fig_bi1, use_container_width=True, config={'displayModeBar': False})
+                else:
+                    st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos para graficar</div>", unsafe_allow_html=True)
+
+            with bg2:
+                st.markdown("<div class='donut-section-title-s'>DISTRIBUCIÓN POR FORMA DE ENVÍO</div>", unsafe_allow_html=True)
+                df_envio_counts = df_bi_f[df_bi_f["FORMA DE ENVIO"] != ""]["FORMA DE ENVIO"].value_counts().reset_index()
+                df_envio_counts.columns = ["Forma", "Cantidad"]
+                if not df_envio_counts.empty:
+                    fig_bi2 = px.pie(df_envio_counts, names="Forma", values="Cantidad", hole=0.6,
+                                      color_discrete_sequence=['#00FFAA', '#38bdf8', '#FFD166', '#A855F7', '#FF6B6B'])
+                    fig_bi2.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent}</b>',
+                                          textfont=dict(color='#1F2937', size=11, family='Inter, sans-serif'),
+                                          insidetextfont=dict(color='#1F2937', size=11))
+                    fig_bi2.update_layout(**config_layout_bi, legend={"orientation": "h", "y": -0.18})
+                    st.plotly_chart(fig_bi2, use_container_width=True, config={'displayModeBar': False})
+                else:
+                    st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos para graficar</div>", unsafe_allow_html=True)
+
+            bg3, bg4 = st.columns(2)
+
+            with bg3:
+                st.markdown("<div class='donut-section-title-s'>TOP 10 CLIENTES POR FACTURACIÓN</div>", unsafe_allow_html=True)
+                df_top_clientes_bi = df_bi_f.groupby("NOMBRE DEL CLIENTE", as_index=False)["FACTURACION"].sum()
+                df_top_clientes_bi = df_top_clientes_bi[df_top_clientes_bi["NOMBRE DEL CLIENTE"] != ""].sort_values("FACTURACION", ascending=False).head(10)
+                if not df_top_clientes_bi.empty:
+                    fig_bi3 = px.bar(df_top_clientes_bi, x="FACTURACION", y="NOMBRE DEL CLIENTE", orientation="h", text_auto=".2s", color_discrete_sequence=["#00FFAA"])
+                    fig_bi3.update_traces(textfont=dict(color="#1F2937"))
+                    fig_bi3.update_layout(**config_layout_bi, xaxis_title=None, yaxis_title=None, yaxis={'categoryorder': 'total ascending'})
+                    st.plotly_chart(fig_bi3, use_container_width=True, config={'displayModeBar': False})
+                else:
+                    st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos para graficar</div>", unsafe_allow_html=True)
+
+            with bg4:
+                st.markdown("<div class='donut-section-title-s'>COSTO TOTAL (GUÍA + ADICIONALES) POR FLETERA</div>", unsafe_allow_html=True)
+                df_bi_f["_costo_total_envio_bi"] = df_bi_f["COSTO DE LA GUÍA"] + df_bi_f["COSTOS ADICIONALES"]
+                df_costo_fletera_bi = df_bi_f.groupby("FLETERA", as_index=False)["_costo_total_envio_bi"].sum()
+                df_costo_fletera_bi = df_costo_fletera_bi[df_costo_fletera_bi["FLETERA"] != ""].sort_values("_costo_total_envio_bi", ascending=False).head(8)
+                if not df_costo_fletera_bi.empty:
+                    fig_bi4 = px.bar(df_costo_fletera_bi, x="FLETERA", y="_costo_total_envio_bi", text_auto=".2s", color_discrete_sequence=["#FF6B6B"])
+                    fig_bi4.update_traces(textfont=dict(color="#E8EEF2"))
+                    fig_bi4.update_layout(**config_layout_bi, xaxis_title=None, yaxis_title="COSTO ($)")
+                    st.plotly_chart(fig_bi4, use_container_width=True, config={'displayModeBar': False})
+                else:
+                    st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos para graficar</div>", unsafe_allow_html=True)
+
+            st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+
+            # --- PREPARAR VISTA LEGIBLE PARA TABLAS DE CONSULTA (fechas como texto) ---
+            df_bi_display = df_bi_f.copy()
+            for col_fecha_bi in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                if col_fecha_bi in df_bi_display.columns:
+                    df_bi_display[col_fecha_bi] = df_bi_display[col_fecha_bi].dt.strftime('%d/%m/%Y')
+                    df_bi_display[col_fecha_bi] = df_bi_display[col_fecha_bi].fillna("")
+
+            # --- TABLA DE INCIDENCIAS ---
+            df_incidencias_tabla_bi = df_bi_display[df_bi_display["INCIDENCIAS"].astype(str).str.strip() != ""]
+            with st.expander(f"⚠️ INCIDENCIAS REGISTRADAS ({len(df_incidencias_tabla_bi)})", expanded=False):
+                if not df_incidencias_tabla_bi.empty:
+                    cols_inc_bi = [c for c in ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "FLETERA", "INCIDENCIAS",
+                                                "TRIGGER", "CONCEPTO", "COMENTARIOS"] if c in df_incidencias_tabla_bi.columns]
+                    st.dataframe(df_incidencias_tabla_bi[cols_inc_bi], use_container_width=True, height=300, hide_index=True)
+                else:
+                    st.markdown("<div style='padding:10px; color:#00FFAA; font-size:12px;'>✓ Sin incidencias registradas con los filtros actuales</div>", unsafe_allow_html=True)
+
+            # --- TABLA DE CONSULTA GENERAL (TODAS LAS COLUMNAS) ---
+            with st.expander(f"🔎 VER DETALLE COMPLETO DE REGISTROS ({len(df_bi_display)})", expanded=False):
+                cols_detalle_bi = [c for c in [
+                    "NO CLIENTE", "NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO", "DOMICILIO",
+                    "FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL",
+                    "FLETERA", "NÚMERO DE GUÍA", "TRANSPORTE", "FORMA DE ENVIO",
+                    "CANTIDAD DE CAJAS", "CAJAS", "COSTO DE LA GUÍA", "COSTOS ADICIONALES",
+                    "FACTURACION", "VALUACION", "EMISION", "MES", "TRIGGER", "CONCEPTO",
+                    "INCIDENCIAS", "COMENTARIOS"
+                ] if c in df_bi_display.columns]
+                st.dataframe(df_bi_display[cols_detalle_bi], use_container_width=True, height=420, hide_index=True)
+
+                csv_export_bi = df_bi_display[cols_detalle_bi].to_csv(index=False).encode("utf-8-sig")
+                st.download_button("📥 DESCARGAR ESTA VISTA (CSV)", data=csv_export_bi,
+                                    file_name=f"detalle_envios_{mes_sel}.csv", mime="text/csv", key="bi_download_csv")
+
+
         # ----------------------------------------------------------
         # TAB 2: PESTAÑA 2 (Espacio reservado para futuro contenido)
         # ----------------------------------------------------------
