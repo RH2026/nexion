@@ -163,6 +163,7 @@ def main():
         .stApp {{ background-color: {vars_css['bg']} !important; }}
         .spacer-menu {{ margin-top: 30px; }}
         .donut-section-title {{ font-size: 11px; font-weight: 800; color: #8B9BB4; letter-spacing: 1px; margin-bottom: 5px; }}
+        .donut-section-title-s {{ font-size: 13px; font-weight: 800; color: #E8EEF2; letter-spacing: 1px; margin-bottom: 6px; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -453,7 +454,7 @@ def main():
                     }
 
                     with col_c1:
-                        st.markdown("<div class='donut-section-title'>DISTRIBUCIÓN POR ESTATUS DE SURTIDO</div>", unsafe_allow_html=True)
+                        st.markdown("<div class='donut-section-title-s'>DISTRIBUCIÓN POR ESTATUS DE SURTIDO</div>", unsafe_allow_html=True)
                         df_estatus_counts = df_filtrado['estatus'].value_counts().reset_index()
                         df_estatus_counts.columns = ['Estatus', 'Cantidad']
 
@@ -464,12 +465,12 @@ def main():
                             hole=0.6,
                             color_discrete_sequence=['#00FFAA', '#FFD166', '#FF6B6B', '#3B82F6']
                         )
-                        fig_donita_s1.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=11, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=11))
+                        fig_donita_s1.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#1F2937', size=11, family='Inter, sans-serif'), insidetextfont=dict(color='#1F2937', size=11))
                         fig_donita_s1.update_layout(**config_layout_s)
                         st.plotly_chart(fig_donita_s1, use_container_width=True, config={'displayModeBar': False})
 
                     with col_c2:
-                        st.markdown("<div class='donut-section-title'>VOLUMEN OPERATIVO POR PAQUETERÍA</div>", unsafe_allow_html=True)
+                        st.markdown("<div class='donut-section-title-s'>VOLUMEN OPERATIVO POR PAQUETERÍA</div>", unsafe_allow_html=True)
                         df_paq_counts = df_filtrado['recomendacion'].value_counts().reset_index()
                         df_paq_counts.columns = ['Paquetería', 'Cantidad']
 
@@ -485,7 +486,7 @@ def main():
                         st.plotly_chart(fig_donita_s2, use_container_width=True, config={'displayModeBar': False})
 
                     with col_c3:
-                        st.markdown("<div class='donut-section-title'>DISTRIBUCIÓN POR DESTINO</div>", unsafe_allow_html=True)
+                        st.markdown("<div class='donut-section-title-s'>DISTRIBUCIÓN POR DESTINO</div>", unsafe_allow_html=True)
                         df_destino_counts = df_filtrado['destino'].value_counts().reset_index()
                         df_destino_counts.columns = ['Destino', 'Cantidad']
 
