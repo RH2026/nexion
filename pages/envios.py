@@ -492,7 +492,7 @@ def main():
 
     # ── CARGA INICIAL UNIFICADA ──
     # Un solo spinner nativo que abarca todo el proceso pesado inicial.
-    with st.spinner("🔄 Conectando con GitHub, cargando bases y cruzando información... Por favor espera."):
+    with st.spinner("🔄 Conectando con los servidores, cargando bases y cruzando información... Por favor espera."):
         
         # 1. Carga de datos base
         df_raw = get_github_data()
