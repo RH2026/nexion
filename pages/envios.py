@@ -482,7 +482,7 @@ def main():
         
         r_put = requests.put(api_url, json=payload, headers=headers)
         if r_put.status_code in [200, 201]:
-            st.success("¡Envíos guardados en GitHub con éxito, mi amor! 🚀")
+            st.success("¡Envíos guardados en GitHub con éxito! 🚀")
             st.cache_data.clear()
             st.session_state["editor_version"] = st.session_state.get("editor_version", 1) + 1
             return True
@@ -493,7 +493,7 @@ def main():
     # ── CARGA INICIAL: MISMO COMPORTAMIENTO QUE KPI'S SURTIDO ──
     # El spinner nativo de Streamlit permanece visible durante TODA
     # la carga inicial, incluyendo T1.xlsx.
-    with st.spinner("🔄 Conectando con GitHub y cargando la matriz de envíos (últimos 10 días)... Por favor espera, amor."):
+    with st.spinner("🔄 Conectando con GitHub y cargando la matriz de envíos (últimos 10 días)... Por favor espera."):
         df_raw = get_github_data()
         df_dashboard_global = cargar_datos_dashboard()
 
