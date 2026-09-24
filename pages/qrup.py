@@ -17,6 +17,24 @@ from auth import exigir_autenticacion
 
 exigir_autenticacion("qrup")
 
+
+def normalizar_columna(texto):
+    """Quita acentos y normaliza a mayúsculas para comparar nombres de columna
+    sin importar tildes, espacios extra o mayúsculas/minúsculas."""
+    return (
+        unicodedata.normalize("NFKD", str(texto))
+        .encode("ascii", "ignore")
+        .decode("utf-8")
+        .upper()
+        .strip()
+    )
+
+
+def valor_ya_capturado(valor):
+    """Determina si una celda ya tiene un valor 'real' capturado (no vacío/NaN)."""
+    v = str(valor).strip().lower()
+    return v not in ["", "nan", "nat", "none"]
+
 # Intentar importar el escáner QR nativo para móviles si está instalado
 try:
     from streamlit_qrcode_scanner import qrcode_scanner
@@ -288,12 +306,16 @@ def agregar_escaneo_al_lote(texto_qr):
   ahora_gdl = datetime.now(tz_gdl)
   prog_val = ahora_gdl.strftime("%d/%m/%Y %H:%M")
 
+  # Usuario que está realizando el escaneo (para decidir qué estatus se captura)
+  usuario_scan = str(st.session_state.get("usuario_activo", "")).strip().upper()
+
   # Descargar envios.csv directamente desde GitHub para validar la existencia
   TOKEN = st.secrets.get("GITHUB_TOKEN", None)
   REPO_NAME = "RH2026/nexion"
   FILE_PATH = "envios.csv"
 
   existe_en_sistema = False
+  fila_encontrada = None
 
   try:
     headers = {
@@ -325,6 +347,9 @@ def agregar_escaneo_al_lote(texto_qr):
           )
           if factura_scans in serie_limpia.values:
             existe_en_sistema = True
+            fila_encontrada = df_envios_val[
+                serie_limpia == factura_scans
+            ].iloc[0]
             break
     else:
       return False, "❌ No se pudo conectar con envios.csv en GitHub para validar."
@@ -336,6 +361,50 @@ def agregar_escaneo_al_lote(texto_qr):
         False,
         f"❌ La factura {factura_scans} no existe en el archivo envios.csv.",
     )
+
+  # Impedir re-escaneo si esa factura ya fue capturada previamente por el
+  # mismo rol (Rigoberto -> ESTATUS LOGISTICA / Almacenista1 -> ESTATUS ALMACEN)
+  if fila_encontrada is not None:
+    col_estatus_almacen_val = next(
+        (
+            c
+            for c in df_envios_val.columns
+            if "ESTATUS" in normalizar_columna(c)
+            and "ALMACEN" in normalizar_columna(c)
+        ),
+        None,
+    )
+    col_estatus_logistica_val = next(
+        (
+            c
+            for c in df_envios_val.columns
+            if "ESTATUS" in normalizar_columna(c)
+            and "LOGISTICA" in normalizar_columna(c)
+        ),
+        None,
+    )
+
+    if (
+        usuario_scan == "RIGOBERTO"
+        and col_estatus_logistica_val
+        and valor_ya_capturado(fila_encontrada.get(col_estatus_logistica_val))
+    ):
+      return (
+          False,
+          f"⚠️ La factura {factura_scans} ya fue marcada como ENVIADA"
+          " anteriormente. No se puede volver a escanear.",
+      )
+
+    if (
+        usuario_scan == "ALMACENISTA1"
+        and col_estatus_almacen_val
+        and valor_ya_capturado(fila_encontrada.get(col_estatus_almacen_val))
+    ):
+      return (
+          False,
+          f"⚠️ La factura {factura_scans} ya fue marcada como SURTIDA"
+          " anteriormente. No se puede volver a escanear.",
+      )
 
   # Verificar si ya está agregado en el lote actual pendiente de sincronizar
   for item in st.session_state.lote_escaneos_pendientes:
@@ -353,6 +422,7 @@ def agregar_escaneo_al_lote(texto_qr):
           "fecha_envio": prog_val,
           "qr_completo": texto_qr,
           "hora": ahora_gdl.strftime("%H:%M:%S"),
+          "usuario": usuario_scan,
       }
   )
 
@@ -410,10 +480,36 @@ def sincronizar_lote_con_github():
             "FECHA DE ENVIO",
         )
 
+        # Columnas de estatus según la matriz de envíos
+        col_estatus_almacen = next(
+            (
+                c
+                for c in df_envios.columns
+                if "ESTATUS" in normalizar_columna(c)
+                and "ALMACEN" in normalizar_columna(c)
+            ),
+            "ESTATUS ALMACEN",
+        )
+        col_estatus_logistica = next(
+            (
+                c
+                for c in df_envios.columns
+                if "ESTATUS" in normalizar_columna(c)
+                and "LOGISTICA" in normalizar_columna(c)
+            ),
+            "ESTATUS LOGISTICA",
+        )
+
         if col_fecha_envio not in df_envios.columns:
             df_envios[col_fecha_envio] = ""
+        if col_estatus_almacen not in df_envios.columns:
+            df_envios[col_estatus_almacen] = ""
+        if col_estatus_logistica not in df_envios.columns:
+            df_envios[col_estatus_logistica] = ""
 
         df_envios[col_fecha_envio] = df_envios[col_fecha_envio].astype(str)
+        df_envios[col_estatus_almacen] = df_envios[col_estatus_almacen].astype(str)
+        df_envios[col_estatus_logistica] = df_envios[col_estatus_logistica].astype(str)
         df_envios[col_fac_encontrada] = (
             df_envios[col_fac_encontrada].astype(str).str.strip()
         )
@@ -423,28 +519,55 @@ def sincronizar_lote_con_github():
         for escaneo in st.session_state.lote_escaneos_pendientes:
             fac = escaneo["factura"]
             f_env = escaneo["fecha_envio"]
+            usuario_scan = str(escaneo.get("usuario", "")).strip().upper()
+
+            # Según quién escaneó, se define qué campos se capturan
+            es_rigoberto = usuario_scan == "RIGOBERTO"
+            es_almacenista1 = usuario_scan == "ALMACENISTA1"
 
             en_envios = fac in df_envios[col_fac_encontrada].values
             if en_envios:
-                fila_actual = df_envios[
-                    df_envios[col_fac_encontrada] == fac
-                ].iloc[0]
-                val_actual = str(fila_actual[col_fecha_envio]).strip()
-                if not val_actual or val_actual.lower() in [
-                    "nan",
-                    "nat",
-                    "none",
-                    "",
-                ]:
-                    df_envios.loc[
-                        df_envios[col_fac_encontrada] == fac, col_fecha_envio
-                    ] = f_env
+                mask_fila = df_envios[col_fac_encontrada] == fac
+                fila_actual = df_envios[mask_fila].iloc[0]
+
+                if es_rigoberto:
+                    # RIGOBERTO: captura FECHA DE ENVIO (si estaba vacía) + ESTATUS LOGISTICA = ENVIADA
+                    val_actual = str(fila_actual[col_fecha_envio]).strip()
+                    if not val_actual or val_actual.lower() in [
+                        "nan",
+                        "nat",
+                        "none",
+                        "",
+                    ]:
+                        df_envios.loc[mask_fila, col_fecha_envio] = f_env
+                    df_envios.loc[mask_fila, col_estatus_logistica] = "ENVIADA"
                     facturas_actualizadas.append(fac)
+
+                elif es_almacenista1:
+                    # ALMACENISTA1: solo captura ESTATUS ALMACEN = SURTIDA
+                    df_envios.loc[mask_fila, col_estatus_almacen] = "SURTIDA"
+                    facturas_actualizadas.append(fac)
+
+                else:
+                    # Cualquier otro usuario conserva el comportamiento original
+                    val_actual = str(fila_actual[col_fecha_envio]).strip()
+                    if not val_actual or val_actual.lower() in [
+                        "nan",
+                        "nat",
+                        "none",
+                        "",
+                    ]:
+                        df_envios.loc[mask_fila, col_fecha_envio] = f_env
+                        facturas_actualizadas.append(fac)
             else:
-                nueva_fila = {
-                    col_fac_encontrada: fac,
-                    col_fecha_envio: f_env,
-                }
+                nueva_fila = {col_fac_encontrada: fac}
+                if es_rigoberto:
+                    nueva_fila[col_fecha_envio] = f_env
+                    nueva_fila[col_estatus_logistica] = "ENVIADA"
+                elif es_almacenista1:
+                    nueva_fila[col_estatus_almacen] = "SURTIDA"
+                else:
+                    nueva_fila[col_fecha_envio] = f_env
                 df_envios = pd.concat(
                     [df_envios, pd.DataFrame([nueva_fila])], ignore_index=True
                 )
