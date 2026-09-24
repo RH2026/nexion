@@ -232,128 +232,130 @@ def main():
             if df_raw_surtido.empty:
                 st.warning("No se encontraron registros en la base de datos de envíos.")
             else:
-                df_raw_surtido.columns = df_raw_surtido.columns.str.strip()
+                with st.spinner("🔗 Cruzando guías, facturas y fechas de programación contra las bases remotas..."):
+                    df_raw_surtido.columns = df_raw_surtido.columns.str.strip()
 
-                # Normalización de estructura base
-                df_envios = pd.DataFrame()
-                df_envios['factura'] = df_raw_surtido.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
-                df_envios['recomendacion'] = df_raw_surtido.get('RECOMENDACION', pd.Series(dtype=str)).fillna('SIN ASIGNAR').astype(str)
-                extran_s = df_raw_surtido.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
-                cliente_s = df_raw_surtido.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
-                df_envios['nombre_cliente'] = extran_s.where(extran_s.str.strip() != '', cliente_s)
-                df_envios['destino'] = df_raw_surtido.get('DESTINO', pd.Series(dtype=str)).fillna('NACIONAL').astype(str)
+                    # Normalización de estructura base
+                    df_envios = pd.DataFrame()
+                    df_envios['factura'] = df_raw_surtido.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
+                    df_envios['recomendacion'] = df_raw_surtido.get('RECOMENDACION', pd.Series(dtype=str)).fillna('SIN ASIGNAR').astype(str)
+                    extran_s = df_raw_surtido.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
+                    cliente_s = df_raw_surtido.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
+                    df_envios['nombre_cliente'] = extran_s.where(extran_s.str.strip() != '', cliente_s)
+                    df_envios['destino'] = df_raw_surtido.get('DESTINO', pd.Series(dtype=str)).fillna('NACIONAL').astype(str)
 
-                f_prog_input = df_raw_surtido.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
-                dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
-                df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
-                df_envios['dt_prog_parsed'] = dt_prog_temp
+                    f_prog_input = df_raw_surtido.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+                    dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
+                    df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
+                    df_envios['dt_prog_parsed'] = dt_prog_temp
 
-                # --------------------------------------------------
-                # EXTRACCIÓN ROBUSTA DE GUÍAS Y FECHAS (CRUCE MULTI-FUENTE)
-                # --------------------------------------------------
-                lista_guias = []
-                lista_fechas_envio = []
-                f_env_raw_list = df_raw_surtido.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+                    # --------------------------------------------------
+                    # EXTRACCIÓN ROBUSTA DE GUÍAS Y FECHAS (CRUCE MULTI-FUENTE)
+                    # --------------------------------------------------
+                    lista_guias = []
+                    lista_fechas_envio = []
+                    f_env_raw_list = df_raw_surtido.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
 
-                for idx, row in df_raw_surtido.iterrows():
-                    fac = str(row.get('Factura', '')).strip()
-                    guia_encontrada = ""
-                    fecha_envio_encontrada = ""
+                    for idx, row in df_raw_surtido.iterrows():
+                        fac = str(row.get('Factura', '')).strip()
+                        guia_encontrada = ""
+                        fecha_envio_encontrada = ""
 
-                    for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON', 'Nro Guia']:
-                        if col_g in df_raw_surtido.columns and pd.notna(row.get(col_g)):
-                            val_g = str(row.get(col_g)).strip()
-                            if val_g and val_g.lower() not in ['', 'nan', '0', '0.0', 'none']:
-                                guia_encontrada = val_g
-                                break
-
-                    if not guia_encontrada and not df_dashboard_global.empty:
-                        for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
-                            if col_ped in df_dashboard_global.columns:
-                                match_dash = df_dashboard_global[df_dashboard_global[col_ped].astype(str).str.strip() == fac]
-                                if not match_dash.empty:
-                                    for cg_dash in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
-                                        if cg_dash in match_dash.columns:
-                                            vg = str(match_dash.iloc[0][cg_dash]).strip()
-                                            if vg and vg.lower() not in ['', 'nan', '0', '0.0', 'none']:
-                                                guia_encontrada = vg
-                                                break
-                                if guia_encontrada:
+                        for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON', 'Nro Guia']:
+                            if col_g in df_raw_surtido.columns and pd.notna(row.get(col_g)):
+                                val_g = str(row.get(col_g)).strip()
+                                if val_g and val_g.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                    guia_encontrada = val_g
                                     break
 
-                    encontrado_en_t1 = False
-                    if not guia_encontrada and not df_t1_global.empty:
-                        for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
-                            if col_t1_ped in df_t1_global.columns:
-                                match_t1 = df_t1_global[df_t1_global[col_t1_ped].astype(str).str.strip() == fac]
-                                if not match_t1.empty:
-                                    for cg_t1 in ['TALON', 'GUIA', 'NÚMERO DE GUÍA']:
-                                        if cg_t1 in match_t1.columns:
-                                            vg = str(match_t1.iloc[0][cg_t1]).strip()
-                                            if vg and vg.lower() not in ['', 'nan', '0', '0.0', 'none']:
-                                                guia_encontrada = vg
-                                                encontrado_en_t1 = True
-                                                break
-                                    if encontrado_en_t1:
-                                        for col_fdoc in ['F.DOC', 'FECHA', 'FECHA DOC']:
-                                            if col_fdoc in match_t1.columns:
-                                                fdoc_val = str(match_t1.iloc[0][col_fdoc]).strip()
-                                                if fdoc_val and fdoc_val.lower() not in ['', 'nan', '0', '0.0', 'none']:
-                                                    dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
-                                                    fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
+                        if not guia_encontrada and not df_dashboard_global.empty:
+                            for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
+                                if col_ped in df_dashboard_global.columns:
+                                    match_dash = df_dashboard_global[df_dashboard_global[col_ped].astype(str).str.strip() == fac]
+                                    if not match_dash.empty:
+                                        for cg_dash in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
+                                            if cg_dash in match_dash.columns:
+                                                vg = str(match_dash.iloc[0][cg_dash]).strip()
+                                                if vg and vg.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                                    guia_encontrada = vg
                                                     break
+                                    if guia_encontrada:
                                         break
 
-                    if not guia_encontrada:
-                        guia_encontrada = "PENDIENTE"
+                        encontrado_en_t1 = False
+                        if not guia_encontrada and not df_t1_global.empty:
+                            for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
+                                if col_t1_ped in df_t1_global.columns:
+                                    match_t1 = df_t1_global[df_t1_global[col_t1_ped].astype(str).str.strip() == fac]
+                                    if not match_t1.empty:
+                                        for cg_t1 in ['TALON', 'GUIA', 'NÚMERO DE GUÍA']:
+                                            if cg_t1 in match_t1.columns:
+                                                vg = str(match_t1.iloc[0][cg_t1]).strip()
+                                                if vg and vg.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                                    guia_encontrada = vg
+                                                    encontrado_en_t1 = True
+                                                    break
+                                        if encontrado_en_t1:
+                                            for col_fdoc in ['F.DOC', 'FECHA', 'FECHA DOC']:
+                                                if col_fdoc in match_t1.columns:
+                                                    fdoc_val = str(match_t1.iloc[0][col_fdoc]).strip()
+                                                    if fdoc_val and fdoc_val.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                                        dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
+                                                        fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
+                                                        break
+                                            break
 
-                    if encontrado_en_t1 and fecha_envio_encontrada:
-                        final_fecha_envio = fecha_envio_encontrada
-                    else:
-                        final_fecha_envio = str(f_env_raw_list.loc[idx]).strip() if idx in f_env_raw_list.index else ''
+                        if not guia_encontrada:
+                            guia_encontrada = "PENDIENTE"
 
-                    lista_guias.append(guia_encontrada)
-                    lista_fechas_envio.append(final_fecha_envio)
+                        if encontrado_en_t1 and fecha_envio_encontrada:
+                            final_fecha_envio = fecha_envio_encontrada
+                        else:
+                            final_fecha_envio = str(f_env_raw_list.loc[idx]).strip() if idx in f_env_raw_list.index else ''
 
-                df_envios['numero_guia'] = lista_guias
-                df_envios['fecha_envio_raw'] = lista_fechas_envio
+                        lista_guias.append(guia_encontrada)
+                        lista_fechas_envio.append(final_fecha_envio)
 
-                dt_envio_temp = pd.to_datetime(df_envios['fecha_envio_raw'], errors='coerce', dayfirst=True)
-                df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios['fecha_envio_raw'])
-                df_envios['dt_envio_parsed'] = dt_envio_temp
+                    df_envios['numero_guia'] = lista_guias
+                    df_envios['fecha_envio_raw'] = lista_fechas_envio
 
-                # Cálculo automático de estatus operativo
-                estatus_calculado = []
-                valores_nulos = ['', 'nan', '0', '0.0', '-', 'nat', 'none', 'pendiente']
+                    dt_envio_temp = pd.to_datetime(df_envios['fecha_envio_raw'], errors='coerce', dayfirst=True)
+                    df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios['fecha_envio_raw'])
+                    df_envios['dt_envio_parsed'] = dt_envio_temp
 
-                for idx, row in df_envios.iterrows():
-                    fe = str(row['fecha_envio']).strip()
-                    guia = str(row['numero_guia']).strip()
+                    # Cálculo automático de estatus operativo
+                    estatus_calculado = []
+                    valores_nulos = ['', 'nan', '0', '0.0', '-', 'nat', 'none', 'pendiente']
 
-                    tiene_g = guia and guia.lower() not in valores_nulos
-                    tiene_fe = fe and fe.lower() not in valores_nulos
+                    for idx, row in df_envios.iterrows():
+                        fe = str(row['fecha_envio']).strip()
+                        guia = str(row['numero_guia']).strip()
 
-                    dt_p = row['dt_prog_parsed']
-                    dt_e = row['dt_envio_parsed']
+                        tiene_g = guia and guia.lower() not in valores_nulos
+                        tiene_fe = fe and fe.lower() not in valores_nulos
 
-                    tarde = False
-                    if pd.notna(dt_p):
-                        limite = dt_p + timedelta(hours=24)
-                        if tiene_fe and pd.notna(dt_e) and dt_e > limite:
-                            tarde = True
-                        elif not tiene_fe and not tiene_g and ahora_surtido.replace(tzinfo=None) > limite:
-                            tarde = True
+                        dt_p = row['dt_prog_parsed']
+                        dt_e = row['dt_envio_parsed']
 
-                    if tiene_g and tiene_fe:
-                        estatus_calculado.append("SURTIDA / EN TIEMPO" if not tarde else "CON RETRASO")
-                    elif not tiene_g and not tiene_fe:
-                        estatus_calculado.append("PENDIENTE / SURTIENDO")
-                    elif tiene_fe and not tiene_g:
-                        estatus_calculado.append("ENVIADA")
-                    else:
-                        estatus_calculado.append("ENVIADA PARCIAL")
+                        tarde = False
+                        if pd.notna(dt_p):
+                            limite = dt_p + timedelta(hours=24)
+                            if tiene_fe and pd.notna(dt_e) and dt_e > limite:
+                                tarde = True
+                            elif not tiene_fe and not tiene_g and ahora_surtido.replace(tzinfo=None) > limite:
+                                tarde = True
 
-                df_envios['estatus'] = estatus_calculado
+                        if tiene_g and tiene_fe:
+                            estatus_calculado.append("SURTIDA / EN TIEMPO" if not tarde else "CON RETRASO")
+                        elif not tiene_g and not tiene_fe:
+                            estatus_calculado.append("PENDIENTE / SURTIENDO")
+                        elif tiene_fe and not tiene_g:
+                            estatus_calculado.append("ENVIADA")
+                        else:
+                            estatus_calculado.append("ENVIADA PARCIAL")
+
+                    df_envios['estatus'] = estatus_calculado
+
 
                 # --------------------------------------------------
                 # FILTROS TÁCTICOS AVANZADOS
@@ -439,14 +441,15 @@ def main():
                 # DONAS INTERACTIVAS
                 # --------------------------------------------------
                 if not df_filtrado.empty:
-                    col_c1, col_c2 = st.columns(2)
+                    col_c1, col_c2, col_c3 = st.columns(3)
 
                     config_layout_s = {
                         "paper_bgcolor": "rgba(0,0,0,0)",
                         "plot_bgcolor": "rgba(0,0,0,0)",
-                        "font": {"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 11},
+                        "font": {"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 10},
                         "margin": {"t": 20, "b": 10, "l": 10, "r": 10},
-                        "legend": {"orientation": "h", "y": -0.15}
+                        "legend": {"orientation": "h", "y": -0.18},
+                        "height": 340
                     }
 
                     with col_c1:
@@ -461,7 +464,7 @@ def main():
                             hole=0.6,
                             color_discrete_sequence=['#00FFAA', '#FFD166', '#FF6B6B', '#3B82F6']
                         )
-                        fig_donita_s1.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=13, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=13))
+                        fig_donita_s1.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=11, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=11))
                         fig_donita_s1.update_layout(**config_layout_s)
                         st.plotly_chart(fig_donita_s1, use_container_width=True, config={'displayModeBar': False})
 
@@ -477,9 +480,25 @@ def main():
                             hole=0.6,
                             color_discrete_sequence=['#00A3A3', '#3B82F6', '#8B5CF6', '#EC4899', '#64748B']
                         )
-                        fig_donita_s2.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=13, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=13))
+                        fig_donita_s2.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=11, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=11))
                         fig_donita_s2.update_layout(**config_layout_s)
                         st.plotly_chart(fig_donita_s2, use_container_width=True, config={'displayModeBar': False})
+
+                    with col_c3:
+                        st.markdown("<div class='donut-section-title'>DISTRIBUCIÓN POR DESTINO</div>", unsafe_allow_html=True)
+                        df_destino_counts = df_filtrado['destino'].value_counts().reset_index()
+                        df_destino_counts.columns = ['Destino', 'Cantidad']
+
+                        fig_donita_s3 = px.pie(
+                            df_destino_counts,
+                            names='Destino',
+                            values='Cantidad',
+                            hole=0.6,
+                            color_discrete_sequence=['#FFA07A', '#38bdf8', '#A855F7', '#FFD700', '#00FFAA', '#FF6B6B']
+                        )
+                        fig_donita_s3.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=11, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=11))
+                        fig_donita_s3.update_layout(**config_layout_s)
+                        st.plotly_chart(fig_donita_s3, use_container_width=True, config={'displayModeBar': False})
 
                 # --------------------------------------------------
                 # TABLA DE PEDIDOS CON ENCABEZADO STICKY
