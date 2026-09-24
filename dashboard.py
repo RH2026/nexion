@@ -163,7 +163,7 @@ def main():
         .stApp {{ background-color: {vars_css['bg']} !important; }}
         .spacer-menu {{ margin-top: 30px; }}
         .donut-section-title {{ font-size: 11px; font-weight: 800; color: #8B9BB4; letter-spacing: 1px; margin-bottom: 5px; }}
-        .donut-section-title-s {{ font-size: 13px; font-weight: 800; color: #E8EEF2; letter-spacing: 1px; margin-bottom: 6px; }}
+        .donut-section-title-s {{ font-size: 13px; font-weight: 500; color: #E8EEF2; letter-spacing: 1px; margin-bottom: 6px; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -631,7 +631,7 @@ def main():
             col_d1, col_d2 = st.columns(2)
 
             with col_d1:
-                st.markdown("<div class='donut-section-title'>DISTRIBUCIÓN DE PEDIDOS DEL MES</div>", unsafe_allow_html=True)
+                st.markdown("<div class='donut-section-title-s'>DISTRIBUCIÓN DE PEDIDOS DEL MES</div>", unsafe_allow_html=True)
                 df_status_counts = pd.DataFrame({
                     "Estatus": ["ENTREGADOS", "EN TRÁNSITO EN TIEMPO", "EN TRÁNSITO CON RETRASO"],
                     "Cantidad": [entregados, en_tiempo, retrasados],
@@ -658,7 +658,7 @@ def main():
                     st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin pedidos en este período</div>", unsafe_allow_html=True)
 
             with col_d2:
-                st.markdown("<div class='donut-section-title'>PORCENTAJE DE PEDIDOS CON RETRASO POR FLETERA</div>", unsafe_allow_html=True)
+                st.markdown("<div class='donut-section-title-s'>PORCENTAJE DE PEDIDOS CON RETRASO POR FLETERA</div>", unsafe_allow_html=True)
                 df_retraso = df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt]
                 df_retraso_fletera = df_retraso.groupby("FLETERA").size().reset_index(name="Cantidad")
                 df_retraso_fletera.columns = ["Fletera", "Cantidad"]
