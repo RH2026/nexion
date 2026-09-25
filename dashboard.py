@@ -627,10 +627,11 @@ def main():
                 "plot_bgcolor": "rgba(0,0,0,0)",
                 "font": {"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 11},
                 "margin": {"t": 20, "b": 10, "l": 10, "r": 10},
-                "legend": {"orientation": "h", "y": -0.15},
+                "legend": {"orientation": "h", "y": -0.18},
+                "height": 340,
             }
 
-            col_d1, col_d2 = st.columns(2)
+            col_d1, col_d2, col_d3 = st.columns(3)
 
             with col_d1:
                 st.markdown("<div class='donut-section-title-s'>DISTRIBUCIÓN DE PEDIDOS DEL MES</div>", unsafe_allow_html=True)
@@ -678,6 +679,26 @@ def main():
                     st.plotly_chart(fig_donita2, use_container_width=True, config={'displayModeBar': False})
                 else:
                     st.markdown("<div style='padding:20px; color:#00FFAA; font-size:12px; font-weight:bold;'>✓ Sin pedidos con retraso en este período</div>", unsafe_allow_html=True)
+
+            with col_d3:
+                st.markdown("<div class='donut-section-title-s'>DISTRIBUCIÓN DE PEDIDOS POR DESTINO</div>", unsafe_allow_html=True)
+                df_destino_mes = df_mes[df_mes["DESTINO"].astype(str).str.strip() != ""]["DESTINO"].value_counts().reset_index()
+                df_destino_mes.columns = ["Destino", "Cantidad"]
+                df_destino_mes = df_destino_mes.head(8)
+
+                if not df_destino_mes.empty:
+                    fig_donita3 = px.pie(
+                        df_destino_mes,
+                        names="Destino",
+                        values="Cantidad",
+                        hole=0.6,
+                        color_discrete_sequence=['#38bdf8', '#00FFAA', '#A855F7', '#FFD166', '#FF6B6B', '#F97316', '#EC4899', '#64748B'],
+                    )
+                    fig_donita3.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#1F2937', size=11, family='Inter, sans-serif'), insidetextfont=dict(color='#1F2937', size=11))
+                    fig_donita3.update_layout(**config_layout)
+                    st.plotly_chart(fig_donita3, use_container_width=True, config={'displayModeBar': False})
+                else:
+                    st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin pedidos en este período</div>", unsafe_allow_html=True)
 
             # ==========================================================
             # INTELIGENCIA DE NEGOCIO — CONSULTA DETALLADA DEL PERÍODO
