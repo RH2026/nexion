@@ -11,7 +11,6 @@ import streamlit.components.v1 as components
 from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
 import reportlab.lib.units as units
-from auth import exigir_autenticacion
 
 from components.layout import render_layout
 
