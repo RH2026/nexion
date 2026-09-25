@@ -11,6 +11,7 @@ import streamlit.components.v1 as components
 from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
 import reportlab.lib.units as units
+from auth import exigir_autenticacion
 
 from components.layout import render_layout
 
@@ -26,7 +27,7 @@ st.set_page_config(
 # ============================================================
 # 2. LLAMADA AL LAYOUT MAESTRO Y PERMISOS
 # ============================================================
-render_layout(modulo_actual="REPORTES", submodulo_actual="ENVIOS ESPECIALES")
+render_layout(modulo_actual="REPORTES", submodulo_actual="ENVÍOS ESPECIALES")
 
 
 # ==========================================
@@ -213,7 +214,7 @@ def main():
 
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <div style="flex:1; border:1px solid black;">
-                    <div style="background:#ffffff; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">REMITENTE</div>
+                    <div style="background:#1B2A2F; color:white; text-align:center; font-weight:bold; font-size:12px; padding:4px;">REMITENTE</div>
                     <div style="padding:8px; font-size:11px; line-height:1.4;">
                         <b>JABONES Y PRODUCTOS ESPECIALIZADOS</b><br>
                         C. Cernícalo 155, La Aurora C.P.: 44460<br>
@@ -223,7 +224,7 @@ def main():
                     </div>
                 </div>
                 <div style="flex:1; border:1px solid black;">
-                    <div style="background:#ffffff; color:black; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
+                    <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
                     <div style="padding:8px; font-size:11px; line-height:1.4;">
                         <b>{str(hotel).upper()}</b><br>
                         {f"{str(calle).upper()}<br>" if calle and calle != "-" else ""}
@@ -290,7 +291,7 @@ def main():
 
     col_rem, col_dest = st.columns(2)
     with col_rem:
-        st.markdown('<div style="background:#4e73df;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">REMITENTE</div>', unsafe_allow_html=True)
+        st.markdown('<div style="background:#1B2A2F;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">REMITENTE</div>', unsafe_allow_html=True)
         st.write("")
         st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
         c_rem1, c_rem2 = st.columns([2, 1])
@@ -303,7 +304,7 @@ def main():
         ).upper()
 
     with col_dest:
-        st.markdown('<div style="background:#f6c23e;color:black;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO</div>', unsafe_allow_html=True)
+        st.markdown('<div style="background:#b30000;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO</div>', unsafe_allow_html=True)
         st.write("")
         f_h = st.text_input(":material/hotel: Hotel / Proveedor", key=f"h_cee_{st.session_state.reset_key_cee}").upper()
         f_ca = st.text_input(":material/location_on: Calle y Número", key=f"ca_cee_{st.session_state.reset_key_cee}").upper()
