@@ -9,6 +9,10 @@ import requests
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.units import cm
 import pandas as pd
 from pypdf import PdfReader, PdfWriter
 import qrcode
@@ -608,6 +612,103 @@ def generar_sellos_emergencia(df_datos, x_pos, y_pos):
         c.showPage()
         
     c.save()
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def generar_reporte_pdf_analisis(df_datos, titulo_reporte="REPORTE DE ANÁLISIS DE ASIGNACIÓN"):
+    """
+    Genera un PDF profesional del Análisis Final:
+    - Encabezado con marca "Jabones y Productos Especializados / DISTRIBUCIÓN Y LOGÍSTICA | 2026"
+    - Fecha y hora de impresión en horario de Guadalajara
+    - Tabla con fila de encabezado "sticky" (se repite en cada página) y estilo del sistema
+    - Pie de página con fecha/hora y número de página
+    """
+    buffer = io.BytesIO()
+    tz_gdl = pytz.timezone("America/Mexico_City")
+    ahora_gdl = datetime.now(tz_gdl)
+    fecha_str = ahora_gdl.strftime("%d/%m/%Y")
+    hora_str = ahora_gdl.strftime("%H:%M:%S")
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        topMargin=1.7 * cm,
+        bottomMargin=1.3 * cm,
+        leftMargin=1 * cm,
+        rightMargin=1 * cm,
+    )
+
+    styles = getSampleStyleSheet()
+    estilo_empresa = ParagraphStyle(
+        "EstiloEmpresa", parent=styles["Heading1"], fontName="Helvetica-Bold",
+        fontSize=14, textColor=colors.HexColor("#1B2A2F"), alignment=TA_CENTER, spaceAfter=2,
+    )
+    estilo_division = ParagraphStyle(
+        "EstiloDivision", parent=styles["Normal"], fontName="Helvetica-Bold",
+        fontSize=10, textColor=colors.HexColor("#00A3A3"), alignment=TA_CENTER, spaceAfter=6,
+    )
+    estilo_reporte = ParagraphStyle(
+        "EstiloReporte", parent=styles["Normal"], fontName="Helvetica-Bold",
+        fontSize=9, textColor=colors.HexColor("#384A52"), alignment=TA_CENTER, spaceAfter=2,
+    )
+    estilo_meta = ParagraphStyle(
+        "EstiloMeta", parent=styles["Normal"], fontName="Helvetica",
+        fontSize=8, textColor=colors.grey, alignment=TA_CENTER, spaceAfter=10,
+    )
+
+    elementos = [
+        Paragraph("JABONES Y PRODUCTOS ESPECIALIZADOS", estilo_empresa),
+        Paragraph("DISTRIBUCIÓN Y LOGÍSTICA | 2026", estilo_division),
+        Paragraph(titulo_reporte, estilo_reporte),
+        Paragraph(
+            f"Impreso: {fecha_str} &nbsp;|&nbsp; {hora_str} hrs (Hora Guadalajara)",
+            estilo_meta,
+        ),
+        Spacer(1, 6),
+    ]
+
+    if not df_datos.empty:
+        columnas = [str(c) for c in df_datos.columns]
+        df_texto = df_datos.astype(str)
+        data_tabla = [columnas] + df_texto.values.tolist()
+
+        ancho_disponible = doc.width
+        num_cols = max(len(columnas), 1)
+        ancho_col = ancho_disponible / num_cols
+
+        # Envuelve cada celda en Paragraph para permitir salto de línea (evita desbordes)
+        estilo_celda_header = ParagraphStyle("CeldaHeader", fontName="Helvetica-Bold", fontSize=6.8, textColor=colors.white, alignment=TA_CENTER, leading=8)
+        estilo_celda = ParagraphStyle("Celda", fontName="Helvetica", fontSize=6.3, textColor=colors.HexColor("#1B2A2F"), alignment=TA_CENTER, leading=7.5)
+
+        data_tabla_wrapped = [[Paragraph(str(c), estilo_celda_header) for c in columnas]]
+        for fila in df_texto.values.tolist():
+            data_tabla_wrapped.append([Paragraph(str(v), estilo_celda) for v in fila])
+
+        tabla = Table(data_tabla_wrapped, colWidths=[ancho_col] * num_cols, repeatRows=1)
+        tabla.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2B343B")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#4B5D67")),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#EAEEF0")]),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        elementos.append(tabla)
+    else:
+        elementos.append(Paragraph("Sin datos para mostrar.", styles["Normal"]))
+
+    def _encabezado_pie(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        canvas_obj.setFont("Helvetica", 7)
+        canvas_obj.setFillColor(colors.grey)
+        canvas_obj.drawString(1 * cm, 0.6 * cm, f"Generado {fecha_str} {hora_str} hrs (Hora Guadalajara) · NEXION")
+        canvas_obj.drawRightString(letter[0] - 1 * cm, 0.6 * cm, f"Página {doc_obj.page}")
+        canvas_obj.restoreState()
+
+    doc.build(elementos, onFirstPage=_encabezado_pie, onLaterPages=_encabezado_pie)
     buffer.seek(0)
     return buffer.getvalue()
 
@@ -1281,6 +1382,17 @@ def main():
                 type="primary" 
             )
 
+            tz_gdl_pdf = pytz.timezone("America/Mexico_City")
+            nombre_pdf_analisis = f"Reporte_Analisis_{datetime.now(tz_gdl_pdf).strftime('%Y%m%d_%H%M%S')}.pdf"
+            st.download_button(
+                label="🧾 GENERAR REPORTE PDF",
+                data=generar_reporte_pdf_analisis(p_editado, titulo_reporte="REPORTE DE ANÁLISIS DE ASIGNACIÓN LOGÍSTICA"),
+                file_name=nombre_pdf_analisis,
+                mime="application/pdf",
+                use_container_width=True,
+                type="primary"
+            )
+
             with st.expander("SISTEMA DE SELLADO", expanded=False):
                 cx, cy = st.columns(2)
                 ax = cx.slider("X", 0, 612, 399)
@@ -1309,4 +1421,3 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-
