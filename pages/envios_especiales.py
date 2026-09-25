@@ -304,7 +304,7 @@ def main():
         ).upper()
 
     with col_dest:
-        st.markdown('<div style="background:#A94442;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO</div>', unsafe_allow_html=True)
+        st.markdown('<div style="background:#0C769E;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO</div>', unsafe_allow_html=True)
         st.write("")
         f_h = st.text_input(":material/hotel: Hotel / Proveedor", key=f"h_cee_{st.session_state.reset_key_cee}").upper()
         f_ca = st.text_input(":material/location_on: Calle y Número", key=f"ca_cee_{st.session_state.reset_key_cee}").upper()
