@@ -764,14 +764,14 @@ def main():
             config_layout_bi = {
                 "paper_bgcolor": "rgba(0,0,0,0)",
                 "plot_bgcolor": "rgba(0,0,0,0)",
-                "font": {"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 11},
+                "font": {"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 14},
                 "margin": {"t": 20, "b": 10, "l": 10, "r": 10},
                 "height": 340,
             }
 
             def _seccion_bi(emoji_sec, texto_sec, color_sec):
                 st.markdown(
-                    f"""<div style="font-size:10px; font-weight:800; color:{color_sec}; letter-spacing:1.5px;
+                    f"""<div style="font-size:12px; font-weight:800; color:{color_sec}; letter-spacing:1.5px;
                     text-transform:uppercase; border-left:3px solid {color_sec}; padding-left:9px;
                     margin:22px 0 12px 0;">{emoji_sec} {texto_sec}</div>""",
                     unsafe_allow_html=True
