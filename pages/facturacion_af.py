@@ -6,13 +6,14 @@ import time
 import unicodedata
 import zipfile
 import requests
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.lib.units import cm
+from reportlab.pdfbase.pdfmetrics import stringWidth
 import pandas as pd
 from pypdf import PdfReader, PdfWriter
 import qrcode
@@ -616,13 +617,24 @@ def generar_sellos_emergencia(df_datos, x_pos, y_pos):
     return buffer.getvalue()
 
 
+def _acortar_texto_celda(valor, limite=38):
+    """Recorta el texto de una celda para que nunca truene línea (mantiene filas bajitas)."""
+    texto = "" if valor is None else str(valor)
+    texto = texto.replace("\n", " ").replace("\r", " ").strip()
+    if len(texto) > limite:
+        return texto[: limite - 1].rstrip() + "…"
+    return texto
+
+
 def generar_reporte_pdf_analisis(df_datos, titulo_reporte="REPORTE DE ANÁLISIS DE ASIGNACIÓN"):
     """
-    Genera un PDF profesional del Análisis Final:
-    - Encabezado con marca "Jabones y Productos Especializados / DISTRIBUCIÓN Y LOGÍSTICA | 2026"
-    - Fecha y hora de impresión en horario de Guadalajara
-    - Tabla con fila de encabezado "sticky" (se repite en cada página) y estilo del sistema
-    - Pie de página con fecha/hora y número de página
+    Genera un PDF profesional del Análisis Final, con el MISMO layout de membrete
+    que el resto de los formatos del sistema (ej. Orden de Embarque):
+    - Izquierda: "Jabones y Productos Especializados" + "DISTRIBUCIÓN Y LOGÍSTICA | 2026"
+    - Derecha: título del reporte (subrayado) + fecha/hora de impresión, hora Guadalajara
+    - Página en HORIZONTAL (landscape)
+    - Celdas de una sola línea (sin saltos de línea) para filas bajitas
+    - Fila de encabezado "sticky": se repite en cada página
     """
     buffer = io.BytesIO()
     tz_gdl = pytz.timezone("America/Mexico_City")
@@ -630,85 +642,121 @@ def generar_reporte_pdf_analisis(df_datos, titulo_reporte="REPORTE DE ANÁLISIS 
     fecha_str = ahora_gdl.strftime("%d/%m/%Y")
     hora_str = ahora_gdl.strftime("%H:%M:%S")
 
+    pagesize_h = landscape(letter)
+
     doc = SimpleDocTemplate(
         buffer,
-        pagesize=letter,
-        topMargin=1.7 * cm,
-        bottomMargin=1.3 * cm,
+        pagesize=pagesize_h,
+        topMargin=1.2 * cm,
+        bottomMargin=1.1 * cm,
         leftMargin=1 * cm,
         rightMargin=1 * cm,
     )
 
-    styles = getSampleStyleSheet()
-    estilo_empresa = ParagraphStyle(
-        "EstiloEmpresa", parent=styles["Heading1"], fontName="Helvetica-Bold",
-        fontSize=14, textColor=colors.HexColor("#1B2A2F"), alignment=TA_CENTER, spaceAfter=2,
+    estilo_membrete_izq = ParagraphStyle(
+        "MembreteIzq", fontName="Helvetica-Bold", fontSize=14,
+        textColor=colors.HexColor("#1B2A2F"), alignment=TA_LEFT, leading=17,
     )
-    estilo_division = ParagraphStyle(
-        "EstiloDivision", parent=styles["Normal"], fontName="Helvetica-Bold",
-        fontSize=10, textColor=colors.HexColor("#00A3A3"), alignment=TA_CENTER, spaceAfter=6,
-    )
-    estilo_reporte = ParagraphStyle(
-        "EstiloReporte", parent=styles["Normal"], fontName="Helvetica-Bold",
-        fontSize=9, textColor=colors.HexColor("#384A52"), alignment=TA_CENTER, spaceAfter=2,
-    )
-    estilo_meta = ParagraphStyle(
-        "EstiloMeta", parent=styles["Normal"], fontName="Helvetica",
-        fontSize=8, textColor=colors.grey, alignment=TA_CENTER, spaceAfter=10,
+    estilo_membrete_der = ParagraphStyle(
+        "MembreteDer", fontName="Helvetica-Bold", fontSize=11,
+        textColor=colors.HexColor("#1B2A2F"), alignment=TA_RIGHT, leading=14,
     )
 
-    elementos = [
-        Paragraph("JABONES Y PRODUCTOS ESPECIALIZADOS", estilo_empresa),
-        Paragraph("DISTRIBUCIÓN Y LOGÍSTICA | 2026", estilo_division),
-        Paragraph(titulo_reporte, estilo_reporte),
-        Paragraph(
-            f"Impreso: {fecha_str} &nbsp;|&nbsp; {hora_str} hrs (Hora Guadalajara)",
-            estilo_meta,
-        ),
-        Spacer(1, 6),
-    ]
+    texto_izq = (
+        "<b>Jabones y Productos Especializados</b><br/>"
+        "<font color='#00A3A3' size=8><b>DISTRIBUCIÓN Y LOGÍSTICA | 2026</b></font>"
+    )
+    texto_der = (
+        f"<u><b>{titulo_reporte}</b></u><br/>"
+        f"<font size=8 color='#555555'>Impreso: {fecha_str} &nbsp;|&nbsp; {hora_str} hrs (Hora Guadalajara)</font>"
+    )
+
+    tabla_membrete = Table(
+        [[Paragraph(texto_izq, estilo_membrete_izq), Paragraph(texto_der, estilo_membrete_der)]],
+        colWidths=[doc.width * 0.6, doc.width * 0.4],
+    )
+    tabla_membrete.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("LINEBELOW", (0, 0), (-1, -1), 1, colors.HexColor("#1B2A2F")),
+    ]))
+
+    elementos = [tabla_membrete, Spacer(1, 8)]
 
     if not df_datos.empty:
         columnas = [str(c) for c in df_datos.columns]
         df_texto = df_datos.astype(str)
-        data_tabla = [columnas] + df_texto.values.tolist()
+        fuente_header, tam_header = "Helvetica-Bold", 7
+        fuente_dato, tam_dato = "Helvetica", 6.8
+        relleno_pt = 10  # padding izq+der por celda
+        ancho_min_pt, ancho_max_pt = 34, 150
 
-        ancho_disponible = doc.width
-        num_cols = max(len(columnas), 1)
-        ancho_col = ancho_disponible / num_cols
+        limite_trunc = 42  # tope inicial de caracteres por celda (una sola línea, sin salto)
 
-        # Envuelve cada celda en Paragraph para permitir salto de línea (evita desbordes)
-        estilo_celda_header = ParagraphStyle("CeldaHeader", fontName="Helvetica-Bold", fontSize=6.8, textColor=colors.white, alignment=TA_CENTER, leading=8)
-        estilo_celda = ParagraphStyle("Celda", fontName="Helvetica", fontSize=6.3, textColor=colors.HexColor("#1B2A2F"), alignment=TA_CENTER, leading=7.5)
+        def _calcular_anchos(limite):
+            fila_hdr = [c.upper() for c in columnas]
+            filas_datos_trunc = [
+                [_acortar_texto_celda(v, limite) for v in fila] for fila in df_texto.values.tolist()
+            ]
+            anchos = []
+            for i, encabezado in enumerate(fila_hdr):
+                ancho_hdr = stringWidth(encabezado, fuente_header, tam_header)
+                ancho_dato = max(
+                    [stringWidth(f[i], fuente_dato, tam_dato) for f in filas_datos_trunc] or [0]
+                )
+                ancho = max(ancho_hdr, ancho_dato) + relleno_pt
+                anchos.append(min(max(ancho, ancho_min_pt), ancho_max_pt))
+            return fila_hdr, filas_datos_trunc, anchos
 
-        data_tabla_wrapped = [[Paragraph(str(c), estilo_celda_header) for c in columnas]]
-        for fila in df_texto.values.tolist():
-            data_tabla_wrapped.append([Paragraph(str(v), estilo_celda) for v in fila])
+        fila_hdr, filas_datos_trunc, anchos_col = _calcular_anchos(limite_trunc)
+        intentos = 0
+        while sum(anchos_col) > doc.width and limite_trunc > 12 and intentos < 6:
+            limite_trunc -= 6
+            fila_hdr, filas_datos_trunc, anchos_col = _calcular_anchos(limite_trunc)
+            intentos += 1
 
-        tabla = Table(data_tabla_wrapped, colWidths=[ancho_col] * num_cols, repeatRows=1)
+        total_anchos = sum(anchos_col) or 1
+        if total_anchos <= doc.width:
+            # Rellena el ancho completo de la página horizontal repartiendo el sobrante
+            factor = doc.width / total_anchos
+            anchos_col = [a * factor for a in anchos_col]
+        else:
+            # Último recurso: comprimir proporcionalmente para que quepa en la página
+            factor = doc.width / total_anchos
+            anchos_col = [a * factor for a in anchos_col]
+
+        data_tabla = [fila_hdr] + filas_datos_trunc
+
+        tabla = Table(data_tabla, colWidths=anchos_col, repeatRows=1)
         tabla.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2B343B")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 0), (-1, 0), 7),
+            ("FONTSIZE", (0, 1), (-1, -1), 6.8),
             ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#4B5D67")),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#EAEEF0")]),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("TOPPADDING", (0, 0), (-1, -1), 2.5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
         ]))
         elementos.append(tabla)
     else:
-        elementos.append(Paragraph("Sin datos para mostrar.", styles["Normal"]))
+        elementos.append(Paragraph("Sin datos para mostrar.", getSampleStyleSheet()["Normal"]))
 
-    def _encabezado_pie(canvas_obj, doc_obj):
+    def _pie_pagina(canvas_obj, doc_obj):
         canvas_obj.saveState()
         canvas_obj.setFont("Helvetica", 7)
         canvas_obj.setFillColor(colors.grey)
-        canvas_obj.drawString(1 * cm, 0.6 * cm, f"Generado {fecha_str} {hora_str} hrs (Hora Guadalajara) · NEXION")
-        canvas_obj.drawRightString(letter[0] - 1 * cm, 0.6 * cm, f"Página {doc_obj.page}")
+        canvas_obj.drawString(1 * cm, 0.55 * cm, f"Generado {fecha_str} {hora_str} hrs (Hora Guadalajara) · NEXION")
+        canvas_obj.drawRightString(pagesize_h[0] - 1 * cm, 0.55 * cm, f"Página {doc_obj.page}")
         canvas_obj.restoreState()
 
-    doc.build(elementos, onFirstPage=_encabezado_pie, onLaterPages=_encabezado_pie)
+    doc.build(elementos, onFirstPage=_pie_pagina, onLaterPages=_pie_pagina)
     buffer.seek(0)
     return buffer.getvalue()
 
