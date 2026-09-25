@@ -628,7 +628,7 @@ def main():
                 "font": {"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 11},
                 "margin": {"t": 20, "b": 10, "l": 10, "r": 10},
                 "legend": {"orientation": "h", "y": -0.18},
-                "height": 340,
+                "height": 380,
             }
 
             col_d1, col_d2, col_d3 = st.columns(3)
@@ -654,7 +654,7 @@ def main():
                             "EN TRÁNSITO CON RETRASO": "#FF6B6B",
                         },
                     )
-                    fig_donita1.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=10, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=10))
+                    fig_donita1.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=11, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=11))
                     fig_donita1.update_layout(**config_layout)
                     st.plotly_chart(fig_donita1, use_container_width=True, config={'displayModeBar': False})
                 else:
@@ -674,7 +674,7 @@ def main():
                         hole=0.6,
                         color_discrete_sequence=['#FF6B6B', '#F97316', '#EC4899', '#8B5CF6', '#64748B'],
                     )
-                    fig_donita2.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=10, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=10))
+                    fig_donita2.update_traces(textposition='inside', textinfo='percent+value', texttemplate='<b>%{percent} (%{value})</b>', textfont=dict(color='#FFFFFF', size=11, family='Inter, sans-serif'), insidetextfont=dict(color='#FFFFFF', size=11))
                     fig_donita2.update_layout(**config_layout)
                     st.plotly_chart(fig_donita2, use_container_width=True, config={'displayModeBar': False})
                 else:
