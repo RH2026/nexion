@@ -577,11 +577,12 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
                                 
-                                # Redirecciones específicas según la opción seleccionada
                                 if s == "ANALISIS MENSUAL":
                                     st.switch_page("pages/analisis_mensual.py")
                                 elif s == "ENVIO DE MUESTRAS":
                                     st.switch_page("pages/muestras.py")
+                                elif s == "ENVIOS ESPECIALES":
+                                    st.switch_page("pages/envios_especiales.py")
                                 else:
                                     st.toast(f"Módulo {s} en desarrollo...", icon="🚧")
                                     st.rerun()
