@@ -58,6 +58,7 @@ DESTINOS_VALIDOS = {
     "gastos" : "pages/gastos.py",
     "recolecciones" : "pages/recolecciones.py",
     "kpi_surtido.py" : "pages/kpi_surtido.py",
+    "envios_especiales.py" : "pages/envios_especiales.py",
 }
 
 
