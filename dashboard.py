@@ -740,9 +740,9 @@ def main():
             total_facturacion_bi = df_bi_f["FACTURACION"].sum()
             total_costo_guias_bi = df_bi_f["COSTO DE LA GUÍA"].sum()
             total_costos_adic_bi = df_bi_f["COSTOS ADICIONALES"].sum()
-            total_valuacion_bi = df_bi_f["VALUACION"].sum()
             total_cajas_bi = df_bi_f["CANTIDAD DE CAJAS"].sum()
-            total_incidencias_bi = int((df_bi_f["INCIDENCIAS"].astype(str).str.strip() != "").sum())
+            costo_logistico_bi = (total_costo_guias_bi / total_facturacion_bi * 100) if total_facturacion_bi else 0.0
+            costo_promedio_caja_bi = (total_costo_guias_bi / total_cajas_bi) if total_cajas_bi else 0.0
 
             bi_kpi_cols = st.columns(6)
             with bi_kpi_cols[0]:
@@ -752,11 +752,12 @@ def main():
             with bi_kpi_cols[2]:
                 render_flat_card("Costos Adic.", f"${total_costos_adic_bi:,.0f}", "#FFD166")
             with bi_kpi_cols[3]:
-                render_flat_card("Valuación", f"${total_valuacion_bi:,.0f}", "#8B5CF6")
+                render_flat_card("Costo Logístico", f"{costo_logistico_bi:.1f}%", "#8B5CF6")
             with bi_kpi_cols[4]:
                 render_flat_card("Cajas Enviadas", f"{total_cajas_bi:,.0f}", "#E8EEF2")
             with bi_kpi_cols[5]:
-                render_flat_card("Incidencias", total_incidencias_bi, "#FF6B6B", border_alpha="255,75,75")
+                render_flat_card("Costo Prom./Caja", f"${costo_promedio_caja_bi:,.2f}", "#FF6B6B", border_alpha="255,75,75")
+
 
             st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
 
@@ -892,12 +893,12 @@ def main():
             # --- TABLA DE CONSULTA GENERAL (TODAS LAS COLUMNAS) ---
             with st.expander(f"🔎 VER DETALLE COMPLETO DE REGISTROS ({len(df_bi_display)})", expanded=False):
                 cols_detalle_bi = [c for c in [
-                    "NO CLIENTE", "NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO", "DOMICILIO",
+                    "NO CLIENTE", "NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO",
                     "FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL",
                     "FLETERA", "NÚMERO DE GUÍA", "TRANSPORTE", "FORMA DE ENVIO",
                     "CANTIDAD DE CAJAS", "CAJAS", "COSTO DE LA GUÍA", "COSTOS ADICIONALES",
                     "FACTURACION", "VALUACION", "EMISION", "MES", "TRIGGER", "CONCEPTO",
-                    "INCIDENCIAS", "COMENTARIOS"
+                    "COMENTARIOS"
                 ] if c in df_bi_display.columns]
                 st.markdown(_tabla_sticky_bi(df_bi_display, cols_detalle_bi, max_altura=460), unsafe_allow_html=True)
 
