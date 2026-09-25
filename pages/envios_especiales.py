@@ -224,7 +224,7 @@ def main():
                     </div>
                 </div>
                 <div style="flex:1; border:1px solid black;">
-                    <div style="background:#b30000; color:white; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
+                    <div style="background:#A94442; color:white; text-align:center; font-weight:bold; font-size:12px; padding:4px;">DESTINATARIO</div>
                     <div style="padding:8px; font-size:11px; line-height:1.4;">
                         <b>{str(hotel).upper()}</b><br>
                         {f"{str(calle).upper()}<br>" if calle and calle != "-" else ""}
@@ -304,7 +304,7 @@ def main():
         ).upper()
 
     with col_dest:
-        st.markdown('<div style="background:#b30000;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO</div>', unsafe_allow_html=True)
+        st.markdown('<div style="background:#A94442;color:white;text-align:center;font-weight:bold;padding:5px;border-radius:4px;">DESTINATARIO</div>', unsafe_allow_html=True)
         st.write("")
         f_h = st.text_input(":material/hotel: Hotel / Proveedor", key=f"h_cee_{st.session_state.reset_key_cee}").upper()
         f_ca = st.text_input(":material/location_on: Calle y Número", key=f"ca_cee_{st.session_state.reset_key_cee}").upper()
