@@ -745,7 +745,7 @@ def main():
             if filtro_envio_bi:
                 df_bi_f = df_bi_f[df_bi_f["FORMA DE ENVIO"].isin(filtro_envio_bi)]
             if solo_incidencias_bi:
-                df_bi_f = df_bi_f[df_bi_f["INCIDENCIAS"].astype(str).str.strip() != ""]
+                df_bi_f = df_bi_f[~df_bi_f["INCIDENCIAS"].astype(str).str.strip().str.upper().isin(["", "OK"])]
             if busq_bi:
                 _b = busq_bi.upper()
                 _mask_bi = (
@@ -902,7 +902,7 @@ def main():
             )
 
             # --- TABLA DE INCIDENCIAS ---
-            df_incidencias_tabla_bi = df_bi_display[df_bi_display["INCIDENCIAS"].astype(str).str.strip() != ""]
+            df_incidencias_tabla_bi = df_bi_display[~df_bi_display["INCIDENCIAS"].astype(str).str.strip().str.upper().isin(["", "OK"])]
             with st.expander(f"INCIDENCIAS REGISTRADAS ({len(df_incidencias_tabla_bi)})", expanded=False):
                 if not df_incidencias_tabla_bi.empty:
                     cols_inc_bi = [c for c in ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "FLETERA", "INCIDENCIAS",
