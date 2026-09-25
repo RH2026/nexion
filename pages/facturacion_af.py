@@ -1432,9 +1432,10 @@ def main():
 
             tz_gdl_pdf = pytz.timezone("America/Mexico_City")
             nombre_pdf_analisis = f"Reporte_Analisis_{datetime.now(tz_gdl_pdf).strftime('%Y%m%d_%H%M%S')}.pdf"
+            df_pdf_analisis = p_editado.drop(columns=[c for c in p_editado.columns if c.strip().upper() == "COSTO"])
             st.download_button(
                 label="🧾 GENERAR REPORTE PDF",
-                data=generar_reporte_pdf_analisis(p_editado, titulo_reporte="REPORTE DE ANÁLISIS DE ASIGNACIÓN LOGÍSTICA"),
+                data=generar_reporte_pdf_analisis(df_pdf_analisis, titulo_reporte="REPORTE DE ANÁLISIS DE ASIGNACIÓN LOGÍSTICA"),
                 file_name=nombre_pdf_analisis,
                 mime="application/pdf",
                 use_container_width=True,
