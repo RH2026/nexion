@@ -1415,32 +1415,36 @@ def main():
             
             p_editado = st.data_editor(p, use_container_width=True, hide_index=True, key="editor_final_github")
             
-            if st.button("FIJAR CAMBIOS Y ACUMULAR EN ENVIOS", use_container_width=True, type="primary"):
-                actualizar_historial_envios_github(p_editado)
-                st.toast("¡Sincronizado en envios.csv!", icon="✅")
+            col_b1, col_b2, col_b3 = st.columns(3, gap="small")
 
-            st.write("")
+            with col_b1:
+                if st.button("FIJAR CAMBIOS Y ACUMULAR EN ENVIOS", use_container_width=True, type="primary"):
+                    actualizar_historial_envios_github(p_editado)
+                    st.toast("¡Sincronizado en envios.csv!", icon="✅")
+
             output_xlsx = io.BytesIO()
             p_editado.to_excel(output_xlsx, index=False, engine='openpyxl')
-            st.download_button(
-                label="DESCARGAR ANÁLISIS FINAL", 
-                data=output_xlsx.getvalue(), 
-                file_name="Analisis_Final.xlsx", 
-                use_container_width=True,
-                type="primary" 
-            )
+            with col_b2:
+                st.download_button(
+                    label="DESCARGAR ANÁLISIS FINAL", 
+                    data=output_xlsx.getvalue(), 
+                    file_name="Analisis_Final.xlsx", 
+                    use_container_width=True,
+                    type="primary" 
+                )
 
             tz_gdl_pdf = pytz.timezone("America/Mexico_City")
             nombre_pdf_analisis = f"Reporte_Analisis_{datetime.now(tz_gdl_pdf).strftime('%Y%m%d_%H%M%S')}.pdf"
             df_pdf_analisis = p_editado.drop(columns=[c for c in p_editado.columns if c.strip().upper() == "COSTO"])
-            st.download_button(
-                label="🧾 GENERAR REPORTE PDF",
-                data=generar_reporte_pdf_analisis(df_pdf_analisis, titulo_reporte="REPORTE DE ANÁLISIS DE ASIGNACIÓN LOGÍSTICA"),
-                file_name=nombre_pdf_analisis,
-                mime="application/pdf",
-                use_container_width=True,
-                type="primary"
-            )
+            with col_b3:
+                st.download_button(
+                    label="🧾 GENERAR REPORTE PDF",
+                    data=generar_reporte_pdf_analisis(df_pdf_analisis, titulo_reporte="REPORTE DE ANÁLISIS DE ASIGNACIÓN LOGÍSTICA"),
+                    file_name=nombre_pdf_analisis,
+                    mime="application/pdf",
+                    use_container_width=True,
+                    type="primary"
+                )
 
             with st.expander("SISTEMA DE SELLADO", expanded=False):
                 cx, cy = st.columns(2)
