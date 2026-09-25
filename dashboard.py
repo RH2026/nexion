@@ -692,7 +692,7 @@ def main():
                         x="Destino",
                         y="Cantidad",
                         text_auto=True,
-                        color_discrete_sequence=["#38bdf8"],
+                        color_discrete_sequence=["#FFD166"],
                     )
                     fig_donita3.update_traces(textfont=dict(color="#E8EEF2", size=11), textposition="outside")
                     fig_donita3.update_layout(**config_layout, xaxis_title=None, yaxis_title=None)
