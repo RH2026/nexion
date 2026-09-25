@@ -778,11 +778,11 @@ def main():
                 )
 
             # === GRUPO 1: COMPARATIVO POR FLETERA (ingreso vs. costo, lado a lado) ===
-            _seccion_bi("🚚", "GRUPO 1 · COMPARATIVO POR FLETERA — INGRESO VS. COSTO", "#38bdf8")
+            _seccion_bi("", "GRUPO 1 · COMPARATIVO POR FLETERA — INGRESO VS. COSTO", "#38bdf8")
             bg1, bg2 = st.columns(2)
 
             with bg1:
-                st.markdown("<div class='donut-section-title-s'>💰 FACTURACIÓN GENERADA POR FLETERA</div>", unsafe_allow_html=True)
+                st.markdown("<div class='donut-section-title-s'>FACTURACIÓN GENERADA POR FLETERA</div>", unsafe_allow_html=True)
                 df_fact_fletera = df_bi_f.groupby("FLETERA", as_index=False)["FACTURACION"].sum()
                 df_fact_fletera = df_fact_fletera[df_fact_fletera["FLETERA"] != ""].sort_values("FACTURACION", ascending=False).head(8)
                 if not df_fact_fletera.empty:
@@ -794,7 +794,7 @@ def main():
                     st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos para graficar</div>", unsafe_allow_html=True)
 
             with bg2:
-                st.markdown("<div class='donut-section-title-s'>🧾 COSTO OPERATIVO POR FLETERA (GUÍA + ADICIONALES)</div>", unsafe_allow_html=True)
+                st.markdown("<div class='donut-section-title-s'>COSTO OPERATIVO POR FLETERA (GUÍA + ADICIONALES)</div>", unsafe_allow_html=True)
                 df_bi_f["_costo_total_envio_bi"] = df_bi_f["COSTO DE LA GUÍA"] + df_bi_f["COSTOS ADICIONALES"]
                 df_costo_fletera_bi = df_bi_f.groupby("FLETERA", as_index=False)["_costo_total_envio_bi"].sum()
                 df_costo_fletera_bi = df_costo_fletera_bi[df_costo_fletera_bi["FLETERA"] != ""].sort_values("_costo_total_envio_bi", ascending=False).head(8)
@@ -811,7 +811,7 @@ def main():
             bg3, bg4 = st.columns(2)
 
             with bg3:
-                st.markdown("<div class='donut-section-title-s'>🏆 TOP 10 CLIENTES POR FACTURACIÓN</div>", unsafe_allow_html=True)
+                st.markdown("<div class='donut-section-title-s'>TOP 10 CLIENTES POR FACTURACIÓN</div>", unsafe_allow_html=True)
                 df_top_clientes_bi = df_bi_f.groupby("NOMBRE DEL CLIENTE", as_index=False)["FACTURACION"].sum()
                 df_top_clientes_bi = df_top_clientes_bi[df_top_clientes_bi["NOMBRE DEL CLIENTE"] != ""].sort_values("FACTURACION", ascending=False).head(10)
                 if not df_top_clientes_bi.empty:
@@ -823,7 +823,7 @@ def main():
                     st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos para graficar</div>", unsafe_allow_html=True)
 
             with bg4:
-                st.markdown("<div class='donut-section-title-s'>📦 DISTRIBUCIÓN POR FORMA DE ENVÍO</div>", unsafe_allow_html=True)
+                st.markdown("<div class='donut-section-title-s'>DISTRIBUCIÓN POR FORMA DE ENVÍO</div>", unsafe_allow_html=True)
                 df_envio_counts = df_bi_f[df_bi_f["FORMA DE ENVIO"] != ""]["FORMA DE ENVIO"].value_counts().reset_index()
                 df_envio_counts.columns = ["Forma", "Cantidad"]
                 if not df_envio_counts.empty:
@@ -881,7 +881,7 @@ def main():
 
             # --- TABLA DE INCIDENCIAS ---
             df_incidencias_tabla_bi = df_bi_display[df_bi_display["INCIDENCIAS"].astype(str).str.strip() != ""]
-            with st.expander(f"⚠️ INCIDENCIAS REGISTRADAS ({len(df_incidencias_tabla_bi)})", expanded=False):
+            with st.expander(f"INCIDENCIAS REGISTRADAS ({len(df_incidencias_tabla_bi)})", expanded=False):
                 if not df_incidencias_tabla_bi.empty:
                     cols_inc_bi = [c for c in ["NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "FLETERA", "INCIDENCIAS",
                                                 "TRIGGER", "CONCEPTO", "COMENTARIOS"] if c in df_incidencias_tabla_bi.columns]
