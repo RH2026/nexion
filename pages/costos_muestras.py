@@ -222,7 +222,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                grafico_horizontal(por_solicitante, "#ADBFC7", alto=420)
+                grafico_horizontal(por_solicitante, "#A4B7C0", alto=420)
 
             with sub_g3:
                 st.markdown(
@@ -279,7 +279,7 @@ def main():
                 serie_prod = pd.Series(cantidades_prod, dtype="float64").sort_values(ascending=False).head(10)
                 serie_prod = serie_prod[serie_prod > 0]
                 serie_prod.index = [i[:35].upper() for i in serie_prod.index]
-                grafico_horizontal(serie_prod, "#00D4FF", alto=420)
+                grafico_horizontal(serie_prod, "#A4B7C0", alto=420)
 
     # ============================================================
     # TAB 1 — HISTORIAL Y REPORTES (costos y envíos por solicitante)
