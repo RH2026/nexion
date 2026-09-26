@@ -576,7 +576,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}2"):
-                            if permisos.get("REPORTES", False) or usuario.upper() == "RIGOBERTO":
+                            if permisos.get("REPORTES", False) and (permisos.get(s, False) or usuario.upper() == "RIGOBERTO"):
                                 registrar_acceso_github(usuario, f"REPORTES - {s}")
                                 st.session_state.menu_main = "REPORTES"
                                 st.session_state.menu_sub = s
@@ -598,7 +598,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                     for s in opciones_for:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_for_{s}2"):
-                            if permisos.get("FORMATOS", False) or usuario.upper() == "RIGOBERTO":
+                            if permisos.get("FORMATOS", False) and (permisos.get(s, False) or usuario.upper() == "RIGOBERTO"):
                                 registrar_acceso_github(usuario, f"FORMATOS - {s}")
                                 st.session_state.menu_main = "FORMATOS"
                                 st.session_state.menu_sub = s
