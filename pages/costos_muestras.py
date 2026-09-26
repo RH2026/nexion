@@ -2,6 +2,7 @@ import io
 import time
 from datetime import date
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
@@ -61,6 +62,46 @@ def main():
             """,
             unsafe_allow_html=True,
         )
+
+    def grafico_horizontal(serie, color, alto=420):
+        """Gráfica de barras HORIZONTAL: las categorías (nombres) se leen
+        de corrido en el eje vertical, sin rotar ni amontonarse abajo."""
+        if serie is None or serie.empty:
+            st.caption("Sin datos suficientes para graficar en este periodo.")
+            return
+        df_chart = serie.reset_index()
+        df_chart.columns = ["categoria", "valor"]
+        chart = (
+            alt.Chart(df_chart)
+            .mark_bar(color=color, cornerRadiusTopRight=4, cornerRadiusBottomRight=4)
+            .encode(
+                x=alt.X("valor:Q", title=None),
+                y=alt.Y("categoria:N", sort="-x", title=None, axis=alt.Axis(labelLimit=280, labelFontSize=11)),
+                tooltip=[alt.Tooltip("categoria:N", title=""), alt.Tooltip("valor:Q", title="Valor", format=",.0f")],
+            )
+            .properties(height=alto)
+        )
+        st.altair_chart(chart, use_container_width=True, theme="streamlit")
+
+    def grafico_vertical(serie, color, alto=380):
+        """Gráfica de barras VERTICAL con las etiquetas del eje X
+        SIEMPRE horizontales (labelAngle=0), sin quedar 'paradas'."""
+        if serie is None or serie.empty:
+            st.caption("Sin datos suficientes para graficar.")
+            return
+        df_chart = serie.reset_index()
+        df_chart.columns = ["categoria", "valor"]
+        chart = (
+            alt.Chart(df_chart)
+            .mark_bar(color=color, cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
+            .encode(
+                x=alt.X("categoria:N", title=None, sort=None, axis=alt.Axis(labelAngle=0, labelFontSize=11)),
+                y=alt.Y("valor:Q", title=None),
+                tooltip=[alt.Tooltip("categoria:N", title=""), alt.Tooltip("valor:Q", title="Valor", format=",.0f")],
+            )
+            .properties(height=alto)
+        )
+        st.altair_chart(chart, use_container_width=True, theme="streamlit")
 
     # ============================================================
     # ORDEN DE PESTAÑAS: 0) Indicadores  1) Historial y Reportes
@@ -163,7 +204,7 @@ def main():
                     df_validas['COSTO_INVERSION'] = df_validas['COSTO_TOTAL'] + df_validas['COSTO_GUIA']
                     trend = df_validas.groupby('MES_PERIOD')['COSTO_INVERSION'].sum().sort_index()
                     trend.index = trend.index.strftime('%m - %Y')
-                    st.bar_chart(trend, color="#00FFAA", height=420)
+                    grafico_vertical(trend, "#00FFAA", alto=420)
                 else:
                     st.caption("Sin fechas válidas para graficar la tendencia.")
 
@@ -178,7 +219,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(por_solicitante, color="#38bdf8", height=420)
+                grafico_horizontal(por_solicitante, "#38bdf8", alto=420)
 
             with sub_g3:
                 st.markdown(
@@ -192,7 +233,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(costo_por_solicitante, color="#a855f7", height=420)
+                grafico_horizontal(costo_por_solicitante, "#a855f7", alto=420)
 
             with sub_g4:
                 st.markdown(
@@ -205,7 +246,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(top_destinos, color="#FFD700", height=420)
+                grafico_horizontal(top_destinos, "#FFD700", alto=420)
 
             with sub_g5:
                 st.markdown(
@@ -221,7 +262,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(costo_flete_paq, color="#FF6B6B", height=420)
+                grafico_horizontal(costo_flete_paq, "#FF6B6B", alto=420)
 
             with sub_g6:
                 st.markdown(
@@ -232,16 +273,10 @@ def main():
                 for p in precios.keys():
                     if p in df_kpi.columns:
                         cantidades_prod[p] = pd.to_numeric(df_kpi[p], errors='coerce').fillna(0).sum()
-                if cantidades_prod:
-                    serie_prod = pd.Series(cantidades_prod).sort_values(ascending=False).head(10)
-                    serie_prod = serie_prod[serie_prod > 0]
-                    if not serie_prod.empty:
-                        serie_prod.index = [i[:35].upper() for i in serie_prod.index]
-                        st.bar_chart(serie_prod, color="#00D4FF", height=420)
-                    else:
-                        st.caption("Sin productos con cantidad registrada en este periodo.")
-                else:
-                    st.caption("Sin productos con cantidad registrada en este periodo.")
+                serie_prod = pd.Series(cantidades_prod, dtype="float64").sort_values(ascending=False).head(10)
+                serie_prod = serie_prod[serie_prod > 0]
+                serie_prod.index = [i[:35].upper() for i in serie_prod.index]
+                grafico_horizontal(serie_prod, "#00D4FF", alto=420)
 
     # ============================================================
     # TAB 1 — HISTORIAL Y REPORTES (costos y envíos por solicitante)
