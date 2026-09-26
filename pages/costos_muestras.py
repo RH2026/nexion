@@ -50,6 +50,18 @@ def main():
                 else:
                     df_actual[col] = 0.0
 
+    def subtitulo_pestana(texto):
+        st.markdown(
+            f"""
+            <div style='padding: 6px 0 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px;'>
+                <span style='color:#FFFFFF; font-size:13px; font-weight:800; letter-spacing:2.5px; text-transform:uppercase;'>
+                    DASHBOARD EJECUTIVO // {texto}
+                </span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     # ============================================================
     # ORDEN DE PESTAÑAS: 0) Indicadores  1) Historial y Reportes
     #                    2) Gestionar Folios  3) Edición
@@ -60,6 +72,7 @@ def main():
     # TAB 0 — INDICADORES (dashboard visual con filtro mensual)
     # ============================================================
     with t0:
+        subtitulo_pestana("KPI DE SURTIDO Y ENVÍOS")
         if df_actual.empty:
             st.info("No hay registros todavía para generar indicadores.")
         else:
@@ -107,45 +120,23 @@ def main():
                     <div style="color:{color}; font-size:20px; font-weight:900; font-family:monospace;">{valor}</div>
                 </div>"""
 
-            no_surtidos = total_folios - despachados
+            k1, k2, k3, k4, k5 = st.columns(5)
+            k1.markdown(tarjeta_kpi("TOTAL DE ENVÍOS", f"{total_folios}"), unsafe_allow_html=True)
+            k2.markdown(tarjeta_kpi("COSTO PRODUCTOS", f"${costo_prod_total:,.0f}", "#38bdf8"), unsafe_allow_html=True)
+            k3.markdown(tarjeta_kpi("COSTO FLETES", f"${costo_flete_total:,.0f}", "#a855f7"), unsafe_allow_html=True)
+            k4.markdown(tarjeta_kpi("INVERSIÓN TOTAL", f"${costo_general:,.0f}", "#00FFAA"), unsafe_allow_html=True)
+            k5.markdown(tarjeta_kpi("% DESPACHADO", f"{pct_despachado:,.0f}%", "#FFD700"), unsafe_allow_html=True)
+
+            st.write("")
+            k6, k7 = st.columns(2)
+            k6.markdown(tarjeta_kpi("COSTO PROMEDIO / ENVÍO", f"${costo_promedio:,.0f}", "#FFA500"), unsafe_allow_html=True)
             if total_folios:
                 top_solicitante_nombre = (
                     df_kpi.groupby(df_kpi['SOLICITO'].astype(str).str.upper())['FOLIO'].count().idxmax()
                 )
             else:
                 top_solicitante_nombre = "SIN DATOS"
-
-            # --------------------------------------------------
-            # SUBTÍTULO: INDICADORES DE ENVÍOS
-            # --------------------------------------------------
-            st.markdown(
-                "<p style='color:#00D4FF; font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px;'>📦 Indicadores de Envíos</p>",
-                unsafe_allow_html=True,
-            )
-            k1, k2, k3 = st.columns(3)
-            k1.markdown(tarjeta_kpi("TOTAL DE ENVÍOS", f"{total_folios}"), unsafe_allow_html=True)
-            k2.markdown(tarjeta_kpi("COSTO PRODUCTOS", f"${costo_prod_total:,.0f}", "#38bdf8"), unsafe_allow_html=True)
-            k3.markdown(tarjeta_kpi("COSTO FLETES", f"${costo_flete_total:,.0f}", "#a855f7"), unsafe_allow_html=True)
-
-            st.write("")
-            k4, k5, k6 = st.columns(3)
-            k4.markdown(tarjeta_kpi("INVERSIÓN TOTAL", f"${costo_general:,.0f}", "#00FFAA"), unsafe_allow_html=True)
-            k5.markdown(tarjeta_kpi("COSTO PROMEDIO / ENVÍO", f"${costo_promedio:,.0f}", "#FFA500"), unsafe_allow_html=True)
-            k6.markdown(tarjeta_kpi("AGENTE CON MÁS ENVÍOS", top_solicitante_nombre[:24], "#FF6B6B"), unsafe_allow_html=True)
-
-            st.write("")
-
-            # --------------------------------------------------
-            # SUBTÍTULO: INDICADORES DE SURTIDO
-            # --------------------------------------------------
-            st.markdown(
-                "<p style='color:#00D4FF; font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px;'>✅ Indicadores de Surtido</p>",
-                unsafe_allow_html=True,
-            )
-            s1, s2, s3 = st.columns(3)
-            s1.markdown(tarjeta_kpi("DESPACHADOS", f"{despachados}", "#00FFAA"), unsafe_allow_html=True)
-            s2.markdown(tarjeta_kpi("NO SURTIDOS", f"{no_surtidos}", "#FF4444"), unsafe_allow_html=True)
-            s3.markdown(tarjeta_kpi("% DESPACHADO", f"{pct_despachado:,.0f}%", "#FFD700"), unsafe_allow_html=True)
+            k7.markdown(tarjeta_kpi("AGENTE CON MÁS ENVÍOS", top_solicitante_nombre[:24], "#FF6B6B"), unsafe_allow_html=True)
 
             st.divider()
 
@@ -252,6 +243,7 @@ def main():
     # TAB 1 — HISTORIAL Y REPORTES (costos y envíos por solicitante)
     # ============================================================
     with t1:
+        subtitulo_pestana("HISTORIAL Y REPORTES DE COSTOS")
         if not df_actual.empty:
             st.write("")
             df_actual['FECHA'] = df_actual['FECHA'].astype(str).str.strip()
@@ -429,6 +421,7 @@ def main():
     # TAB 2 — GESTIONAR FOLIOS EXISTENTES (guías, flete, reimpresión)
     # ============================================================
     with t2:
+        subtitulo_pestana("GESTIÓN DE FOLIOS Y GUÍAS")
         contenedor_aviso = st.empty()
         if not df_actual.empty:
             st.markdown("""
@@ -708,6 +701,7 @@ def main():
     # TAB 3 — EDICIÓN TOTAL DE MATRIZ DE MUESTRAS
     # ============================================================
     with t3:
+        subtitulo_pestana("EDICIÓN DE REGISTROS")
         st.markdown("### EDICIÓN TOTAL DE MATRIZ DE MUESTRAS")
         st.info("Modifica cualquier registro de la base de datos de manera directa. Los cambios se sincronizarán y actualizarán en GitHub al guardar.")
 
