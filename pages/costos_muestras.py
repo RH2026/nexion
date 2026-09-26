@@ -62,10 +62,180 @@ def main():
     )
 
     # ============================================================
-    # ORDEN DE PESTAÑAS: 1) Historial y Reportes  2) Gestionar Folios
-    #                    3) Edición
+    # ORDEN DE PESTAÑAS: 0) Indicadores  1) Historial y Reportes
+    #                    2) Gestionar Folios  3) Edición
     # ============================================================
-    t1, t2, t3 = st.tabs(["Historial y Reportes", "Gestionar Folios / Guías", "Edición"])
+    t0, t1, t2, t3 = st.tabs(["📊 Indicadores", "Historial y Reportes", "Gestionar Folios / Guías", "Edición"])
+
+    # ============================================================
+    # TAB 0 — INDICADORES (dashboard visual con filtro mensual)
+    # ============================================================
+    with t0:
+        if df_actual.empty:
+            st.info("No hay registros todavía para generar indicadores.")
+        else:
+            df_ind = df_actual.copy()
+            df_ind['FECHA'] = df_ind['FECHA'].astype(str).str.strip()
+            df_ind['FECHA_DT'] = pd.to_datetime(df_ind['FECHA'], format='%Y-%m-%d', errors='coerce')
+            df_ind['FECHA_DT'] = df_ind['FECHA_DT'].fillna(
+                pd.to_datetime(df_ind['FECHA'], dayfirst=True, errors='coerce')
+            )
+            df_ind['MES_FILTRO'] = df_ind['FECHA_DT'].dt.strftime('%m - %Y').fillna("SIN FECHA")
+            df_ind['COSTO_TOTAL'] = pd.to_numeric(df_ind.get('COSTO_TOTAL', 0), errors='coerce').fillna(0)
+            df_ind['COSTO_GUIA'] = pd.to_numeric(df_ind.get('COSTO_GUIA', 0), errors='coerce').fillna(0)
+
+            meses_ind = sorted([m for m in df_ind['MES_FILTRO'].unique() if m != "SIN FECHA"], reverse=True)
+            if "SIN FECHA" in df_ind['MES_FILTRO'].values:
+                meses_ind.append("SIN FECHA")
+
+            col_fi1, col_fi2 = st.columns([1.5, 2.5])
+            mes_ind_sel = col_fi1.selectbox(
+                ":material/calendar_month: FILTRAR PERIODO",
+                ["MOSTRAR TODO"] + meses_ind,
+                key="mes_indicadores"
+            )
+
+            if mes_ind_sel != "MOSTRAR TODO":
+                df_kpi = df_ind[df_ind['MES_FILTRO'] == mes_ind_sel].copy()
+            else:
+                df_kpi = df_ind.copy()
+
+            # --------------------------------------------------
+            # KPIs PRINCIPALES
+            # --------------------------------------------------
+            total_folios = len(df_kpi)
+            costo_prod_total = df_kpi['COSTO_TOTAL'].sum()
+            costo_flete_total = df_kpi['COSTO_GUIA'].sum()
+            costo_general = costo_prod_total + costo_flete_total
+            costo_promedio = (costo_general / total_folios) if total_folios else 0
+            despachados = (df_kpi['ESTATUS'].astype(str).str.upper() == "DESPACHADO").sum()
+            pct_despachado = (despachados / total_folios * 100) if total_folios else 0
+
+            def tarjeta_kpi(titulo, valor, color="#00D4FF"):
+                return f"""
+                <div style="background:#263238; border:1px solid rgba(255,255,255,0.05); border-top:3px solid {color}; border-radius:10px; padding:16px 12px; text-align:center; height:100%;">
+                    <div style="color:rgba(255,255,255,0.5); font-size:9px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; margin-bottom:8px;">{titulo}</div>
+                    <div style="color:{color}; font-size:20px; font-weight:900; font-family:monospace;">{valor}</div>
+                </div>"""
+
+            k1, k2, k3, k4, k5 = st.columns(5)
+            k1.markdown(tarjeta_kpi("TOTAL DE ENVÍOS", f"{total_folios}"), unsafe_allow_html=True)
+            k2.markdown(tarjeta_kpi("COSTO PRODUCTOS", f"${costo_prod_total:,.0f}", "#38bdf8"), unsafe_allow_html=True)
+            k3.markdown(tarjeta_kpi("COSTO FLETES", f"${costo_flete_total:,.0f}", "#a855f7"), unsafe_allow_html=True)
+            k4.markdown(tarjeta_kpi("INVERSIÓN TOTAL", f"${costo_general:,.0f}", "#00FFAA"), unsafe_allow_html=True)
+            k5.markdown(tarjeta_kpi("% DESPACHADO", f"{pct_despachado:,.0f}%", "#FFD700"), unsafe_allow_html=True)
+
+            st.write("")
+            k6, k7 = st.columns(2)
+            k6.markdown(tarjeta_kpi("COSTO PROMEDIO / ENVÍO", f"${costo_promedio:,.0f}", "#FFA500"), unsafe_allow_html=True)
+            if total_folios:
+                top_solicitante_nombre = (
+                    df_kpi.groupby(df_kpi['SOLICITO'].astype(str).str.upper())['FOLIO'].count().idxmax()
+                )
+            else:
+                top_solicitante_nombre = "SIN DATOS"
+            k7.markdown(tarjeta_kpi("AGENTE CON MÁS ENVÍOS", top_solicitante_nombre[:24], "#FF6B6B"), unsafe_allow_html=True)
+
+            st.divider()
+
+            # --------------------------------------------------
+            # TENDENCIA: COSTO TOTAL POR MES (histórico completo)
+            # --------------------------------------------------
+            st.markdown(
+                "<p style='color:#00FFAA; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>📈 Costo Total por Mes (histórico)</p>",
+                unsafe_allow_html=True,
+            )
+            df_validas = df_ind.dropna(subset=['FECHA_DT']).copy()
+            if not df_validas.empty:
+                df_validas['MES_PERIOD'] = df_validas['FECHA_DT'].dt.to_period('M')
+                df_validas['COSTO_INVERSION'] = df_validas['COSTO_TOTAL'] + df_validas['COSTO_GUIA']
+                trend = df_validas.groupby('MES_PERIOD')['COSTO_INVERSION'].sum().sort_index()
+                trend.index = trend.index.strftime('%m - %Y')
+                st.bar_chart(trend)
+            else:
+                st.caption("Sin fechas válidas para graficar la tendencia.")
+
+            col_g1, col_g2 = st.columns(2)
+
+            with col_g1:
+                st.markdown(
+                    "<p style='color:#38bdf8; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>👤 Envíos por Solicitante / Agente</p>",
+                    unsafe_allow_html=True,
+                )
+                por_solicitante = (
+                    df_kpi.groupby(df_kpi['SOLICITO'].astype(str).str.upper())['FOLIO']
+                    .count()
+                    .sort_values(ascending=False)
+                    .head(10)
+                )
+                st.bar_chart(por_solicitante)
+
+            with col_g2:
+                st.markdown(
+                    "<p style='color:#a855f7; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>💰 Costo por Solicitante / Agente</p>",
+                    unsafe_allow_html=True,
+                )
+                costo_por_solicitante = (
+                    df_kpi.assign(COSTO_INVERSION=df_kpi['COSTO_TOTAL'] + df_kpi['COSTO_GUIA'])
+                    .groupby(df_kpi['SOLICITO'].astype(str).str.upper())['COSTO_INVERSION']
+                    .sum()
+                    .sort_values(ascending=False)
+                    .head(10)
+                )
+                st.bar_chart(costo_por_solicitante)
+
+            col_g3, col_g4 = st.columns(2)
+
+            with col_g3:
+                st.markdown(
+                    "<p style='color:#FFD700; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>🏨 Top Destinos / Hoteles</p>",
+                    unsafe_allow_html=True,
+                )
+                top_destinos = (
+                    df_kpi.groupby(df_kpi['NOMBRE DEL HOTEL'].astype(str).str.upper())['FOLIO']
+                    .count()
+                    .sort_values(ascending=False)
+                    .head(10)
+                )
+                st.bar_chart(top_destinos)
+
+            with col_g4:
+                st.markdown(
+                    "<p style='color:#FF6B6B; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>🚚 Costo de Flete por Paquetería</p>",
+                    unsafe_allow_html=True,
+                )
+                col_paq = 'PAQUETERIA_NOMBRE' if 'PAQUETERIA_NOMBRE' in df_kpi.columns else 'PAQUETERIA'
+                df_paq = df_kpi.copy()
+                df_paq[col_paq] = df_paq[col_paq].replace('', 'SIN ASIGNAR').fillna('SIN ASIGNAR')
+                costo_flete_paq = (
+                    df_paq.groupby(df_paq[col_paq].astype(str).str.upper())['COSTO_GUIA']
+                    .sum()
+                    .sort_values(ascending=False)
+                    .head(10)
+                )
+                st.bar_chart(costo_flete_paq)
+
+            st.divider()
+
+            # --------------------------------------------------
+            # PRODUCTOS MÁS SOLICITADOS (por piezas)
+            # --------------------------------------------------
+            st.markdown(
+                "<p style='color:#00D4FF; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>📦 Productos Más Solicitados (piezas)</p>",
+                unsafe_allow_html=True,
+            )
+            cantidades_prod = {}
+            for p in precios.keys():
+                if p in df_kpi.columns:
+                    cantidades_prod[p] = pd.to_numeric(df_kpi[p], errors='coerce').fillna(0).sum()
+            if cantidades_prod:
+                serie_prod = pd.Series(cantidades_prod).sort_values(ascending=False).head(10)
+                serie_prod = serie_prod[serie_prod > 0]
+                if not serie_prod.empty:
+                    serie_prod.index = [i[:35].upper() for i in serie_prod.index]
+                    st.bar_chart(serie_prod)
+                else:
+                    st.caption("Sin productos con cantidad registrada en este periodo.")
 
     # ============================================================
     # TAB 1 — HISTORIAL Y REPORTES (costos y envíos por solicitante)
