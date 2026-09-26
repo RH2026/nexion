@@ -222,7 +222,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                grafico_horizontal(por_solicitante, "#38bdf8", alto=420)
+                grafico_horizontal(por_solicitante, "#ADBFC7", alto=420)
 
             with sub_g3:
                 st.markdown(
