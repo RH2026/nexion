@@ -198,7 +198,7 @@ def main():
 
             with sub_g1:
                 st.markdown(
-                    "<p style='color:#00FFAA; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo Total por Mes (histórico completo)</p>",
+                    "<p style='color:#FFD700; font-size:12px; font-weight:500; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo Total por Mes (histórico completo)</p>",
                     unsafe_allow_html=True,
                 )
                 df_validas = df_ind.dropna(subset=['FECHA_DT']).copy()
@@ -213,7 +213,7 @@ def main():
 
             with sub_g2:
                 st.markdown(
-                    "<p style='color:#38bdf8; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Envíos por Solicitante / Agente (top 10 del periodo)</p>",
+                    "<p style='color:#FFD700; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Envíos por Solicitante / Agente (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 por_solicitante = (
@@ -226,7 +226,7 @@ def main():
 
             with sub_g3:
                 st.markdown(
-                    "<p style='color:#a855f7; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo por Solicitante / Agente (top 10 del periodo)</p>",
+                    "<p style='color:#FFD700; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo por Solicitante / Agente (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 costo_por_solicitante = (
@@ -240,7 +240,7 @@ def main():
 
             with sub_g4:
                 st.markdown(
-                    "<p style='color:#FFD700; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Top Destinos / Hoteles (top 10 del periodo)</p>",
+                    "<p style='color:#FFD700; font-size:12px; font-weight:500; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Top Destinos / Hoteles (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 top_destinos = (
