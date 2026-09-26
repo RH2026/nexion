@@ -236,7 +236,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                grafico_horizontal(costo_por_solicitante, "#a855f7", alto=420)
+                grafico_horizontal(costo_por_solicitante, "#5190AF", alto=420)
 
             with sub_g4:
                 st.markdown(
@@ -265,7 +265,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                grafico_horizontal(costo_flete_paq, "#FF6B6B", alto=420)
+                grafico_horizontal(costo_flete_paq, "#5190AF", alto=420)
 
             with sub_g6:
                 st.markdown(
