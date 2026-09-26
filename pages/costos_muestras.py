@@ -207,7 +207,7 @@ def main():
                     df_validas['COSTO_INVERSION'] = df_validas['COSTO_TOTAL'] + df_validas['COSTO_GUIA']
                     trend = df_validas.groupby('MES_PERIOD')['COSTO_INVERSION'].sum().sort_index()
                     trend.index = trend.index.strftime('%m - %Y')
-                    grafico_vertical(trend, "#00FFAA", alto=420)
+                    grafico_vertical(trend, "#508592", alto=420)
                 else:
                     st.caption("Sin fechas válidas para graficar la tendencia.")
 
@@ -249,7 +249,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                grafico_horizontal(top_destinos, "#FFD700", alto=420)
+                grafico_horizontal(top_destinos, "#508592", alto=420)
 
             with sub_g5:
                 st.markdown(
