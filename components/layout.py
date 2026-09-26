@@ -589,7 +589,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
             
                 if permisos.get("FORMATOS", False) or usuario.upper() == "RIGOBERTO":
                     with st.expander("FORMATOS", expanded=(st.session_state.menu_main == "FORMATOS")):
-                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES"]
+                        opciones_for = ["SALIDA DE PT", "CHECK LIST AGC", "QR AGC", "PREGUIA PAQMEX", "RECOLECCION 3G", "RECOLECCION ONE", "CARTA RECLAMO", "COTIZACIONES", "ENVIO DE MUESTRAS"]  # <-- agregado aquí
                         
                         for s in opciones_for:
                             label = f"» {s}" if st.session_state.menu_sub == s else s
@@ -610,6 +610,8 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                     st.switch_page("pages/recoleccion_3g.py")
                                 elif s == "COTIZACIONES":
                                     st.switch_page("pages/cotizaciones.py")
+                                elif s == "ENVIO DE MUESTRAS":                    # <-- agregado aquí
+                                    st.switch_page("pages/muestras.py")           # <-- y aquí
                                 else:
                                     st.toast(f"Módulo {s} en desarrollo...", icon="🚧")
                                     st.rerun()
