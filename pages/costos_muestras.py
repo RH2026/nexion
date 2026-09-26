@@ -157,10 +157,10 @@ def main():
 
             def tarjeta_kpi(titulo, valor, color="#00D4FF"):
                 return f"""
-                <div style="background:#263238; border:1px solid rgba(255,255,255,0.05); border-top:0px solid {color}; border-radius:10px; padding:16px 12px; text-align:center; height:110%;">
+                <div style="background:#263238; border:1px solid rgba(255,255,255,0.05); border-top:0px solid {color}; border-radius:10px; padding:16px 12px; text-align:center; min-height:110px; box-sizing:border-box;">
                     <div style="color:rgba(255,255,255,0.5); font-size:9px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; margin-bottom:8px;">{titulo}</div>
                     <div style="color:{color}; font-size:20px; font-weight:900; font-family:monospace;">{valor}</div>
-                </div>"""
+                </div>""""
 
             if total_folios:
                 top_solicitante_nombre = (
