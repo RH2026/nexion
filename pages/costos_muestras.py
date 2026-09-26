@@ -213,7 +213,7 @@ def main():
 
             with sub_g2:
                 st.markdown(
-                    "<p style='color:#FFD700; font-size:12px; font-weight:300; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Envíos por Solicitante / Agente (top 10 del periodo)</p>",
+                    "<p style='color:#FFD700; font-size:12px; font-weight:500; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Envíos por Solicitante / Agente (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 por_solicitante = (
@@ -226,7 +226,7 @@ def main():
 
             with sub_g3:
                 st.markdown(
-                    "<p style='color:#FFD700; font-size:12px; font-weight:300; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo por Solicitante / Agente (top 10 del periodo)</p>",
+                    "<p style='color:#FFD700; font-size:12px; font-weight:500; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo por Solicitante / Agente (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 costo_por_solicitante = (
@@ -240,7 +240,7 @@ def main():
 
             with sub_g4:
                 st.markdown(
-                    "<p style='color:#FFD700; font-size:12px; font-weight:300; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Top Destinos / Hoteles (top 10 del periodo)</p>",
+                    "<p style='color:#FFD700; font-size:12px; font-weight:500; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Top Destinos / Hoteles (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 top_destinos = (
@@ -253,7 +253,7 @@ def main():
 
             with sub_g5:
                 st.markdown(
-                    "<p style='color:#FFD700; font-size:12px; font-weight:300 letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo de Flete por Paquetería (top 10 del periodo)</p>",
+                    "<p style='color:#FFD700; font-size:12px; font-weight:500 letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo de Flete por Paquetería (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 col_paq = 'PAQUETERIA_NOMBRE' if 'PAQUETERIA_NOMBRE' in df_kpi.columns else 'PAQUETERIA'
@@ -269,7 +269,7 @@ def main():
 
             with sub_g6:
                 st.markdown(
-                    "<p style='color:#FFD700; font-size:12px; font-weight:300; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Productos Más Solicitados (piezas, periodo filtrado)</p>",
+                    "<p style='color:#FFD700; font-size:12px; font-weight:500; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Productos Más Solicitados (piezas, periodo filtrado)</p>",
                     unsafe_allow_html=True,
                 )
                 cantidades_prod = {}
