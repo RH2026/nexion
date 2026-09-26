@@ -125,6 +125,23 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
         }}
     }}
     
+    /* --- TOAST ESTILO TARJETA (MÓDULO BLOQUEADO) --- */
+    div[data-testid="stToast"] {{
+        background-color: {vars_css['card']} !important;
+        border: 1px solid {vars_css['border']} !important;
+        border-left: 5px solid #FF4B4B !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.35) !important;
+    }}
+    
+    div[data-testid="stToast"] p {{
+        color: #FFFFFF !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.5px !important;
+        text-transform: uppercase !important;
+        font-size: 12px !important;
+    }}
+    
     /* ===================== TABS - ESTILO NEXION (IGUAL A TÍTULOS DINÁMICOS) ===================== */
     
     /* CONTENEDOR DE LAS PESTAÑAS */
@@ -519,7 +536,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                 # sea idéntico en toda la app: el menú siempre se ve completo,
                 # y solo al hacer click se avisa si no hay permiso (sin redirigir).
                 def _sin_acceso(nombre):
-                    st.warning(f"Sin acceso a: {nombre}", icon="🔒")
+                    st.toast(f"MÓDULO BLOQUEADO", icon="🔒")
 
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     if permisos.get("DASHBOARD", False) or usuario.upper() == "RIGOBERTO":
