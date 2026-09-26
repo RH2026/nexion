@@ -141,27 +141,35 @@ def main():
             st.divider()
 
             # --------------------------------------------------
-            # TENDENCIA: COSTO TOTAL POR MES (histórico completo)
+            # GRÁFICAS EN SUB-PESTAÑAS (evita el scroll infinito)
             # --------------------------------------------------
-            st.markdown(
-                "<p style='color:#00FFAA; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>📈 Costo Total por Mes (histórico)</p>",
-                unsafe_allow_html=True,
-            )
-            df_validas = df_ind.dropna(subset=['FECHA_DT']).copy()
-            if not df_validas.empty:
-                df_validas['MES_PERIOD'] = df_validas['FECHA_DT'].dt.to_period('M')
-                df_validas['COSTO_INVERSION'] = df_validas['COSTO_TOTAL'] + df_validas['COSTO_GUIA']
-                trend = df_validas.groupby('MES_PERIOD')['COSTO_INVERSION'].sum().sort_index()
-                trend.index = trend.index.strftime('%m - %Y')
-                st.bar_chart(trend, color="#00FFAA")
-            else:
-                st.caption("Sin fechas válidas para graficar la tendencia.")
+            sub_g1, sub_g2, sub_g3, sub_g4, sub_g5, sub_g6 = st.tabs([
+                "📈 Tendencia Mensual",
+                "👤 Envíos por Agente",
+                "💰 Costo por Agente",
+                "🏨 Top Destinos",
+                "🚚 Flete por Paquetería",
+                "📦 Productos Top",
+            ])
 
-            col_g1, col_g2 = st.columns(2)
-
-            with col_g1:
+            with sub_g1:
                 st.markdown(
-                    "<p style='color:#38bdf8; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>👤 Envíos por Solicitante / Agente</p>",
+                    "<p style='color:#00FFAA; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo Total por Mes (histórico completo)</p>",
+                    unsafe_allow_html=True,
+                )
+                df_validas = df_ind.dropna(subset=['FECHA_DT']).copy()
+                if not df_validas.empty:
+                    df_validas['MES_PERIOD'] = df_validas['FECHA_DT'].dt.to_period('M')
+                    df_validas['COSTO_INVERSION'] = df_validas['COSTO_TOTAL'] + df_validas['COSTO_GUIA']
+                    trend = df_validas.groupby('MES_PERIOD')['COSTO_INVERSION'].sum().sort_index()
+                    trend.index = trend.index.strftime('%m - %Y')
+                    st.bar_chart(trend, color="#00FFAA", height=420)
+                else:
+                    st.caption("Sin fechas válidas para graficar la tendencia.")
+
+            with sub_g2:
+                st.markdown(
+                    "<p style='color:#38bdf8; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Envíos por Solicitante / Agente (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 por_solicitante = (
@@ -170,11 +178,11 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(por_solicitante, color="#38bdf8")
+                st.bar_chart(por_solicitante, color="#38bdf8", height=420)
 
-            with col_g2:
+            with sub_g3:
                 st.markdown(
-                    "<p style='color:#a855f7; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>💰 Costo por Solicitante / Agente</p>",
+                    "<p style='color:#a855f7; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo por Solicitante / Agente (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 costo_por_solicitante = (
@@ -184,13 +192,11 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(costo_por_solicitante, color="#a855f7")
+                st.bar_chart(costo_por_solicitante, color="#a855f7", height=420)
 
-            col_g3, col_g4 = st.columns(2)
-
-            with col_g3:
+            with sub_g4:
                 st.markdown(
-                    "<p style='color:#FFD700; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>🏨 Top Destinos / Hoteles</p>",
+                    "<p style='color:#FFD700; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Top Destinos / Hoteles (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 top_destinos = (
@@ -199,11 +205,11 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(top_destinos, color="#FFD700")
+                st.bar_chart(top_destinos, color="#FFD700", height=420)
 
-            with col_g4:
+            with sub_g5:
                 st.markdown(
-                    "<p style='color:#FF6B6B; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>🚚 Costo de Flete por Paquetería</p>",
+                    "<p style='color:#FF6B6B; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo de Flete por Paquetería (top 10 del periodo)</p>",
                     unsafe_allow_html=True,
                 )
                 col_paq = 'PAQUETERIA_NOMBRE' if 'PAQUETERIA_NOMBRE' in df_kpi.columns else 'PAQUETERIA'
@@ -215,27 +221,25 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(costo_flete_paq, color="#FF6B6B")
+                st.bar_chart(costo_flete_paq, color="#FF6B6B", height=420)
 
-            st.divider()
-
-            # --------------------------------------------------
-            # PRODUCTOS MÁS SOLICITADOS (por piezas)
-            # --------------------------------------------------
-            st.markdown(
-                "<p style='color:#00D4FF; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;'>📦 Productos Más Solicitados (piezas)</p>",
-                unsafe_allow_html=True,
-            )
-            cantidades_prod = {}
-            for p in precios.keys():
-                if p in df_kpi.columns:
-                    cantidades_prod[p] = pd.to_numeric(df_kpi[p], errors='coerce').fillna(0).sum()
-            if cantidades_prod:
-                serie_prod = pd.Series(cantidades_prod).sort_values(ascending=False).head(10)
-                serie_prod = serie_prod[serie_prod > 0]
-                if not serie_prod.empty:
-                    serie_prod.index = [i[:35].upper() for i in serie_prod.index]
-                    st.bar_chart(serie_prod, color="#00D4FF")
+            with sub_g6:
+                st.markdown(
+                    "<p style='color:#00D4FF; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Productos Más Solicitados (piezas, periodo filtrado)</p>",
+                    unsafe_allow_html=True,
+                )
+                cantidades_prod = {}
+                for p in precios.keys():
+                    if p in df_kpi.columns:
+                        cantidades_prod[p] = pd.to_numeric(df_kpi[p], errors='coerce').fillna(0).sum()
+                if cantidades_prod:
+                    serie_prod = pd.Series(cantidades_prod).sort_values(ascending=False).head(10)
+                    serie_prod = serie_prod[serie_prod > 0]
+                    if not serie_prod.empty:
+                        serie_prod.index = [i[:35].upper() for i in serie_prod.index]
+                        st.bar_chart(serie_prod, color="#00D4FF", height=420)
+                    else:
+                        st.caption("Sin productos con cantidad registrada en este periodo.")
                 else:
                     st.caption("Sin productos con cantidad registrada en este periodo.")
 
