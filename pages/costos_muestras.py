@@ -144,7 +144,8 @@ def main():
                 df_kpi = df_ind.copy()
 
             # --------------------------------------------------
-            # KPIs PRINCIPALES
+            # KPIs PRINCIPALES (cálculo, se muestran dentro de la
+            # primera sub-pestaña "🧮 KPI's")
             # --------------------------------------------------
             total_folios = len(df_kpi)
             costo_prod_total = df_kpi['COSTO_TOTAL'].sum()
@@ -161,30 +162,18 @@ def main():
                     <div style="color:{color}; font-size:20px; font-weight:900; font-family:monospace;">{valor}</div>
                 </div>"""
 
-            k1, k2, k3, k4, k5 = st.columns(5)
-            k1.markdown(tarjeta_kpi("TOTAL DE ENVÍOS", f"{total_folios}"), unsafe_allow_html=True)
-            k2.markdown(tarjeta_kpi("COSTO PRODUCTOS", f"${costo_prod_total:,.0f}", "#38bdf8"), unsafe_allow_html=True)
-            k3.markdown(tarjeta_kpi("COSTO FLETES", f"${costo_flete_total:,.0f}", "#a855f7"), unsafe_allow_html=True)
-            k4.markdown(tarjeta_kpi("INVERSIÓN TOTAL", f"${costo_general:,.0f}", "#00FFAA"), unsafe_allow_html=True)
-            k5.markdown(tarjeta_kpi("% DESPACHADO", f"{pct_despachado:,.0f}%", "#FFD700"), unsafe_allow_html=True)
-
-            st.write("")
-            k6, k7 = st.columns(2)
-            k6.markdown(tarjeta_kpi("COSTO PROMEDIO / ENVÍO", f"${costo_promedio:,.0f}", "#FFA500"), unsafe_allow_html=True)
             if total_folios:
                 top_solicitante_nombre = (
                     df_kpi.groupby(df_kpi['SOLICITO'].astype(str).str.upper())['FOLIO'].count().idxmax()
                 )
             else:
                 top_solicitante_nombre = "SIN DATOS"
-            k7.markdown(tarjeta_kpi("AGENTE CON MÁS ENVÍOS", top_solicitante_nombre[:24], "#FF6B6B"), unsafe_allow_html=True)
-
-            st.divider()
 
             # --------------------------------------------------
-            # GRÁFICAS EN SUB-PESTAÑAS (evita el scroll infinito)
+            # SUB-PESTAÑAS: KPI's + LAS 6 GRÁFICAS (evita el scroll infinito)
             # --------------------------------------------------
-            sub_g1, sub_g2, sub_g3, sub_g4, sub_g5, sub_g6 = st.tabs([
+            sub_g0, sub_g1, sub_g2, sub_g3, sub_g4, sub_g5, sub_g6 = st.tabs([
+                "🧮 KPI's",
                 "📈 Tendencia Mensual",
                 "👤 Envíos por Agente",
                 "💰 Costo por Agente",
@@ -192,6 +181,20 @@ def main():
                 "🚚 Flete por Paquetería",
                 "📦 Productos Top",
             ])
+
+            with sub_g0:
+                st.write("")
+                k1, k2, k3, k4, k5 = st.columns(5)
+                k1.markdown(tarjeta_kpi("TOTAL DE ENVÍOS", f"{total_folios}"), unsafe_allow_html=True)
+                k2.markdown(tarjeta_kpi("COSTO PRODUCTOS", f"${costo_prod_total:,.0f}", "#38bdf8"), unsafe_allow_html=True)
+                k3.markdown(tarjeta_kpi("COSTO FLETES", f"${costo_flete_total:,.0f}", "#a855f7"), unsafe_allow_html=True)
+                k4.markdown(tarjeta_kpi("INVERSIÓN TOTAL", f"${costo_general:,.0f}", "#00FFAA"), unsafe_allow_html=True)
+                k5.markdown(tarjeta_kpi("% DESPACHADO", f"{pct_despachado:,.0f}%", "#FFD700"), unsafe_allow_html=True)
+
+                st.write("")
+                k6, k7 = st.columns(2)
+                k6.markdown(tarjeta_kpi("COSTO PROMEDIO / ENVÍO", f"${costo_promedio:,.0f}", "#FFA500"), unsafe_allow_html=True)
+                k7.markdown(tarjeta_kpi("AGENTE CON MÁS ENVÍOS", top_solicitante_nombre[:24], "#FF6B6B"), unsafe_allow_html=True)
 
             with sub_g1:
                 st.markdown(
@@ -945,4 +948,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
