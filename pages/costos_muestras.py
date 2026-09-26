@@ -107,7 +107,7 @@ def main():
     # ORDEN DE PESTAÑAS: 0) Indicadores  1) Historial y Reportes
     #                    2) Gestionar Folios  3) Edición
     # ============================================================
-    t0, t1, t2, t3 = st.tabs(["📊 Indicadores", "Historial y Reportes", "Gestionar Folios / Guías", "Edición"])
+    t0, t1, t2, t3 = st.tabs(["Indicadores", "Historial y Reportes", "Gestionar Folios / Guías", "Edición"])
 
     # ============================================================
     # TAB 0 — INDICADORES (dashboard visual con filtro mensual)
@@ -173,13 +173,13 @@ def main():
             # SUB-PESTAÑAS: KPI's + LAS 6 GRÁFICAS (evita el scroll infinito)
             # --------------------------------------------------
             sub_g0, sub_g1, sub_g2, sub_g3, sub_g4, sub_g5, sub_g6 = st.tabs([
-                "🧮 KPI's",
-                "📈 Tendencia Mensual",
-                "👤 Envíos por Agente",
-                "💰 Costo por Agente",
-                "🏨 Top Destinos",
-                "🚚 Flete por Paquetería",
-                "📦 Productos Top",
+                "KPI's",
+                "Tendencia Mensual",
+                "Envíos por Agente",
+                "Costo por Agente",
+                "Top Destinos",
+                "Flete por Paquetería",
+                "Productos Top",
             ])
 
             with sub_g0:
