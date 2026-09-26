@@ -27,7 +27,7 @@ st.set_page_config(
 # ============================================================
 # 2. LLAMADA AL LAYOUT MAESTRO Y PERMISOS
 # ============================================================
-render_layout(modulo_actual="FORMATOS", submodulo_actual="MUESTRAS")
+render_layout(modulo_actual="FORMATOS", submodulo_actual="ENVIO DE MUESTRAS")
 
 # ============================================================
 # 3. ESTADO DE SESIÓN
