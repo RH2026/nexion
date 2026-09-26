@@ -519,7 +519,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                 # sea idéntico en toda la app: el menú siempre se ve completo,
                 # y solo al hacer click se avisa si no hay permiso (sin redirigir).
                 def _sin_acceso(nombre):
-                    st.warning(f"🚫 No tienes acceso a: {nombre}", icon="🔒")
+                    st.warning(f"Sin acceso a: {nombre}", icon="🔒")
 
                 if st.button("DASHBOARD", use_container_width=True, key="pop_trk"):
                     if permisos.get("DASHBOARD", False) or usuario.upper() == "RIGOBERTO":
