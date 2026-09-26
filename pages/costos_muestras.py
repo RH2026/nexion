@@ -198,7 +198,7 @@ def main():
 
             with sub_g1:
                 st.markdown(
-                    "<p style='color:#FFD700; font-size:12px; font-weight:300; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo Total por Mes (histórico completo)</p>",
+                    "<p style='color:#FFD700; font-size:12px; font-weight:500; letter-spacing:1px; text-transform:uppercase; margin:8px 0;'>Costo Total por Mes (histórico completo)</p>",
                     unsafe_allow_html=True,
                 )
                 df_validas = df_ind.dropna(subset=['FECHA_DT']).copy()
