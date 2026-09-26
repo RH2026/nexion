@@ -50,17 +50,6 @@ def main():
                 else:
                     df_actual[col] = 0.0
 
-    st.markdown(
-        """
-        <div style='background: rgba(0, 212, 255, 0.05); border: 1px solid rgba(0, 212, 255, 0.2); border-left: 4px solid #00D4FF; padding: 10px 15px; border-radius: 6px; margin: 20px 0 15px 0;'>
-            <span style='color: #00D4FF; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;'>
-                🛠 PANEL DE ADMINISTRACIÓN — COSTOS Y GESTIÓN DE MUESTRAS
-            </span>
-        </div>
-    """,
-        unsafe_allow_html=True,
-    )
-
     # ============================================================
     # ORDEN DE PESTAÑAS: 0) Indicadores  1) Historial y Reportes
     #                    2) Gestionar Folios  3) Edición
@@ -118,23 +107,45 @@ def main():
                     <div style="color:{color}; font-size:20px; font-weight:900; font-family:monospace;">{valor}</div>
                 </div>"""
 
-            k1, k2, k3, k4, k5 = st.columns(5)
-            k1.markdown(tarjeta_kpi("TOTAL DE ENVÍOS", f"{total_folios}"), unsafe_allow_html=True)
-            k2.markdown(tarjeta_kpi("COSTO PRODUCTOS", f"${costo_prod_total:,.0f}", "#38bdf8"), unsafe_allow_html=True)
-            k3.markdown(tarjeta_kpi("COSTO FLETES", f"${costo_flete_total:,.0f}", "#a855f7"), unsafe_allow_html=True)
-            k4.markdown(tarjeta_kpi("INVERSIÓN TOTAL", f"${costo_general:,.0f}", "#00FFAA"), unsafe_allow_html=True)
-            k5.markdown(tarjeta_kpi("% DESPACHADO", f"{pct_despachado:,.0f}%", "#FFD700"), unsafe_allow_html=True)
-
-            st.write("")
-            k6, k7 = st.columns(2)
-            k6.markdown(tarjeta_kpi("COSTO PROMEDIO / ENVÍO", f"${costo_promedio:,.0f}", "#FFA500"), unsafe_allow_html=True)
+            no_surtidos = total_folios - despachados
             if total_folios:
                 top_solicitante_nombre = (
                     df_kpi.groupby(df_kpi['SOLICITO'].astype(str).str.upper())['FOLIO'].count().idxmax()
                 )
             else:
                 top_solicitante_nombre = "SIN DATOS"
-            k7.markdown(tarjeta_kpi("AGENTE CON MÁS ENVÍOS", top_solicitante_nombre[:24], "#FF6B6B"), unsafe_allow_html=True)
+
+            # --------------------------------------------------
+            # SUBTÍTULO: INDICADORES DE ENVÍOS
+            # --------------------------------------------------
+            st.markdown(
+                "<p style='color:#00D4FF; font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px;'>📦 Indicadores de Envíos</p>",
+                unsafe_allow_html=True,
+            )
+            k1, k2, k3 = st.columns(3)
+            k1.markdown(tarjeta_kpi("TOTAL DE ENVÍOS", f"{total_folios}"), unsafe_allow_html=True)
+            k2.markdown(tarjeta_kpi("COSTO PRODUCTOS", f"${costo_prod_total:,.0f}", "#38bdf8"), unsafe_allow_html=True)
+            k3.markdown(tarjeta_kpi("COSTO FLETES", f"${costo_flete_total:,.0f}", "#a855f7"), unsafe_allow_html=True)
+
+            st.write("")
+            k4, k5, k6 = st.columns(3)
+            k4.markdown(tarjeta_kpi("INVERSIÓN TOTAL", f"${costo_general:,.0f}", "#00FFAA"), unsafe_allow_html=True)
+            k5.markdown(tarjeta_kpi("COSTO PROMEDIO / ENVÍO", f"${costo_promedio:,.0f}", "#FFA500"), unsafe_allow_html=True)
+            k6.markdown(tarjeta_kpi("AGENTE CON MÁS ENVÍOS", top_solicitante_nombre[:24], "#FF6B6B"), unsafe_allow_html=True)
+
+            st.write("")
+
+            # --------------------------------------------------
+            # SUBTÍTULO: INDICADORES DE SURTIDO
+            # --------------------------------------------------
+            st.markdown(
+                "<p style='color:#00D4FF; font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px;'>✅ Indicadores de Surtido</p>",
+                unsafe_allow_html=True,
+            )
+            s1, s2, s3 = st.columns(3)
+            s1.markdown(tarjeta_kpi("DESPACHADOS", f"{despachados}", "#00FFAA"), unsafe_allow_html=True)
+            s2.markdown(tarjeta_kpi("NO SURTIDOS", f"{no_surtidos}", "#FF4444"), unsafe_allow_html=True)
+            s3.markdown(tarjeta_kpi("% DESPACHADO", f"{pct_despachado:,.0f}%", "#FFD700"), unsafe_allow_html=True)
 
             st.divider()
 
@@ -151,7 +162,7 @@ def main():
                 df_validas['COSTO_INVERSION'] = df_validas['COSTO_TOTAL'] + df_validas['COSTO_GUIA']
                 trend = df_validas.groupby('MES_PERIOD')['COSTO_INVERSION'].sum().sort_index()
                 trend.index = trend.index.strftime('%m - %Y')
-                st.bar_chart(trend)
+                st.bar_chart(trend, color="#00FFAA")
             else:
                 st.caption("Sin fechas válidas para graficar la tendencia.")
 
@@ -168,7 +179,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(por_solicitante)
+                st.bar_chart(por_solicitante, color="#38bdf8")
 
             with col_g2:
                 st.markdown(
@@ -182,7 +193,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(costo_por_solicitante)
+                st.bar_chart(costo_por_solicitante, color="#a855f7")
 
             col_g3, col_g4 = st.columns(2)
 
@@ -197,7 +208,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(top_destinos)
+                st.bar_chart(top_destinos, color="#FFD700")
 
             with col_g4:
                 st.markdown(
@@ -213,7 +224,7 @@ def main():
                     .sort_values(ascending=False)
                     .head(10)
                 )
-                st.bar_chart(costo_flete_paq)
+                st.bar_chart(costo_flete_paq, color="#FF6B6B")
 
             st.divider()
 
@@ -233,7 +244,7 @@ def main():
                 serie_prod = serie_prod[serie_prod > 0]
                 if not serie_prod.empty:
                     serie_prod.index = [i[:35].upper() for i in serie_prod.index]
-                    st.bar_chart(serie_prod)
+                    st.bar_chart(serie_prod, color="#00D4FF")
                 else:
                     st.caption("Sin productos con cantidad registrada en este periodo.")
 
