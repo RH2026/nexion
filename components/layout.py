@@ -566,7 +566,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
             
                 if permisos.get("REPORTES", False) or usuario.upper() == "RIGOBERTO":
                     with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                        opciones_rep_posibles = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "ENVIO DE MUESTRAS"]
+                        opciones_rep_posibles = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "COSTOS DE MUESTRAS"]
                         opciones_rep = [s for s in opciones_rep_posibles if permisos.get(s, False) or usuario.upper() == "RIGOBERTO"]
                         
                         for s in opciones_rep:
@@ -579,8 +579,8 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 
                                 if s == "ANALISIS MENSUAL":
                                     st.switch_page("pages/analisis_mensual.py")
-                                elif s == "ENVIO DE MUESTRAS":
-                                    st.switch_page("pages/muestras.py")
+                                elif s == "COSTOS DE MUESTRAS":
+                                    st.switch_page("pages/costos_muestras.py")
                                 elif s == "ENVIOS ESPECIALES":
                                     st.switch_page("pages/envios_especiales.py")
                                 else:
