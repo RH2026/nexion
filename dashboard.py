@@ -18,6 +18,7 @@ import streamlit as st
 from auth import exigir_autenticacion
 import math
 import plotly.express as px
+from concurrent.futures import ThreadPoolExecutor
 
 from components.layout import render_layout
 
