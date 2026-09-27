@@ -161,12 +161,12 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     
     /* EXPANDER ABIERTO / ACTIVO */
     div[data-testid="stPopoverBody"] [data-testid="stExpander"] details[open] > summary {{
-        background: #F6C23E !important;
+        background: #f6c23e !important;
         border-color: #F6C23E !important;
     }}
     
     div[data-testid="stPopoverBody"] [data-testid="stExpander"] details[open] > summary p {{
-        color: #ffffff !important;
+        color: #000000 !important;
     }}
     
     /* --- TOAST ESTILO TARJETA (MÓDULO BLOQUEADO) --- */
