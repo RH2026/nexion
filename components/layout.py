@@ -123,8 +123,8 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     div[data-testid="stPopoverBody"] [data-testid="stExpander"] details > summary p {{
     color: #ffffff !important;
     font-family: inherit !important;
-    font-size: 10px !important;
-    font-weight: 700 !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
     text-transform: uppercase !important;
     letter-spacing: normal !important;
     line-height: normal !important;
