@@ -568,12 +568,10 @@ def main():
         with tab1:
             render_subtitulo("KPI'S DE ENVÍOS // PEDIDOS, ENTREGAS Y EFECTIVIDAD DEL MES")
             st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
-            
-            st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
             sub_env1, sub_env2, sub_env3 = st.tabs([
-                "RESUMEN DEL MES",
-                "INTELIGENCIA DE NEGOCIO",
-                "TOP CLIENTES Y DISTRIBUCIÓN",
+                "\U0001F4E6 RESUMEN DEL MES",
+                "\U0001F4B9 INTELIGENCIA DE NEGOCIO",
+                "\U0001F3C6 TOP CLIENTES Y DISTRIBUCIÓN",
             ])
 
             with sub_env1:
@@ -709,14 +707,9 @@ def main():
                         st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin pedidos en este período</div>", unsafe_allow_html=True)
 
             with sub_env2:
-
                 # ==========================================================
                 # INTELIGENCIA DE NEGOCIO — CONSULTA DETALLADA DEL PERÍODO
                 # ==========================================================
-                st.markdown(f"""
-                    <hr style="border: 0; height: 1px; background: {vars_css['border']}; margin: 30px 0; opacity: 0.3;">
-                """, unsafe_allow_html=True)
-
                 render_subtitulo("INTELIGENCIA DE NEGOCIO // CONSULTA DETALLADA DEL PERÍODO")
 
                 def _limpiar_moneda_bi(serie):
