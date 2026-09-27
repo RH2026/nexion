@@ -249,28 +249,45 @@ def main():
                 while not futuro_carga.done():
                     mensaje_carga = mensajes_carga[i_carga % len(mensajes_carga)]
 
-                    indicador_carga.markdown(
-                        f"""
-                        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0 18px;padding:13px 18px;background:#263238;border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#D7DEE3;font-size:14px;font-weight:500;">
-                            <div style="width:16px;height:16px;border:2px solid rgba(0,212,255,.20);border-top:2px solid #00D4FF;border-radius:50%;animation:nexion_spin .8s linear infinite;"></div>
-                            <span>{mensaje_carga}</span>
-                        </div>
-                        <style>
-                        @keyframes nexion_spin {{
-                            from {{ transform:rotate(0deg); }}
-                            to {{ transform:rotate(360deg); }}
-                        }}
-                        </style>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    componentes.html(
+                """
+                <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0 18px;padding:13px 18px;background:#263238;border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#D7DEE3;font-size:14px;font-weight:500;font-family:Inter,Arial,sans-serif;">
+                    <div style="width:16px;height:16px;border:2px solid rgba(0,212,255,.20);border-top:2px solid #00D4FF;border-radius:50%;animation:nexion_spin .8s linear infinite;flex-shrink:0;"></div>
+                    <span id="nexion_loading_text">🔄 Conectando con bases remotas y cruzando guías y métricas de surtido...</span>
+                </div>
 
-                    time.sleep(0.8)
-                    i_carga += 1
+                <style>
+                    @keyframes nexion_spin {
+                        from { transform:rotate(0deg); }
+                        to { transform:rotate(360deg); }
+                    }
+                </style>
 
+                <script>
+                    const mensajes = [
+                        "🔄 Conectando con bases remotas y cruzando guías y métricas de surtido...",
+                        "🔗 Ejecutando cruce inteligente de guías, facturas y programación contra las bases remotas...",
+                        "📡 Sincronizando información operativa con las bases remotas...",
+                        "⚙️ Procesando matrices y registros logísticos...",
+                        "🧠 Integrando información para construir la vista operativa...",
+                        "🔎 Validando guías, facturas y fechas de programación..."
+                    ];
+
+                    let i = 0;
+
+                    setInterval(() => {
+                        i = (i + 1) % mensajes.length;
+                        document.getElementById("nexion_loading_text").textContent = mensajes[i];
+                    }, 1800);
+                </script>
+                """,
+                height=70,
+                scrolling=False
+            )
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                futuro_carga = executor.submit(ejecutar_carga_real)
                 df_raw_surtido, df_dashboard_global, df_t1_global = futuro_carga.result()
-
-            indicador_carga.empty()
 
             if df_raw_surtido.empty:
                 st.warning("No se encontraron registros en la base de datos de envíos.")
