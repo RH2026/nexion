@@ -250,7 +250,7 @@ def main():
                 while not futuro_carga.done():
                     mensaje_carga = mensajes_carga[i_carga % len(mensajes_carga)]
 
-                    componentes.html(
+                    components.html(
                 """
                 <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0 18px;padding:13px 18px;background:#263238;border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#D7DEE3;font-size:14px;font-weight:500;font-family:Inter,Arial,sans-serif;">
                     <div style="width:16px;height:16px;border:2px solid rgba(0,212,255,.20);border-top:2px solid #00D4FF;border-radius:50%;animation:nexion_spin .8s linear infinite;flex-shrink:0;"></div>
