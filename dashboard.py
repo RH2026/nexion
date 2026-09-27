@@ -219,6 +219,34 @@ def main():
                     unsafe_allow_html=True
                 )
 
+            st.markdown("""
+            <style>
+            div[data-testid="stSpinner"] {
+                justify-content: center !important;
+                align-items: center !important;
+                width: 100% !important;
+                text-align: center !important;
+            }
+
+            div[data-testid="stSpinner"] > div {
+                justify-content: center !important;
+                align-items: center !important;
+            }
+
+            div[data-testid="stSpinner"] svg {
+                width: 28px !important;
+                height: 28px !important;
+            }
+
+            div[data-testid="stSpinner"] p {
+                text-align: center !important;
+                font-size: 14px !important;
+                font-weight: 600 !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            
             with st.spinner("🔄 Conectando con bases remotas y cruzando guías y métricas de surtido..."):
                 df_raw_surtido = cargar_datos_envios()
                 df_dashboard_global = cargar_datos_dashboard_global()
