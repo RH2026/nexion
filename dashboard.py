@@ -192,210 +192,210 @@ def main():
         # ----------------------------------------------------------
         # TAB 0: KPI'S SURTIDO (guías, cruce con T1.xlsx y matriz global)
         # ----------------------------------------------------------
-                mensajes_carga = [
-                    "🔄 Conectando con bases remotas y cruzando guías y métricas de surtido...",
-                    "🔗 Ejecutando cruce inteligente de guías, facturas y programación contra las bases remotas...",
-                    "📡 Sincronizando información operativa con las bases remotas...",
-                    "⚙️ Procesando matrices y registros logísticos...",
-                    "🧠 Integrando información para construir la vista operativa...",
-                    "🔎 Validando guías, facturas y fechas de programación...",
-                ]
-        
-                def ejecutar_carga_real():
-                    df_raw_surtido = cargar_datos_envios()
-                    df_dashboard_global = cargar_datos_dashboard_global()
-        
-                    df_t1_global = pd.DataFrame()
-                    try:
-                        df_t1_global = pd.read_excel("T1.xlsx")
-                        df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
-                    except Exception:
-                        pass
-        
-                    return df_raw_surtido, df_dashboard_global, df_t1_global
-        
-                indicador_carga = st.empty()
-        
-                with ThreadPoolExecutor(max_workers=1) as executor:
-                    futuro_carga = executor.submit(ejecutar_carga_real)
-                    i_carga = 0
-        
-                    while not futuro_carga.done():
-                        mensaje_carga = mensajes_carga[i_carga % len(mensajes_carga)]
-        
-                        indicador_carga.markdown(
-                            f"""
-                            <div style="
-                                display:flex;
-                                align-items:center;
-                                justify-content:center;
-                                gap:12px;
-                                margin:12px 0 18px;
-                                padding:13px 18px;
-                                background:#263238;
-                                border:1px solid rgba(255,255,255,0.06);
-                                border-radius:10px;
-                                color:#D7DEE3;
-                                font-size:14px;
-                                font-weight:500;
-                            ">
-                                <div style="
-                                    width:16px;
-                                    height:16px;
-                                    border:2px solid rgba(0,212,255,.20);
-                                    border-top:2px solid #00D4FF;
-                                    border-radius:50%;
-                                    animation:nexion_spin .8s linear infinite;
-                                "></div>
-        
-                                <span>{mensaje_carga}</span>
-                            </div>
-        
-                            <style>
-                            @keyframes nexion_spin {{
-                                from {{ transform:rotate(0deg); }}
-                                to {{ transform:rotate(360deg); }}
-                            }}
-                            </style>
-                            """,
-                            unsafe_allow_html=True
-                        )
-        
-                        time.sleep(0.8)
-                        i_carga += 1
-        
-                    df_raw_surtido, df_dashboard_global, df_t1_global = futuro_carga.result()
-        
-                indicador_carga.empty()
-        
-                if df_raw_surtido.empty:
-                    st.warning("No se encontraron registros en la base de datos de envíos.")
-                else:
-                    df_raw_surtido.columns = df_raw_surtido.columns.str.strip()
-        
-                    # Normalización de estructura base
-                    df_envios = pd.DataFrame()
+        with tab0:
+            tz_gdl_surtido = pytz.timezone("America/Mexico_City")
+            ahora_surtido = datetime.now(tz_gdl_surtido)
+            hoy_gdl_surtido = ahora_surtido.date()
+            ayer_gdl_surtido = hoy_gdl_surtido - timedelta(days=1)
 
-                    # Normalización de estructura base
-                    df_envios = pd.DataFrame()
-                    df_envios['factura'] = df_raw_surtido.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
-                    df_envios['recomendacion'] = df_raw_surtido.get('RECOMENDACION', pd.Series(dtype=str)).fillna('SIN ASIGNAR').astype(str)
-                    extran_s = df_raw_surtido.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
-                    cliente_s = df_raw_surtido.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
-                    df_envios['nombre_cliente'] = extran_s.where(extran_s.str.strip() != '', cliente_s)
-                    df_envios['destino'] = df_raw_surtido.get('DESTINO', pd.Series(dtype=str)).fillna('NACIONAL').astype(str)
+            col_titulo_s, col_indicador_s = st.columns([4, 1.8], vertical_alignment="center")
 
-                    f_prog_input = df_raw_surtido.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
-                    dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
-                    df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
-                    df_envios['dt_prog_parsed'] = dt_prog_temp
+            with col_titulo_s:
+                render_subtitulo("DASHBOARD EJECUTIVO // KPI DE SURTIDO Y ENVÍOS")
 
-                    # --------------------------------------------------
-                    # EXTRACCIÓN ROBUSTA DE GUÍAS Y FECHAS (CRUCE MULTI-FUENTE)
-                    # --------------------------------------------------
-                    lista_guias = []
-                    lista_fechas_envio = []
-                    f_env_raw_list = df_raw_surtido.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+            with col_indicador_s:
+                fecha_str_s = ahora_surtido.strftime("%d/%m/%Y")
+                hora_str_s = ahora_surtido.strftime("%H:%M:%S")
+                st.markdown(
+                    f"""
+                    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 10px; padding: 6px 12px; background: #182229; border: 1px solid #34495E; border-radius: 6px;">
+                        <div style="width: 6px; height: 6px; background: #00FFAA; border-radius: 50%; box-shadow: 0 0 8px #00FFAA;"></div>
+                        <span style="color: #8B9BB4; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Sync GDL:</span>
+                        <span style="color: #E8EEF2; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;">{fecha_str_s} &bull; <span style="color:#00FFAA;">{hora_str_s}</span></span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
-                    for idx, row in df_raw_surtido.iterrows():
-                        fac = str(row.get('Factura', '')).strip()
-                        guia_encontrada = ""
-                        fecha_envio_encontrada = ""
+            mensajes_carga = [
+                "🔄 Conectando con bases remotas y cruzando guías y métricas de surtido...",
+                "🔗 Ejecutando cruce inteligente de guías, facturas y programación contra las bases remotas...",
+                "📡 Sincronizando información operativa con las bases remotas...",
+                "⚙️ Procesando matrices y registros logísticos...",
+                "🧠 Integrando información para construir la vista operativa...",
+                "🔎 Validando guías, facturas y fechas de programación...",
+            ]
 
-                        for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON', 'Nro Guia']:
-                            if col_g in df_raw_surtido.columns and pd.notna(row.get(col_g)):
-                                val_g = str(row.get(col_g)).strip()
-                                if val_g and val_g.lower() not in ['', 'nan', '0', '0.0', 'none']:
-                                    guia_encontrada = val_g
+            def ejecutar_carga_real():
+                df_raw_surtido = cargar_datos_envios()
+                df_dashboard_global = cargar_datos_dashboard_global()
+
+                df_t1_global = pd.DataFrame()
+                try:
+                    df_t1_global = pd.read_excel("T1.xlsx")
+                    df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
+                except Exception:
+                    pass
+
+                return df_raw_surtido, df_dashboard_global, df_t1_global
+
+            indicador_carga = st.empty()
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                futuro_carga = executor.submit(ejecutar_carga_real)
+                i_carga = 0
+
+                while not futuro_carga.done():
+                    mensaje_carga = mensajes_carga[i_carga % len(mensajes_carga)]
+
+                    indicador_carga.markdown(
+                        f"""
+                        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0 18px;padding:13px 18px;background:#263238;border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#D7DEE3;font-size:14px;font-weight:500;">
+                            <div style="width:16px;height:16px;border:2px solid rgba(0,212,255,.20);border-top:2px solid #00D4FF;border-radius:50%;animation:nexion_spin .8s linear infinite;"></div>
+                            <span>{mensaje_carga}</span>
+                        </div>
+                        <style>
+                        @keyframes nexion_spin {{
+                            from {{ transform:rotate(0deg); }}
+                            to {{ transform:rotate(360deg); }}
+                        }}
+                        </style>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    time.sleep(0.8)
+                    i_carga += 1
+
+                df_raw_surtido, df_dashboard_global, df_t1_global = futuro_carga.result()
+
+            indicador_carga.empty()
+
+            if df_raw_surtido.empty:
+                st.warning("No se encontraron registros en la base de datos de envíos.")
+            else:
+                df_raw_surtido.columns = df_raw_surtido.columns.str.strip()
+
+                # Normalización de estructura base
+                df_envios = pd.DataFrame()
+                df_envios['factura'] = df_raw_surtido.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
+                df_envios['recomendacion'] = df_raw_surtido.get('RECOMENDACION', pd.Series(dtype=str)).fillna('SIN ASIGNAR').astype(str)
+                extran_s = df_raw_surtido.get('Nombre_Extran', pd.Series(dtype=str)).fillna('').astype(str)
+                cliente_s = df_raw_surtido.get('Nombre_Cliente', pd.Series(dtype=str)).fillna('').astype(str)
+                df_envios['nombre_cliente'] = extran_s.where(extran_s.str.strip() != '', cliente_s)
+                df_envios['destino'] = df_raw_surtido.get('DESTINO', pd.Series(dtype=str)).fillna('NACIONAL').astype(str)
+
+                f_prog_input = df_raw_surtido.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+                dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
+                df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
+                df_envios['dt_prog_parsed'] = dt_prog_temp
+
+                # --------------------------------------------------
+                # EXTRACCIÓN ROBUSTA DE GUÍAS Y FECHAS (CRUCE MULTI-FUENTE)
+                # --------------------------------------------------
+                lista_guias = []
+                lista_fechas_envio = []
+                f_env_raw_list = df_raw_surtido.get('FECHA DE ENVIO', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
+
+                for idx, row in df_raw_surtido.iterrows():
+                    fac = str(row.get('Factura', '')).strip()
+                    guia_encontrada = ""
+                    fecha_envio_encontrada = ""
+
+                    for col_g in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON', 'Nro Guia']:
+                        if col_g in df_raw_surtido.columns and pd.notna(row.get(col_g)):
+                            val_g = str(row.get(col_g)).strip()
+                            if val_g and val_g.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                guia_encontrada = val_g
+                                break
+
+                    if not guia_encontrada and not df_dashboard_global.empty:
+                        for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
+                            if col_ped in df_dashboard_global.columns:
+                                match_dash = df_dashboard_global[df_dashboard_global[col_ped].astype(str).str.strip() == fac]
+                                if not match_dash.empty:
+                                    for cg_dash in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
+                                        if cg_dash in match_dash.columns:
+                                            vg = str(match_dash.iloc[0][cg_dash]).strip()
+                                            if vg and vg.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                                guia_encontrada = vg
+                                                break
+                                if guia_encontrada:
                                     break
 
-                        if not guia_encontrada and not df_dashboard_global.empty:
-                            for col_ped in ['NÚMERO DE PEDIDO', 'PEDIDO', 'FACTURA']:
-                                if col_ped in df_dashboard_global.columns:
-                                    match_dash = df_dashboard_global[df_dashboard_global[col_ped].astype(str).str.strip() == fac]
-                                    if not match_dash.empty:
-                                        for cg_dash in ['NÚMERO DE GUÍA', 'NUMERO DE GUIA', 'GUIA', 'TALON']:
-                                            if cg_dash in match_dash.columns:
-                                                vg = str(match_dash.iloc[0][cg_dash]).strip()
-                                                if vg and vg.lower() not in ['', 'nan', '0', '0.0', 'none']:
-                                                    guia_encontrada = vg
+                    encontrado_en_t1 = False
+                    if not guia_encontrada and not df_t1_global.empty:
+                        for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
+                            if col_t1_ped in df_t1_global.columns:
+                                match_t1 = df_t1_global[df_t1_global[col_t1_ped].astype(str).str.strip() == fac]
+                                if not match_t1.empty:
+                                    for cg_t1 in ['TALON', 'GUIA', 'NÚMERO DE GUÍA']:
+                                        if cg_t1 in match_t1.columns:
+                                            vg = str(match_t1.iloc[0][cg_t1]).strip()
+                                            if vg and vg.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                                guia_encontrada = vg
+                                                encontrado_en_t1 = True
+                                                break
+                                    if encontrado_en_t1:
+                                        for col_fdoc in ['F.DOC', 'FECHA', 'FECHA DOC']:
+                                            if col_fdoc in match_t1.columns:
+                                                fdoc_val = str(match_t1.iloc[0][col_fdoc]).strip()
+                                                if fdoc_val and fdoc_val.lower() not in ['', 'nan', '0', '0.0', 'none']:
+                                                    dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
+                                                    fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
                                                     break
-                                    if guia_encontrada:
                                         break
 
-                        encontrado_en_t1 = False
-                        if not guia_encontrada and not df_t1_global.empty:
-                            for col_t1_ped in ['OBSERVACION 1', 'PEDIDO', 'FACTURA']:
-                                if col_t1_ped in df_t1_global.columns:
-                                    match_t1 = df_t1_global[df_t1_global[col_t1_ped].astype(str).str.strip() == fac]
-                                    if not match_t1.empty:
-                                        for cg_t1 in ['TALON', 'GUIA', 'NÚMERO DE GUÍA']:
-                                            if cg_t1 in match_t1.columns:
-                                                vg = str(match_t1.iloc[0][cg_t1]).strip()
-                                                if vg and vg.lower() not in ['', 'nan', '0', '0.0', 'none']:
-                                                    guia_encontrada = vg
-                                                    encontrado_en_t1 = True
-                                                    break
-                                        if encontrado_en_t1:
-                                            for col_fdoc in ['F.DOC', 'FECHA', 'FECHA DOC']:
-                                                if col_fdoc in match_t1.columns:
-                                                    fdoc_val = str(match_t1.iloc[0][col_fdoc]).strip()
-                                                    if fdoc_val and fdoc_val.lower() not in ['', 'nan', '0', '0.0', 'none']:
-                                                        dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
-                                                        fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
-                                                        break
-                                            break
+                    if not guia_encontrada:
+                        guia_encontrada = "PENDIENTE"
 
-                        if not guia_encontrada:
-                            guia_encontrada = "PENDIENTE"
+                    if encontrado_en_t1 and fecha_envio_encontrada:
+                        final_fecha_envio = fecha_envio_encontrada
+                    else:
+                        final_fecha_envio = str(f_env_raw_list.loc[idx]).strip() if idx in f_env_raw_list.index else ''
 
-                        if encontrado_en_t1 and fecha_envio_encontrada:
-                            final_fecha_envio = fecha_envio_encontrada
-                        else:
-                            final_fecha_envio = str(f_env_raw_list.loc[idx]).strip() if idx in f_env_raw_list.index else ''
+                    lista_guias.append(guia_encontrada)
+                    lista_fechas_envio.append(final_fecha_envio)
 
-                        lista_guias.append(guia_encontrada)
-                        lista_fechas_envio.append(final_fecha_envio)
+                df_envios['numero_guia'] = lista_guias
+                df_envios['fecha_envio_raw'] = lista_fechas_envio
 
-                    df_envios['numero_guia'] = lista_guias
-                    df_envios['fecha_envio_raw'] = lista_fechas_envio
+                dt_envio_temp = pd.to_datetime(df_envios['fecha_envio_raw'], errors='coerce', dayfirst=True)
+                df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios['fecha_envio_raw'])
+                df_envios['dt_envio_parsed'] = dt_envio_temp
 
-                    dt_envio_temp = pd.to_datetime(df_envios['fecha_envio_raw'], errors='coerce', dayfirst=True)
-                    df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios['fecha_envio_raw'])
-                    df_envios['dt_envio_parsed'] = dt_envio_temp
+                # Cálculo automático de estatus operativo
+                estatus_calculado = []
+                valores_nulos = ['', 'nan', '0', '0.0', '-', 'nat', 'none', 'pendiente']
 
-                    # Cálculo automático de estatus operativo
-                    estatus_calculado = []
-                    valores_nulos = ['', 'nan', '0', '0.0', '-', 'nat', 'none', 'pendiente']
+                for idx, row in df_envios.iterrows():
+                    fe = str(row['fecha_envio']).strip()
+                    guia = str(row['numero_guia']).strip()
 
-                    for idx, row in df_envios.iterrows():
-                        fe = str(row['fecha_envio']).strip()
-                        guia = str(row['numero_guia']).strip()
+                    tiene_g = guia and guia.lower() not in valores_nulos
+                    tiene_fe = fe and fe.lower() not in valores_nulos
 
-                        tiene_g = guia and guia.lower() not in valores_nulos
-                        tiene_fe = fe and fe.lower() not in valores_nulos
+                    dt_p = row['dt_prog_parsed']
+                    dt_e = row['dt_envio_parsed']
 
-                        dt_p = row['dt_prog_parsed']
-                        dt_e = row['dt_envio_parsed']
+                    tarde = False
+                    if pd.notna(dt_p):
+                        limite = dt_p + timedelta(hours=24)
+                        if tiene_fe and pd.notna(dt_e) and dt_e > limite:
+                            tarde = True
+                        elif not tiene_fe and not tiene_g and ahora_surtido.replace(tzinfo=None) > limite:
+                            tarde = True
 
-                        tarde = False
-                        if pd.notna(dt_p):
-                            limite = dt_p + timedelta(hours=24)
-                            if tiene_fe and pd.notna(dt_e) and dt_e > limite:
-                                tarde = True
-                            elif not tiene_fe and not tiene_g and ahora_surtido.replace(tzinfo=None) > limite:
-                                tarde = True
+                    if tiene_g and tiene_fe:
+                        estatus_calculado.append("SURTIDA / EN TIEMPO" if not tarde else "CON RETRASO")
+                    elif not tiene_g and not tiene_fe:
+                        estatus_calculado.append("PENDIENTE / SURTIENDO")
+                    elif tiene_fe and not tiene_g:
+                        estatus_calculado.append("ENVIADA")
+                    else:
+                        estatus_calculado.append("ENVIADA PARCIAL")
 
-                        if tiene_g and tiene_fe:
-                            estatus_calculado.append("SURTIDA / EN TIEMPO" if not tarde else "CON RETRASO")
-                        elif not tiene_g and not tiene_fe:
-                            estatus_calculado.append("PENDIENTE / SURTIENDO")
-                        elif tiene_fe and not tiene_g:
-                            estatus_calculado.append("ENVIADA")
-                        else:
-                            estatus_calculado.append("ENVIADA PARCIAL")
-
-                    df_envios['estatus'] = estatus_calculado
+                df_envios['estatus'] = estatus_calculado
 
 
                 # --------------------------------------------------
