@@ -596,8 +596,8 @@ def main():
 
                 if df_raw_tab1 is not None:
                     st.markdown(f"""<div style="text-align:left; margin-top:5px; margin-bottom:5px;">
-                        <span style="color:#FFC000; font-weight:600; font-size:14px; letter-spacing:3px;">
-                            Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}
+                        <span style="color:#FFC000; font-weight:400; font-size:14px; letter-spacing:3px;">
+                            MOSTRANDO {len(df_filtrado_mes)} REGISTROS CORRESPONDIENTES A {mes_sel}
                         </span>
                     </div>""", unsafe_allow_html=True)
 
@@ -712,7 +712,14 @@ def main():
                 # ==========================================================
                 # INTELIGENCIA DE NEGOCIO — CONSULTA DETALLADA DEL PERÍODO
                 # ==========================================================
-                render_subtitulo("INTELIGENCIA DE NEGOCIO // CONSULTA DETALLADA DEL PERÍODO")
+                st.markdown(
+                    """<div style="text-align:left; margin-top:15px; margin-bottom:15px;">
+                        <span style="color:#FFC000; font-weight:600; font-size:14px; letter-spacing:3px;">
+                            INTELIGENCIA DE NEGOCIO // CONSULTA DETALLADA DEL PERÍODO
+                        </span>
+                    </div>""",
+                    unsafe_allow_html=True
+                )
 
                 def _limpiar_moneda_bi(serie):
                     return pd.to_numeric(
