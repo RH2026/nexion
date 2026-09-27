@@ -516,7 +516,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                     st.toast("Sin resultados: No se encontró en Matriz Global ni en T1", icon="⚠️")
 
         with c4:
-            with st.popover("☰ Menú", use_container_width=True):
+            with st.popover("🎛️ Módulos", use_container_width=True):
                 usuario = st.session_state.get("usuario_activo", "GUEST")
                 permisos = st.session_state.get("permisos", {})
                 nombre_display = st.session_state.get("nombre_completo", "OPERADOR DESCONOCIDO")
