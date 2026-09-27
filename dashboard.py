@@ -1004,7 +1004,7 @@ def main():
             df_rank = df_rank[df_rank["FLETERA"].astype(str).str.strip() != ""]
 
             st.markdown(f"""<div style="text-align:left; margin-top:5px; margin-bottom:5px;">
-                <span style="color:#FFC000; font-weight:400; font-size:12px; letter-spacing:3px;">
+                <span style="color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;">
                     MOSTRANDO {len(df_rank)} REGISTROS CORRESPONDIENTES A {mes_sel_rank}
                 </span>
             </div>""", unsafe_allow_html=True)
