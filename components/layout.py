@@ -162,8 +162,8 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     
     /* EXPANDER ABIERTO / ACTIVO */
     div[data-testid="stPopoverBody"] [data-testid="stExpander"] details[open] > summary {{
-        background: #C99A24 !important;
-        border-color: #C99A24 !important;
+        background: #1E272E !important;
+        border-color: #1E272E !important;
     }}
     
     div[data-testid="stPopoverBody"] [data-testid="stExpander"] details[open] > summary p {{
