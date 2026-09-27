@@ -595,7 +595,7 @@ def main():
                     df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
 
                 if df_raw_tab1 is not None:
-                    st.markdown(f"<p style='color:#00FFAA; font-size:14px; font-style:italic; margin-top:1px;'>Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic; margin-top:5px;'>Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}</p>", unsafe_allow_html=True)
 
                 total_p = len(df_mes)
                 entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
@@ -603,8 +603,6 @@ def main():
                 en_tiempo = len(df_trans[df_trans["PROMESA DE ENTREGA"] >= hoy_dt])
                 retrasados = len(df_trans[df_trans["PROMESA DE ENTREGA"] < hoy_dt])
                 total_t = len(df_trans)  
-
-                st.markdown("<br>", unsafe_allow_html=True)
 
                 # --- TARJETAS PLANAS (mismo estilo que KPI Surtido) ---
                 kpi_cols = st.columns(5)
@@ -811,7 +809,7 @@ def main():
                     df_fact_fletera = df_bi_f.groupby("FLETERA", as_index=False)["FACTURACION"].sum()
                     df_fact_fletera = df_fact_fletera[df_fact_fletera["FLETERA"] != ""].sort_values("FACTURACION", ascending=False).head(8)
                     if not df_fact_fletera.empty:
-                        fig_bi1 = px.bar(df_fact_fletera, x="FLETERA", y="FACTURACION", text_auto=".2s", color_discrete_sequence=["#38bdf8"])
+                        fig_bi1 = px.bar(df_fact_fletera, x="FLETERA", y="FACTURACION", text_auto=".2s", color_discrete_sequence=["#7FA0B0"])
                         fig_bi1.update_traces(textfont=dict(color="#E8EEF2"))
                         fig_bi1.update_layout(**config_layout_bi, xaxis_title=None, yaxis_title=None)
                         st.plotly_chart(fig_bi1, use_container_width=True, config={'displayModeBar': False})
@@ -824,7 +822,7 @@ def main():
                     df_costo_fletera_bi = df_bi_f.groupby("FLETERA", as_index=False)["_costo_total_envio_bi"].sum()
                     df_costo_fletera_bi = df_costo_fletera_bi[df_costo_fletera_bi["FLETERA"] != ""].sort_values("_costo_total_envio_bi", ascending=False).head(8)
                     if not df_costo_fletera_bi.empty:
-                        fig_bi2 = px.bar(df_costo_fletera_bi, x="FLETERA", y="_costo_total_envio_bi", text_auto=".2s", color_discrete_sequence=["#FF6B6B"])
+                        fig_bi2 = px.bar(df_costo_fletera_bi, x="FLETERA", y="_costo_total_envio_bi", text_auto=".2s", color_discrete_sequence=["#B98B78"])
                         fig_bi2.update_traces(textfont=dict(color="#E8EEF2"))
                         fig_bi2.update_layout(**config_layout_bi, xaxis_title=None, yaxis_title="COSTO ($)")
                         st.plotly_chart(fig_bi2, use_container_width=True, config={'displayModeBar': False})
