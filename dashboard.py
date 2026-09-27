@@ -595,7 +595,11 @@ def main():
                     df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
 
                 if df_raw_tab1 is not None:
-                    st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic; margin-top:5px;'>Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}</p>", unsafe_allow_html=True)
+                    st.markdown(f"""<div style="text-align:left; margin-top:5px; margin-bottom:5px;">
+                        <span style="color:#FFD166; font-weight:600; font-size:14px; letter-spacing:3px;">
+                            Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}
+                        </span>
+                    </div>""", unsafe_allow_html=True)
 
                 total_p = len(df_mes)
                 entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
@@ -832,7 +836,14 @@ def main():
 
             with sub_env3:
                 # === GRUPO 2: CLIENTES Y CANAL DE ENVÍO ===
-                _seccion_bi("👥", "GRUPO 2 · CLIENTES Y CANAL DE ENVÍO", "#A855F7")
+                st.markdown(
+                    """<div style="text-align:left; margin-top:15px; margin-bottom:15px;">
+                        <span style="color:#FFD166; font-weight:600; font-size:14px; letter-spacing:3px;">
+                            GRUPO 2 · CLIENTES Y CANAL DE ENVÍO
+                        </span>
+                    </div>""",
+                    unsafe_allow_html=True
+                )
                 bg3, bg4 = st.columns(2)
 
                 with bg3:
