@@ -18,7 +18,6 @@ import streamlit as st
 from auth import exigir_autenticacion
 import math
 import plotly.express as px
-from concurrent.futures import ThreadPoolExecutor
 
 from components.layout import render_layout
 
@@ -220,73 +219,23 @@ def main():
                     unsafe_allow_html=True
                 )
 
-                mensajes_carga = [
-                    "🔄 Conectando con bases remotas y cruzando guías y métricas de surtido...",
-                    "🔗 Ejecutando cruce inteligente de guías, facturas y programación contra las bases remotas...",
-                    "📡 Sincronizando información operativa con las bases remotas...",
-                    "⚙️ Procesando matrices y registros logísticos...",
-                    "🧠 Integrando información para construir la vista operativa...",
-                    "🔎 Validando guías, facturas y fechas de programación...",
-                ]
-                
-                def ejecutar_carga_real():
-                    df_raw_surtido = cargar_datos_envios()
-                    df_dashboard_global = cargar_datos_dashboard_global()
-                
-                    df_t1_global = pd.DataFrame()
-                    try:
-                        df_t1_global = pd.read_excel("T1.xlsx")
-                        df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
-                    except Exception:
-                        pass
-                
-                    if not df_raw_surtido.empty:
-                        df_raw_surtido.columns = df_raw_surtido.columns.str.strip()
-                
-                    return df_raw_surtido, df_dashboard_global, df_t1_global
-                
-                
-                with ThreadPoolExecutor(max_workers=1) as executor:
-                    futuro = executor.submit(ejecutar_carga_real)
-                
-                    indicador = st.empty()
-                    i = 0
-                
-                    while not futuro.done():
-                        mensaje = mensajes_carga[i % len(mensajes_carga)]
-                
-                        indicador.markdown(
-                            f"""
-                            <div style="display:flex;align-items:center;justify-content:center;gap:12px;
-                                        margin:12px 0 18px;padding:13px 18px;background:#263238;
-                                        border:1px solid rgba(255,255,255,0.06);border-radius:10px;
-                                        color:#D7DEE3;font-size:14px;font-weight:500;">
-                                <div style="width:16px;height:16px;border:2px solid rgba(0,212,255,.20);
-                                            border-top:2px solid #00D4FF;border-radius:50%;
-                                            animation:nexion_spin .8s linear infinite;"></div>
-                                <span>{mensaje}</span>
-                            </div>
-                            <style>
-                            @keyframes nexion_spin {{
-                                from {{transform:rotate(0deg)}}
-                                to {{transform:rotate(360deg)}}
-                            }}
-                            </style>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                
-                        time.sleep(1)
-                        i += 1
-                
-                    df_raw_surtido, df_dashboard_global, df_t1_global = futuro.result()
-                
-                    indicador.empty()
-                
-                
-                if df_raw_surtido.empty:
-                    st.warning("No se encontraron registros en la base de datos de envíos.")
-                
+            with st.spinner("🔄 Conectando con bases remotas y cruzando guías y métricas de surtido..."):
+                df_raw_surtido = cargar_datos_envios()
+                df_dashboard_global = cargar_datos_dashboard_global()
+
+                df_t1_global = pd.DataFrame()
+                try:
+                    df_t1_global = pd.read_excel("T1.xlsx")
+                    df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
+                except Exception:
+                    pass
+
+            if df_raw_surtido.empty:
+                st.warning("No se encontraron registros en la base de datos de envíos.")
+            else:
+                with st.spinner("🔗 Ejecutando cruce inteligente de guías, facturas y programación contra las bases remotas..."):
+                    df_raw_surtido.columns = df_raw_surtido.columns.str.strip()
+
                     # Normalización de estructura base
                     df_envios = pd.DataFrame()
                     df_envios['factura'] = df_raw_surtido.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
