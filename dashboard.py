@@ -998,10 +998,19 @@ def main():
                 filtro_fletera_rank = st.multiselect("FLETERA", op_fletera_rank, default=[], key="rank_filtro_fletera")
 
             num_mes_rank = meses.index(mes_sel_rank) + 1
-            df_rank = df_rank_raw[df_rank_raw["FECHA DE ENVÍO"].dt.month == num_mes_rank].copy()
+            df_rank_periodo = df_rank_raw[df_rank_raw["FECHA DE ENVÍO"].dt.month == num_mes_rank].copy()
+            df_rank_periodo = df_rank_periodo[df_rank_periodo["FLETERA"].astype(str).str.strip() != ""]
+
+            # --- MÉTRICAS BASE POR REGISTRO (se calculan antes de aplicar el filtro de fletera) ---
+            df_rank_periodo["_ENTREGADO"] = df_rank_periodo["FECHA DE ENTREGA REAL"].notna()
+            df_rank_periodo["_A_TIEMPO"] = df_rank_periodo["_ENTREGADO"] & (df_rank_periodo["FECHA DE ENTREGA REAL"] <= df_rank_periodo["PROMESA DE ENTREGA"])
+            df_rank_periodo["_INCIDENCIA"] = ~df_rank_periodo["INCIDENCIAS"].astype(str).str.strip().str.upper().isin(["", "OK"])
+            df_rank_periodo["_DIAS_TRANSITO"] = (df_rank_periodo["FECHA DE ENTREGA REAL"] - df_rank_periodo["FECHA DE ENVÍO"]).dt.days
+            df_rank_periodo["_COSTO_TOTAL"] = df_rank_periodo["COSTO DE LA GUÍA"] + df_rank_periodo["COSTOS ADICIONALES"]
+
+            df_rank = df_rank_periodo.copy()
             if filtro_fletera_rank:
                 df_rank = df_rank[df_rank["FLETERA"].isin(filtro_fletera_rank)]
-            df_rank = df_rank[df_rank["FLETERA"].astype(str).str.strip() != ""]
 
             st.markdown(f"""<div style="text-align:left; margin-top:5px; margin-bottom:5px;">
                 <span style="color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;">
@@ -1009,39 +1018,42 @@ def main():
                 </span>
             </div>""", unsafe_allow_html=True)
 
-            # --- MÉTRICAS BASE POR REGISTRO ---
-            df_rank["_ENTREGADO"] = df_rank["FECHA DE ENTREGA REAL"].notna()
-            df_rank["_A_TIEMPO"] = df_rank["_ENTREGADO"] & (df_rank["FECHA DE ENTREGA REAL"] <= df_rank["PROMESA DE ENTREGA"])
-            df_rank["_INCIDENCIA"] = ~df_rank["INCIDENCIAS"].astype(str).str.strip().str.upper().isin(["", "OK"])
-            df_rank["_DIAS_TRANSITO"] = (df_rank["FECHA DE ENTREGA REAL"] - df_rank["FECHA DE ENVÍO"]).dt.days
-            df_rank["_COSTO_TOTAL"] = df_rank["COSTO DE LA GUÍA"] + df_rank["COSTOS ADICIONALES"]
-
             # --- RESUMEN AGREGADO POR FLETERA (alimenta las 3 sub-tabs) ---
-            filas_resumen_rk = []
-            for fletera_rk, g_rk in df_rank.groupby("FLETERA"):
-                entregados_rk = int(g_rk["_ENTREGADO"].sum())
-                a_tiempo_rk = int(g_rk["_A_TIEMPO"].sum())
-                pct_a_tiempo_rk = (a_tiempo_rk / entregados_rk * 100) if entregados_rk else None
-                incidencias_pct_rk = (g_rk["_INCIDENCIA"].sum() / len(g_rk) * 100) if len(g_rk) else 0.0
-                dias_validos_rk = g_rk.loc[g_rk["_ENTREGADO"] & (g_rk["_DIAS_TRANSITO"] >= 0), "_DIAS_TRANSITO"]
-                dias_prom_rk = dias_validos_rk.mean() if not dias_validos_rk.empty else None
-                cajas_sum_rk = g_rk["CANTIDAD DE CAJAS"].sum()
-                costo_sum_rk = g_rk["_COSTO_TOTAL"].sum()
-                costo_prom_envio_rk = g_rk["_COSTO_TOTAL"].mean() if len(g_rk) else 0.0
-                costo_prom_caja_rk = (costo_sum_rk / cajas_sum_rk) if cajas_sum_rk else None
-                filas_resumen_rk.append({
-                    "FLETERA": fletera_rk,
-                    "ENVIOS": len(g_rk),
-                    "ENTREGADOS": entregados_rk,
-                    "A_TIEMPO": a_tiempo_rk,
-                    "RETRASO": max(entregados_rk - a_tiempo_rk, 0),
-                    "PCT_A_TIEMPO": pct_a_tiempo_rk,
-                    "INCIDENCIAS_PCT": incidencias_pct_rk,
-                    "DIAS_TRANSITO_PROM": dias_prom_rk,
-                    "COSTO_PROM_ENVIO": costo_prom_envio_rk,
-                    "COSTO_PROM_CAJA": costo_prom_caja_rk,
-                })
-            df_resumen_rk = pd.DataFrame(filas_resumen_rk)
+            def _resumen_por_fletera_rk(df_in):
+                filas_x = []
+                for fletera_x, g_x in df_in.groupby("FLETERA"):
+                    entregados_x = int(g_x["_ENTREGADO"].sum())
+                    a_tiempo_x = int(g_x["_A_TIEMPO"].sum())
+                    pct_a_tiempo_x = (a_tiempo_x / entregados_x * 100) if entregados_x else None
+                    incidencias_pct_x = (g_x["_INCIDENCIA"].sum() / len(g_x) * 100) if len(g_x) else 0.0
+                    dias_validos_x = g_x.loc[g_x["_ENTREGADO"] & (g_x["_DIAS_TRANSITO"] >= 0), "_DIAS_TRANSITO"]
+                    dias_prom_x = dias_validos_x.mean() if not dias_validos_x.empty else None
+                    cajas_sum_x = g_x["CANTIDAD DE CAJAS"].sum()
+                    costo_sum_x = g_x["_COSTO_TOTAL"].sum()
+                    costo_prom_envio_x = g_x["_COSTO_TOTAL"].mean() if len(g_x) else 0.0
+                    costo_prom_caja_x = (costo_sum_x / cajas_sum_x) if cajas_sum_x else None
+                    filas_x.append({
+                        "FLETERA": fletera_x,
+                        "ENVIOS": len(g_x),
+                        "ENTREGADOS": entregados_x,
+                        "A_TIEMPO": a_tiempo_x,
+                        "RETRASO": max(entregados_x - a_tiempo_x, 0),
+                        "PCT_A_TIEMPO": pct_a_tiempo_x,
+                        "INCIDENCIAS_PCT": incidencias_pct_x,
+                        "DIAS_TRANSITO_PROM": dias_prom_x,
+                        "COSTO_PROM_ENVIO": costo_prom_envio_x,
+                        "COSTO_PROM_CAJA": costo_prom_caja_x,
+                    })
+                return pd.DataFrame(filas_x)
+
+            df_resumen_rk = _resumen_por_fletera_rk(df_rank)
+
+            # --- FLETERAS PRINCIPALES (fijas, sin filtro): las que más se manejan y pagan ---
+            FLETERAS_PRINCIPALES_RK = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "SANCHEZ"]
+            mask_principales_rk = df_rank_periodo["FLETERA"].astype(str).str.upper().str.strip().apply(
+                lambda nom_x: any(p in nom_x for p in FLETERAS_PRINCIPALES_RK)
+            )
+            df_resumen_principales_rk = _resumen_por_fletera_rk(df_rank_periodo[mask_principales_rk])
 
             config_layout_rk = {
                 "paper_bgcolor": "rgba(0,0,0,0)",
@@ -1103,9 +1115,10 @@ def main():
 
                 rkc1, rkc2 = st.columns(2)
                 with rkc1:
-                    st.markdown("<div class='donut-section-title-s'>RANKING DE EFECTIVIDAD POR FLETERA (%)</div>", unsafe_allow_html=True)
-                    if not df_con_entregas_rk.empty:
-                        df_plot_rk1 = df_con_entregas_rk.sort_values("PCT_A_TIEMPO", ascending=True)
+                    st.markdown("<div class='donut-section-title-s'>RANKING DE EFECTIVIDAD — FLETERAS PRINCIPALES (%)</div>", unsafe_allow_html=True)
+                    df_con_entregas_principales_rk = df_resumen_principales_rk[df_resumen_principales_rk["ENTREGADOS"] > 0]
+                    if not df_con_entregas_principales_rk.empty:
+                        df_plot_rk1 = df_con_entregas_principales_rk.sort_values("PCT_A_TIEMPO", ascending=True)
                         fig_rk1 = px.bar(df_plot_rk1, x="PCT_A_TIEMPO", y="FLETERA", orientation="h",
                                           color_discrete_sequence=["#8FBF9F"])
                         fig_rk1.update_traces(text=df_plot_rk1["PCT_A_TIEMPO"].round(0).astype(int).astype(str) + "%",
