@@ -192,34 +192,16 @@ def main():
         # ----------------------------------------------------------
         # TAB 0: KPI'S SURTIDO (guías, cruce con T1.xlsx y matriz global)
         # ----------------------------------------------------------
-        with tab0:
-            tz_gdl_surtido = pytz.timezone("America/Mexico_City")
-            ahora_surtido = datetime.now(tz_gdl_surtido)
-            hoy_gdl_surtido = ahora_surtido.date()
-            # Día base por defecto: AYER. Lo de hoy apenas se está surtiendo/programando,
-            # así que para ver el cierre real (qué sí tiene guía y qué no) usamos ayer.
-            ayer_gdl_surtido = hoy_gdl_surtido - timedelta(days=1)
+        mensajes_carga = [
+                "🔄 Conectando con bases remotas y cruzando guías y métricas de surtido...",
+                "🔗 Ejecutando cruce inteligente de guías, facturas y programación contra las bases remotas...",
+                "📡 Sincronizando información operativa con las bases remotas...",
+                "⚙️ Procesando matrices y registros logísticos...",
+                "🧠 Integrando información para construir la vista operativa...",
+                "🔎 Validando guías, facturas y fechas de programación...",
+            ]
 
-            col_titulo_s, col_indicador_s = st.columns([4, 1.8], vertical_alignment="center")
-
-            with col_titulo_s:
-                render_subtitulo("DASHBOARD EJECUTIVO // KPI DE SURTIDO Y ENVÍOS")
-
-            with col_indicador_s:
-                fecha_str_s = ahora_surtido.strftime("%d/%m/%Y")
-                hora_str_s = ahora_surtido.strftime("%H:%M:%S")
-                st.markdown(
-                    f"""
-                    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 10px; padding: 6px 12px; background: #182229; border: 1px solid #34495E; border-radius: 6px;">
-                        <div style="width: 6px; height: 6px; background: #00FFAA; border-radius: 50%; box-shadow: 0 0 8px #00FFAA;"></div>
-                        <span style="color: #8B9BB4; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Sync GDL:</span>
-                        <span style="color: #E8EEF2; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;">{fecha_str_s} &bull; <span style="color:#00FFAA;">{hora_str_s}</span></span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-            with st.spinner("🔄 Conectando con bases remotas y cruzando guías y métricas de surtido..."):
+            def ejecutar_carga_real():
                 df_raw_surtido = cargar_datos_envios()
                 df_dashboard_global = cargar_datos_dashboard_global()
 
@@ -229,6 +211,62 @@ def main():
                     df_t1_global.columns = df_t1_global.columns.str.strip().str.upper()
                 except Exception:
                     pass
+
+                return df_raw_surtido, df_dashboard_global, df_t1_global
+
+            indicador_carga = st.empty()
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                futuro_carga = executor.submit(ejecutar_carga_real)
+                i_carga = 0
+
+                while not futuro_carga.done():
+                    mensaje_carga = mensajes_carga[i_carga % len(mensajes_carga)]
+
+                    indicador_carga.markdown(
+                        f"""
+                        <div style="
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            gap:12px;
+                            margin:12px 0 18px;
+                            padding:13px 18px;
+                            background:#263238;
+                            border:1px solid rgba(255,255,255,0.06);
+                            border-radius:10px;
+                            color:#D7DEE3;
+                            font-size:14px;
+                            font-weight:500;
+                        ">
+                            <div style="
+                                width:16px;
+                                height:16px;
+                                border:2px solid rgba(0,212,255,.20);
+                                border-top:2px solid #00D4FF;
+                                border-radius:50%;
+                                animation:nexion_spin .8s linear infinite;
+                            "></div>
+
+                            <span>{mensaje_carga}</span>
+                        </div>
+
+                        <style>
+                        @keyframes nexion_spin {{
+                            from {{ transform:rotate(0deg); }}
+                            to {{ transform:rotate(360deg); }}
+                        }}
+                        </style>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    time.sleep(0.8)
+                    i_carga += 1
+
+                df_raw_surtido, df_dashboard_global, df_t1_global = futuro_carga.result()
+
+            indicador_carga.empty()
 
             if df_raw_surtido.empty:
                 st.warning("No se encontraron registros en la base de datos de envíos.")
