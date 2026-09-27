@@ -286,7 +286,7 @@ def main():
                 
                 if df_raw_surtido.empty:
                     st.warning("No se encontraron registros en la base de datos de envíos.")
-                else:
+                
                     # Normalización de estructura base
                     df_envios = pd.DataFrame()
                     df_envios['factura'] = df_raw_surtido.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
