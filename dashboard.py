@@ -962,9 +962,301 @@ def main():
         # ----------------------------------------------------------
         with tab4:
             render_subtitulo("RANKING DE FLETERAS // DESEMPEÑO Y PUNTUALIDAD")
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.info("💡 **Espacio reservado para la Pestaña 4.** Espacio libre y bien delimitado para nuevos componentes.")
-            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 4
+            st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
+
+            # --- PREPARACIÓN DE DATOS BASE (todo el ranking parte de aquí) ---
+            df_rank_raw = df_raw.copy()
+            for col_fecha_rk in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
+                if col_fecha_rk in df_rank_raw.columns:
+                    df_rank_raw[col_fecha_rk] = pd.to_datetime(df_rank_raw[col_fecha_rk], dayfirst=True, errors='coerce')
+                else:
+                    df_rank_raw[col_fecha_rk] = pd.NaT
+
+            if "FLETERA" not in df_rank_raw.columns:
+                df_rank_raw["FLETERA"] = ""
+            df_rank_raw["FLETERA"] = df_rank_raw["FLETERA"].fillna("")
+
+            if "INCIDENCIAS" not in df_rank_raw.columns:
+                df_rank_raw["INCIDENCIAS"] = ""
+            df_rank_raw["INCIDENCIAS"] = df_rank_raw["INCIDENCIAS"].fillna("")
+
+            def _limpiar_moneda_rk(serie):
+                return pd.to_numeric(
+                    serie.astype(str).str.replace(r"[^\d\.\-]", "", regex=True).replace("", "0"),
+                    errors="coerce"
+                ).fillna(0.0)
+
+            for col_num_rk in ["COSTO DE LA GUÍA", "COSTOS ADICIONALES", "CANTIDAD DE CAJAS"]:
+                df_rank_raw[col_num_rk] = _limpiar_moneda_rk(df_rank_raw[col_num_rk]) if col_num_rk in df_rank_raw.columns else 0.0
+
+            # --- FILTRO COMPARTIDO POR LAS 3 SUB-TABS ---
+            rkf1, rkf2 = st.columns([1.3, 3])
+            with rkf1:
+                mes_sel_rank = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1, key="select_mes_rank")
+            with rkf2:
+                op_fletera_rank = sorted([x for x in df_rank_raw["FLETERA"].unique().tolist() if str(x).strip() != ""])
+                filtro_fletera_rank = st.multiselect("FLETERA", op_fletera_rank, default=[], key="rank_filtro_fletera")
+
+            num_mes_rank = meses.index(mes_sel_rank) + 1
+            df_rank = df_rank_raw[df_rank_raw["FECHA DE ENVÍO"].dt.month == num_mes_rank].copy()
+            if filtro_fletera_rank:
+                df_rank = df_rank[df_rank["FLETERA"].isin(filtro_fletera_rank)]
+            df_rank = df_rank[df_rank["FLETERA"].astype(str).str.strip() != ""]
+
+            st.markdown(f"""<div style="text-align:left; margin-top:5px; margin-bottom:5px;">
+                <span style="color:#FFC000; font-weight:400; font-size:12px; letter-spacing:3px;">
+                    MOSTRANDO {len(df_rank)} REGISTROS CORRESPONDIENTES A {mes_sel_rank}
+                </span>
+            </div>""", unsafe_allow_html=True)
+
+            # --- MÉTRICAS BASE POR REGISTRO ---
+            df_rank["_ENTREGADO"] = df_rank["FECHA DE ENTREGA REAL"].notna()
+            df_rank["_A_TIEMPO"] = df_rank["_ENTREGADO"] & (df_rank["FECHA DE ENTREGA REAL"] <= df_rank["PROMESA DE ENTREGA"])
+            df_rank["_INCIDENCIA"] = ~df_rank["INCIDENCIAS"].astype(str).str.strip().str.upper().isin(["", "OK"])
+            df_rank["_DIAS_TRANSITO"] = (df_rank["FECHA DE ENTREGA REAL"] - df_rank["FECHA DE ENVÍO"]).dt.days
+            df_rank["_COSTO_TOTAL"] = df_rank["COSTO DE LA GUÍA"] + df_rank["COSTOS ADICIONALES"]
+
+            # --- RESUMEN AGREGADO POR FLETERA (alimenta las 3 sub-tabs) ---
+            filas_resumen_rk = []
+            for fletera_rk, g_rk in df_rank.groupby("FLETERA"):
+                entregados_rk = int(g_rk["_ENTREGADO"].sum())
+                a_tiempo_rk = int(g_rk["_A_TIEMPO"].sum())
+                pct_a_tiempo_rk = (a_tiempo_rk / entregados_rk * 100) if entregados_rk else None
+                incidencias_pct_rk = (g_rk["_INCIDENCIA"].sum() / len(g_rk) * 100) if len(g_rk) else 0.0
+                dias_validos_rk = g_rk.loc[g_rk["_ENTREGADO"] & (g_rk["_DIAS_TRANSITO"] >= 0), "_DIAS_TRANSITO"]
+                dias_prom_rk = dias_validos_rk.mean() if not dias_validos_rk.empty else None
+                cajas_sum_rk = g_rk["CANTIDAD DE CAJAS"].sum()
+                costo_sum_rk = g_rk["_COSTO_TOTAL"].sum()
+                costo_prom_envio_rk = g_rk["_COSTO_TOTAL"].mean() if len(g_rk) else 0.0
+                costo_prom_caja_rk = (costo_sum_rk / cajas_sum_rk) if cajas_sum_rk else None
+                filas_resumen_rk.append({
+                    "FLETERA": fletera_rk,
+                    "ENVIOS": len(g_rk),
+                    "ENTREGADOS": entregados_rk,
+                    "A_TIEMPO": a_tiempo_rk,
+                    "RETRASO": max(entregados_rk - a_tiempo_rk, 0),
+                    "PCT_A_TIEMPO": pct_a_tiempo_rk,
+                    "INCIDENCIAS_PCT": incidencias_pct_rk,
+                    "DIAS_TRANSITO_PROM": dias_prom_rk,
+                    "COSTO_PROM_ENVIO": costo_prom_envio_rk,
+                    "COSTO_PROM_CAJA": costo_prom_caja_rk,
+                })
+            df_resumen_rk = pd.DataFrame(filas_resumen_rk)
+
+            config_layout_rk = {
+                "paper_bgcolor": "rgba(0,0,0,0)",
+                "plot_bgcolor": "rgba(0,0,0,0)",
+                "font": {"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 12},
+                "margin": {"t": 20, "b": 10, "l": 10, "r": 10},
+                "height": 360,
+            }
+
+            def _titulo_sub_rk(texto_sub):
+                st.markdown(f"""<div style="text-align:left; margin-top:5px; margin-bottom:15px;">
+                    <span style="color:#FFC000; font-weight:600; font-size:12px; letter-spacing:3px;">
+                        {texto_sub}
+                    </span>
+                </div>""", unsafe_allow_html=True)
+
+            sub_rank1, sub_rank2, sub_rank3 = st.tabs([
+                "EFECTIVIDAD DE ENTREGAS",
+                "TIEMPOS DE TRÁNSITO",
+                "COSTO PROMEDIO POR PAQUETERÍA",
+            ])
+
+            # ==========================================================
+            # SUB-TAB 1: EFECTIVIDAD DE ENTREGAS
+            # ==========================================================
+            with sub_rank1:
+                _titulo_sub_rk("EFECTIVIDAD DE ENTREGAS // % DE CUMPLIMIENTO DE PROMESA")
+
+                total_entregados_rk = int(df_rank["_ENTREGADO"].sum())
+                total_a_tiempo_rk = int(df_rank["_A_TIEMPO"].sum())
+                efectividad_global_rk = (total_a_tiempo_rk / total_entregados_rk * 100) if total_entregados_rk else 0.0
+
+                df_con_entregas_rk = df_resumen_rk[df_resumen_rk["ENTREGADOS"] > 0]
+                if not df_con_entregas_rk.empty:
+                    fila_top_rk = df_con_entregas_rk.loc[df_con_entregas_rk["PCT_A_TIEMPO"].idxmax()]
+                    fletera_top_rk = f"{fila_top_rk['FLETERA']}"
+                    fletera_top_val_rk = f"{fila_top_rk['PCT_A_TIEMPO']:.0f}%"
+                else:
+                    fletera_top_rk, fletera_top_val_rk = "—", "—"
+
+                if not df_resumen_rk.empty:
+                    fila_inc_rk = df_resumen_rk.loc[df_resumen_rk["INCIDENCIAS_PCT"].idxmax()]
+                    fletera_inc_rk = f"{fila_inc_rk['FLETERA']}"
+                    fletera_inc_val_rk = f"{fila_inc_rk['INCIDENCIAS_PCT']:.0f}%"
+                else:
+                    fletera_inc_rk, fletera_inc_val_rk = "—", "—"
+
+                rk1_cols = st.columns(4)
+                with rk1_cols[0]:
+                    render_flat_card("Efectividad Global", f"{efectividad_global_rk:.0f}%", "#8FBF9F", border_alpha="143,191,159")
+                with rk1_cols[1]:
+                    render_flat_card("Pedidos Entregados", total_entregados_rk, "#E8EEF2")
+                with rk1_cols[2]:
+                    render_flat_card(f"Más Puntual: {fletera_top_rk}", fletera_top_val_rk, "#FFD166")
+                with rk1_cols[3]:
+                    render_flat_card(f"Más Incidencias: {fletera_inc_rk}", fletera_inc_val_rk, "#B98B78", border_alpha="185,139,120")
+
+                st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+
+                rkc1, rkc2 = st.columns(2)
+                with rkc1:
+                    st.markdown("<div class='donut-section-title-s'>RANKING DE EFECTIVIDAD POR FLETERA (%)</div>", unsafe_allow_html=True)
+                    if not df_con_entregas_rk.empty:
+                        df_plot_rk1 = df_con_entregas_rk.sort_values("PCT_A_TIEMPO", ascending=True)
+                        fig_rk1 = px.bar(df_plot_rk1, x="PCT_A_TIEMPO", y="FLETERA", orientation="h",
+                                          color_discrete_sequence=["#8FBF9F"])
+                        fig_rk1.update_traces(text=df_plot_rk1["PCT_A_TIEMPO"].round(0).astype(int).astype(str) + "%",
+                                              textposition="outside", textfont=dict(color="#E8EEF2"))
+                        fig_rk1.update_layout(**config_layout_rk, xaxis_title="% A TIEMPO", yaxis_title=None)
+                        st.plotly_chart(fig_rk1, use_container_width=True, config={'displayModeBar': False})
+                    else:
+                        st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin entregas registradas en este período</div>", unsafe_allow_html=True)
+
+                with rkc2:
+                    st.markdown("<div class='donut-section-title-s'>COMPOSICIÓN DE ENTREGAS: A TIEMPO VS. CON RETRASO</div>", unsafe_allow_html=True)
+                    if not df_con_entregas_rk.empty:
+                        df_largo_rk = pd.concat([
+                            df_con_entregas_rk[["FLETERA", "A_TIEMPO"]].rename(columns={"A_TIEMPO": "Cantidad"}).assign(Estatus="A TIEMPO"),
+                            df_con_entregas_rk[["FLETERA", "RETRASO"]].rename(columns={"RETRASO": "Cantidad"}).assign(Estatus="CON RETRASO"),
+                        ])
+                        fig_rk2 = px.bar(df_largo_rk, x="FLETERA", y="Cantidad", color="Estatus", barmode="stack",
+                                          color_discrete_map={"A TIEMPO": "#8FBF9F", "CON RETRASO": "#B98B78"})
+                        fig_rk2.update_layout(**config_layout_rk, xaxis_title=None, yaxis_title=None,
+                                              legend={"orientation": "h", "y": -0.18})
+                        st.plotly_chart(fig_rk2, use_container_width=True, config={'displayModeBar': False})
+                    else:
+                        st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin entregas registradas en este período</div>", unsafe_allow_html=True)
+
+            # ==========================================================
+            # SUB-TAB 2: TIEMPOS DE TRÁNSITO
+            # ==========================================================
+            with sub_rank2:
+                _titulo_sub_rk("TIEMPOS DE TRÁNSITO // DÍAS DE ENVÍO A ENTREGA")
+
+                df_dias_validos_rk = df_rank[df_rank["_ENTREGADO"] & (df_rank["_DIAS_TRANSITO"] >= 0)]
+                tiempo_prom_gral_rk = df_dias_validos_rk["_DIAS_TRANSITO"].mean() if not df_dias_validos_rk.empty else 0.0
+
+                df_con_tiempo_rk = df_resumen_rk[df_resumen_rk["DIAS_TRANSITO_PROM"].notna()]
+                if not df_con_tiempo_rk.empty:
+                    fila_rapida_rk = df_con_tiempo_rk.loc[df_con_tiempo_rk["DIAS_TRANSITO_PROM"].idxmin()]
+                    fila_lenta_rk = df_con_tiempo_rk.loc[df_con_tiempo_rk["DIAS_TRANSITO_PROM"].idxmax()]
+                    rapida_nom_rk, rapida_val_rk = fila_rapida_rk["FLETERA"], f"{fila_rapida_rk['DIAS_TRANSITO_PROM']:.1f} días"
+                    lenta_nom_rk, lenta_val_rk = fila_lenta_rk["FLETERA"], f"{fila_lenta_rk['DIAS_TRANSITO_PROM']:.1f} días"
+                else:
+                    rapida_nom_rk, rapida_val_rk = "—", "—"
+                    lenta_nom_rk, lenta_val_rk = "—", "—"
+
+                rk2_cols = st.columns(4)
+                with rk2_cols[0]:
+                    render_flat_card("Tiempo Promedio General", f"{tiempo_prom_gral_rk:.1f} días", "#7FA0B0")
+                with rk2_cols[1]:
+                    render_flat_card("Envíos Analizados", len(df_dias_validos_rk), "#E8EEF2")
+                with rk2_cols[2]:
+                    render_flat_card(f"Más Rápida: {rapida_nom_rk}", rapida_val_rk, "#8FBF9F", border_alpha="143,191,159")
+                with rk2_cols[3]:
+                    render_flat_card(f"Más Lenta: {lenta_nom_rk}", lenta_val_rk, "#B98B78", border_alpha="185,139,120")
+
+                st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+
+                rkc3, rkc4 = st.columns(2)
+                with rkc3:
+                    st.markdown("<div class='donut-section-title-s'>RANKING DE TIEMPO PROMEDIO DE TRÁNSITO (DÍAS)</div>", unsafe_allow_html=True)
+                    if not df_con_tiempo_rk.empty:
+                        df_plot_rk3 = df_con_tiempo_rk.sort_values("DIAS_TRANSITO_PROM", ascending=False)
+                        fig_rk3 = px.bar(df_plot_rk3, x="DIAS_TRANSITO_PROM", y="FLETERA", orientation="h",
+                                          color_discrete_sequence=["#7FA0B0"])
+                        fig_rk3.update_traces(text=df_plot_rk3["DIAS_TRANSITO_PROM"].round(1).astype(str) + " días",
+                                              textposition="outside", textfont=dict(color="#E8EEF2"))
+                        fig_rk3.update_layout(**config_layout_rk, xaxis_title="DÍAS PROMEDIO", yaxis_title=None)
+                        st.plotly_chart(fig_rk3, use_container_width=True, config={'displayModeBar': False})
+                    else:
+                        st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin entregas registradas en este período</div>", unsafe_allow_html=True)
+
+                with rkc4:
+                    st.markdown("<div class='donut-section-title-s'>CONSISTENCIA DE TIEMPOS POR FLETERA</div>", unsafe_allow_html=True)
+                    if not df_dias_validos_rk.empty:
+                        fig_rk4 = px.box(df_dias_validos_rk, x="FLETERA", y="_DIAS_TRANSITO",
+                                          color_discrete_sequence=["#7FA0B0"])
+                        fig_rk4.update_layout(**config_layout_rk, xaxis_title=None, yaxis_title="DÍAS DE TRÁNSITO")
+                        st.plotly_chart(fig_rk4, use_container_width=True, config={'displayModeBar': False})
+                    else:
+                        st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos suficientes para graficar</div>", unsafe_allow_html=True)
+
+            # ==========================================================
+            # SUB-TAB 3: COSTO PROMEDIO POR PAQUETERÍA
+            # ==========================================================
+            with sub_rank3:
+                _titulo_sub_rk("COSTO PROMEDIO POR PAQUETERÍA // GUÍA + ADICIONALES")
+
+                costo_prom_envio_gral_rk = df_rank["_COSTO_TOTAL"].mean() if len(df_rank) else 0.0
+                cajas_totales_rk = df_rank["CANTIDAD DE CAJAS"].sum()
+                costo_prom_caja_gral_rk = (df_rank["_COSTO_TOTAL"].sum() / cajas_totales_rk) if cajas_totales_rk else 0.0
+
+                df_con_costo_rk = df_resumen_rk[df_resumen_rk["ENVIOS"] > 0]
+                if not df_con_costo_rk.empty:
+                    fila_barata_rk = df_con_costo_rk.loc[df_con_costo_rk["COSTO_PROM_ENVIO"].idxmin()]
+                    fila_cara_rk = df_con_costo_rk.loc[df_con_costo_rk["COSTO_PROM_ENVIO"].idxmax()]
+                    barata_nom_rk, barata_val_rk = fila_barata_rk["FLETERA"], f"${fila_barata_rk['COSTO_PROM_ENVIO']:,.0f}"
+                    cara_nom_rk, cara_val_rk = fila_cara_rk["FLETERA"], f"${fila_cara_rk['COSTO_PROM_ENVIO']:,.0f}"
+                else:
+                    barata_nom_rk, barata_val_rk = "—", "—"
+                    cara_nom_rk, cara_val_rk = "—", "—"
+
+                rk3_cols = st.columns(4)
+                with rk3_cols[0]:
+                    render_flat_card("Costo Prom. por Envío", f"${costo_prom_envio_gral_rk:,.0f}", "#B98B78", border_alpha="185,139,120")
+                with rk3_cols[1]:
+                    render_flat_card("Costo Prom. por Caja", f"${costo_prom_caja_gral_rk:,.2f}", "#C9A46C")
+                with rk3_cols[2]:
+                    render_flat_card(f"Más Económica: {barata_nom_rk}", barata_val_rk, "#8FBF9F", border_alpha="143,191,159")
+                with rk3_cols[3]:
+                    render_flat_card(f"Más Cara: {cara_nom_rk}", cara_val_rk, "#FF6B6B", border_alpha="255,75,75")
+
+                st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+
+                rkc5, rkc6 = st.columns(2)
+                with rkc5:
+                    st.markdown("<div class='donut-section-title-s'>RANKING DE COSTO PROMEDIO POR ENVÍO</div>", unsafe_allow_html=True)
+                    if not df_con_costo_rk.empty:
+                        df_plot_rk5 = df_con_costo_rk.sort_values("COSTO_PROM_ENVIO", ascending=False)
+                        fig_rk5 = px.bar(df_plot_rk5, x="COSTO_PROM_ENVIO", y="FLETERA", orientation="h",
+                                          color_discrete_sequence=["#B98B78"])
+                        fig_rk5.update_traces(text="$" + df_plot_rk5["COSTO_PROM_ENVIO"].round(0).astype(int).astype(str),
+                                              textposition="outside", textfont=dict(color="#E8EEF2"))
+                        fig_rk5.update_layout(**config_layout_rk, xaxis_title="COSTO PROMEDIO ($)", yaxis_title=None)
+                        st.plotly_chart(fig_rk5, use_container_width=True, config={'displayModeBar': False})
+                    else:
+                        st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos para graficar</div>", unsafe_allow_html=True)
+
+                with rkc6:
+                    st.markdown("<div class='donut-section-title-s'>RANKING DE COSTO PROMEDIO POR CAJA</div>", unsafe_allow_html=True)
+                    df_con_costo_caja_rk = df_con_costo_rk[df_con_costo_rk["COSTO_PROM_CAJA"].notna()]
+                    if not df_con_costo_caja_rk.empty:
+                        df_plot_rk6 = df_con_costo_caja_rk.sort_values("COSTO_PROM_CAJA", ascending=False)
+                        fig_rk6 = px.bar(df_plot_rk6, x="COSTO_PROM_CAJA", y="FLETERA", orientation="h",
+                                          color_discrete_sequence=["#C9A46C"])
+                        fig_rk6.update_traces(text="$" + df_plot_rk6["COSTO_PROM_CAJA"].round(2).astype(str),
+                                              textposition="outside", textfont=dict(color="#E8EEF2"))
+                        fig_rk6.update_layout(**config_layout_rk, xaxis_title="COSTO PROMEDIO ($)", yaxis_title=None)
+                        st.plotly_chart(fig_rk6, use_container_width=True, config={'displayModeBar': False})
+                    else:
+                        st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos de cajas para graficar</div>", unsafe_allow_html=True)
+
+                st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div class='donut-section-title-s'>MAPA DE VALOR: COSTO PROMEDIO VS. EFECTIVIDAD POR FLETERA</div>", unsafe_allow_html=True)
+                df_mapa_valor_rk = df_resumen_rk[df_resumen_rk["PCT_A_TIEMPO"].notna() & (df_resumen_rk["ENVIOS"] > 0)]
+                if not df_mapa_valor_rk.empty:
+                    fig_rk7 = px.scatter(df_mapa_valor_rk, x="COSTO_PROM_ENVIO", y="PCT_A_TIEMPO", text="FLETERA",
+                                          size="ENVIOS", color_discrete_sequence=["#7FA0B0"])
+                    fig_rk7.update_traces(textposition="top center", textfont=dict(color="#E8EEF2", size=10), marker=dict(line=dict(width=0)))
+                    fig_rk7.update_layout(**{**config_layout_rk, "height": 380},
+                                          xaxis_title="COSTO PROMEDIO POR ENVÍO ($)", yaxis_title="% ENTREGAS A TIEMPO")
+                    st.plotly_chart(fig_rk7, use_container_width=True, config={'displayModeBar': False})
+                else:
+                    st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos suficientes para graficar</div>", unsafe_allow_html=True)
 
         # ----------------------------------------------------------
         # TAB 5: PESTAÑA 5 (Espacio reservado para futuro contenido)
