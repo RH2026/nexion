@@ -143,8 +143,8 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     /* TEXTO DEL EXPANDER */
     div[data-testid="stPopoverBody"] [data-testid="stExpander"] details > summary p {{
         color: #ffffff !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
         letter-spacing: 1px !important;
         text-transform: uppercase !important;
     }}
