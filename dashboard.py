@@ -1129,11 +1129,11 @@ def main():
                         st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin entregas registradas en este período</div>", unsafe_allow_html=True)
 
                 with rkc2:
-                    st.markdown("<div class='donut-section-title-s'>COMPOSICIÓN DE ENTREGAS: A TIEMPO VS. CON RETRASO</div>", unsafe_allow_html=True)
-                    if not df_con_entregas_rk.empty:
+                    st.markdown("<div class='donut-section-title-s'>COMPOSICIÓN — FLETERAS PRINCIPALES: A TIEMPO VS. CON RETRASO</div>", unsafe_allow_html=True)
+                    if not df_con_entregas_principales_rk.empty:
                         df_largo_rk = pd.concat([
-                            df_con_entregas_rk[["FLETERA", "A_TIEMPO"]].rename(columns={"A_TIEMPO": "Cantidad"}).assign(Estatus="A TIEMPO"),
-                            df_con_entregas_rk[["FLETERA", "RETRASO"]].rename(columns={"RETRASO": "Cantidad"}).assign(Estatus="CON RETRASO"),
+                            df_con_entregas_principales_rk[["FLETERA", "A_TIEMPO"]].rename(columns={"A_TIEMPO": "Cantidad"}).assign(Estatus="A TIEMPO"),
+                            df_con_entregas_principales_rk[["FLETERA", "RETRASO"]].rename(columns={"RETRASO": "Cantidad"}).assign(Estatus="CON RETRASO"),
                         ])
                         fig_rk2 = px.bar(df_largo_rk, x="FLETERA", y="Cantidad", color="Estatus", barmode="stack",
                                           color_discrete_map={"A TIEMPO": "#8FBF9F", "CON RETRASO": "#B98B78"})
