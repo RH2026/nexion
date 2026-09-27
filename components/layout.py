@@ -120,13 +120,15 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
    EXPANDERS DEL MENÚ
    ============================================================ */
 
-    div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
-        border: 1px solid #628290 !important;
-        background: transparent !important;
-        border-radius: 7px !important;
-        margin: 2px 0 !important;
-        padding: 0 !important;
-        transition: all 0.25s ease !important;
+    div[data-testid="stPopoverBody"] [data-testid="stExpander"] details > summary p {{
+    color: #ffffff !important;
+    font-family: inherit !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: normal !important;
+    line-height: normal !important;
+    margin: 0 !important;
     }}
     
     /* ENCABEZADO DEL EXPANDER */
