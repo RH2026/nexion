@@ -571,9 +571,9 @@ def main():
             
             st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
             sub_env1, sub_env2, sub_env3 = st.tabs([
-                "\U0001F4E6 RESUMEN DEL MES",
-                "\U0001F4B9 INTELIGENCIA DE NEGOCIO",
-                "\U0001F3C6 TOP CLIENTES Y DISTRIBUCIÓN",
+                "RESUMEN DEL MES",
+                "INTELIGENCIA DE NEGOCIO",
+                "TOP CLIENTES Y DISTRIBUCIÓN",
             ])
 
             with sub_env1:
