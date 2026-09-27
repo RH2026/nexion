@@ -569,9 +569,9 @@ def main():
             render_subtitulo("KPI'S DE ENVÍOS // PEDIDOS, ENTREGAS Y EFECTIVIDAD DEL MES")
             st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
             sub_env1, sub_env2, sub_env3 = st.tabs([
-                "\U0001F4E6 RESUMEN DEL MES",
-                "\U0001F4B9 INTELIGENCIA DE NEGOCIO",
-                "\U0001F3C6 TOP CLIENTES Y DISTRIBUCIÓN",
+                "RESUMEN DEL MES",
+                "INTELIGENCIA DE NEGOCIO",
+                "TOP CLIENTES Y DISTRIBUCIÓN",
             ])
 
             with sub_env1:
@@ -596,7 +596,7 @@ def main():
 
                 if df_raw_tab1 is not None:
                     st.markdown(f"""<div style="text-align:left; margin-top:5px; margin-bottom:5px;">
-                        <span style="color:#FFD166; font-weight:600; font-size:14px; letter-spacing:3px;">
+                        <span style="color:#FFC000; font-weight:600; font-size:14px; letter-spacing:3px;">
                             Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}
                         </span>
                     </div>""", unsafe_allow_html=True)
@@ -838,8 +838,8 @@ def main():
                 # === GRUPO 2: CLIENTES Y CANAL DE ENVÍO ===
                 st.markdown(
                     """<div style="text-align:left; margin-top:15px; margin-bottom:15px;">
-                        <span style="color:#FFD166; font-weight:600; font-size:14px; letter-spacing:3px;">
-                            GRUPO 2 · CLIENTES Y CANAL DE ENVÍO
+                        <span style="color:#FFC000; font-weight:600; font-size:14px; letter-spacing:3px;">
+                            CLIENTES // CANAL DE ENVÍO
                         </span>
                     </div>""",
                     unsafe_allow_html=True
