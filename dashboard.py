@@ -221,27 +221,18 @@ def main():
 
             st.markdown("""
             <style>
-            div[data-testid="stSpinner"] {
-                justify-content: center !important;
-                align-items: center !important;
+            [data-testid="stSpinner"] {
                 width: 100% !important;
-                text-align: center !important;
             }
 
-            div[data-testid="stSpinner"] > div {
-                justify-content: center !important;
-                align-items: center !important;
+            [data-testid="stSpinner"] > div {
+                margin-left: auto !important;
+                margin-right: auto !important;
             }
 
-            div[data-testid="stSpinner"] svg {
-                width: 28px !important;
-                height: 28px !important;
-            }
-
-            div[data-testid="stSpinner"] p {
-                text-align: center !important;
-                font-size: 14px !important;
-                font-weight: 600 !important;
+            [data-testid="stSpinner"] svg {
+                width: 32px !important;
+                height: 32px !important;
             }
             </style>
             """, unsafe_allow_html=True)
