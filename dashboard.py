@@ -595,7 +595,7 @@ def main():
                     df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
 
                 if df_raw_tab1 is not None:
-                    st.markdown(f"<p style='color:#00FFAA; font-size:11px; font-style:italic; margin-top:5px;'>Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color:#00FFAA; font-size:14px; font-style:italic; margin-top:1px;'>Mostrando {len(df_filtrado_mes)} registros correspondientes a {mes_sel}</p>", unsafe_allow_html=True)
 
                 total_p = len(df_mes)
                 entregados = len(df_mes[df_mes["FECHA DE ENTREGA REAL"].notna()])
