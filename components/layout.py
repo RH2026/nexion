@@ -116,13 +116,55 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
         margin-bottom: 0rem !important;
     }}
     
+    /* ============================================================
+   EXPANDERS DEL MENÚ
+   ============================================================ */
+
     div[data-testid="stPopoverBody"] [data-testid="stExpander"] {{
-        border: none !important;
+        border: 1px solid #628290 !important;
         background: transparent !important;
-        margin-bottom: 0rem !important;
-        > div {{
-            padding: 0 !important;
-        }}
+        border-radius: 7px !important;
+        margin: 2px 0 !important;
+        padding: 0 !important;
+        transition: all 0.25s ease !important;
+    }}
+    
+    /* ENCABEZADO DEL EXPANDER */
+    div[data-testid="stPopoverBody"] [data-testid="stExpander"] details > summary {{
+        background: #628290 !important;
+        border-radius: 7px !important;
+        padding: 8px 10px !important;
+        color: #ffffff !important;
+        transition: all 0.25s ease !important;
+    }}
+    
+    /* TEXTO DEL EXPANDER */
+    div[data-testid="stPopoverBody"] [data-testid="stExpander"] details > summary p {{
+        color: #ffffff !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: 1px !important;
+        text-transform: uppercase !important;
+    }}
+    
+    /* HOVER DEL EXPANDER */
+    div[data-testid="stPopoverBody"] [data-testid="stExpander"] details > summary:hover {{
+        background: #4E6772 !important;
+        border-color: #4E6772 !important;
+    }}
+    
+    div[data-testid="stPopoverBody"] [data-testid="stExpander"] details > summary:hover p {{
+        color: #ffffff !important;
+    }}
+    
+    /* EXPANDER ABIERTO / ACTIVO */
+    div[data-testid="stPopoverBody"] [data-testid="stExpander"] details[open] > summary {{
+        background: #4E6772 !important;
+        border-color: #4E6772 !important;
+    }}
+    
+    div[data-testid="stPopoverBody"] [data-testid="stExpander"] details[open] > summary p {{
+        color: #ffffff !important;
     }}
     
     /* --- TOAST ESTILO TARJETA (MÓDULO BLOQUEADO) --- */
