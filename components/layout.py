@@ -151,8 +151,8 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     
     /* HOVER DEL EXPANDER */
     div[data-testid="stPopoverBody"] [data-testid="stExpander"] details > summary:hover {{
-        background: #4E6772 !important;
-        border-color: #4E6772 !important;
+        background: #3D515A !important;
+        border-color: #3D515A !important;
     }}
     
     div[data-testid="stPopoverBody"] [data-testid="stExpander"] details > summary:hover p {{
