@@ -199,6 +199,9 @@ def main():
             # Día base por defecto: AYER. Lo de hoy apenas se está surtiendo/programando,
             # así que para ver el cierre real (qué sí tiene guía y qué no) usamos ayer.
             ayer_gdl_surtido = hoy_gdl_surtido - timedelta(days=1)
+            # Los domingos no se consideran: si ayer fue domingo, tomamos el sábado.
+            if ayer_gdl_surtido.weekday() == 6:
+                ayer_gdl_surtido = ayer_gdl_surtido - timedelta(days=1)
 
             col_titulo_s, col_indicador_s = st.columns([4, 1.8], vertical_alignment="center")
 
@@ -384,6 +387,9 @@ def main():
                     rango_dias = st.selectbox("VENTANA", ["Día Anterior", "Últimos 7 días", "Histórico Completo"], index=0, key="kpi_filtro_ventana")
 
                 df_filtrado = df_envios.copy()
+
+                # Excluir domingos (por fecha de programación) de todos los KPIs de envíos
+                df_filtrado = df_filtrado[df_filtrado['dt_prog_parsed'].dt.weekday != 6]
 
                 if filtro_fprog is not None:
                     df_filtrado = df_filtrado[df_filtrado['dt_prog_parsed'].dt.date == filtro_fprog]
