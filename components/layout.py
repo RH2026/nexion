@@ -809,8 +809,8 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                     st.markdown(f"<div class='card-inv' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {inv_color};border-radius:10px;padding:10px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CÓDIGO / SKU</span><br><b style='font-size:16px;color:{inv_color};letter-spacing:1px;'>{i.get('CODIGO','')}</b></div><div style='flex:3;padding-left:20px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>DESCRIPCIÓN</span><br><span style='font-size:13px;color:white;font-weight:600;line-height:1.2;'>{i.get('DESCRIPCION','')}</span></div><div style='flex:1;text-align:right;'><span style='background:{inv_color}15;color:{inv_color};padding:3px 8px;border-radius:4px;font-size:9px;font-weight:800;border:1px solid {inv_color}30;text-transform:uppercase;'>DISPONIBLE</span></div></div>", unsafe_allow_html=True)
             elif tipo == "FACTURACION":
                 fact_color = "#F59E0B"  # ámbar: información encontrada, pero sin envío procesado
-                # Clases de entrega que por regla NO se procesan para envío (editable)
-                CLASES_SIN_ENVIO = ["CEDIS", "LOCAL", "CLIENTE PASA"]
+                # Tipos de TRANSPORTE que por regla NO se procesan para envío (editable)
+                TRANSPORTES_SIN_ENVIO = ["CEDIS", "LOCAL", "CLIENTE PASA"]
 
                 def _val(row, nombre_col):
                     """Valor limpio de una columna (sin importar mayúsculas/espacios en el encabezado)."""
@@ -832,7 +832,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                         </div>
                         <div style="font-size:12px; color:rgba(255,255,255,0.85); font-weight:600; margin-left:19px; line-height:1.5;">
                             El registro fue localizado; sin embargo, <b>aún no ha sido procesado para envío</b>.<br>
-                            Revisa la <b>CLASE DE ENTREGA</b> para conocer el motivo o comunícate con <b>Facturación</b> o <b>Logística</b>.
+                            Revisa el <b>TRANSPORTE</b> para conocer el motivo o comunícate con <b>Facturación</b> o <b>Logística</b>.
                         </div>
                     </div>""",
                     unsafe_allow_html=True,
@@ -844,19 +844,19 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                     cliente_f = html.escape(_val(f, "NOMBRE DEL CLIENTE") or "N/A")
                     destino_f = html.escape(_val(f, "DESTINO"))
                     guia_f = html.escape(_val(f, "NÚMERO DE GUÍA"))
-                    clase_raw = _val(f, "CLASE DE ENTREGA")
+                    clase_raw = _val(f, "TRANSPORTE")
                     clase_f = html.escape(clase_raw.upper() if clase_raw else "NO ESPECIFICADA")
 
-                    # ¿La clase de entrega es de las que no generan envío?
-                    sin_envio_por_clase = any(k in clase_raw.upper() for k in CLASES_SIN_ENVIO) if clase_raw else False
+                    # ¿El transporte es de los que no generan envío?
+                    sin_envio_por_clase = any(k in clase_raw.upper() for k in TRANSPORTES_SIN_ENVIO) if clase_raw else False
                     if sin_envio_por_clase:
-                        motivo_html = f"Esta clase de entrega <b>no se procesa para envío</b>"
+                        motivo_html = f"Este tipo de transporte <b>no se procesa para envío</b>"
                         clase_color = "#FF6B6B"
                     elif clase_raw:
-                        motivo_html = "Clase sin regla de exclusión: confirmar con Facturación / Logística"
+                        motivo_html = "Transporte sin regla de exclusión: confirmar con Facturación / Logística"
                         clase_color = fact_color
                     else:
-                        motivo_html = "Sin clase de entrega registrada: confirmar con Facturación / Logística"
+                        motivo_html = "Sin transporte registrado: confirmar con Facturación / Logística"
                         clase_color = fact_color
 
                     linea_cliente = f"ID: {no_cliente_f}" if no_cliente_f else ""
@@ -866,7 +866,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                         f"<div class='card-fact' style='background:rgba(38,32,20,0.75);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {fact_color};border-radius:12px;padding:16px 24px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;'>"
                         f"<div style='flex:1.2;min-width:150px;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:17px;color:{fact_color};letter-spacing:0.5px;'># {pedido_f}</b><br>{linea_guia}</div>"
                         f"<div style='flex:2.4;min-width:220px;padding-left:22px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{cliente_f}</b><br><span style='font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;'>{linea_cliente}{' | ' if linea_cliente and destino_f else ''}{destino_f}</span></div>"
-                        f"<div style='flex:1.8;min-width:200px;padding-left:22px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLASE DE ENTREGA</span><br><span style='background:{clase_color}20;color:{clase_color};padding:4px 12px;border-radius:6px;font-size:13px;font-weight:900;border:1px solid {clase_color};letter-spacing:1px;display:inline-block;margin-top:3px;'>{clase_f}</span><br><span style='font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;display:inline-block;margin-top:5px;'>{motivo_html}</span></div>"
+                        f"<div style='flex:1.8;min-width:200px;padding-left:22px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>TRANSPORTE</span><br><span style='background:{clase_color}20;color:{clase_color};padding:4px 12px;border-radius:6px;font-size:13px;font-weight:900;border:1px solid {clase_color};letter-spacing:1px;display:inline-block;margin-top:3px;'>{clase_f}</span><br><span style='font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;display:inline-block;margin-top:5px;'>{motivo_html}</span></div>"
                         f"<div style='flex:1.2;min-width:140px;text-align:right;'><span style='background:{fact_color}15;color:{fact_color};padding:5px 12px;border-radius:6px;font-size:10px;font-weight:800;border:1px solid {fact_color};text-transform:uppercase;letter-spacing:1px;display:inline-block;'>SIN PROCESAR PARA ENVÍO</span></div>"
                         f"</div>",
                         unsafe_allow_html=True,
