@@ -961,6 +961,9 @@ def main():
             df_carga_raw["MES"] = df_carga_raw["MES"].str.upper()
             df_carga_raw["CAJAS"] = pd.to_numeric(df_carga_raw["CAJAS"], errors="coerce").fillna(0) if "CAJAS" in df_carga_raw.columns else 0
 
+            # --- EXCLUIR "COBRO REGRESO" EXACTO: aún sin fletera asignada, sin guía ni cajas ---
+            df_carga_raw = df_carga_raw[df_carga_raw["FORMA DE ENVIO"].str.upper().str.strip() != "COBRO REGRESO"]
+
             # --- SOLO LAS 7 PAQUETERÍAS MÁS IMPORTANTES ---
             CARRIERS_PRINCIPALES_DC = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "PAQUETE", "SANCHEZ", "FLETES DE REGRESO", "FARMASES"]
             _fletera_dc = df_carga_raw["FLETERA"].fillna("").astype(str).str.upper() if "FLETERA" in df_carga_raw.columns else pd.Series("", index=df_carga_raw.index)
@@ -1048,6 +1051,30 @@ def main():
                 total_sel_dc = df_dest_sum_dc["CAJAS"].sum()
 
                 with col_dl_dc:
+                    st.markdown("""
+                        <style>
+                            .st-key-dl_carga_rutas button,
+                            .st-key-dl_carga_rutas [data-testid="stDownloadButton"] button,
+                            .st-key-dl_carga_rutas [data-testid="stBaseButton-secondary"] {
+                                background-color: #628290 !important;
+                                color: #ffffff !important;
+                                border: 1px solid #628290 !important;
+                                border-radius: 7px !important;
+                                font-weight: 700 !important;
+                                text-transform: uppercase !important;
+                                font-size: 10px !important;
+                                height: 32px !important;
+                                width: 100% !important;
+                                transition: all 0.3s ease !important;
+                            }
+                            .st-key-dl_carga_rutas button:hover,
+                            .st-key-dl_carga_rutas [data-testid="stBaseButton-secondary"]:hover {
+                                background-color: #4E6772 !important;
+                                border-color: #4E6772 !important;
+                                color: #ffffff !important;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
                     st.download_button("DESCARGAR CSV", data=df_dest_sum_dc.to_csv(index=False).encode("utf-8"),
                                        file_name=f"carga_{carrier_sel_dc}_{mes_sel_carga}.csv", mime="text/csv",
                                        use_container_width=True, key="dl_carga_rutas")
