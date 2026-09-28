@@ -18,6 +18,25 @@ import streamlit.components.v1 as components
 import streamlit as st
 import pytz
 
+@st.cache_data(ttl=60, show_spinner=False)
+def _leer_csv_remoto_o_local(nombre_archivo):
+    """Lee un CSV del repo en GitHub (dato fresco) y, si falla, de la carpeta local.
+    Acepta UTF-8 / Latin-1 y separadores distintos a coma. Devuelve (df, error)."""
+    url = f"https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/{nombre_archivo}"
+    ultimo_error = ""
+    for origen in (url, nombre_archivo):
+        for enc in ("utf-8-sig", "latin-1"):
+            try:
+                df = pd.read_csv(origen, dtype=str, encoding=enc)
+                if df.shape[1] == 1:  # separador distinto a coma (; o tab)
+                    df = pd.read_csv(origen, dtype=str, encoding=enc, sep=None, engine="python")
+                df.columns = df.columns.astype(str).str.strip()
+                return df, ""
+            except Exception as e_read:
+                ultimo_error = f"{origen} [{enc}]: {e_read}"
+    return None, ultimo_error
+
+
 def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     """
     Layout maestro de NEXION: incluye estilos, sesión, control de permisos, 
@@ -541,36 +560,73 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                 except Exception:
                     pass
 
-                # ── Tercer nivel: facturacion.csv (facturado pero aún NO procesado para envío) ──
-                res_fact = pd.DataFrame()
+                # ── Tercer nivel: envios.csv (envío registrado; se adapta al MISMO render de Matriz/T1) ──
+                res_env = pd.DataFrame()
                 if res_ops.empty and res_t1.empty:
                     try:
-                        df_fact_temp = None
-                        errores_fact = []
-                        # Primero GitHub (dato fresco, igual que la matriz) y luego archivo local
-                        for origen in (
-                            "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/facturacion.csv",
-                            "facturacion.csv",
-                        ):
-                            for enc in ("utf-8-sig", "latin-1"):
-                                try:
-                                    tmp = pd.read_csv(origen, dtype=str, encoding=enc)
-                                    if tmp.shape[1] == 1:  # separador distinto a coma (; o tab)
-                                        tmp = pd.read_csv(origen, dtype=str, encoding=enc, sep=None, engine="python")
-                                    df_fact_temp = tmp
-                                    break
-                                except Exception as e_read:
-                                    errores_fact.append(f"{origen} [{enc}]: {e_read}")
-                            if df_fact_temp is not None:
-                                break
-
-                        if df_fact_temp is None:
-                            st.toast("No se pudo leer facturacion.csv: " + errores_fact[-1][:120], icon="⚠️")
+                        df_env, err_env = _leer_csv_remoto_o_local("envios.csv")
+                        if df_env is None:
+                            st.toast("No se pudo leer envios.csv: " + err_env[-120:], icon="⚠️")
                         else:
-                            df_fact_temp.columns = df_fact_temp.columns.astype(str).str.strip()
-                            mapa_cols = {c.upper(): c for c in df_fact_temp.columns}
+                            mapa_env = {c.upper(): c for c in df_env.columns}
+                            claves_busq_env = ["FACTURA", "NOMBRE_CLIENTE", "NOMBRE_EXTRAN", "DESTINO"]
+                            cols_env = [mapa_env[k] for k in claves_busq_env if k in mapa_env]
+                            if cols_env:
+                                mask_env = df_env[cols_env].astype(str).apply(
+                                    lambda x: x.str.contains(query, case=False, na=False, regex=False)
+                                ).any(axis=1)
+                                match_env = df_env[mask_env].copy()
+                                if not match_env.empty:
+                                    # envios.csv -> nombres de columna que ya usa el render de Matriz/T1
+                                    equivalencias = {
+                                        "FACTURA": "NÚMERO DE PEDIDO",
+                                        "NOMBRE_CLIENTE": "NOMBRE DEL CLIENTE",
+                                        "DESTINO": "DESTINO",
+                                        "DIRECCION": "DOMICILIO",
+                                        "TRANSPORTE": "FLETERA",
+                                        "COSTO": "COSTO DE LA GUÍA",
+                                        "QUANTITY": "CANTIDAD DE CAJAS",
+                                        "FECHA DE ENVIO": "FECHA DE ENVÍO",
+                                        "FECHA DE PROGRAMACION": "PROMESA DE ENTREGA",
+                                        "ESTATUS": "COMENTARIOS",
+                                    }
+                                    match_env = match_env.rename(columns={mapa_env[k]: v for k, v in equivalencias.items() if k in mapa_env})
 
-                            # Columnas de búsqueda reales de facturacion.csv (sin importar mayúsculas)
+                                    # Si hay varias filas por partida, se agrupan por envío y se suma la cantidad
+                                    llaves_env = [c for c in ["NÚMERO DE PEDIDO", "FECHA DE ENVÍO", "FLETERA", "COMENTARIOS"] if c in match_env.columns]
+                                    if llaves_env:
+                                        if "CANTIDAD DE CAJAS" in match_env.columns:
+                                            qty_num = pd.to_numeric(match_env["CANTIDAD DE CAJAS"], errors="coerce")
+                                            suma = qty_num.groupby([match_env[k] for k in llaves_env], dropna=False).transform(lambda x: x.sum(min_count=1))
+                                            match_env["CANTIDAD DE CAJAS"] = [
+                                                (str(int(v)) if float(v).is_integer() else str(v)) if pd.notna(v) else orig
+                                                for v, orig in zip(suma, match_env["CANTIDAD DE CAJAS"])
+                                            ]
+                                        match_env = match_env.drop_duplicates(subset=llaves_env).reset_index(drop=True)
+
+                                    # Celdas vacías: que no se pinte "nan" en la tarjeta
+                                    match_env = match_env.fillna("")
+                                    if "FECHA DE ENVÍO" in match_env.columns:
+                                        match_env["FECHA DE ENVÍO"] = match_env["FECHA DE ENVÍO"].replace("", "PENDIENTE")
+                                    if "PROMESA DE ENTREGA" in match_env.columns:
+                                        match_env["PROMESA DE ENTREGA"] = match_env["PROMESA DE ENTREGA"].replace("", "N/A")
+
+                                    match_env["_ORIGEN"] = "ENVIOS"
+                                    res_env = match_env
+                            else:
+                                st.toast("envios.csv no trae las columnas esperadas (Factura, Nombre_Cliente, DESTINO...)", icon="⚠️")
+                    except Exception as e_env:
+                        st.toast(f"Error buscando en envios.csv: {str(e_env)[:120]}", icon="⚠️")
+
+                # ── Cuarto nivel: facturacion.csv (facturado pero aún NO procesado para envío) ──
+                res_fact = pd.DataFrame()
+                if res_ops.empty and res_t1.empty and res_env.empty:
+                    try:
+                        df_fact_temp, err_fact = _leer_csv_remoto_o_local("facturacion.csv")
+                        if df_fact_temp is None:
+                            st.toast("No se pudo leer facturacion.csv: " + err_fact[-120:], icon="⚠️")
+                        else:
+                            mapa_cols = {c.upper(): c for c in df_fact_temp.columns}
                             claves_busq = ["FACTURA", "REFERENCIA", "PEDIDO", "CLIENTE", "NOMBRE_CLIENTE", "DESTINO"]
                             cols_fact = [mapa_cols[k] for k in claves_busq if k in mapa_cols]
 
@@ -592,7 +648,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                         st.toast(f"Error buscando en facturacion.csv: {str(e_fact)[:120]}", icon="⚠️")
 
                 res_inv = pd.DataFrame()
-                if res_ops.empty and res_t1.empty and res_fact.empty:
+                if res_ops.empty and res_t1.empty and res_env.empty and res_fact.empty:
                     try:
                         df_inv_temp = pd.read_csv("inventario.csv")
                         df_inv_temp.columns = df_inv_temp.columns.str.strip()
@@ -613,6 +669,10 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                     st.session_state.busqueda_activa = True
                     st.session_state.tipo_resultado = "OPERACION" 
                     st.session_state.resultado_busqueda = res_t1
+                elif not res_env.empty:
+                    st.session_state.busqueda_activa = True
+                    st.session_state.tipo_resultado = "OPERACION"
+                    st.session_state.resultado_busqueda = res_env
                 elif not res_fact.empty:
                     st.session_state.busqueda_activa = True
                     st.session_state.tipo_resultado = "FACTURACION"
@@ -624,7 +684,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                 else:
                     st.session_state.busqueda_activa = False
                     st.session_state.resultado_busqueda = None
-                    st.toast("Sin resultados: No se encontró en Matriz Global, T1 ni Facturación", icon="⚠️")
+                    st.toast("Sin resultados: No se encontró en Matriz Global, T1, Envíos ni Facturación", icon="⚠️")
 
         with c4:
             with st.popover("🎛️ Módulos", use_container_width=True):
@@ -916,6 +976,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
             else:
                 if total == 1:
                     envio = resultados.iloc[0]
+                    es_envios = str(envio.get("_ORIGEN", "")) == "ENVIOS"
                     entregado_real = pd.notna(envio.get("FECHA DE ENTREGA REAL"))
                     f_entrega_val = envio["FECHA DE ENTREGA REAL"] if entregado_real else "PENDIENTE"
                     trigger_val = str(envio.get("TRIGGER", "")).strip()
@@ -925,6 +986,8 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                         n_guia = envio["NÚMERO DE GUÍA"]
                     elif trigger_val == "Enviada":
                         n_guia = "GENERANDO GUÍA..."
+                    elif es_envios:
+                        n_guia = "POR ASIGNAR"
                     else:
                         n_guia = "EN ESPERA DE SURTIDO"
 
@@ -933,7 +996,20 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                         f_promesa_dt = f_promesa_dt.normalize()
                     hoy = pd.Timestamp(datetime.now()).normalize()
 
-                    if not tiene_guia:
+                    if es_envios:
+                        # El estatus viene directo de envios.csv (columna ESTATUS)
+                        status_text = str(envio.get("COMENTARIOS", "")).strip().upper()
+                        if status_text in ("", "NAN", "NONE"):
+                            status_text = "EN PROCESO"
+                        if "ENTREGAD" in status_text:
+                            status_color, f_entrega_val = "#00FFAA", "ENTREGADO"
+                        elif any(k in status_text for k in ("CANCEL", "RETRAS", "INCIDENC")):
+                            status_color = "#ff4b4b"
+                        elif any(k in status_text for k in ("TRANSIT", "TRÁNSIT", "RUTA", "ENVIAD", "EMBARC")):
+                            status_color = "#38bdf8"
+                        else:
+                            status_color = "#FFA500"
+                    elif not tiene_guia:
                         status_text, status_color = ("GENERANDO GUÍA", "#38bdf8") if trigger_val == "Enviada" else ("SURTIENDO", "#FFA500")
                     elif not entregado_real:
                         status_text, status_color = ("EN TRÁNSITO", "#38bdf8") if pd.isna(f_promesa_dt) or hoy <= f_promesa_dt else ("RETRASO EN TRÁNSITO", "#ff4b4b")
@@ -945,6 +1021,28 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
 
                     tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">$ {envio.get('COSTO DE LA GUÍA','0.00')}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
                     st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
+
+                    if es_envios:
+                        def _dato_env(nombre):
+                            v = str(envio.get(nombre, "")).strip()
+                            return "" if v.lower() in ("", "nan", "none", "nat") else html.escape(v)
+
+                        extras_env = [
+                            ("ESTATUS ALMACÉN", _dato_env("ESTATUS ALMACEN")),
+                            ("ESTATUS LOGÍSTICA", _dato_env("ESTATUS LOGISTICA")),
+                            ("RECOMENDACIÓN", _dato_env("RECOMENDACION")),
+                            ("NOMBRE EXTRANJERO", _dato_env("Nombre_Extran")),
+                        ]
+                        chips_env = "".join(
+                            f"<div style='flex:1;min-width:160px;'><div style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>{etq}</div>"
+                            f"<div style='color:white;font-size:12px;font-weight:700;margin-top:2px;'>{val}</div></div>"
+                            for etq, val in extras_env if val
+                        )
+                        if chips_env:
+                            st.markdown(
+                                f"<div style=\"background:{vars_css['card']};border:1px solid {vars_css['border']};border-left:5px solid #a855f7;border-radius:8px;padding:12px 25px;margin:-15px 0 25px 0;display:flex;gap:20px;flex-wrap:wrap;font-family:'Inter',sans-serif;\">{chips_env}</div>",
+                                unsafe_allow_html=True,
+                            )
                 else:
                     st.markdown(f"<div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px;'><div style='background: {azul_premium}; width: 5px; height: 22px; border-radius: 3px; box-shadow: 0 0 10px {azul_premium};'></div><span style='color: white; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;'>MULTIPLE MATCHES DETECTED <span style='color: {azul_premium};'>({total})</span></span></div>", unsafe_allow_html=True)
                     st.markdown(f"<style>.card-nexion {{ transition: all 0.3s ease !important; cursor: pointer; }} .card-nexion:hover {{ transform: translateX(10px); border-color: {azul_premium} !important; background: rgba(30, 39, 46, 0.9) !important; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }}</style>", unsafe_allow_html=True)
