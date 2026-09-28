@@ -542,21 +542,54 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                     pass
 
                 # ── Tercer nivel: facturacion.csv (facturado pero aún NO procesado para envío) ──
-                # Usa las mismas columnas de búsqueda que la Matriz Global.
                 res_fact = pd.DataFrame()
                 if res_ops.empty and res_t1.empty:
                     try:
-                        df_fact_temp = pd.read_csv("facturacion.csv", dtype=str)
-                        df_fact_temp.columns = df_fact_temp.columns.str.strip()
-                        cols_fact_busq = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
-                        cols_fact = [c for c in cols_fact_busq if c in df_fact_temp.columns]
-                        if cols_fact:
-                            mask_fact = df_fact_temp[cols_fact].astype(str).apply(
-                                lambda x: x.str.contains(query, case=False, na=False, regex=False)
-                            ).any(axis=1)
-                            res_fact = df_fact_temp[mask_fact].copy()
-                    except Exception:
-                        pass
+                        df_fact_temp = None
+                        errores_fact = []
+                        # Primero GitHub (dato fresco, igual que la matriz) y luego archivo local
+                        for origen in (
+                            "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/facturacion.csv",
+                            "facturacion.csv",
+                        ):
+                            for enc in ("utf-8-sig", "latin-1"):
+                                try:
+                                    tmp = pd.read_csv(origen, dtype=str, encoding=enc)
+                                    if tmp.shape[1] == 1:  # separador distinto a coma (; o tab)
+                                        tmp = pd.read_csv(origen, dtype=str, encoding=enc, sep=None, engine="python")
+                                    df_fact_temp = tmp
+                                    break
+                                except Exception as e_read:
+                                    errores_fact.append(f"{origen} [{enc}]: {e_read}")
+                            if df_fact_temp is not None:
+                                break
+
+                        if df_fact_temp is None:
+                            st.toast("No se pudo leer facturacion.csv: " + errores_fact[-1][:120], icon="⚠️")
+                        else:
+                            df_fact_temp.columns = df_fact_temp.columns.astype(str).str.strip()
+                            mapa_cols = {c.upper(): c for c in df_fact_temp.columns}
+
+                            # Columnas de búsqueda reales de facturacion.csv (sin importar mayúsculas)
+                            claves_busq = ["FACTURA", "REFERENCIA", "PEDIDO", "CLIENTE", "NOMBRE_CLIENTE", "DESTINO"]
+                            cols_fact = [mapa_cols[k] for k in claves_busq if k in mapa_cols]
+
+                            if cols_fact:
+                                mask_fact = df_fact_temp[cols_fact].astype(str).apply(
+                                    lambda x: x.str.contains(query, case=False, na=False, regex=False)
+                                ).any(axis=1)
+                                res_fact = df_fact_temp[mask_fact].copy()
+
+                                # Facturación viene por partida (una fila por producto):
+                                # se agrupa por Factura + Pedido para no repetir la tarjeta.
+                                llaves = [mapa_cols[k] for k in ("FACTURA", "PEDIDO") if k in mapa_cols]
+                                if llaves and not res_fact.empty:
+                                    res_fact["_PARTIDAS"] = res_fact.groupby(llaves, dropna=False)[llaves[0]].transform("size")
+                                    res_fact = res_fact.drop_duplicates(subset=llaves).reset_index(drop=True)
+                            else:
+                                st.toast("facturacion.csv no trae las columnas esperadas (Factura, Pedido, Cliente...)", icon="⚠️")
+                    except Exception as e_fact:
+                        st.toast(f"Error buscando en facturacion.csv: {str(e_fact)[:120]}", icon="⚠️")
 
                 res_inv = pd.DataFrame()
                 if res_ops.empty and res_t1.empty and res_fact.empty:
@@ -839,11 +872,13 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                 )
 
                 for _, f in resultados.iterrows():
-                    pedido_f = html.escape(_val(f, "NÚMERO DE PEDIDO") or "S/N")
-                    no_cliente_f = html.escape(_val(f, "NO CLIENTE"))
-                    cliente_f = html.escape(_val(f, "NOMBRE DEL CLIENTE") or "N/A")
-                    destino_f = html.escape(_val(f, "DESTINO"))
-                    guia_f = html.escape(_val(f, "NÚMERO DE GUÍA"))
+                    pedido_f = html.escape(_val(f, "PEDIDO") or "S/N")
+                    factura_f = html.escape(_val(f, "FACTURA"))
+                    no_cliente_f = html.escape(_val(f, "CLIENTE"))
+                    cliente_f = html.escape(_val(f, "NOMBRE_CLIENTE") or "N/A")
+                    destino_f = html.escape(_val(f, "DESTINO") or _val(f, "CUIDAD"))
+                    fecha_f = html.escape(_val(f, "FECHA_CONTA"))
+                    partidas_f = _val(f, "_PARTIDAS")
                     clase_raw = _val(f, "TRANSPORTE")
                     clase_f = html.escape(clase_raw.upper() if clase_raw else "NO ESPECIFICADA")
 
@@ -860,11 +895,18 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                         clase_color = fact_color
 
                     linea_cliente = f"ID: {no_cliente_f}" if no_cliente_f else ""
-                    linea_guia = f"<span style='font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;'>Guía: {guia_f}</span>" if guia_f else ""
+                    detalle_pedido = []
+                    if factura_f:
+                        detalle_pedido.append(f"Factura: {factura_f}")
+                    if fecha_f:
+                        detalle_pedido.append(f"Fecha: {fecha_f}")
+                    if partidas_f and partidas_f != "1":
+                        detalle_pedido.append(f"{partidas_f} partidas")
+                    linea_guia = f"<span style='font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;'>{' | '.join(detalle_pedido)}</span>" if detalle_pedido else ""
 
                     st.markdown(
                         f"<div class='card-fact' style='background:rgba(38,32,20,0.75);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {fact_color};border-radius:12px;padding:16px 24px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;'>"
-                        f"<div style='flex:1.2;min-width:150px;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:17px;color:{fact_color};letter-spacing:0.5px;'># {pedido_f}</b><br>{linea_guia}</div>"
+                        f"<div style='flex:1.2;min-width:150px;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO</span><br><b style='font-size:17px;color:{fact_color};letter-spacing:0.5px;'># {pedido_f}</b><br>{linea_guia}</div>"
                         f"<div style='flex:2.4;min-width:220px;padding-left:22px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{cliente_f}</b><br><span style='font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;'>{linea_cliente}{' | ' if linea_cliente and destino_f else ''}{destino_f}</span></div>"
                         f"<div style='flex:1.8;min-width:200px;padding-left:22px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>TRANSPORTE</span><br><span style='background:{clase_color}20;color:{clase_color};padding:4px 12px;border-radius:6px;font-size:13px;font-weight:900;border:1px solid {clase_color};letter-spacing:1px;display:inline-block;margin-top:3px;'>{clase_f}</span><br><span style='font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;display:inline-block;margin-top:5px;'>{motivo_html}</span></div>"
                         f"<div style='flex:1.2;min-width:140px;text-align:right;'><span style='background:{fact_color}15;color:{fact_color};padding:5px 12px;border-radius:6px;font-size:10px;font-weight:800;border:1px solid {fact_color};text-transform:uppercase;letter-spacing:1px;display:inline-block;'>SIN PROCESAR PARA ENVÍO</span></div>"
