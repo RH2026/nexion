@@ -1125,10 +1125,231 @@ def main():
         # TAB 3: PESTAÑA 3 (Espacio reservado para futuro contenido)
         # ----------------------------------------------------------
         with tab3:
-            render_subtitulo("EFECTIVIDAD DE ENVÍOS // CUMPLIMIENTO DE PROMESA DE ENTREGA")
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.info("💡 **Espacio reservado para la Pestaña 3.** Aquí podrás agregar contenido adicional de manera totalmente independiente.")
-            # AQUÍ PUEDES EMPEZAR A INSERTAR TU CONTENIDO PARA LA PESTAÑA 3
+            render_subtitulo("EFECTIVIDAD DE ENVÍOS // DESPACHOS EN 24 HORAS HÁBILES")
+            st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
+
+            import io as io_lib
+            import html as html_lib
+            import numpy as np
+            import plotly.graph_objects as go
+
+            # --- DATOS BASE ---
+            df_desp_raw = df_raw.copy()
+            for col_f_ds in ["EMISION", "FECHA DE ENVÍO"]:
+                if col_f_ds in df_desp_raw.columns:
+                    df_desp_raw[col_f_ds] = pd.to_datetime(df_desp_raw[col_f_ds], dayfirst=True, errors="coerce")
+                else:
+                    df_desp_raw[col_f_ds] = pd.NaT
+            if "NÚMERO DE PEDIDO" not in df_desp_raw.columns:
+                df_desp_raw["NÚMERO DE PEDIDO"] = ""
+            df_desp_raw["NÚMERO DE PEDIDO"] = df_desp_raw["NÚMERO DE PEDIDO"].fillna("").astype(str).str.strip()
+
+            # --- FILTROS: PERÍODO + ESTATUS + BÚSQUEDA ---
+            dsf1, dsf2, dsf3 = st.columns([1.3, 2.4, 1.6])
+            with dsf1:
+                mes_sel_desp = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1, key="select_mes_desp")
+            with dsf2:
+                filtro_estado_desp = st.radio("ESTATUS", ["TODOS", "A TIEMPO", "FUERA DE TIEMPO"],
+                                              index=0, horizontal=True, key="filtro_estado_desp")
+            with dsf3:
+                buscar_desp = st.text_input("BUSCAR PEDIDO", placeholder="Escribe para filtrar...", key="buscar_pedido_desp")
+
+            df_desp = df_desp_raw[df_desp_raw["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel_desp) + 1)].copy()
+
+            # --- REGLA DE 24H HÁBILES (feriados y fines de semana no cuentan) ---
+            lista_feriados_ds = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']
+            feriados_np_ds = np.array(lista_feriados_ds, dtype='datetime64[D]')
+
+            def _calcular_kpi_24h_ds(row):
+                ini = row['EMISION']
+                fin = row['FECHA DE ENVÍO']
+                if pd.isna(ini) and not pd.isna(fin):
+                    ini = fin
+                if pd.isna(ini) or pd.isna(fin):
+                    return pd.Series(["Sin Datos", None])
+                try:
+                    if fin <= ini:
+                        return pd.Series(["A Tiempo", 0])
+                    d = int(np.busday_count(ini.date(), fin.date(), weekmask='1111100', holidays=feriados_np_ds))
+                    if d == 0:
+                        return pd.Series(["A Tiempo", d])
+                    if d == 1 and fin.time() <= ini.time():
+                        return pd.Series(["A Tiempo", d])
+                    return pd.Series(["Fuera de Tiempo", d])
+                except Exception:
+                    return pd.Series(["Sin Datos", None])
+
+            if not df_desp.empty:
+                df_desp[["Estado_KPI", "DIAS_HABILES"]] = df_desp.apply(_calcular_kpi_24h_ds, axis=1)
+            else:
+                df_desp["Estado_KPI"] = pd.Series(dtype=str)
+                df_desp["DIAS_HABILES"] = pd.Series(dtype=float)
+
+            validos_ds = df_desp[df_desp["Estado_KPI"] != "Sin Datos"]
+            tot_ds = len(validos_ds)
+            ok_ds = int((validos_ds["Estado_KPI"] == "A Tiempo").sum())
+            no_ds = tot_ds - ok_ds
+            pct_ok_ds = (ok_ds / tot_ds * 100) if tot_ds else 0.0
+            pct_no_ds = (no_ds / tot_ds * 100) if tot_ds else 0.0
+
+            st.markdown(f"""<div style="text-align:left; margin-top:5px; margin-bottom:5px;">
+                <span style="color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;">
+                    MOSTRANDO {len(df_desp)} REGISTROS CORRESPONDIENTES A {mes_sel_desp}
+                </span>
+            </div>""", unsafe_allow_html=True)
+
+            # --- TARJETAS ---
+            ds_cols = st.columns(3)
+            with ds_cols[0]:
+                render_flat_card("Total Facturas", tot_ds, "#E8EEF2")
+            with ds_cols[1]:
+                render_flat_card("A Tiempo", f"{ok_ds} · {pct_ok_ds:.1f}%", "#00FFAA", border_alpha="0,255,170")
+            with ds_cols[2]:
+                render_flat_card("Fuera de Meta", f"{no_ds} · {pct_no_ds:.1f}%", "#FF6B6B", border_alpha="255,75,75")
+
+            st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+
+            # --- GRÁFICO: DESPACHOS POR DÍA ---
+            st.markdown("<div class='donut-section-title-s'>DESPACHOS POR DÍA: A TIEMPO VS. FUERA DE TIEMPO</div>", unsafe_allow_html=True)
+            if not validos_ds.empty:
+                df_dia_ds = validos_ds.assign(DIA=validos_ds["FECHA DE ENVÍO"].dt.date)
+                df_dia_ds = df_dia_ds.groupby(["DIA", "Estado_KPI"]).size().reset_index(name="Facturas")
+                fig_ds = px.bar(df_dia_ds, x="DIA", y="Facturas", color="Estado_KPI", barmode="stack",
+                                color_discrete_map={"A Tiempo": "#00FFAA", "Fuera de Tiempo": "#FF6B6B"})
+                fig_ds.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                                     font={"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 12},
+                                     margin={"t": 20, "b": 10, "l": 10, "r": 10}, height=320,
+                                     xaxis_title=None, yaxis_title=None,
+                                     legend={"orientation": "h", "y": -0.2, "title": None})
+                st.plotly_chart(fig_ds, use_container_width=True, config={'displayModeBar': False}, key=f"desp_dia_{mes_sel_desp}")
+            else:
+                st.markdown("<div style='padding:20px; color:#475569; font-size:12px;'>Sin datos para graficar</div>", unsafe_allow_html=True)
+
+            # --- DETALLE DE OPERACIÓN ---
+            st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div class='donut-section-title-s'>DETALLE DE OPERACIÓN EN TIEMPO REAL</div>", unsafe_allow_html=True)
+
+            df_lista_ds = df_desp.copy()
+            if filtro_estado_desp == "A TIEMPO":
+                df_lista_ds = df_lista_ds[df_lista_ds["Estado_KPI"] == "A Tiempo"]
+            elif filtro_estado_desp == "FUERA DE TIEMPO":
+                df_lista_ds = df_lista_ds[df_lista_ds["Estado_KPI"] == "Fuera de Tiempo"]
+            if buscar_desp.strip():
+                df_lista_ds = df_lista_ds[df_lista_ds["NÚMERO DE PEDIDO"].str.contains(buscar_desp.strip(), case=False, na=False)]
+
+            # Fuera de tiempo: primero los de mayor retraso; resto: más recientes primero
+            if filtro_estado_desp == "FUERA DE TIEMPO":
+                df_lista_ds = df_lista_ds.sort_values("DIAS_HABILES", ascending=False)
+            else:
+                df_lista_ds = df_lista_ds.sort_values("EMISION", ascending=False, na_position="last")
+
+            if df_lista_ds.empty:
+                st.info("No hay registros para los filtros seleccionados.")
+            else:
+                data_detalle_ds = df_lista_ds.to_dict("records")
+                alto_detalle_ds = min(len(data_detalle_ds) * 72 + 20, 550)
+
+                def _fmt_fecha_ds(v):
+                    return v.strftime("%d/%m/%Y %H:%M") if pd.notna(v) else "S/D"
+
+                def _tarjeta_ds(item):
+                    est = str(item["Estado_KPI"])
+                    if est == "A Tiempo":
+                        color, clase = "#00FFAA", "st-ok"
+                    elif est == "Fuera de Tiempo":
+                        color, clase = "#FF6B6B", "st-fuera"
+                    else:
+                        color, clase = "#94a3b8", "st-otro"
+                    dias = item["DIAS_HABILES"]
+                    dias_txt = f"{int(dias)} DÍAS HÁB." if pd.notna(dias) else "—"
+                    return f"""
+                    <div class="card-detalle" style="border-left-color: {color};">
+                        <div style="flex: 1;"><div class="label-mini">Pedido</div>
+                            <div class="val-pedido">{html_lib.escape(str(item['NÚMERO DE PEDIDO']))}</div></div>
+                        <div class="col-sep" style="flex: 1.5;"><div class="label-mini">Emisión</div>
+                            <div class="val-fecha">{_fmt_fecha_ds(item['EMISION'])}</div></div>
+                        <div class="col-sep" style="flex: 1.5;"><div class="label-mini">Salida de Almacén</div>
+                            <div class="val-fecha">{_fmt_fecha_ds(item['FECHA DE ENVÍO'])}</div></div>
+                        <div class="col-sep" style="flex: 0.8;"><div class="label-mini">Diferencia</div>
+                            <div class="val-fecha">{dias_txt}</div></div>
+                        <div style="flex: 1; text-align: right;"><span class="badge-kpi {clase}">{est.upper()}</span></div>
+                    </div>"""
+
+                html_detalle_ds = f"""
+                <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                    <style>
+                        body {{ background: transparent; margin: 0; padding: 0; }}
+                        ::-webkit-scrollbar {{ width: 8px; }}
+                        ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); border-radius: 10px; }}
+                        ::-webkit-scrollbar-thumb {{ background: #4B5D67; border-radius: 10px; }}
+                        .card-detalle {{ background: #182229; border: 1px solid #4B5D67; border-left: 5px solid #94a3b8; border-radius: 8px;
+                                         padding: 12px 20px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }}
+                        .col-sep {{ padding: 0 10px; border-left: 1px solid rgba(75,93,103,0.5); }}
+                        .label-mini {{ font-size: 8px; color: #8B9BB4; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
+                        .val-pedido {{ color: #00FFAA; font-family: monospace; font-size: 15px; font-weight: 800; }}
+                        .val-fecha {{ color: #E8EEF2; font-size: 11px; font-weight: 400; }}
+                        .badge-kpi {{ padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; display: inline-block; min-width: 100px; text-align: center; }}
+                        .st-ok {{ background: rgba(0,255,170,0.1); color: #00FFAA; border: 1px solid rgba(0,255,170,0.25); }}
+                        .st-fuera {{ background: rgba(255,107,107,0.1); color: #FF6B6B; border: 1px solid rgba(255,107,107,0.25); }}
+                        .st-otro {{ background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); }}
+                    </style>
+                    {"".join(_tarjeta_ds(item) for item in data_detalle_ds)}
+                </div>
+                """
+                components.html(html_detalle_ds, height=alto_detalle_ds, scrolling=True)
+
+                # --- DESCARGA EXCEL (al final de la lista, estilo layout.py) ---
+                df_excel_ds = pd.DataFrame({
+                    "NÚMERO DE PEDIDO": df_lista_ds["NÚMERO DE PEDIDO"],
+                    "EMISION": df_lista_ds["EMISION"].dt.strftime("%d/%m/%Y %H:%M").fillna("S/D"),
+                    "FECHA DE ENVÍO": df_lista_ds["FECHA DE ENVÍO"].dt.strftime("%d/%m/%Y %H:%M").fillna("S/D"),
+                    "ESTATUS": df_lista_ds["Estado_KPI"],
+                    "DÍAS HÁBILES": df_lista_ds["DIAS_HABILES"],
+                })
+                buffer_ds = io_lib.BytesIO()
+                try:
+                    with pd.ExcelWriter(buffer_ds, engine="xlsxwriter") as writer_ds:
+                        df_excel_ds.to_excel(writer_ds, index=False, sheet_name="Detalle_Operacion")
+                except ImportError:
+                    buffer_ds = io_lib.BytesIO()
+                    with pd.ExcelWriter(buffer_ds, engine="openpyxl") as writer_ds:
+                        df_excel_ds.to_excel(writer_ds, index=False, sheet_name="Detalle_Operacion")
+                buffer_ds.seek(0)
+
+                st.markdown("""
+                    <style>
+                        .st-key-dl_desp_excel button,
+                        .st-key-dl_desp_excel [data-testid="stDownloadButton"] button,
+                        .st-key-dl_desp_excel [data-testid="stBaseButton-secondary"] {
+                            background-color: #628290 !important;
+                            color: #ffffff !important;
+                            border: 1px solid #628290 !important;
+                            border-radius: 7px !important;
+                            font-weight: 700 !important;
+                            text-transform: uppercase !important;
+                            font-size: 10px !important;
+                            height: 32px !important;
+                            width: 100% !important;
+                            transition: all 0.3s ease !important;
+                        }
+                        .st-key-dl_desp_excel button:hover,
+                        .st-key-dl_desp_excel [data-testid="stBaseButton-secondary"]:hover {
+                            background-color: #4E6772 !important;
+                            border-color: #4E6772 !important;
+                            color: #ffffff !important;
+                        }
+                    </style>
+                """, unsafe_allow_html=True)
+                _, col_dl_ds = st.columns([3, 1])
+                with col_dl_ds:
+                    st.download_button(
+                        label="DESCARGAR EXCEL",
+                        data=buffer_ds,
+                        file_name=f"Detalle_Operacion_{mes_sel_desp}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key="dl_desp_excel",
+                    )
 
         # ----------------------------------------------------------
         # TAB 4: PESTAÑA 4 (Espacio reservado para futuro contenido)
