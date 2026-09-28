@@ -962,9 +962,11 @@ def main():
             df_carga_raw["CAJAS"] = pd.to_numeric(df_carga_raw["CAJAS"], errors="coerce").fillna(0) if "CAJAS" in df_carga_raw.columns else 0
 
             # --- SOLO LAS 7 PAQUETERÍAS MÁS IMPORTANTES ---
-            CARRIERS_PRINCIPALES_DC = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "SANCHEZ", "FLETES DE REGRESO", "FARMASES"]
+            CARRIERS_PRINCIPALES_DC = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "PAQUETE", "SANCHEZ", "FLETES DE REGRESO", "FARMASES"]
+            _fletera_dc = df_carga_raw["FLETERA"].fillna("").astype(str).str.upper() if "FLETERA" in df_carga_raw.columns else pd.Series("", index=df_carga_raw.index)
+            _texto_carrier_dc = df_carga_raw["TRANSPORTE"].str.upper() + " | " + _fletera_dc
             df_carga_raw = df_carga_raw[
-                df_carga_raw["TRANSPORTE"].str.upper().apply(lambda nom_x: any(p in nom_x for p in CARRIERS_PRINCIPALES_DC))
+                _texto_carrier_dc.apply(lambda nom_x: any(p in nom_x for p in CARRIERS_PRINCIPALES_DC))
             ]
 
             # --- FILTROS: PERÍODO + FLUJO ---
@@ -1017,34 +1019,18 @@ def main():
                     "height": max(340, len(df_part_carga) * 38),
                 }
 
-                dcc1, dcc2 = st.columns(2)
-                with dcc1:
-                    st.markdown("<div class='donut-section-title-s'>PARTICIPACIÓN DE CARGA POR CARRIER (CAJAS Y %)</div>", unsafe_allow_html=True)
-                    fig_dc1 = go.Figure(go.Bar(
-                        x=df_part_carga["CAJAS"], y=df_part_carga["TRANSPORTE"], orientation="h",
-                        marker=dict(color="#7FA0B0"),
-                        text=[f"{int(c):,} · {p:.1f}%" for c, p in zip(df_part_carga["CAJAS"], df_part_carga["PORCENTAJE"])],
-                        textposition="outside", textfont=dict(color="#E8EEF2"), cliponaxis=False,
-                    ))
-                    fig_dc1.update_layout(**config_layout_dc, xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                                          yaxis=dict(showgrid=False, automargin=True), showlegend=False,
-                                          hoverlabel=dict(bgcolor="#182229", font_size=12))
-                    st.plotly_chart(fig_dc1, use_container_width=True, config={'displayModeBar': False},
-                                    key=f"bar_part_{mes_sel_carga}_{tipo_mov_carga}")
-
-                with dcc2:
-                    st.markdown("<div class='donut-section-title-s'>COMPOSICIÓN POR FORMA DE ENVÍO</div>", unsafe_allow_html=True)
-                    df_forma_carga = df_carga.groupby(["TRANSPORTE", "FORMA DE ENVIO"], as_index=False)["CAJAS"].sum()
-                    df_forma_carga["FORMA DE ENVIO"] = df_forma_carga["FORMA DE ENVIO"].replace("", "SIN DATO")
-                    orden_carga = df_part_carga["TRANSPORTE"].tolist()
-                    fig_dc2 = px.bar(df_forma_carga, x="CAJAS", y="TRANSPORTE", color="FORMA DE ENVIO", orientation="h",
-                                     barmode="stack", category_orders={"TRANSPORTE": orden_carga},
-                                     color_discrete_sequence=["#7FA0B0", "#B98B78", "#00FFAA", "#C9A46C", "#9C8FB5", "#A0A8AD"])
-                    fig_dc2.update_layout(**{**config_layout_dc, "margin": {"t": 20, "b": 10, "l": 10, "r": 10}},
-                                          xaxis_title=None, yaxis_title=None,
-                                          legend={"orientation": "h", "y": -0.15, "title": None})
-                    st.plotly_chart(fig_dc2, use_container_width=True, config={'displayModeBar': False},
-                                    key=f"bar_forma_{mes_sel_carga}_{tipo_mov_carga}")
+                st.markdown("<div class='donut-section-title-s'>PARTICIPACIÓN DE CARGA POR CARRIER (CAJAS Y %)</div>", unsafe_allow_html=True)
+                fig_dc1 = go.Figure(go.Bar(
+                    x=df_part_carga["CAJAS"], y=df_part_carga["TRANSPORTE"], orientation="h",
+                    marker=dict(color="#7FA0B0"),
+                    text=[f"{int(c):,} · {p:.1f}%" for c, p in zip(df_part_carga["CAJAS"], df_part_carga["PORCENTAJE"])],
+                    textposition="outside", textfont=dict(color="#E8EEF2"), cliponaxis=False,
+                ))
+                fig_dc1.update_layout(**config_layout_dc, xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                                      yaxis=dict(showgrid=False, automargin=True), showlegend=False,
+                                      hoverlabel=dict(bgcolor="#182229", font_size=12))
+                st.plotly_chart(fig_dc1, use_container_width=True, config={'displayModeBar': False},
+                                key=f"bar_part_{mes_sel_carga}_{tipo_mov_carga}")
 
                 # --- EXPLORADOR DE RUTAS Y DESTINOS ---
                 st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
@@ -1062,21 +1048,6 @@ def main():
                 total_sel_dc = df_dest_sum_dc["CAJAS"].sum()
 
                 with col_dl_dc:
-                    st.markdown("""
-                        <style>
-                            .st-key-dl_carga_rutas button,
-                            .st-key-dl_carga_rutas button:hover,
-                            .st-key-dl_carga_rutas button:focus,
-                            .st-key-dl_carga_rutas button:active {
-                                background: transparent !important;
-                                background-color: transparent !important;
-                                border: none !important;
-                                box-shadow: none !important;
-                                color: #E8EEF2 !important;
-                                outline: none !important;
-                            }
-                        </style>
-                    """, unsafe_allow_html=True)
                     st.download_button("DESCARGAR CSV", data=df_dest_sum_dc.to_csv(index=False).encode("utf-8"),
                                        file_name=f"carga_{carrier_sel_dc}_{mes_sel_carga}.csv", mime="text/csv",
                                        use_container_width=True, key="dl_carga_rutas")
