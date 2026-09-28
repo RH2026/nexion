@@ -238,24 +238,30 @@ def main():
         """
         return components.html(html_content, height=800, scrolling=True)
 
-    def generar_pdf_citas_mes(data_completa, mes_num, anio=2026):
-        meses_nombres = {
-            1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO",
-            7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"
-        }
-        nombre_mes = meses_nombres.get(mes_num, "MES")
+    def generar_pdf_citas_activas(data_completa):
+        """Genera un PDF con TODAS las citas activas (estatus distinto de ENTREGADA
+        y con fecha de cita válida), sin importar la semana o el mes en pantalla."""
+
+        def _parse_fecha(fecha_str):
+            for fmt in ("%d/%m/%Y", "%d/%m/%y"):
+                try:
+                    return datetime.strptime(fecha_str, fmt)
+                except ValueError:
+                    continue
+            return None
 
         citas_filtradas = []
         for item in data_completa:
             if item.get('estatus') == 'ENTREGADA':
                 continue
-            try:
-                fecha_str = str(item['cita']).split(" - ")[0].strip()
-                dt = datetime.strptime(fecha_str, "%d/%m/%m" if len(fecha_str.split('/')[2])==2 else "%d/%m/%Y")
-                if dt.month == mes_num and dt.year == anio:
-                    citas_filtradas.append(item)
-            except:
-                pass
+            fecha_str = str(item.get('cita', '')).split(" - ")[0].strip()
+            dt = _parse_fecha(fecha_str)
+            if dt:
+                citas_filtradas.append((dt, item))
+
+        # Orden cronológico (fecha, luego hora tal como viene en la cita)
+        citas_filtradas.sort(key=lambda x: (x[0], str(x[1].get('cita', ''))))
+        citas_filtradas = [item for _, item in citas_filtradas]
 
         buffer = io.BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=letter)
@@ -268,7 +274,7 @@ def main():
         pdf.setFont("Helvetica-Bold", 16)
         pdf.drawString(40, height - 35, "JYPESA | REPORTE DE CITAS AGC PENDIENTES")
         pdf.setFont("Helvetica", 10)
-        pdf.drawString(40, height - 55, f"PERIODO: {nombre_mes} {anio} — NEXION SUPPLY CHAIN INTELLIGENCE")
+        pdf.drawString(40, height - 55, f"TODAS LAS CITAS ACTIVAS — GENERADO: {datetime.now().strftime('%d/%m/%Y')} — NEXION SUPPLY CHAIN INTELLIGENCE")
 
         y = height - 120
         pdf.setFillColorRGB(0.1, 0.1, 0.1)
@@ -288,6 +294,7 @@ def main():
         for item in citas_filtradas:
             if y < 50:
                 pdf.showPage()
+                pdf.setFont("Helvetica", 8)
                 y = height - 50
             
             pdf.drawString(40, y, str(item.get('cita', ''))[:30])
@@ -299,7 +306,7 @@ def main():
 
         if not citas_filtradas:
             pdf.setFont("Helvetica-Oblique", 10)
-            pdf.drawString(40, y, "No hay citas pendientes registradas para este mes.")
+            pdf.drawString(40, y, "No hay citas activas registradas.")
 
         pdf.save()
         buffer.seek(0)
@@ -323,7 +330,7 @@ def main():
                     hora_str = partes[1].upper()
                     
                     dt_cita = None
-                    for fmt in ("%d/%m/%Y", "%d/%m/%y", "%d/%m/%m"):
+                    for fmt in ("%d/%m/%Y", "%d/%m/%y"):
                         try:
                             dt_cita = datetime.strptime(fecha_str, fmt)
                             break
@@ -570,7 +577,7 @@ def main():
                 return datetime(9999, 12, 31)
             try:
                 fecha_parte = val_str.split(" - ")[0].strip()
-                formato = "%d/%m/%Y" if len(fecha_parte.split('/')[-1]) == 4 else "%d/%m/%m"
+                formato = "%d/%m/%Y" if len(fecha_parte.split('/')[-1]) == 4 else "%d/%m/%y"
                 return datetime.strptime(fecha_parte, formato)
             except:
                 return datetime(9999, 12, 31)
@@ -599,12 +606,11 @@ def main():
                 st.rerun()
 
         with col_btn_pdf:
-            pdf_bytes = generar_pdf_citas_mes(data_completa, st.session_state.fecha_calendario_ref.month)
-            nombre_mes_actual = st.session_state.fecha_calendario_ref.strftime("%B").lower()
-            nombre_archivo_pdf = f"citas_pendientes_agc_{nombre_mes_actual}_2026.pdf"
+            pdf_bytes = generar_pdf_citas_activas(data_completa)
+            nombre_archivo_pdf = f"citas_activas_agc_{datetime.now().strftime('%Y%m%d')}.pdf"
             
             st.download_button(
-                label="DESCARGAR PDF DE CITAS DEL MES",
+                label="DESCARGAR PDF DE TODAS LAS CITAS ACTIVAS",
                 data=pdf_bytes,
                 file_name=nombre_archivo_pdf,
                 mime="application/pdf",
