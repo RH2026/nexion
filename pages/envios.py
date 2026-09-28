@@ -1,4 +1,5 @@
 import base64
+import hashlib
 from datetime import datetime, timedelta
 import io
 import re
@@ -43,6 +44,32 @@ def cargar_datos_dashboard():
         return df
     except Exception as e:
         return None
+
+
+
+def aplicar_ediciones(df_base, idx_subset, estado):
+    """Aplica sobre el DataFrame COMPLETO las ediciones hechas en la vista filtrada.
+    idx_subset: índices originales de df_base, en el orden en que se mostraron en el editor."""
+    df = df_base.copy()
+
+    for pos, cambios in estado.get("edited_rows", {}).items():
+        orig = idx_subset[int(pos)]
+        for col, val in cambios.items():
+            try:
+                df.at[orig, col] = val
+            except Exception:
+                df[col] = df[col].astype(object)
+                df.at[orig, col] = val
+
+    borrar = [idx_subset[int(p)] for p in estado.get("deleted_rows", [])]
+    if borrar:
+        df = df.drop(index=borrar)
+
+    nuevas = estado.get("added_rows", [])
+    if nuevas:
+        df = pd.concat([df, pd.DataFrame(nuevas)], ignore_index=True)
+
+    return df
 
 
 # ============================================================
@@ -513,34 +540,6 @@ def main():
         if not df_raw.empty:
             df_raw.columns = df_raw.columns.str.strip()
 
-            if modo_edicion:
-                st.markdown(
-                    f"{chr(60)}div style=\"background: rgba(234, 179, 8, 0.08); border: 1px solid #eab308; border-left: 5px solid #eab308; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-family: 'Inter', sans-serif; color: white;\"{chr(62)}"
-                    f"{chr(60)}div style=\"display: flex; align-items: center; gap: 10px; margin-bottom: 4px;\"{chr(62)}"
-                    f"{chr(60)}div style=\"width: 8px; height: 8px; background: #eab308; border-radius: 50%; box-shadow: 0 0 8px #eab308;\"{chr(62)}{chr(60)}/div{chr(62)}"
-                    f"{chr(60)}span style=\"font-size: 11px; font-weight: 800; color: #eab308; letter-spacing: 1.5px; text-transform: uppercase;\"{chr(62)}NEXION SECURITY // MODO EDICIÓN ACTIVO{chr(60)}/span{chr(62)}"
-                    f"{chr(60)}/div{chr(62)}"
-                    f"{chr(60)}div style=\"font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; margin-left: 18px;\"{chr(62)}"
-                    "Modifica los registros en la matriz inferior y ejecuta la sincronización para actualizar la base remota de forma segura."
-                    f"{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}",
-                    unsafe_allow_html=True,
-                )
-
-                editor_key = f"editor_envios_admin_session_{st.session_state.get('editor_version', 1)}"
-
-                df_editado = st.data_editor(
-                    df_raw,
-                    use_container_width=True,
-                    num_rows="dynamic",
-                    key=editor_key,
-                )
-
-                if st.button(
-                    ":material/save: Guardar Cambios en GitHub", key="btn_guardar_github_envios_session"
-                ):
-                    if guardar_cambios_github(df_editado):
-                        st.rerun()
-                st.markdown("---")
 
             df_envios = pd.DataFrame()
             df_envios['factura'] = df_raw.get('Factura', pd.Series(dtype=str)).fillna('').astype(str)
@@ -722,6 +721,7 @@ def main():
                     
             df_envios_procesar['estatus'] = estatus_calculado
             df_envios_procesar = df_envios_procesar.replace(r'(?i)^nan$', '', regex=True)
+            df_envios_procesar['_idx'] = df_envios_procesar.index  # índice original en df_raw (para el modo edición)
             df_envios_procesar = df_envios_procesar.sort_values(by='factura', ascending=True, ignore_index=True)
 
             df_filtrado = df_envios_procesar.copy()
@@ -754,7 +754,7 @@ def main():
                     df_filtrado = df_filtrado[mask_sin_guia]
 
                 with col_btn_descarga:
-                    df_excel_export = df_filtrado.drop(columns=['dt_prog_parsed', 'dt_envio_parsed'], errors='ignore')
+                    df_excel_export = df_filtrado.drop(columns=['dt_prog_parsed', 'dt_envio_parsed', '_idx'], errors='ignore')
                 
                     output_buffer = io.BytesIO()
                     with pd.ExcelWriter(output_buffer, engine='xlsxwriter') as writer:
@@ -774,10 +774,56 @@ def main():
         else:
             data_completa = []
 
+    # ── EDITOR ADMIN (usa los MISMOS 5 filtros + toggle de arriba) ──
+    if modo_edicion and not df_raw.empty:
+        st.markdown(
+                f"{chr(60)}div style=\"background: rgba(234, 179, 8, 0.08); border: 1px solid #eab308; border-left: 5px solid #eab308; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-family: 'Inter', sans-serif; color: white;\"{chr(62)}"
+                f"{chr(60)}div style=\"display: flex; align-items: center; gap: 10px; margin-bottom: 4px;\"{chr(62)}"
+                f"{chr(60)}div style=\"width: 8px; height: 8px; background: #eab308; border-radius: 50%; box-shadow: 0 0 8px #eab308;\"{chr(62)}{chr(60)}/div{chr(62)}"
+                f"{chr(60)}span style=\"font-size: 11px; font-weight: 800; color: #eab308; letter-spacing: 1.5px; text-transform: uppercase;\"{chr(62)}NEXION SECURITY // MODO EDICIÓN ACTIVO{chr(60)}/span{chr(62)}"
+                f"{chr(60)}/div{chr(62)}"
+                f"{chr(60)}div style=\"font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; margin-left: 18px;\"{chr(62)}"
+                "Modifica los registros en la matriz inferior y ejecuta la sincronización para actualizar la base remota de forma segura."
+                f"{chr(60)}/div{chr(62)}{chr(60)}/div{chr(62)}",
+                unsafe_allow_html=True,
+            )
+    
+
+        idx_subset = df_filtrado['_idx'].tolist()
+        df_subset = df_raw.loc[idx_subset].reset_index(drop=True)
+
+        st.caption(
+            f"Editando {len(df_subset)} de {len(df_raw)} registros "
+            "(según los filtros activos). Guarda antes de cambiar de filtro: "
+            "los cambios sin guardar de la vista anterior se descartan."
+        )
+
+        firma_filtros = "|".join(str(x) for x in [
+            filtro_factura, filtro_fprog, filtro_fenvio, filtro_paqueteria, filtro_estatus,
+            st.session_state.get("toggle_solo_sin_guia_admin", False),
+        ])
+        firma_hash = hashlib.md5(firma_filtros.encode("utf-8")).hexdigest()[:10]
+        editor_key = f"editor_envios_admin_session_{st.session_state.get('editor_version', 1)}_{firma_hash}"
+
+        st.data_editor(
+            df_subset,
+            use_container_width=True,
+            num_rows="dynamic",
+            key=editor_key,
+        )
+
+        if st.button(
+            ":material/save: Guardar Cambios en GitHub", key="btn_guardar_github_envios_session"
+        ):
+            estado_editor = st.session_state.get(editor_key, {})
+            df_final = aplicar_ediciones(df_raw, idx_subset, estado_editor)
+            if guardar_cambios_github(df_final):
+                st.rerun()
+        st.markdown("---")
+
     render_envios_flow_responsive(data_completa)
     st.markdown(f"{chr(60)}/div{chr(62)}", unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
     main()
-
