@@ -961,6 +961,12 @@ def main():
             df_carga_raw["MES"] = df_carga_raw["MES"].str.upper()
             df_carga_raw["CAJAS"] = pd.to_numeric(df_carga_raw["CAJAS"], errors="coerce").fillna(0) if "CAJAS" in df_carga_raw.columns else 0
 
+            # --- SOLO LAS 7 PAQUETERÍAS MÁS IMPORTANTES ---
+            CARRIERS_PRINCIPALES_DC = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "SANCHEZ", "FLETES DE REGRESO", "FARMASES"]
+            df_carga_raw = df_carga_raw[
+                df_carga_raw["TRANSPORTE"].str.upper().apply(lambda nom_x: any(p in nom_x for p in CARRIERS_PRINCIPALES_DC))
+            ]
+
             # --- FILTROS: PERÍODO + FLUJO ---
             dcf1, dcf2 = st.columns([1.3, 3])
             with dcf1:
@@ -968,7 +974,7 @@ def main():
             with dcf2:
                 tipo_mov_carga = st.radio(
                     "FLUJO", ["TODOS", "COBRO DESTINO", "COBRO REGRESO"],
-                    index=0, horizontal=True, key="tipo_mov_carga"
+                    index=2, horizontal=True, key="tipo_mov_carga"
                 )
 
             df_carga = df_carga_raw[(df_carga_raw["MES"] == mes_sel_carga) & (df_carga_raw["TRANSPORTE"] != "")].copy()
@@ -997,7 +1003,7 @@ def main():
                 with dc_cols[0]:
                     render_flat_card("Volumen Total (Cajas)", f"{int(total_cajas_carga):,}", "#E8EEF2")
                 with dc_cols[1]:
-                    render_flat_card("Carrier Dominante", f"{lider_carga['TRANSPORTE']} · {lider_carga['PORCENTAJE']:.0f}%", "#8FBF9F", border_alpha="143,191,159")
+                    render_flat_card("Carrier Dominante", f"{lider_carga['TRANSPORTE']} · {lider_carga['PORCENTAJE']:.0f}%", "#00FFAA", border_alpha="0,255,170")
                 with dc_cols[2]:
                     render_flat_card("Destinos Distintos", df_carga["DESTINO"].replace("", pd.NA).nunique(), "#7FA0B0")
 
@@ -1033,7 +1039,7 @@ def main():
                     orden_carga = df_part_carga["TRANSPORTE"].tolist()
                     fig_dc2 = px.bar(df_forma_carga, x="CAJAS", y="TRANSPORTE", color="FORMA DE ENVIO", orientation="h",
                                      barmode="stack", category_orders={"TRANSPORTE": orden_carga},
-                                     color_discrete_sequence=["#7FA0B0", "#B98B78", "#8FBF9F", "#C9A46C", "#9C8FB5", "#A0A8AD"])
+                                     color_discrete_sequence=["#7FA0B0", "#B98B78", "#00FFAA", "#C9A46C", "#9C8FB5", "#A0A8AD"])
                     fig_dc2.update_layout(**{**config_layout_dc, "margin": {"t": 20, "b": 10, "l": 10, "r": 10}},
                                           xaxis_title=None, yaxis_title=None,
                                           legend={"orientation": "h", "y": -0.15, "title": None})
@@ -1056,6 +1062,21 @@ def main():
                 total_sel_dc = df_dest_sum_dc["CAJAS"].sum()
 
                 with col_dl_dc:
+                    st.markdown("""
+                        <style>
+                            .st-key-dl_carga_rutas button,
+                            .st-key-dl_carga_rutas button:hover,
+                            .st-key-dl_carga_rutas button:focus,
+                            .st-key-dl_carga_rutas button:active {
+                                background: transparent !important;
+                                background-color: transparent !important;
+                                border: none !important;
+                                box-shadow: none !important;
+                                color: #E8EEF2 !important;
+                                outline: none !important;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
                     st.download_button("DESCARGAR CSV", data=df_dest_sum_dc.to_csv(index=False).encode("utf-8"),
                                        file_name=f"carga_{carrier_sel_dc}_{mes_sel_carga}.csv", mime="text/csv",
                                        use_container_width=True, key="dl_carga_rutas")
@@ -1090,7 +1111,7 @@ def main():
                         .route-row:last-child {{ border-bottom: none; }}
                         .dest-name {{ color: #E8EEF2; font-size: 12px; font-weight: 600; }}
                         .method-tag {{ background: rgba(185,139,120,0.15); color: #B98B78; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; margin-left: 8px; }}
-                        .unit-badge {{ background: rgba(143,191,159,0.12); color: #8FBF9F; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-weight: 800; font-size: 13px; border: 1px solid rgba(143,191,159,0.25); }}
+                        .unit-badge {{ background: rgba(0,255,170,0.12); color: #00FFAA; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-weight: 800; font-size: 13px; border: 1px solid rgba(0,255,170,0.25); }}
                     </style>
                     {"".join(bloques_dc)}
                 </div>
