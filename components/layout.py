@@ -1,5 +1,6 @@
 import base64
 from datetime import datetime
+import html
 import io
 import re
 import time
@@ -540,8 +541,25 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                 except Exception:
                     pass
 
-                res_inv = pd.DataFrame()
+                # ── Tercer nivel: facturacion.csv (facturado pero aún NO procesado para envío) ──
+                # Usa las mismas columnas de búsqueda que la Matriz Global.
+                res_fact = pd.DataFrame()
                 if res_ops.empty and res_t1.empty:
+                    try:
+                        df_fact_temp = pd.read_csv("facturacion.csv", dtype=str)
+                        df_fact_temp.columns = df_fact_temp.columns.str.strip()
+                        cols_fact_busq = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
+                        cols_fact = [c for c in cols_fact_busq if c in df_fact_temp.columns]
+                        if cols_fact:
+                            mask_fact = df_fact_temp[cols_fact].astype(str).apply(
+                                lambda x: x.str.contains(query, case=False, na=False, regex=False)
+                            ).any(axis=1)
+                            res_fact = df_fact_temp[mask_fact].copy()
+                    except Exception:
+                        pass
+
+                res_inv = pd.DataFrame()
+                if res_ops.empty and res_t1.empty and res_fact.empty:
                     try:
                         df_inv_temp = pd.read_csv("inventario.csv")
                         df_inv_temp.columns = df_inv_temp.columns.str.strip()
@@ -562,6 +580,10 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                     st.session_state.busqueda_activa = True
                     st.session_state.tipo_resultado = "OPERACION" 
                     st.session_state.resultado_busqueda = res_t1
+                elif not res_fact.empty:
+                    st.session_state.busqueda_activa = True
+                    st.session_state.tipo_resultado = "FACTURACION"
+                    st.session_state.resultado_busqueda = res_fact
                 elif not res_inv.empty:
                     st.session_state.busqueda_activa = True
                     st.session_state.tipo_resultado = "INVENTARIO"
@@ -569,7 +591,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                 else:
                     st.session_state.busqueda_activa = False
                     st.session_state.resultado_busqueda = None
-                    st.toast("Sin resultados: No se encontró en Matriz Global ni en T1", icon="⚠️")
+                    st.toast("Sin resultados: No se encontró en Matriz Global, T1 ni Facturación", icon="⚠️")
 
         with c4:
             with st.popover("🎛️ Módulos", use_container_width=True):
@@ -785,6 +807,70 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                 st.markdown(f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:15px;'><div style='background:{inv_color};width:5px;height:20px;border-radius:2px;box-shadow:0 0 10px {inv_color};'></div><span style='color:white;font-size:14px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;'>EXISTENCIAS EN INVENTARIO <span style='color:{inv_color};'>({total})</span></span></div>", unsafe_allow_html=True)
                 for _, i in resultados.iterrows():
                     st.markdown(f"<div class='card-inv' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {inv_color};border-radius:10px;padding:10px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CÓDIGO / SKU</span><br><b style='font-size:16px;color:{inv_color};letter-spacing:1px;'>{i.get('CODIGO','')}</b></div><div style='flex:3;padding-left:20px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>DESCRIPCIÓN</span><br><span style='font-size:13px;color:white;font-weight:600;line-height:1.2;'>{i.get('DESCRIPCION','')}</span></div><div style='flex:1;text-align:right;'><span style='background:{inv_color}15;color:{inv_color};padding:3px 8px;border-radius:4px;font-size:9px;font-weight:800;border:1px solid {inv_color}30;text-transform:uppercase;'>DISPONIBLE</span></div></div>", unsafe_allow_html=True)
+            elif tipo == "FACTURACION":
+                fact_color = "#F59E0B"  # ámbar: información encontrada, pero sin envío procesado
+                # Clases de entrega que por regla NO se procesan para envío (editable)
+                CLASES_SIN_ENVIO = ["CEDIS", "LOCAL", "CLIENTE PASA"]
+
+                def _val(row, nombre_col):
+                    """Valor limpio de una columna (sin importar mayúsculas/espacios en el encabezado)."""
+                    for col in row.index:
+                        if str(col).strip().upper() == nombre_col:
+                            v = str(row[col]).strip()
+                            return "" if v.lower() in ("", "nan", "none", "nat") else v
+                    return ""
+
+                st.markdown(
+                    f"<style>.card-fact {{ transition: all 0.3s ease; }} .card-fact:hover {{ transform: translateX(8px); border-color: {fact_color} !important; background: rgba(38, 32, 20, 0.95) !important; box-shadow: 0 0 15px rgba(245, 158, 11, 0.15); }}</style>",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    f"""<div style="background: rgba(245,158,11,0.08); border: 1px solid {fact_color}; border-left: 5px solid {fact_color}; padding: 16px 22px; border-radius: 8px; margin-bottom: 18px; font-family: 'Inter', sans-serif; color: white;">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                            <div style="width:9px; height:9px; background:{fact_color}; border-radius:50%; box-shadow:0 0 8px {fact_color};"></div>
+                            <span style="font-size:12px; font-weight:800; color:{fact_color}; letter-spacing:1.5px; text-transform:uppercase;">INFORMACIÓN ENCONTRADA EN FACTURACIÓN ({total})</span>
+                        </div>
+                        <div style="font-size:12px; color:rgba(255,255,255,0.85); font-weight:600; margin-left:19px; line-height:1.5;">
+                            El registro fue localizado; sin embargo, <b>aún no ha sido procesado para envío</b>.<br>
+                            Revisa la <b>CLASE DE ENTREGA</b> para conocer el motivo o comunícate con <b>Facturación</b> o <b>Logística</b>.
+                        </div>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
+
+                for _, f in resultados.iterrows():
+                    pedido_f = html.escape(_val(f, "NÚMERO DE PEDIDO") or "S/N")
+                    no_cliente_f = html.escape(_val(f, "NO CLIENTE"))
+                    cliente_f = html.escape(_val(f, "NOMBRE DEL CLIENTE") or "N/A")
+                    destino_f = html.escape(_val(f, "DESTINO"))
+                    guia_f = html.escape(_val(f, "NÚMERO DE GUÍA"))
+                    clase_raw = _val(f, "CLASE DE ENTREGA")
+                    clase_f = html.escape(clase_raw.upper() if clase_raw else "NO ESPECIFICADA")
+
+                    # ¿La clase de entrega es de las que no generan envío?
+                    sin_envio_por_clase = any(k in clase_raw.upper() for k in CLASES_SIN_ENVIO) if clase_raw else False
+                    if sin_envio_por_clase:
+                        motivo_html = f"Esta clase de entrega <b>no se procesa para envío</b>"
+                        clase_color = "#FF6B6B"
+                    elif clase_raw:
+                        motivo_html = "Clase sin regla de exclusión: confirmar con Facturación / Logística"
+                        clase_color = fact_color
+                    else:
+                        motivo_html = "Sin clase de entrega registrada: confirmar con Facturación / Logística"
+                        clase_color = fact_color
+
+                    linea_cliente = f"ID: {no_cliente_f}" if no_cliente_f else ""
+                    linea_guia = f"<span style='font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;'>Guía: {guia_f}</span>" if guia_f else ""
+
+                    st.markdown(
+                        f"<div class='card-fact' style='background:rgba(38,32,20,0.75);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {fact_color};border-radius:12px;padding:16px 24px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;'>"
+                        f"<div style='flex:1.2;min-width:150px;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:17px;color:{fact_color};letter-spacing:0.5px;'># {pedido_f}</b><br>{linea_guia}</div>"
+                        f"<div style='flex:2.4;min-width:220px;padding-left:22px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{cliente_f}</b><br><span style='font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;'>{linea_cliente}{' | ' if linea_cliente and destino_f else ''}{destino_f}</span></div>"
+                        f"<div style='flex:1.8;min-width:200px;padding-left:22px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLASE DE ENTREGA</span><br><span style='background:{clase_color}20;color:{clase_color};padding:4px 12px;border-radius:6px;font-size:13px;font-weight:900;border:1px solid {clase_color};letter-spacing:1px;display:inline-block;margin-top:3px;'>{clase_f}</span><br><span style='font-size:10px;color:rgba(255,255,255,0.7);font-weight:600;display:inline-block;margin-top:5px;'>{motivo_html}</span></div>"
+                        f"<div style='flex:1.2;min-width:140px;text-align:right;'><span style='background:{fact_color}15;color:{fact_color};padding:5px 12px;border-radius:6px;font-size:10px;font-weight:800;border:1px solid {fact_color};text-transform:uppercase;letter-spacing:1px;display:inline-block;'>SIN PROCESAR PARA ENVÍO</span></div>"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
             else:
                 if total == 1:
                     envio = resultados.iloc[0]
