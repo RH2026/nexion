@@ -1145,14 +1145,14 @@ def main():
             df_desp_raw["NÚMERO DE PEDIDO"] = df_desp_raw["NÚMERO DE PEDIDO"].fillna("").astype(str).str.strip()
 
             # --- FILTROS: PERÍODO + ESTATUS + BÚSQUEDA ---
-            dsf1, dsf2, dsf3 = st.columns([1.3, 2.4, 1.6])
+            dsf1, dsf2, dsf3 = st.columns([1.3, 1.6, 2.4])
             with dsf1:
                 mes_sel_desp = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1, key="select_mes_desp")
             with dsf2:
+                buscar_desp = st.text_input("BUSCAR PEDIDO", placeholder="Escribe para filtrar...", key="buscar_pedido_desp")
+            with dsf3:
                 filtro_estado_desp = st.radio("ESTATUS", ["TODOS", "A TIEMPO", "FUERA DE TIEMPO"],
                                               index=0, horizontal=True, key="filtro_estado_desp")
-            with dsf3:
-                buscar_desp = st.text_input("BUSCAR PEDIDO", placeholder="Escribe para filtrar...", key="buscar_pedido_desp")
 
             df_desp = df_desp_raw[df_desp_raw["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel_desp) + 1)].copy()
 
@@ -1212,10 +1212,14 @@ def main():
             # --- GRÁFICO: DESPACHOS POR DÍA ---
             st.markdown("<div class='donut-section-title-s'>DESPACHOS POR DÍA: A TIEMPO VS. FUERA DE TIEMPO</div>", unsafe_allow_html=True)
             if not validos_ds.empty:
-                df_dia_ds = validos_ds.assign(DIA=validos_ds["FECHA DE ENVÍO"].dt.date)
-                df_dia_ds = df_dia_ds.groupby(["DIA", "Estado_KPI"]).size().reset_index(name="Facturas")
+                df_dia_ds = validos_ds.assign(DIA=validos_ds["FECHA DE ENVÍO"].dt.strftime("%d/%m"),
+                                              _ORDEN=validos_ds["FECHA DE ENVÍO"].dt.normalize())
+                df_dia_ds = df_dia_ds.groupby(["_ORDEN", "DIA", "Estado_KPI"]).size().reset_index(name="Facturas")
+                df_dia_ds = df_dia_ds.sort_values("_ORDEN")
                 fig_ds = px.bar(df_dia_ds, x="DIA", y="Facturas", color="Estado_KPI", barmode="stack",
+                                category_orders={"DIA": df_dia_ds["DIA"].drop_duplicates().tolist()},
                                 color_discrete_map={"A Tiempo": "#00FFAA", "Fuera de Tiempo": "#FF6B6B"})
+                fig_ds.update_xaxes(type="category", tickmode="linear", tickangle=-45)
                 fig_ds.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                                      font={"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 12},
                                      margin={"t": 20, "b": 10, "l": 10, "r": 10}, height=320,
