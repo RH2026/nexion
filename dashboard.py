@@ -219,25 +219,6 @@ def main():
                     unsafe_allow_html=True
                 )
 
-            st.markdown("""
-            <style>
-            [data-testid="stSpinner"] {
-                width: 100% !important;
-            }
-
-            [data-testid="stSpinner"] > div {
-                margin-left: auto !important;
-                margin-right: auto !important;
-            }
-
-            [data-testid="stSpinner"] svg {
-                width: 32px !important;
-                height: 32px !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            
-            
             with st.spinner("🔄 Conectando con bases remotas y cruzando guías y métricas de surtido..."):
                 df_raw_surtido = cargar_datos_envios()
                 df_dashboard_global = cargar_datos_dashboard_global()
@@ -1008,6 +989,14 @@ def main():
             for col_num_rk in ["COSTO DE LA GUÍA", "COSTOS ADICIONALES", "CANTIDAD DE CAJAS"]:
                 df_rank_raw[col_num_rk] = _limpiar_moneda_rk(df_rank_raw[col_num_rk]) if col_num_rk in df_rank_raw.columns else 0.0
 
+            # --- FLETERAS PRINCIPALES: TODA la pestaña evalúa solo estas, sin importar el filtro ---
+            FLETERAS_PRINCIPALES_RK = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "SANCHEZ", "FLETES DE REGRESO"]
+            df_rank_raw = df_rank_raw[
+                df_rank_raw["FLETERA"].astype(str).str.upper().str.strip().apply(
+                    lambda nom_x: any(p in nom_x for p in FLETERAS_PRINCIPALES_RK)
+                )
+            ]
+
             # --- FILTRO COMPARTIDO POR LAS 3 SUB-TABS ---
             rkf1, rkf2 = st.columns([1.3, 3])
             with rkf1:
@@ -1067,12 +1056,8 @@ def main():
 
             df_resumen_rk = _resumen_por_fletera_rk(df_rank)
 
-            # --- FLETERAS PRINCIPALES (fijas, sin filtro): las que más se manejan y pagan ---
-            FLETERAS_PRINCIPALES_RK = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "SANCHEZ"]
-            mask_principales_rk = df_rank_periodo["FLETERA"].astype(str).str.upper().str.strip().apply(
-                lambda nom_x: any(p in nom_x for p in FLETERAS_PRINCIPALES_RK)
-            )
-            df_resumen_principales_rk = _resumen_por_fletera_rk(df_rank_periodo[mask_principales_rk])
+            # --- RESUMEN FIJO SIN FILTRO DE FLETERA (base ya restringida a las fleteras principales) ---
+            df_resumen_principales_rk = _resumen_por_fletera_rk(df_rank_periodo)
 
             config_layout_rk = {
                 "paper_bgcolor": "rgba(0,0,0,0)",
