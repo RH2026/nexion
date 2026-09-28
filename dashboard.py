@@ -961,8 +961,11 @@ def main():
             df_carga_raw["MES"] = df_carga_raw["MES"].str.upper()
             df_carga_raw["CAJAS"] = pd.to_numeric(df_carga_raw["CAJAS"], errors="coerce").fillna(0) if "CAJAS" in df_carga_raw.columns else 0
 
-            # --- EXCLUIR "COBRO REGRESO" EXACTO: aún sin fletera asignada, sin guía ni cajas ---
-            df_carga_raw = df_carga_raw[df_carga_raw["FORMA DE ENVIO"].str.upper().str.strip() != "COBRO REGRESO"]
+            # --- "COBRO REGRESO" a secas (sin nombre de paquetería) = aún sin fletera: no se considera ---
+            # (lo que diga "TINY PACK COBRO REGRESO", "TRES GUERRAS COBRO REGRESO", etc. SÍ se considera)
+            _fletera_base_dc = df_carga_raw["FLETERA"].fillna("").astype(str).str.upper().str.strip() if "FLETERA" in df_carga_raw.columns else pd.Series("", index=df_carga_raw.index)
+            _sin_asignar_dc = (df_carga_raw["TRANSPORTE"].str.upper().str.strip() == "COBRO REGRESO") | (_fletera_base_dc == "COBRO REGRESO")
+            df_carga_raw = df_carga_raw[~_sin_asignar_dc]
 
             # --- SOLO LAS 7 PAQUETERÍAS MÁS IMPORTANTES ---
             CARRIERS_PRINCIPALES_DC = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "PAQUETE", "SANCHEZ", "FLETES DE REGRESO", "FARMASES"]
@@ -984,9 +987,11 @@ def main():
 
             df_carga = df_carga_raw[(df_carga_raw["MES"] == mes_sel_carga) & (df_carga_raw["TRANSPORTE"] != "")].copy()
             if tipo_mov_carga == "COBRO DESTINO":
-                df_carga = df_carga[df_carga["FORMA DE ENVIO"].str.contains("DESTINO", case=False, na=False)]
+                df_carga = df_carga[df_carga["FORMA DE ENVIO"].str.contains("DESTINO", case=False, na=False)
+                                    | df_carga["TRANSPORTE"].str.contains("COBRO DESTINO", case=False, na=False)]
             elif tipo_mov_carga == "COBRO REGRESO":
-                df_carga = df_carga[df_carga["FORMA DE ENVIO"].str.contains("REGRESO", case=False, na=False)]
+                df_carga = df_carga[df_carga["FORMA DE ENVIO"].str.contains("REGRESO", case=False, na=False)
+                                    | df_carga["TRANSPORTE"].str.contains("COBRO REGRESO", case=False, na=False)]
 
             if df_carga.empty:
                 st.warning(f"No se encontraron registros para '{tipo_mov_carga}' en {mes_sel_carga}.")
@@ -1040,7 +1045,7 @@ def main():
                 st.markdown("<div class='donut-section-title-s'>EXPLORADOR DE RUTAS Y DESTINOS</div>", unsafe_allow_html=True)
 
                 lista_carriers_dc = ["TODOS"] + sorted(df_carga["TRANSPORTE"].unique())
-                col_sel_dc, col_dl_dc = st.columns([3, 1])
+                col_sel_dc, _ = st.columns([3, 1])
                 with col_sel_dc:
                     carrier_sel_dc = st.selectbox("CARRIER", lista_carriers_dc, key=f"select_carrier_{mes_sel_carga}_{tipo_mov_carga}",
                                                   label_visibility="collapsed")
@@ -1049,35 +1054,6 @@ def main():
                 df_dest_sum_dc = (df_dest_f_dc.groupby(["TRANSPORTE", "DESTINO", "FORMA DE ENVIO"], as_index=False)["CAJAS"].sum()
                                   .sort_values(["TRANSPORTE", "CAJAS"], ascending=[True, False]))
                 total_sel_dc = df_dest_sum_dc["CAJAS"].sum()
-
-                with col_dl_dc:
-                    st.markdown("""
-                        <style>
-                            .st-key-dl_carga_rutas button,
-                            .st-key-dl_carga_rutas [data-testid="stDownloadButton"] button,
-                            .st-key-dl_carga_rutas [data-testid="stBaseButton-secondary"] {
-                                background-color: #628290 !important;
-                                color: #ffffff !important;
-                                border: 1px solid #628290 !important;
-                                border-radius: 7px !important;
-                                font-weight: 700 !important;
-                                text-transform: uppercase !important;
-                                font-size: 10px !important;
-                                height: 32px !important;
-                                width: 100% !important;
-                                transition: all 0.3s ease !important;
-                            }
-                            .st-key-dl_carga_rutas button:hover,
-                            .st-key-dl_carga_rutas [data-testid="stBaseButton-secondary"]:hover {
-                                background-color: #4E6772 !important;
-                                border-color: #4E6772 !important;
-                                color: #ffffff !important;
-                            }
-                        </style>
-                    """, unsafe_allow_html=True)
-                    st.download_button("DESCARGAR CSV", data=df_dest_sum_dc.to_csv(index=False).encode("utf-8"),
-                                       file_name=f"carga_{carrier_sel_dc}_{mes_sel_carga}.csv", mime="text/csv",
-                                       use_container_width=True, key="dl_carga_rutas")
 
                 st.markdown(f"<p style='color:#FFC000; font-size:12px; font-weight:600; letter-spacing:2px; margin:10px 0 15px 0;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel_dc):,}</p>", unsafe_allow_html=True)
 
@@ -1115,6 +1091,35 @@ def main():
                 </div>
                 """
                 components.html(html_rutas_dc, height=500, scrolling=True)
+                _, col_dl_dc = st.columns([3, 1])
+                with col_dl_dc:
+                    st.markdown("""
+                        <style>
+                            .st-key-dl_carga_rutas button,
+                            .st-key-dl_carga_rutas [data-testid="stDownloadButton"] button,
+                            .st-key-dl_carga_rutas [data-testid="stBaseButton-secondary"] {
+                                background-color: #628290 !important;
+                                color: #ffffff !important;
+                                border: 1px solid #628290 !important;
+                                border-radius: 7px !important;
+                                font-weight: 700 !important;
+                                text-transform: uppercase !important;
+                                font-size: 10px !important;
+                                height: 32px !important;
+                                width: 100% !important;
+                                transition: all 0.3s ease !important;
+                            }
+                            .st-key-dl_carga_rutas button:hover,
+                            .st-key-dl_carga_rutas [data-testid="stBaseButton-secondary"]:hover {
+                                background-color: #4E6772 !important;
+                                border-color: #4E6772 !important;
+                                color: #ffffff !important;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
+                    st.download_button("DESCARGAR CSV", data=df_dest_sum_dc.to_csv(index=False).encode("utf-8"),
+                                       file_name=f"carga_{carrier_sel_dc}_{mes_sel_carga}.csv", mime="text/csv",
+                                       use_container_width=True, key="dl_carga_rutas")
              
         # ----------------------------------------------------------
         # TAB 3: PESTAÑA 3 (Espacio reservado para futuro contenido)
