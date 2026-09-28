@@ -27,6 +27,9 @@ st.set_page_config(
 render_layout(modulo_actual="ENTREGAS", submodulo_actual="NACIONAL")
 
 
+ESTATUS_POSIBLES = ["ENVIADA", "ENVIADA CON RETRASO", "ENVIADA EN TIEMPO", "RETRASO", "SURTIENDO"]
+
+
 # ============================================================
 # 3. FUNCIONES MAESTRAS DE SOPORTE Y DATOS
 # ============================================================
@@ -579,6 +582,22 @@ def main():
                 df_raw_procesar = df_raw[df_raw['Factura'].astype(str).str.strip() == filtro_factura].copy()
                 df_envios_procesar = df_envios[df_envios['factura'] == filtro_factura].copy()
 
+            # ── RESTO DE LOS FILTROS (se pintan ANTES del procesamiento pesado) ──
+            with f1:
+                filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=None, key="calendario_fprog_envios")
+
+            with f2:
+                filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=None, key="calendario_fenv_envios")
+
+            with f4:
+                paq_opts = ["TODAS"] + sorted(list(df_envios_procesar['recomendacion'].loc[df_envios_procesar['recomendacion'] != ''].unique()))
+                filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
+
+            with f5:
+                estatus_opts = ["TODOS"] + ESTATUS_POSIBLES
+                filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
+
+
             # ── PROCESAMIENTO DE REGISTROS FILTRADOS ──
             lista_guias = []
             lista_fechas_envio = []
@@ -704,21 +723,6 @@ def main():
             df_envios_procesar['estatus'] = estatus_calculado
             df_envios_procesar = df_envios_procesar.replace(r'(?i)^nan$', '', regex=True)
             df_envios_procesar = df_envios_procesar.sort_values(by='factura', ascending=True, ignore_index=True)
-
-            # ── RESTO DE LOS FILTROS TÁCTICOS ──
-            with f1:
-                filtro_fprog = st.date_input("FECHA PROGRAMACIÓN", value=None, key="calendario_fprog_envios")
-
-            with f2:
-                filtro_fenvio = st.date_input("FECHA DE ENVÍO", value=None, key="calendario_fenv_envios")
-
-            with f4:
-                paq_opts = ["TODAS"] + sorted(list(df_envios_procesar['recomendacion'].loc[df_envios_procesar['recomendacion'] != ''].unique()))
-                filtro_paqueteria = st.selectbox("PAQUETERÍA", paq_opts, key="filtro_paqueteria_envios")
-
-            with f5:
-                estatus_opts = ["TODOS"] + sorted(list(df_envios_procesar['estatus'].loc[df_envios_procesar['estatus'] != ''].unique()))
-                filtro_estatus = st.selectbox("ESTATUS", estatus_opts, key="filtro_estatus_envios")
 
             df_filtrado = df_envios_procesar.copy()
 
