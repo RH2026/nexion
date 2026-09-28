@@ -947,6 +947,155 @@ def main():
         # ----------------------------------------------------------
         with tab2:
             render_subtitulo("DISTRIBUCIÓN DE CARGA // VOLUMEN Y OCUPACIÓN POR FLETERA")
+            st.markdown('<div class="spacer-menu"></div>', unsafe_allow_html=True)
+
+            import html as html_lib
+            import plotly.graph_objects as go
+
+            # --- DATOS BASE (misma fuente que el resto del dashboard) ---
+            df_carga_raw = df_raw.copy()
+            for col_txt_dc in ["TRANSPORTE", "DESTINO", "FORMA DE ENVIO", "MES"]:
+                if col_txt_dc not in df_carga_raw.columns:
+                    df_carga_raw[col_txt_dc] = ""
+                df_carga_raw[col_txt_dc] = df_carga_raw[col_txt_dc].fillna("").astype(str).str.strip()
+            df_carga_raw["MES"] = df_carga_raw["MES"].str.upper()
+            df_carga_raw["CAJAS"] = pd.to_numeric(df_carga_raw["CAJAS"], errors="coerce").fillna(0) if "CAJAS" in df_carga_raw.columns else 0
+
+            # --- FILTROS: PERÍODO + FLUJO ---
+            dcf1, dcf2 = st.columns([1.3, 3])
+            with dcf1:
+                mes_sel_carga = st.selectbox("PERÍODO", meses, index=hoy_gdl.month - 1, key="select_mes_carga")
+            with dcf2:
+                tipo_mov_carga = st.radio(
+                    "FLUJO", ["TODOS", "COBRO DESTINO", "COBRO REGRESO"],
+                    index=0, horizontal=True, key="tipo_mov_carga"
+                )
+
+            df_carga = df_carga_raw[(df_carga_raw["MES"] == mes_sel_carga) & (df_carga_raw["TRANSPORTE"] != "")].copy()
+            if tipo_mov_carga == "COBRO DESTINO":
+                df_carga = df_carga[df_carga["FORMA DE ENVIO"].str.contains("DESTINO", case=False, na=False)]
+            elif tipo_mov_carga == "COBRO REGRESO":
+                df_carga = df_carga[df_carga["FORMA DE ENVIO"].str.contains("REGRESO", case=False, na=False)]
+
+            if df_carga.empty:
+                st.warning(f"No se encontraron registros para '{tipo_mov_carga}' en {mes_sel_carga}.")
+            else:
+                total_cajas_carga = df_carga["CAJAS"].sum()
+                df_part_carga = df_carga.groupby("TRANSPORTE", as_index=False)["CAJAS"].sum()
+                df_part_carga["PORCENTAJE"] = (df_part_carga["CAJAS"] / total_cajas_carga * 100) if total_cajas_carga else 0.0
+                df_part_carga = df_part_carga.sort_values("CAJAS", ascending=True)
+
+                lider_carga = df_part_carga.iloc[-1]
+                st.markdown(f"""<div style="text-align:left; margin-top:5px; margin-bottom:5px;">
+                    <span style="color:#FFFFFF; font-weight:400; font-size:12px; letter-spacing:3px;">
+                        MOSTRANDO {len(df_carga)} REGISTROS CORRESPONDIENTES A {mes_sel_carga}
+                    </span>
+                </div>""", unsafe_allow_html=True)
+
+                # --- TARJETAS ---
+                dc_cols = st.columns(3)
+                with dc_cols[0]:
+                    render_flat_card("Volumen Total (Cajas)", f"{int(total_cajas_carga):,}", "#E8EEF2")
+                with dc_cols[1]:
+                    render_flat_card("Carrier Dominante", f"{lider_carga['TRANSPORTE']} · {lider_carga['PORCENTAJE']:.0f}%", "#8FBF9F", border_alpha="143,191,159")
+                with dc_cols[2]:
+                    render_flat_card("Destinos Distintos", df_carga["DESTINO"].replace("", pd.NA).nunique(), "#7FA0B0")
+
+                st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+
+                config_layout_dc = {
+                    "paper_bgcolor": "rgba(0,0,0,0)",
+                    "plot_bgcolor": "rgba(0,0,0,0)",
+                    "font": {"color": "#E8EEF2", "family": "Inter, sans-serif", "size": 12},
+                    "margin": {"t": 20, "b": 10, "l": 10, "r": 60},
+                    "height": max(340, len(df_part_carga) * 38),
+                }
+
+                dcc1, dcc2 = st.columns(2)
+                with dcc1:
+                    st.markdown("<div class='donut-section-title-s'>PARTICIPACIÓN DE CARGA POR CARRIER (CAJAS Y %)</div>", unsafe_allow_html=True)
+                    fig_dc1 = go.Figure(go.Bar(
+                        x=df_part_carga["CAJAS"], y=df_part_carga["TRANSPORTE"], orientation="h",
+                        marker=dict(color="#7FA0B0"),
+                        text=[f"{int(c):,} · {p:.1f}%" for c, p in zip(df_part_carga["CAJAS"], df_part_carga["PORCENTAJE"])],
+                        textposition="outside", textfont=dict(color="#E8EEF2"), cliponaxis=False,
+                    ))
+                    fig_dc1.update_layout(**config_layout_dc, xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                                          yaxis=dict(showgrid=False, automargin=True), showlegend=False,
+                                          hoverlabel=dict(bgcolor="#182229", font_size=12))
+                    st.plotly_chart(fig_dc1, use_container_width=True, config={'displayModeBar': False},
+                                    key=f"bar_part_{mes_sel_carga}_{tipo_mov_carga}")
+
+                with dcc2:
+                    st.markdown("<div class='donut-section-title-s'>COMPOSICIÓN POR FORMA DE ENVÍO</div>", unsafe_allow_html=True)
+                    df_forma_carga = df_carga.groupby(["TRANSPORTE", "FORMA DE ENVIO"], as_index=False)["CAJAS"].sum()
+                    df_forma_carga["FORMA DE ENVIO"] = df_forma_carga["FORMA DE ENVIO"].replace("", "SIN DATO")
+                    orden_carga = df_part_carga["TRANSPORTE"].tolist()
+                    fig_dc2 = px.bar(df_forma_carga, x="CAJAS", y="TRANSPORTE", color="FORMA DE ENVIO", orientation="h",
+                                     barmode="stack", category_orders={"TRANSPORTE": orden_carga},
+                                     color_discrete_sequence=["#7FA0B0", "#B98B78", "#8FBF9F", "#C9A46C", "#9C8FB5", "#A0A8AD"])
+                    fig_dc2.update_layout(**{**config_layout_dc, "margin": {"t": 20, "b": 10, "l": 10, "r": 10}},
+                                          xaxis_title=None, yaxis_title=None,
+                                          legend={"orientation": "h", "y": -0.15, "title": None})
+                    st.plotly_chart(fig_dc2, use_container_width=True, config={'displayModeBar': False},
+                                    key=f"bar_forma_{mes_sel_carga}_{tipo_mov_carga}")
+
+                # --- EXPLORADOR DE RUTAS Y DESTINOS ---
+                st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div class='donut-section-title-s'>EXPLORADOR DE RUTAS Y DESTINOS</div>", unsafe_allow_html=True)
+
+                lista_carriers_dc = ["TODOS"] + sorted(df_carga["TRANSPORTE"].unique())
+                col_sel_dc, col_dl_dc = st.columns([3, 1])
+                with col_sel_dc:
+                    carrier_sel_dc = st.selectbox("CARRIER", lista_carriers_dc, key=f"select_carrier_{mes_sel_carga}_{tipo_mov_carga}",
+                                                  label_visibility="collapsed")
+
+                df_dest_f_dc = df_carga if carrier_sel_dc == "TODOS" else df_carga[df_carga["TRANSPORTE"] == carrier_sel_dc]
+                df_dest_sum_dc = (df_dest_f_dc.groupby(["TRANSPORTE", "DESTINO", "FORMA DE ENVIO"], as_index=False)["CAJAS"].sum()
+                                  .sort_values(["TRANSPORTE", "CAJAS"], ascending=[True, False]))
+                total_sel_dc = df_dest_sum_dc["CAJAS"].sum()
+
+                with col_dl_dc:
+                    st.download_button("DESCARGAR CSV", data=df_dest_sum_dc.to_csv(index=False).encode("utf-8"),
+                                       file_name=f"carga_{carrier_sel_dc}_{mes_sel_carga}.csv", mime="text/csv",
+                                       use_container_width=True, key="dl_carga_rutas")
+
+                st.markdown(f"<p style='color:#FFC000; font-size:12px; font-weight:600; letter-spacing:2px; margin:10px 0 15px 0;'>UNIDADES EN SELECCIÓN ACTUAL: {int(total_sel_dc):,}</p>", unsafe_allow_html=True)
+
+                # Un solo encabezado por carrier, con sus rutas debajo
+                bloques_dc = []
+                for carrier_dc, g_dc in df_dest_sum_dc.groupby("TRANSPORTE", sort=False):
+                    filas_dc = "".join(
+                        f'''<div class="route-row"><div><span class="dest-name">{html_lib.escape(str(r["DESTINO"]))}</span>
+                        <span class="method-tag">{html_lib.escape(str(r["FORMA DE ENVIO"]))}</span></div>
+                        <div class="unit-badge">{int(r["CAJAS"]):,} u.</div></div>'''
+                        for _, r in g_dc.iterrows()
+                    )
+                    bloques_dc.append(f'''<div class="carrier-group"><div class="carrier-header">
+                        <span class="carrier-name">{html_lib.escape(str(carrier_dc))}</span>
+                        <span class="carrier-total">{int(g_dc["CAJAS"].sum()):,} u.</span></div>{filas_dc}</div>''')
+
+                html_rutas_dc = f"""
+                <div style="font-family: 'Inter', sans-serif; padding-right: 10px;">
+                    <style>
+                        body {{ background: transparent; margin: 0; padding: 0; }}
+                        ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+                        ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); border-radius: 10px; }}
+                        ::-webkit-scrollbar-thumb {{ background: #4B5D67; border-radius: 10px; }}
+                        .carrier-group {{ background: #182229; border: 1px solid #4B5D67; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }}
+                        .carrier-header {{ background: rgba(127,160,176,0.12); padding: 10px 15px; border-bottom: 1px solid #4B5D67; display: flex; justify-content: space-between; align-items: center; }}
+                        .carrier-name {{ color: #7FA0B0; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }}
+                        .carrier-total {{ color: #8B9BB4; font-size: 10px; font-weight: 800; letter-spacing: 1px; }}
+                        .route-row {{ display: flex; justify-content: space-between; padding: 10px 15px; align-items: center; border-bottom: 1px solid rgba(75,93,103,0.4); }}
+                        .route-row:last-child {{ border-bottom: none; }}
+                        .dest-name {{ color: #E8EEF2; font-size: 12px; font-weight: 600; }}
+                        .method-tag {{ background: rgba(185,139,120,0.15); color: #B98B78; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; margin-left: 8px; }}
+                        .unit-badge {{ background: rgba(143,191,159,0.12); color: #8FBF9F; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-weight: 800; font-size: 13px; border: 1px solid rgba(143,191,159,0.25); }}
+                    </style>
+                    {"".join(bloques_dc)}
+                </div>
+                """
+                components.html(html_rutas_dc, height=500, scrolling=True)
              
         # ----------------------------------------------------------
         # TAB 3: PESTAÑA 3 (Espacio reservado para futuro contenido)
