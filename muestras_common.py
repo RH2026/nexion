@@ -127,22 +127,7 @@ def obtener_datos_github():
         r = requests.get(url, headers=headers)
         if r.status_code == 200:
             content = r.json()
-            # Guías, teléfonos y datos de autorización se leen SIEMPRE como texto:
-            # evita 8.75112E+11, el ".0" y la pérdida de ceros al inicio.
-            columnas_texto = {
-                "NUMERO_GUIA": str,
-                "NÚMERO DE GUÍA": str,
-                "CONTACTO": str,
-                "CONTACTO_NOMBRE": str,
-                "CONTACTO_TELEFONO": str,
-                "AUTORIZACION": str,
-                "AUTORIZADO_POR": str,
-                "FECHA_AUTORIZACION": str,
-            }
-            df = pd.read_csv(
-                io.BytesIO(base64.b64decode(content["content"])),
-                dtype=columnas_texto,
-            )
+            df = pd.read_csv(io.BytesIO(base64.b64decode(content["content"])))
             return df, content["sha"]
     except Exception:
         pass
