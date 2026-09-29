@@ -107,6 +107,26 @@ CSS_TARJETAS = """
 """
 
 
+def limpiar_numero_texto(valor):
+    """Convierte guías / teléfonos a texto limpio.
+    Quita el '.0' que agrega pandas y expande notación científica (8.75112E+11 -> 875112000000).
+    OJO: si el dato ya se guardó como 8.75112E+11, los dígitos perdidos no se pueden recuperar."""
+    if valor is None:
+        return ""
+    s = str(valor).strip()
+    if s.lower() in ("", "nan", "none", "0", "0.0"):
+        return ""
+    if re.fullmatch(r"\d+\.0+", s):
+        return s.split(".")[0]
+    if re.fullmatch(r"\d+(\.\d+)?[eE]\+?\d+", s):
+        try:
+            from decimal import Decimal
+            return str(int(Decimal(s)))
+        except Exception:
+            return s
+    return s
+
+
 def _e(valor):
     """Escapa texto para meterlo seguro en HTML."""
     return html_lib.escape(str(valor if valor is not None else ""))
@@ -114,10 +134,7 @@ def _e(valor):
 
 def _tel_visible(valor):
     """Teléfono sin '.0' ni espacios (pandas puede leerlo como número)."""
-    s = str(valor if valor is not None else "").strip()
-    if s.lower() == "nan":
-        return ""
-    return s[:-2] if s.endswith(".0") else s
+    return limpiar_numero_texto(valor)
 
 
 def _chips_productos(item):
@@ -181,7 +198,7 @@ def _tarjeta_html(item, mostrar_guia=True):
         paq = item.get("PAQUETERÍA", "") or item.get("PAQUETERIA_NOMBRE", "") or ""
         guia = item.get("NÚMERO DE GUÍA", "") or item.get("NUMERO_GUIA", "") or ""
         paq = "" if str(paq) in ("0", "0.0", "nan") else str(paq)
-        guia = "" if str(guia) in ("0", "0.0", "nan") else str(guia)
+        guia = limpiar_numero_texto(guia)
         guia_html = f"""
         <div class="jp-col jp-col-guia">
             <div class="jp-lbl">Envío</div>
