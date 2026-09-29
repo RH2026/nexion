@@ -1,5 +1,6 @@
+import re
 import time
-from datetime import date
+from datetime import date, datetime
 
 import pandas as pd
 import streamlit as st
@@ -16,6 +17,24 @@ from muestras_common import (
 )
 
 # ============================================================
+# 0. CONSTANTES Y FUNCIONES DE APOYO
+# ============================================================
+# Usuarios que pueden autorizar envíos de muestras (en minúsculas)
+AUTORIZADORES = ["rigoberto", "arodriguez"]
+
+
+def obtener_usuario_actual():
+    """Regresa el usuario logueado en minúsculas.
+    log.py lo guarda en st.session_state.usuario_activo."""
+    return str(st.session_state.get("usuario_activo", "")).strip().lower()
+
+
+def limpiar_telefono(texto):
+    """Deja solo los dígitos del teléfono."""
+    return re.sub(r"\D", "", texto or "")
+
+
+# ============================================================
 # 1. CONFIGURACIÓN DE PÁGINA
 # ============================================================
 st.set_page_config(
@@ -23,6 +42,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+# Si no hay sesión iniciada, manda al login
+exigir_autenticacion("muestras")
 
 # ============================================================
 # 2. LLAMADA AL LAYOUT MAESTRO Y PERMISOS
@@ -47,6 +69,9 @@ def main():
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
         st.session_state.animacion_cargada = True
+
+    usuario_actual = obtener_usuario_actual()
+    puede_autorizar = usuario_actual in AUTORIZADORES
 
     df_actual, sha_actual = obtener_datos_github()
 
@@ -93,10 +118,10 @@ def main():
         st.text_input(":material/corporate_fare: Nombre", "JABONES Y PRODUCTOS ESPECIALIZADOS", disabled=True)
 
         c_rem1, c_rem2 = st.columns([2, 1])
-        f_atn_rem = c_rem1.text_input(":material/person: Atención", "RIGOBERTO HERNANDEZ")
-        f_tel_rem = c_rem2.text_input(":material/call: Teléfono", "3319753122")
+        f_atn_rem = c_rem1.text_input(":material/person: Atención (Nombre) *", "RIGOBERTO HERNANDEZ")
+        f_tel_rem = c_rem2.text_input(":material/call: Teléfono (10 dígitos) *", "3319753122")
         f_soli = st.text_input(
-            ":material/badge: Solicitante / Agente",
+            ":material/badge: Solicitante / Agente *",
             placeholder="NOMBRE DE QUIEN SOLICITA LAS MUESTRAS",
             key=f"soli_{st.session_state.reset_key}"
         ).upper()
@@ -118,11 +143,19 @@ def main():
         f_ci = cd3.text_input(":material/location_city: Ciudad", key=f"ci_{st.session_state.reset_key}").upper()
         f_es = cd4.text_input(":material/public: Estado", key=f"es_{st.session_state.reset_key}").upper()
 
-        f_con = st.text_input(
-            ":material/contact_phone: Contacto Receptor",
-            placeholder="NOMBRE Y TELÉFONO DE QUIEN RECIBE",
-            key=f"con_{st.session_state.reset_key}"
+        cc1, cc2 = st.columns([2, 1])
+        f_con_nom = cc1.text_input(
+            ":material/person: Contacto Receptor - Nombre *",
+            placeholder="NOMBRE DE QUIEN RECIBE",
+            key=f"con_nom_{st.session_state.reset_key}"
         ).upper()
+        f_con_tel = cc2.text_input(
+            ":material/call: Contacto Receptor - Teléfono *",
+            placeholder="10 DÍGITOS",
+            key=f"con_tel_{st.session_state.reset_key}"
+        )
+        # Texto combinado (para el PDF y compatibilidad con la columna CONTACTO existente)
+        f_con = f"{f_con_nom.strip()} TEL: {limpiar_telefono(f_con_tel)}"
 
     st.divider()
 
@@ -225,20 +258,42 @@ def main():
     ).upper()
 
     st.write("")
+    f_autoriza = False
+    if puede_autorizar:
+        f_autoriza = st.checkbox(
+            "✅ AUTORIZAR ESTE ENVÍO",
+            key=f"auto_{st.session_state.reset_key}",
+            help="Solo visible para usuarios autorizadores."
+        )
+    else:
+        st.info("Este registro se guardará como PENDIENTE DE AUTORIZACIÓN. No podrá despacharse hasta que lo autorice Rigoberto o Arodriguez.")
+
     st.write("")
 
     col_b1, col_b2, col_b3 = st.columns([1, 1, 0.5])
 
     if col_b1.button(":material/save: GUARDAR REGISTRO NUEVO", use_container_width=True, type="primary"):
-        if not f_h:
-            st.error("Falta el hotel")
-        elif not f_soli:
-            st.error("Falta el nombre de quien solicita (Solicitante / Agente)")
-        elif not f_con:
-            st.error("Falta el nombre y teléfono de quien recibe")
-        elif not prods_actuales:
-            st.error("Selecciona al menos un producto")
+        errores = []
+        if not f_h.strip():
+            errores.append("Falta el hotel")
+        if not f_soli.strip():
+            errores.append("Falta el nombre de quien solicita (Solicitante / Agente)")
+        if len(f_atn_rem.strip()) < 3:
+            errores.append("Remitente: falta el nombre en Atención")
+        if len(limpiar_telefono(f_tel_rem)) != 10:
+            errores.append("Remitente: el teléfono debe tener 10 dígitos")
+        if len(f_con_nom.strip()) < 3:
+            errores.append("Destinatario: falta el nombre de quien recibe")
+        if len(limpiar_telefono(f_con_tel)) != 10:
+            errores.append("Destinatario: el teléfono de quien recibe debe tener 10 dígitos")
+        if not prods_actuales:
+            errores.append("Selecciona al menos un producto")
+
+        if errores:
+            for e in errores:
+                st.error(e)
         else:
+            autorizado = bool(puede_autorizar and f_autoriza)
             direccion_completa = f"{f_ca}, Col. {f_co}, CP {f_cp}, {f_ci}, {f_es}".upper()
 
             reg = {
@@ -248,6 +303,11 @@ def main():
                 "NOMBRE DEL HOTEL": f_h.upper(),
                 "DESTINO": direccion_completa,
                 "CONTACTO": f_con.upper(),
+                "CONTACTO_NOMBRE": f_con_nom.strip(),
+                "CONTACTO_TELEFONO": limpiar_telefono(f_con_tel),
+                "AUTORIZACION": "AUTORIZADO" if autorizado else "PENDIENTE",
+                "AUTORIZADO_POR": usuario_actual if autorizado else "",
+                "FECHA_AUTORIZACION": datetime.now().strftime("%Y-%m-%d %H:%M") if autorizado else "",
                 "SOLICITO": f_soli.upper(),
                 "PAQUETERIA": f_paq_sel.upper(),
                 "PAQUETERIA_NOMBRE": f_paq_nombre,
@@ -319,6 +379,25 @@ def main():
 
     with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS", expanded=True):
         if not df_actual.empty:
+            if puede_autorizar and "AUTORIZACION" in df_actual.columns:
+                pend = df_actual[df_actual["AUTORIZACION"].astype(str).str.upper() == "PENDIENTE"]
+                if not pend.empty:
+                    st.markdown("**⏳ PENDIENTES DE AUTORIZACIÓN**")
+                    for _, r in pend.sort_values("FOLIO", ascending=False).iterrows():
+                        ca, cb = st.columns([4, 1])
+                        ca.write(f"#{r['FOLIO']} · {r.get('NOMBRE DEL HOTEL', '')} · Solicitó: {r.get('SOLICITO', '')}")
+                        if cb.button("AUTORIZAR", key=f"aut_{r['FOLIO']}"):
+                            df_nuevo, sha_nuevo = obtener_datos_github()
+                            mask = pd.to_numeric(df_nuevo["FOLIO"], errors="coerce") == pd.to_numeric(r["FOLIO"])
+                            df_nuevo.loc[mask, "AUTORIZACION"] = "AUTORIZADO"
+                            df_nuevo.loc[mask, "AUTORIZADO_POR"] = usuario_actual
+                            df_nuevo.loc[mask, "FECHA_AUTORIZACION"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+                            if subir_a_github(df_nuevo, sha_nuevo, f"Autoriza folio JYP-{r['FOLIO']}"):
+                                st.success(f"Folio JYP-{r['FOLIO']} autorizado")
+                                time.sleep(1)
+                                st.rerun()
+                    st.divider()
+
             busqueda = st.text_input("Escribe el nombre del Hotel, Solicitante o Folio para filtrar:").upper()
 
             df_vista = df_actual.copy()
@@ -361,6 +440,7 @@ def main():
                         <div class="label-mini">Hotel / Destino</div>
                         <div class="val-hotel">{str(item.get('NOMBRE DEL HOTEL', ''))[:30]}</div>
                         <div class="val-soli">SOLICITÓ: {str(item.get('SOLICITO', ''))[:30]}</div>
+                        <div class="val-soli">AUTORIZACIÓN: {str(item.get('AUTORIZACION', '') or '—')}</div>
                     </div>
                     <div style="flex: 2.5; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
                         <div class="label-mini">Productos Solicitados</div>
