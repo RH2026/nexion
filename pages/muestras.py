@@ -1,3 +1,4 @@
+import html as html_lib
 import re
 import time
 from datetime import date, datetime
@@ -65,6 +66,150 @@ if "seleccionados_muestras" not in st.session_state:
 # ==========================================
 # 4. INTERFAZ PRINCIPAL (CAPTURA DE MUESTRAS)
 # ==========================================
+# ============================================================
+# 0.1 APOYO PARA TARJETAS (PENDIENTES Y CONSULTA)
+# ============================================================
+CSS_TARJETAS = """
+.jp-card { background:#263238; border:1px solid rgba(255,255,255,0.06); border-left:5px solid var(--acento,#FF4444);
+           border-radius:12px; padding:14px 18px; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:14px 18px;
+           align-items:flex-start; font-family:'Inter',sans-serif; transition:all .25s ease; }
+.jp-card:hover { background:#2d3b42; border-color:rgba(56,189,248,0.6); border-left-color:var(--acento,#FF4444); }
+.jp-col { flex:1 1 180px; min-width:160px; }
+.jp-col-prod { flex:2 1 260px; }
+.jp-col-guia { flex:1 1 170px; text-align:right; }
+.jp-lbl { font-size:8px; color:rgba(255,255,255,0.4); font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:3px; }
+.jp-folio { color:var(--acento,#00FFAA); font-family:monospace; font-size:20px; font-weight:900; line-height:1.1; }
+.jp-fecha { color:rgba(255,255,255,0.5); font-size:10px; margin:2px 0 6px 0; }
+.jp-hotel { color:#FFF; font-size:13px; font-weight:800; line-height:1.25; }
+.jp-line { color:rgba(255,255,255,0.6); font-size:10px; margin-top:3px; line-height:1.35; }
+.jp-line b { color:#FFD700; font-weight:700; }
+.jp-tel { color:#38bdf8; font-weight:700; }
+.jp-chips { display:flex; flex-wrap:wrap; gap:5px; }
+.jp-chip { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); color:#FFF; border-radius:8px;
+           padding:3px 8px; font-size:9.5px; font-weight:600; }
+.jp-chip b { color:#00FFAA; margin-right:3px; }
+.jp-badge { display:inline-block; border-radius:10px; padding:2px 8px; font-size:8px; font-weight:800; letter-spacing:1px;
+            margin:0 4px 4px 0; border:1px solid; }
+.jp-ok   { color:#00FFAA; border-color:#00FFAA; background:rgba(0,255,170,0.10); }
+.jp-bad  { color:#FF4444; border-color:#FF4444; background:rgba(255,68,68,0.10); }
+.jp-wait { color:#f97316; border-color:#f97316; background:rgba(249,115,22,0.12); }
+.jp-info { color:#38bdf8; border-color:#38bdf8; background:rgba(56,189,248,0.10); }
+.jp-mute { color:rgba(255,255,255,0.45); border-color:rgba(255,255,255,0.2); background:rgba(255,255,255,0.04); }
+.jp-guia { color:#38bdf8; font-family:monospace; font-size:14px; font-weight:800; line-height:1.2; }
+.jp-guia2 { color:#FFF; font-family:monospace; font-size:12px; font-weight:700; margin-top:4px; }
+.jp-pend { color:#f97316 !important; font-style:italic; font-size:10px; font-weight:400; }
+.jp-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin:6px 0 14px 0; }
+.jp-tile { background:#263238; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 14px; }
+.jp-tile .n { font-size:24px; font-weight:900; font-family:monospace; line-height:1.1; }
+.jp-tile .t { font-size:8px; letter-spacing:1px; font-weight:800; color:rgba(255,255,255,0.45); text-transform:uppercase; }
+.jp-banner { background:rgba(249,115,22,0.10); border:1px solid #f97316; color:#f97316; border-radius:10px;
+             padding:8px 14px; font-size:11px; font-weight:800; letter-spacing:1px; margin-bottom:10px; }
+"""
+
+
+def _e(valor):
+    """Escapa texto para meterlo seguro en HTML."""
+    return html_lib.escape(str(valor if valor is not None else ""))
+
+
+def _tel_visible(valor):
+    """Teléfono sin '.0' ni espacios (pandas puede leerlo como número)."""
+    s = str(valor if valor is not None else "").strip()
+    if s.lower() == "nan":
+        return ""
+    return s[:-2] if s.endswith(".0") else s
+
+
+def _chips_productos(item):
+    """Regresa (html_chips, total_piezas) con los productos del folio."""
+    chips, total = "", 0
+    for p_key in precios.keys():
+        cant = pd.to_numeric(item.get(p_key, 0), errors="coerce")
+        if pd.notna(cant) and cant > 0:
+            total += int(cant)
+            nombre = str(p_key).upper()
+            corto = nombre if len(nombre) <= 34 else nombre[:33] + "…"
+            chips += f'<span class="jp-chip" title="{_e(nombre)}"><b>{int(cant)}</b>{_e(corto)}</span>'
+    return (chips or '<span class="jp-line"><i>Sin detalle</i></span>'), total
+
+
+def _contacto_visible(item):
+    nombre = str(item.get("CONTACTO_NOMBRE", "") or "").strip()
+    tel = _tel_visible(item.get("CONTACTO_TELEFONO", ""))
+    if nombre or tel:
+        return nombre, tel
+    return str(item.get("CONTACTO", "") or "").strip(), ""
+
+
+def _estado_aut(item):
+    v = str(item.get("AUTORIZACION", "") or "").strip().upper()
+    return v if v in ("AUTORIZADO", "PENDIENTE") else ""
+
+
+def _tarjeta_html(item, mostrar_guia=True):
+    """Tarjeta de un folio (se usa en pendientes y en consulta)."""
+    est = str(item.get("ESTATUS", "") or "NO SURTIDO").strip().upper()
+    aut = _estado_aut(item)
+
+    if aut == "PENDIENTE":
+        acento = "#f97316"
+    elif est == "DESPACHADO":
+        acento = "#00FFAA"
+    else:
+        acento = "#FF4444"
+
+    badge_est = ('<span class="jp-badge jp-ok">✓ DESPACHADO</span>' if est == "DESPACHADO"
+                 else '<span class="jp-badge jp-bad">⚠ NO SURTIDO</span>')
+    if aut == "AUTORIZADO":
+        quien = str(item.get("AUTORIZADO_POR", "") or "").strip().upper()
+        badge_aut = f'<span class="jp-badge jp-info">✓ AUTORIZADO{(" · " + _e(quien)) if quien else ""}</span>'
+    elif aut == "PENDIENTE":
+        badge_aut = '<span class="jp-badge jp-wait">⏳ PENDIENTE DE AUTORIZAR</span>'
+    else:
+        badge_aut = '<span class="jp-badge jp-mute">AUT. N/D</span>'
+
+    chips, total = _chips_productos(item)
+    c_nom, c_tel = _contacto_visible(item)
+    contacto = ""
+    if c_nom or c_tel:
+        contacto = f'<div class="jp-line"><b>RECIBE:</b> {_e(c_nom)}' + (f' · <span class="jp-tel">{_e(c_tel)}</span>' if c_tel else "") + "</div>"
+    destino = str(item.get("DESTINO", "") or "").strip()
+    destino_html = f'<div class="jp-line"><b>DESTINO:</b> {_e(destino[:90])}{"…" if len(destino) > 90 else ""}</div>' if destino else ""
+
+    guia_html = ""
+    if mostrar_guia:
+        paq = item.get("PAQUETERÍA", "") or item.get("PAQUETERIA_NOMBRE", "") or ""
+        guia = item.get("NÚMERO DE GUÍA", "") or item.get("NUMERO_GUIA", "") or ""
+        paq = "" if str(paq) in ("0", "0.0", "nan") else str(paq)
+        guia = "" if str(guia) in ("0", "0.0", "nan") else str(guia)
+        guia_html = f"""
+        <div class="jp-col jp-col-guia">
+            <div class="jp-lbl">Envío</div>
+            <div class="jp-guia {'jp-pend' if not paq else ''}">{_e(paq) if paq else 'PAQUETERÍA PENDIENTE'}</div>
+            <div class="jp-guia2 {'jp-pend' if not guia else ''}">{_e(guia) if guia else 'GUÍA PENDIENTE'}</div>
+        </div>"""
+
+    return f"""
+    <div class="jp-card" style="--acento:{acento};">
+        <div class="jp-col" style="flex:0 1 150px;">
+            <div class="jp-lbl">Folio / Fecha</div>
+            <div class="jp-folio">#{_e(item.get('FOLIO', ''))}</div>
+            <div class="jp-fecha">{_e(str(item.get('FECHA', ''))[:10])}</div>
+            {badge_est}{badge_aut}
+        </div>
+        <div class="jp-col">
+            <div class="jp-lbl">Hotel / Solicitante</div>
+            <div class="jp-hotel">{_e(str(item.get('NOMBRE DEL HOTEL', ''))[:60])}</div>
+            <div class="jp-line"><b>SOLICITÓ:</b> {_e(str(item.get('SOLICITO', ''))[:40])}</div>
+            {contacto}{destino_html}
+        </div>
+        <div class="jp-col jp-col-prod">
+            <div class="jp-lbl">Productos · {total} pzas</div>
+            <div class="jp-chips">{chips}</div>
+        </div>{guia_html}
+    </div>"""
+
+
 def main():
     if "animacion_cargada" not in st.session_state:
         time.sleep(0.08)
@@ -378,112 +523,118 @@ def main():
     st.write("")
 
     with st.expander("🔍 CONSULTA DE FOLIOS Y GUIAS", expanded=True):
-        if not df_actual.empty:
-            if puede_autorizar and "AUTORIZACION" in df_actual.columns:
-                pend = df_actual[df_actual["AUTORIZACION"].astype(str).str.upper() == "PENDIENTE"]
-                if not pend.empty:
-                    st.markdown("**⏳ PENDIENTES DE AUTORIZACIÓN**")
-                    for _, r in pend.sort_values("FOLIO", ascending=False).iterrows():
-                        ca, cb = st.columns([4, 1])
-                        ca.write(f"#{r['FOLIO']} · {r.get('NOMBRE DEL HOTEL', '')} · Solicitó: {r.get('SOLICITO', '')}")
-                        if cb.button("AUTORIZAR", key=f"aut_{r['FOLIO']}"):
-                            df_nuevo, sha_nuevo = obtener_datos_github()
-                            mask = pd.to_numeric(df_nuevo["FOLIO"], errors="coerce") == pd.to_numeric(r["FOLIO"])
-                            df_nuevo.loc[mask, "AUTORIZACION"] = "AUTORIZADO"
-                            df_nuevo.loc[mask, "AUTORIZADO_POR"] = usuario_actual
-                            df_nuevo.loc[mask, "FECHA_AUTORIZACION"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-                            if subir_a_github(df_nuevo, sha_nuevo, f"Autoriza folio JYP-{r['FOLIO']}"):
-                                st.success(f"Folio JYP-{r['FOLIO']} autorizado")
-                                time.sleep(1)
-                                st.rerun()
-                    st.divider()
+        st.markdown(f"<style>{CSS_TARJETAS}</style>", unsafe_allow_html=True)
 
-            busqueda = st.text_input("Escribe el nombre del Hotel, Solicitante o Folio para filtrar:").upper()
+        if df_actual.empty:
+            st.info("No hay registros todavía.")
+        else:
+            # ---------- Series de apoyo (estatus y autorización) ----------
+            def _serie(df, col, defecto=""):
+                if col in df.columns:
+                    return df[col].fillna("").astype(str).str.strip().str.upper().replace("", defecto)
+                return pd.Series(defecto, index=df.index)
 
-            df_vista = df_actual.copy()
-            df_vista = df_vista.fillna('')
+            est_all = _serie(df_actual, "ESTATUS", "NO SURTIDO")
+            aut_all = _serie(df_actual, "AUTORIZACION", "")
 
-            if busqueda:
-                df_vista = df_vista[df_vista.astype(str).apply(lambda x: x.str.contains(busqueda, case=False)).any(axis=1)]
-
-            df_render = df_vista.sort_values(by="FOLIO", ascending=False)
-            data_busqueda = df_render.to_dict('records')
-
-            alto_busqueda = min(len(data_busqueda) * 130 + 20, 550)
-
-            tarjetas_busqueda_html = ""
-            for item in data_busqueda:
-                detalle_p_busqueda = ""
-                for p_key in precios.keys():
-                    cant_p = pd.to_numeric(item.get(p_key, 0), errors='coerce')
-                    if pd.notna(cant_p) and cant_p > 0:
-                        detalle_p_busqueda += f"• {int(cant_p)} PZAS {str(p_key).upper()}<br>"
-
-                estatus_val = str(item.get('ESTATUS', 'NO SURTIDO')).upper()
-                if estatus_val == 'DESPACHADO':
-                    badge_status = "<div style='display:inline-block; background:rgba(0,255,170,0.1); border:1px solid #00FFAA; color:#00FFAA; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px;'>✓ DESPACHADO</div>"
+            # ---------- PENDIENTES DE AUTORIZACIÓN (solo autorizadores) ----------
+            if puede_autorizar:
+                pend = df_actual[aut_all == "PENDIENTE"].copy()
+                if pend.empty:
+                    st.success("✓ No hay envíos pendientes de autorización.")
                 else:
-                    badge_status = "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:2px 6px; border-radius:10px; font-size:8px; font-weight:800; letter-spacing:1px; box-shadow: 0 0 8px rgba(255,68,68,0.4);'>⚠️ NO SURTIDO</div>"
+                    st.markdown(
+                        f'<div class="jp-banner">⏳ {len(pend)} ENVÍO(S) ESPERAN TU AUTORIZACIÓN</div>',
+                        unsafe_allow_html=True,
+                    )
+                    pend["_f"] = pd.to_numeric(pend["FOLIO"], errors="coerce")
+                    for _, r in pend.sort_values("_f", ascending=False).iterrows():
+                        with st.container(border=True):
+                            c_info, c_btn = st.columns([5, 1.3], vertical_alignment="center")
+                            c_info.markdown(_tarjeta_html(r.fillna("").to_dict(), mostrar_guia=False), unsafe_allow_html=True)
+                            if c_btn.button("✅ AUTORIZAR", key=f"aut_{r['FOLIO']}", type="primary", use_container_width=True):
+                                with st.spinner("Autorizando..."):
+                                    df_nuevo, sha_nuevo = obtener_datos_github()
+                                    for col in ["AUTORIZACION", "AUTORIZADO_POR", "FECHA_AUTORIZACION"]:
+                                        if col not in df_nuevo.columns:
+                                            df_nuevo[col] = ""
+                                        df_nuevo[col] = df_nuevo[col].astype(object)
+                                    mask = pd.to_numeric(df_nuevo["FOLIO"], errors="coerce") == pd.to_numeric(r["FOLIO"])
+                                    df_nuevo.loc[mask, "AUTORIZACION"] = "AUTORIZADO"
+                                    df_nuevo.loc[mask, "AUTORIZADO_POR"] = usuario_actual
+                                    df_nuevo.loc[mask, "FECHA_AUTORIZACION"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+                                    ok = subir_a_github(df_nuevo, sha_nuevo, f"Autoriza folio JYP-{r['FOLIO']}")
+                                if ok:
+                                    st.success(f"Folio JYP-{r['FOLIO']} autorizado")
+                                    time.sleep(1)
+                                    st.rerun()
+                                else:
+                                    st.error("No se pudo guardar la autorización. Intenta de nuevo.")
+                st.divider()
 
-                paq_text = item.get('PAQUETERÍA', '') or item.get('PAQUETERIA_NOMBRE', '')
-                guia_text = item.get('NÚMERO DE GUÍA', '') or item.get('NUMERO_GUIA', '')
-
-                tarjetas_busqueda_html += f"""
-                <div class="card-busqueda" style="padding: 15px; margin-bottom: 10px; background: #263238; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <div style="flex: 1.1;">
-                        <div class="label-mini">Folio / Fecha</div>
-                        <div class="val-folio">#{str(item['FOLIO'])}</div>
-                        <div style="color: rgba(255,255,255,0.5); font-size: 10px; margin-bottom: 5px;">{str(item['FECHA'])[:10]}</div>
-                        {badge_status}
-                    </div>
-                    <div style="flex: 2.0; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
-                        <div class="label-mini">Hotel / Destino</div>
-                        <div class="val-hotel">{str(item.get('NOMBRE DEL HOTEL', ''))[:30]}</div>
-                        <div class="val-soli">SOLICITÓ: {str(item.get('SOLICITO', ''))[:30]}</div>
-                        <div class="val-soli">AUTORIZACIÓN: {str(item.get('AUTORIZACION', '') or '—')}</div>
-                    </div>
-                    <div style="flex: 2.5; padding: 0 10px; border-left: 1px solid rgba(255,255,255,0.05);">
-                        <div class="label-mini">Productos Solicitados</div>
-                        <div style="color: #FFFFFF; font-size: 9px; line-height: 1.4; opacity: 0.9;">{detalle_p_busqueda if detalle_p_busqueda else '<i>Sin detalle</i>'}</div>
-                    </div>
-                    <div style="flex: 1.6; text-align: right; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 10px;">
-                        <div class="val-guia {'pendiente' if not paq_text else ''}">
-                            { paq_text if paq_text else 'PAQUETERÍA PENDIENTE' }
-                        </div>
-                        <div class="val-sub-guia {'pendiente' if not guia_text else ''}">
-                            { guia_text if guia_text else 'GUÍA PENDIENTE' }
-                        </div>
-                    </div>
+            # ---------- RESUMEN ----------
+            n_total = len(df_actual)
+            n_pend = int((aut_all == "PENDIENTE").sum())
+            n_nosurt = int((est_all != "DESPACHADO").sum())
+            n_desp = int((est_all == "DESPACHADO").sum())
+            st.markdown(
+                f"""
+                <div class="jp-tiles">
+                    <div class="jp-tile"><div class="n" style="color:#FFFFFF;">{n_total}</div><div class="t">Folios totales</div></div>
+                    <div class="jp-tile"><div class="n" style="color:#f97316;">{n_pend}</div><div class="t">Por autorizar</div></div>
+                    <div class="jp-tile"><div class="n" style="color:#FF4444;">{n_nosurt}</div><div class="t">No surtidos</div></div>
+                    <div class="jp-tile"><div class="n" style="color:#00FFAA;">{n_desp}</div><div class="t">Despachados</div></div>
                 </div>
-                """
+                """,
+                unsafe_allow_html=True,
+            )
 
-            html_busqueda = f"""
-            <div style="font-family: 'Inter', sans-serif; padding-right: 10px; height: {alto_busqueda}px; overflow-y: auto;">
+            # ---------- FILTROS ----------
+            f1, f2, f3 = st.columns([2.4, 1, 1])
+            busqueda = f1.text_input(
+                "Buscar", placeholder="Hotel, solicitante, folio, guía...", label_visibility="collapsed"
+            ).strip().upper()
+            filtro_est = f2.selectbox("Estatus", ["TODOS", "NO SURTIDO", "DESPACHADO"], label_visibility="collapsed")
+            filtro_aut = f3.selectbox("Autorización", ["TODAS", "PENDIENTE", "AUTORIZADO"], label_visibility="collapsed")
+
+            df_vista = df_actual.copy().fillna("")
+            if busqueda:
+                hay = df_vista.astype(str).apply(
+                    lambda col: col.str.contains(busqueda, case=False, regex=False)
+                ).any(axis=1)
+                df_vista = df_vista[hay]
+            if filtro_est != "TODOS":
+                df_vista = df_vista[est_all.loc[df_vista.index] == filtro_est]
+            if filtro_aut != "TODAS":
+                df_vista = df_vista[aut_all.loc[df_vista.index] == filtro_aut]
+
+            df_vista = df_vista.assign(_f=pd.to_numeric(df_vista["FOLIO"], errors="coerce")).sort_values("_f", ascending=False)
+
+            # ---------- RESULTADOS ----------
+            MAX_TARJETAS = 60
+            total_res = len(df_vista)
+            if total_res == 0:
+                st.info("Ningún folio coincide con los filtros.")
+            else:
+                st.caption(
+                    f"Mostrando {min(total_res, MAX_TARJETAS)} de {total_res} folio(s)"
+                    + (" · afina la búsqueda para ver los demás" if total_res > MAX_TARJETAS else "")
+                )
+                data_busqueda = df_vista.head(MAX_TARJETAS).to_dict("records")
+                tarjetas = "".join(_tarjeta_html(item) for item in data_busqueda)
+                alto = int(min(len(data_busqueda) * 150 + 20, 640))
+                html_busqueda = f"""
                 <style>
                     body {{ background: transparent; margin: 0; padding: 0; }}
                     ::-webkit-scrollbar {{ width: 8px; }}
-                    ::-webkit-scrollbar-track {{ background: rgba(0, 0, 0, 0.1); border-radius: 10px; }}
+                    ::-webkit-scrollbar-track {{ background: rgba(0,0,0,0.1); border-radius: 10px; }}
                     ::-webkit-scrollbar-thumb {{ background: #3498db; border-radius: 10px; border: 2px solid #384A52; min-height: 50px; }}
                     ::-webkit-scrollbar-thumb:hover {{ background: #2ecc71; }}
-
-                    .card-busqueda {{
-                        transition: all 0.3s ease;
-                    }}
-                    .card-busqueda:hover {{ border-color: #38bdf8; background: #2d3b42; transform: translateX(5px); }}
-                    .label-mini {{ font-size: 8px; color: rgba(255,255,255,0.4); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }}
-                    .val-folio {{ color: #00FFAA; font-family: monospace; font-size: 16px; font-weight: 800; }}
-                    .val-hotel {{ color: #FFFFFF; font-size: 13px; font-weight: 700; margin-top: 2px; }}
-                    .val-soli {{ color: #FFD700; font-size: 10px; font-weight: 600; margin-top: 2px; opacity: 0.8; }}
-                    .val-guia {{ color: #38bdf8; font-family: monospace; font-size: 14px; font-weight: 800; line-height: 1.2; }}
-                    .val-sub-guia {{ color: #FFFFFF; font-family: monospace; font-size: 12px; font-weight: 700; margin-top: 4px; }}
-                    .pendiente {{ color: #f97316 !important; font-style: italic; opacity: 0.8; font-size: 10px; font-weight: 400; }}
+                    {CSS_TARJETAS}
                 </style>
-                {tarjetas_busqueda_html}
-            </div>
-            """
-            components.html(html_busqueda, height=alto_busqueda, scrolling=False)
-        else:
-            st.info("No hay registros todavía.")
+                <div style="padding-right:8px;">{tarjetas}</div>
+                """
+                components.html(html_busqueda, height=alto, scrolling=True)
 
 
 if __name__ == "__main__":
