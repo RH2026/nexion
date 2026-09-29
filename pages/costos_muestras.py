@@ -1,4 +1,5 @@
 import io
+import re
 import time
 from datetime import date
 
@@ -34,6 +35,26 @@ st.set_page_config(
 render_layout(modulo_actual="REPORTES", submodulo_actual="COSTOS DE MUESTRAS")
 
 
+def limpiar_numero_texto(valor):
+    """Convierte guías / teléfonos a texto limpio.
+    Quita el '.0' que agrega pandas y expande notación científica (8.75112E+11 -> 875112000000).
+    OJO: si el dato ya se guardó como 8.75112E+11, los dígitos perdidos no se pueden recuperar."""
+    if valor is None:
+        return ""
+    s = str(valor).strip()
+    if s.lower() in ("", "nan", "none", "0", "0.0"):
+        return ""
+    if re.fullmatch(r"\d+\.0+", s):
+        return s.split(".")[0]
+    if re.fullmatch(r"\d+(\.\d+)?[eE]\+?\d+", s):
+        try:
+            from decimal import Decimal
+            return str(int(Decimal(s)))
+        except Exception:
+            return s
+    return s
+
+
 def folio_autorizado(fila):
     """True si el folio ya fue autorizado.
     Los folios anteriores a esta validación (sin dato de autorización) se consideran autorizados."""
@@ -59,6 +80,11 @@ def main():
                     df_actual[col] = "NO SURTIDO"
                 else:
                     df_actual[col] = 0.0
+
+        # Guías y teléfonos siempre como texto (evita 8.75112E+11 y el '.0')
+        for col in ["NUMERO_GUIA", "CONTACTO_TELEFONO"]:
+            if col in df_actual.columns:
+                df_actual[col] = df_actual[col].apply(limpiar_numero_texto).astype(object)
 
     def subtitulo_pestana(texto):
         st.markdown(
@@ -460,7 +486,14 @@ def main():
             with c2:
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df_render.drop(columns=['FECHA_DT', 'MES_FILTRO']).to_excel(writer, index=False)
+                    df_exp = df_render.drop(columns=['FECHA_DT', 'MES_FILTRO'])
+                    df_exp.to_excel(writer, index=False, sheet_name="Muestras")
+                    hoja = writer.sheets["Muestras"]
+                    fmt_texto = writer.book.add_format({"num_format": "@"})
+                    for col_txt in ("NUMERO_GUIA", "CONTACTO_TELEFONO"):
+                        if col_txt in df_exp.columns:
+                            i_col = list(df_exp.columns).index(col_txt)
+                            hoja.set_column(i_col, i_col, 24, fmt_texto)
                 st.download_button(f":material/download: EXCEL {mes_sel}", data=output.getvalue(), file_name=f"JYPESA_Muestras_{mes_sel}.xlsx", use_container_width=True, key="btn_download_excel_tab")
             with c3:
                 if st.button(":material/update: ACTUALIZAR", use_container_width=True, key="btn_actualizar_tab"):
