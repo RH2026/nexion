@@ -34,6 +34,15 @@ st.set_page_config(
 render_layout(modulo_actual="REPORTES", submodulo_actual="COSTOS DE MUESTRAS")
 
 
+def folio_autorizado(fila):
+    """True si el folio ya fue autorizado.
+    Los folios anteriores a esta validación (sin dato de autorización) se consideran autorizados."""
+    valor = fila.get("AUTORIZACION", "")
+    if pd.isna(valor) or str(valor).strip() == "":
+        return True
+    return str(valor).strip().upper() == "AUTORIZADO"
+
+
 def main():
     puede_ver, usuario_logeado = es_usuario_logistica()
 
@@ -513,6 +522,13 @@ def main():
                     badge_admin = "<div style='display:inline-block; background:rgba(255,68,68,0.1); border:1px solid #FF4444; color:#FF4444; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:1px; margin-top:8px; box-shadow: 0 0 10px rgba(255,68,68,0.3);'>⚠️ NO SURTIDO</div>"
                     borde_color = "#FF4444"
 
+                if folio_autorizado(datos_fol):
+                    quien = str(datos_fol.get("AUTORIZADO_POR", "") or "").strip().upper()
+                    texto_aut = f"✓ AUTORIZADO{(' POR ' + quien) if quien else ''}"
+                    badge_admin += f"<div style='display:inline-block; background:rgba(56,189,248,0.1); border:1px solid #38bdf8; color:#38bdf8; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:1px; margin-top:8px; margin-left:6px;'>{texto_aut}</div>"
+                else:
+                    badge_admin += "<div style='display:inline-block; background:rgba(249,115,22,0.1); border:1px solid #f97316; color:#f97316; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:1px; margin-top:8px; margin-left:6px;'>⏳ PENDIENTE DE AUTORIZACIÓN</div>"
+
                 st.markdown(f"""
                 <div style="background: #263238; border: 1px solid rgba(255,255,255,0.05); border-left: 6px solid {borde_color}; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; margin-top: 15px; margin-bottom: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                     <div style="flex: 1.2;">
@@ -603,24 +619,32 @@ def main():
                 "La base de datos no se afecta hasta que guardes."
             )
 
+            bloqueado_aut = datos_fol is not None and not folio_autorizado(datos_fol)
+            if bloqueado_aut:
+                st.warning(
+                    "Este folio está PENDIENTE DE AUTORIZACIÓN. "
+                    "Solo Rigoberto o Arodriguez pueden autorizarlo (desde Envío de Muestras). "
+                    "No se puede despachar, imprimir ni generar etiqueta hasta entonces."
+                )
+
             b1, b2, b3 = st.columns(3)
 
             with b1:
                 btn_guardar = st.button(
                     ":material/update: GUARDAR Y ACTUALIZAR FOLIO",
                     use_container_width=True,
-                    disabled=not fol_sel_texto
+                    disabled=(not fol_sel_texto) or bloqueado_aut
                 )
 
             with b2:
                 btn_imprimir = st.button(
                     ":material/print: IMPRIMIR FORMATO ACTUALIZADO",
                     use_container_width=True,
-                    disabled=not fol_sel_texto
+                    disabled=(not fol_sel_texto) or bloqueado_aut
                 )
 
             with b3:
-                if fol_sel_texto and datos_fol is not None:
+                if fol_sel_texto and datos_fol is not None and not bloqueado_aut:
                     cant_etiquetas_sel = n_total_cajas
 
                     transporte_etq = (
@@ -656,7 +680,7 @@ def main():
                         disabled=True
                     )
 
-            if btn_guardar and datos_fol is not None:
+            if btn_guardar and datos_fol is not None and not bloqueado_aut:
                 idx = df_actual.index[
                     df_actual['FOLIO'] == fol_edit
                 ].tolist()[0]
@@ -679,7 +703,7 @@ def main():
                     time.sleep(1.5)
                     st.rerun()
 
-            if btn_imprimir and datos_fol is not None:
+            if btn_imprimir and datos_fol is not None and not bloqueado_aut:
                 prods_re = []
 
                 for p in precios.keys():
@@ -897,7 +921,12 @@ def main():
                         use_container_width=True
                     )
 
-                if guardar_cambios:
+                if guardar_cambios and nuevo_estatus == "DESPACHADO" and not folio_autorizado(registro_sel):
+                    st.error(
+                        f"El folio JYP-{num_folio_sel} está PENDIENTE DE AUTORIZACIÓN. "
+                        "No se puede marcar como DESPACHADO hasta que lo autorice Rigoberto o Arodriguez."
+                    )
+                elif guardar_cambios:
                     total_cants = sum(nuevas_cantidades.values())
 
                     total_cost_p = sum(
