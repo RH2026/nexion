@@ -2,6 +2,7 @@ import base64
 from datetime import datetime, timedelta
 import io
 import time
+from html import escape
 import requests
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -66,7 +67,83 @@ verificar_permiso_modulo("ENTREGAS", "AGC")
 
 
 # ============================================================
-# 3. INTERFAZ PRINCIPAL (ENTREGAS AGC)
+# 3. CAPA DE DATOS (GITHUB): lectura sin caché de CDN + guardado seguro
+# ============================================================
+TOKEN = st.secrets.get("GITHUB_TOKEN", None)
+REPO_NAME = "RH2026/nexion"
+FILE_PATH = "agc.csv"
+API_URL = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+
+
+def _headers(raw=False):
+    h = {"Accept": "application/vnd.github.raw+json" if raw else "application/vnd.github+json"}
+    if TOKEN:
+        h["Authorization"] = f"Bearer {TOKEN}"
+    return h
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def cargar_csv_remoto():
+    """Lee el CSV desde la API de GitHub (NO desde raw.githubusercontent, que
+    tiene caché de CDN de ~5 min y devolvía datos viejos tras guardar).
+    Devuelve (df, sha). Todo se lee como texto para no alterar ningún valor
+    (ej. 3 -> 3.0) al volver a guardar. Si falla lanza excepción, y las
+    excepciones no se cachean."""
+    r = requests.get(API_URL, headers=_headers(), timeout=15)
+    r.raise_for_status()
+    info = r.json()
+    sha = info["sha"]
+    if info.get("content"):
+        texto = base64.b64decode(info["content"]).decode("utf-8-sig")
+    else:  # archivos > 1 MB: la API no trae el contenido en el JSON
+        r2 = requests.get(API_URL, headers=_headers(raw=True), timeout=30)
+        r2.raise_for_status()
+        texto = r2.content.decode("utf-8-sig")
+    df = pd.read_csv(io.StringIO(texto), dtype=str, keep_default_na=False)
+    return df, sha
+
+
+def limpiar_df_para_guardar(df):
+    """Rellena vacíos y descarta filas totalmente vacías (ej. fila agregada por error)."""
+    df = df.copy().fillna("")
+    vacias = df.astype(str).apply(lambda c: c.str.strip()).eq("").all(axis=1)
+    return df[~vacias].reset_index(drop=True)
+
+
+def guardar_cambios_github(df_nuevo, sha_base):
+    """Guarda usando el sha con el que se CARGÓ la tabla. Si alguien más guardó
+    mientras tanto, GitHub rechaza (409/422) y no se pisa su trabajo.
+    Devuelve (ok, mensaje)."""
+    if df_nuevo is None or df_nuevo.empty:
+        return False, "La tabla quedó vacía; no se guardó para evitar borrar toda la base."
+    if not sha_base:
+        return False, "No se conoce la versión base del archivo. Pulsa 'Actualizar datos' e inténtalo de nuevo."
+
+    contenido = base64.b64encode(df_nuevo.to_csv(index=False).encode("utf-8")).decode("utf-8")
+    payload = {
+        "message": "Actualización automática de citas desde panel admin seguro de Rigoberto",
+        "content": contenido,
+        "sha": sha_base,
+    }
+    try:
+        r = requests.put(API_URL, json=payload, headers=_headers(), timeout=30)
+    except requests.RequestException as e:
+        return False, f"Error de red al guardar: {e}"
+
+    if r.status_code in (200, 201):
+        return True, ""
+    if r.status_code in (409, 422):
+        return False, ("El archivo cambió en la base remota desde que lo cargaste "
+                       "(otra persona guardó antes). Pulsa 'Actualizar datos' y vuelve a aplicar tus cambios.")
+    try:
+        detalle = r.json().get("message", "Desconocido")
+    except ValueError:
+        detalle = r.text[:200]
+    return False, f"Error al guardar en GitHub ({r.status_code}): {detalle}"
+
+
+# ============================================================
+# 4. INTERFAZ PRINCIPAL (ENTREGAS AGC)
 # ============================================================
 def main():
     if "animacion_cargada" not in st.session_state:
@@ -132,6 +209,7 @@ def main():
     """, unsafe_allow_html=True)
 
     def render_logistica_flow_responsive(data):
+        data = [{k: escape(str(v)) for k, v in it.items()} for it in data]
         html_content = f"""
         <!DOCTYPE html>
         <html lang="es">
@@ -353,8 +431,8 @@ def main():
                     if h_clean not in eventos_map[f_key]:
                         eventos_map[f_key][h_clean] = []
                     
-                    oc_txt = str(item.get('oc', ''))
-                    producto_txt = str(item.get('producto', ''))
+                    oc_txt = escape(str(item.get('oc', '')))
+                    producto_txt = escape(str(item.get('producto', '')))
                     
                     tarima_val = str(item.get('tarimas_num', '0'))
                     if not tarima_val or tarima_val in ['0', 'nan', '0.0']:
@@ -362,7 +440,7 @@ def main():
                             cant_raw = str(item.get('cantidad', ''))
                             if "TARIMAS" in cant_raw:
                                 tarima_val = cant_raw.split("TARIMAS")[0].split("/")[-1].strip()
-                        except:
+                        except Exception:
                             tarima_val = "0"
                     
                     detalle_html = f"<div class='mb-1 font-bold text-amber-300'>{oc_txt} | {tarima_val} Tarimas</div><div class='text-xs text-slate-200 font-semibold'>{producto_txt}</div>"
@@ -425,55 +503,22 @@ def main():
         """
         return components.html(html_calendario, height=550, scrolling=True)
 
-    TOKEN = st.secrets.get("GITHUB_TOKEN", None)
-    REPO_NAME = "RH2026/nexion"
-    FILE_PATH = "agc.csv"
-    CSV_URL = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{FILE_PATH}"
+    # --- Carga de datos (cacheada 60 s; se invalida al guardar o con el botón) ---
+    if st.button("🔄 Actualizar datos", key="btn_refrescar_datos"):
+        cargar_csv_remoto.clear()
+        st.rerun()
 
-    def get_github_data():
-        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
-        response = requests.get(CSV_URL, headers=headers)
-        if response.status_code == 200:
-            return pd.read_csv(io.StringIO(response.text))
-        else:
-            st.error(f"Hubo un error al cargar los datos: {response.status_code}")
-            return pd.DataFrame()
+    try:
+        df_base, sha_base = cargar_csv_remoto()
+    except Exception as e:
+        st.error(f"Hubo un error al cargar los datos: {e}")
+        df_base, sha_base = pd.DataFrame(), None
 
-    def guardar_cambios_github(df_nuevo):
-        headers = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
-        api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
-        
-        r_get = requests.get(api_url, headers=headers)
-        if r_get.status_code != 200:
-            st.error("No se pudo obtener el identificador actual del archivo en la base remota.")
-            return False
-        sha_actual = r_get.json().get("sha")
-        
-        csv_buffer = io.StringIO()
-        df_nuevo.to_csv(csv_buffer, index=False)
-        csv_content = csv_buffer.getvalue()
-        
-        content_encoded = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
-        
-        payload = {
-            "message": "Actualización automática de citas desde panel admin seguro de Rigoberto",
-            "content": content_encoded,
-            "sha": sha_actual
-        }
-        
-        r_put = requests.put(api_url, json=payload, headers=headers)
-        if r_put.status_code in [200, 201]:
-            st.success("¡Citas y cambios guardados en la base remota! 🚀")
-            st.cache_data.clear()
-            return True
-        else:
-            st.error(f"Error al guardar en GitHub: {r_put.json().get('message', 'Desconocido')}")
-            return False
-
-    df_raw = get_github_data()
+    # Copia de trabajo con encabezados limpios; df_base conserva los originales al guardar
+    df_raw = df_base.copy()
+    df_raw.columns = df_raw.columns.str.strip()
 
     if not df_raw.empty:
-        df_raw.columns = df_raw.columns.str.strip()
 
         if modo_edicion:
             st.markdown(
@@ -491,18 +536,41 @@ def main():
                 unsafe_allow_html=True,
             )
 
-            df_editado = st.data_editor(
-                df_raw,
-                use_container_width=True,
-                num_rows="dynamic",
-                key="editor_agc_admin_session",
-            )
+            ver = st.session_state.get("editor_ver", 0)
+            # En un form no se re-ejecuta toda la página con cada celda editada:
+            # solo al pulsar guardar. Edición fluida, sin parpadeos.
+            with st.form(f"form_editor_agc_{ver}", clear_on_submit=False):
+                df_editado = st.data_editor(
+                    df_base,
+                    use_container_width=True,
+                    num_rows="dynamic",
+                    key=f"editor_agc_admin_{ver}",
+                )
+                confirmar_borrado = st.checkbox(
+                    "Confirmo que quiero ELIMINAR filas (solo necesario si borraste alguna)",
+                    key=f"chk_borrado_{ver}",
+                )
+                guardar = st.form_submit_button("Guardar Cambios en la base remota")
 
-            if st.button(
-                "Guardar Cambios en la base remota", key="btn_guardar_github_session"
-            ):
-                if guardar_cambios_github(df_editado):
-                    st.rerun()
+            if guardar:
+                filas_borradas = len(df_base) - len(df_editado)
+                df_limpio = limpiar_df_para_guardar(df_editado)
+                if filas_borradas > 0 and not confirmar_borrado:
+                    st.warning(
+                        f"Se eliminarían {filas_borradas} fila(s). Marca la casilla de "
+                        "confirmación y vuelve a guardar."
+                    )
+                else:
+                    with st.spinner("Guardando..."):
+                        ok, msg = guardar_cambios_github(df_limpio, sha_base)
+                    if ok:
+                        cargar_csv_remoto.clear()
+                        # Nueva versión del editor: descarta los deltas viejos del widget
+                        st.session_state.editor_ver = ver + 1
+                        st.toast("¡Cambios guardados en la base remota! 🚀")
+                        st.rerun()
+                    else:
+                        st.error(msg)
             st.markdown("---")
 
         num_rows = len(df_raw)
@@ -579,7 +647,7 @@ def main():
                 fecha_parte = val_str.split(" - ")[0].strip()
                 formato = "%d/%m/%Y" if len(fecha_parte.split('/')[-1]) == 4 else "%d/%m/%y"
                 return datetime.strptime(fecha_parte, formato)
-            except:
+            except Exception:
                 return datetime(9999, 12, 31)
 
         df_entregas['_temp_dt'] = df_entregas['cita'].apply(parse_fecha_cita)
