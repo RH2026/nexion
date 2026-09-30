@@ -21,7 +21,7 @@ import streamlit as st
 import pytz
 from reportlab.lib import colors
 from auth import exigir_autenticacion
-from layout import render_layout   # 👈 layout maestro (CSS, seguridad, header, buscador, menú y footer)
+from layout import render_layout
 
 exigir_autenticacion("facturacion")
 
