@@ -171,73 +171,100 @@ def main():
     GITHUB_FILE = "recolecciones_estatus.csv"
     BRANCH = "main"
 
+    COLUMNAS_ESTATUS = ["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total",
+                        "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"]
+    COLUMNAS_NUM = ["Peso_Total", "Costo de la Guia"]
+    API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
+
+    def _gh_headers(extra=None):
+        h = {"Authorization": f"token {st.secrets['GITHUB_TOKEN']}",
+             "Accept": "application/vnd.github.v3+json"}
+        if extra:
+            h.update(extra)
+        return h
+
+    def _normalizar_estatus(df):
+        df.columns = df.columns.astype(str).str.strip()
+        for col in COLUMNAS_ESTATUS:
+            if col not in df.columns:
+                df[col] = 0.0 if col in COLUMNAS_NUM else ""
+        for col in COLUMNAS_NUM:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+        for col in df.columns:
+            if col not in COLUMNAS_NUM:
+                df[col] = df[col].fillna("").astype(str)
+        return df
+
+    def _leer_github_fresco():
+        """Lee el CSV por la API de GitHub (SIN caché del CDN). Devuelve (df, sha)."""
+        params = {"ref": BRANCH, "t": time.time_ns()}
+        r = requests.get(API_URL, headers=_gh_headers(), params=params, timeout=20)
+        if r.status_code == 404:
+            return _normalizar_estatus(pd.DataFrame(columns=COLUMNAS_ESTATUS)), None
+        r.raise_for_status()
+        data = r.json()
+        if data.get("content"):
+            raw = base64.b64decode(data["content"])
+        else:  # archivos grandes: la API no manda el contenido en base64
+            r2 = requests.get(API_URL, headers=_gh_headers({"Accept": "application/vnd.github.raw"}),
+                              params=params, timeout=30)
+            r2.raise_for_status()
+            raw = r2.content
+        # dtype=str: evita que "Numero de Guia" o "Folio" se conviertan en 1234.0
+        df = pd.read_csv(BytesIO(raw), encoding="utf-8-sig", dtype=str, keep_default_na=False)
+        return _normalizar_estatus(df), data.get("sha")
+
     def cargar_estatus_github():
         try:
-            url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{BRANCH}/{GITHUB_FILE}"
-            token = st.secrets["GITHUB_TOKEN"]
-            headers = {"Authorization": f"token {token}"}
-            response = requests.get(url, headers=headers)
-            if response.status_code == 200:
-                df = pd.read_csv(BytesIO(response.content), encoding="utf-8-sig")
-                df.columns = df.columns.astype(str).str.strip()
-                
-                columnas_requeridas = {
-                    "Folio": str,
-                    "Fecha_Recoleccion": str,
-                    "Cliente": str,
-                    "Proveedor": str,
-                    "Peso_Total": float,
-                    "Estatus": str,
-                    "Observaciones": str,
-                    "Solicitante": str,
-                    "Numero de Guia": str,
-                    "Costo de la Guia": float
-                }
-                
-                for col, tipo in columnas_requeridas.items():
-                    if col not in df.columns:
-                        df[col] = "" if tipo == str else 0.0
-                    else:
-                        if tipo == float:
-                            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
-                        else:
-                            df[col] = df[col].astype(str).replace("nan", "")
-                            
-                return df
-            else:
-                return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"])
-        except Exception:
-            return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"])
+            df, _ = _leer_github_fresco()
+            return df
+        except Exception as e:
+            st.error(f"No se pudo leer el archivo desde GitHub: {e}")
+            return _normalizar_estatus(pd.DataFrame(columns=COLUMNAS_ESTATUS))
 
-    def guardar_estatus_github(df_nuevo, mensaje="Actualizar estatus de recolecciones"):
-        try:
-            token = st.secrets["GITHUB_TOKEN"]
-            url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
-            headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-            
-            response_get = requests.get(url, headers=headers)
-            sha = response_get.json().get("sha") if response_get.status_code == 200 else None
+    def actualizar_folio_github(folio, cambios, mensaje):
+        """Actualiza SOLO la fila del folio (y solo los campos cambiados).
+        Siempre relee el archivo justo antes de escribir, así nunca pisa
+        ediciones anteriores. Si hay conflicto de versión, reintenta."""
+        for intento in range(4):
+            try:
+                df, sha = _leer_github_fresco()
+            except Exception as e:
+                st.error(f"No se pudo leer GitHub antes de guardar: {e}")
+                return False
 
-            csv_buffer = df_nuevo.to_csv(index=False, encoding="utf-8-sig")
-            content_encoded = base64.b64encode(csv_buffer.encode("utf-8")).decode("utf-8")
+            mask = df["Folio"].astype(str) == str(folio)
+            if not mask.any():
+                st.error(f"El folio {folio} ya no existe en el archivo.")
+                return False
+
+            for col, val in cambios.items():
+                df.loc[mask, col] = val
 
             payload = {
                 "message": mensaje,
-                "content": content_encoded,
-                "branch": BRANCH
+                "content": base64.b64encode(df.to_csv(index=False).encode("utf-8-sig")).decode("utf-8"),
+                "branch": BRANCH,
             }
             if sha:
                 payload["sha"] = sha
 
-            response_put = requests.put(url, headers=headers, json=payload)
-            if response_put.status_code in [200, 201]:
-                return True
-            else:
-                st.error(f"Error al guardar en GitHub: {response_put.status_code} - {response_put.text}")
+            try:
+                r = requests.put(API_URL, headers=_gh_headers(), json=payload, timeout=30)
+            except Exception as e:
+                st.error(f"No se pudo guardar en GitHub: {e}")
                 return False
-        except Exception as e:
-            st.error(f"No se pudo guardar en GitHub: {e}")
+
+            if r.status_code in (200, 201):
+                return True
+            if r.status_code in (409, 422) and intento < 3:
+                time.sleep(0.6 * (intento + 1))  # alguien más guardó: releer y reintentar
+                continue
+            st.error(f"Error al guardar en GitHub: {r.status_code} - {r.text}")
             return False
+
+        st.error("No se pudo guardar por conflictos repetidos. Intenta de nuevo.")
+        return False
 
     col_espacio, col_regresar = st.columns([5, 1])
     with col_regresar:
@@ -493,44 +520,64 @@ def main():
 
             if folio_a_editar:
                 fila_actual = df_estatus_edit[df_estatus_edit["Folio"].astype(str) == str(folio_a_editar)].iloc[0]
-                
-                with st.form("form_edicion_estatus"):
+
+                # Cada folio tiene sus propias llaves de widget => no se arrastra nada de otro registro
+                k = re.sub(r"\W", "_", str(folio_a_editar))
+                claves = {n: f"edit_{n}_{k}" for n in ["estatus", "solicitante", "guia", "costo", "peso", "cliente", "proveedor", "obs"]}
+                OPC_ESTATUS = ["PENDIENTE", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"]
+                estatus_actual = str(fila_actual.get("Estatus", "PENDIENTE")).strip().upper()
+
+                with st.form(f"form_edicion_estatus_{k}"):
                     st.markdown(f"**Editando Folio:** `{folio_a_editar}`")
-                    
+
                     nuevo_estatus = st.selectbox(
-                        "Estatus de la Recolección", 
-                        ["PENDIENTE", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"],
-                        index=["PENDIENTE", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"].index(fila_actual.get("Estatus", "PENDIENTE")) if fila_actual.get("Estatus", "PENDIENTE") in ["PENDIENTE", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"] else 0
+                        "Estatus de la Recolección", OPC_ESTATUS,
+                        index=OPC_ESTATUS.index(estatus_actual) if estatus_actual in OPC_ESTATUS else 0,
+                        key=claves["estatus"],
                     )
-                    
+
                     col_e1, col_e2 = st.columns(2)
                     with col_e1:
-                        nuevo_solicitante = st.text_input("Solicitante", value=str(fila_actual.get("Solicitante", "")))
-                        nuevo_num_guia = st.text_input("Número de Guía", value=str(fila_actual.get("Numero de Guia", "")))
+                        nuevo_solicitante = st.text_input("Solicitante", value=str(fila_actual.get("Solicitante", "")), key=claves["solicitante"])
+                        nuevo_num_guia = st.text_input("Número de Guía", value=str(fila_actual.get("Numero de Guia", "")), key=claves["guia"])
                     with col_e2:
-                        nuevo_costo_guia = st.number_input("Costo de la Guía", value=float(fila_actual.get("Costo de la Guia", 0.0)))
-                        nuevo_peso = st.number_input("Peso Total (KG)", value=float(fila_actual.get("Peso_Total", 0.0)))
+                        nuevo_costo_guia = st.number_input("Costo de la Guía", value=float(fila_actual.get("Costo de la Guia", 0.0)), key=claves["costo"])
+                        nuevo_peso = st.number_input("Peso Total (KG)", value=float(fila_actual.get("Peso_Total", 0.0)), key=claves["peso"])
 
-                    nuevo_cliente = st.text_input("Cliente Destino", value=str(fila_actual.get("Cliente", "")))
-                    nuevo_proveedor = st.text_input("Proveedor Remitente", value=str(fila_actual.get("Proveedor", "")))
-                    nueva_obs = st.text_area("Observaciones / Notas de Entrega", value=str(fila_actual.get("Observaciones", "")))
+                    nuevo_cliente = st.text_input("Cliente Destino", value=str(fila_actual.get("Cliente", "")), key=claves["cliente"])
+                    nuevo_proveedor = st.text_input("Proveedor Remitente", value=str(fila_actual.get("Proveedor", "")), key=claves["proveedor"])
+                    nueva_obs = st.text_area("Observaciones / Notas de Entrega", value=str(fila_actual.get("Observaciones", "")), key=claves["obs"])
 
                     btn_guardar_cambios = st.form_submit_button("💾 GUARDAR CAMBIOS")
 
-                    if btn_guardar_cambios:
-                        idx_match = df_estatus_edit[df_estatus_edit["Folio"].astype(str) == str(folio_a_editar)].index
-                        df_estatus_edit.loc[idx_match, "Estatus"] = nuevo_estatus
-                        df_estatus_edit.loc[idx_match, "Observaciones"] = nueva_obs
-                        df_estatus_edit.loc[idx_match, "Cliente"] = nuevo_cliente
-                        df_estatus_edit.loc[idx_match, "Proveedor"] = nuevo_proveedor
-                        df_estatus_edit.loc[idx_match, "Peso_Total"] = float(nuevo_peso)
-                        df_estatus_edit.loc[idx_match, "Solicitante"] = nuevo_solicitante
-                        df_estatus_edit.loc[idx_match, "Numero de Guia"] = str(nuevo_num_guia).strip()
-                        df_estatus_edit.loc[idx_match, "Costo de la Guia"] = float(nuevo_costo_guia)
-                    
-                        if guardar_estatus_github(df_estatus_edit, f"Actualización de estatus y datos para folio {folio_a_editar}"):
-                            st.session_state.mensaje_guardado = f"¡Cambios guardados correctamente en GitHub para el folio {folio_a_editar}!"
-                            st.rerun()
+                if btn_guardar_cambios:
+                    # Solo se envían los campos que realmente cambiaron, de ESTA fila
+                    candidatos = {
+                        "Estatus": nuevo_estatus,
+                        "Observaciones": nueva_obs,
+                        "Cliente": nuevo_cliente,
+                        "Proveedor": nuevo_proveedor,
+                        "Solicitante": nuevo_solicitante,
+                        "Numero de Guia": str(nuevo_num_guia).strip(),
+                        "Peso_Total": float(nuevo_peso),
+                        "Costo de la Guia": float(nuevo_costo_guia),
+                    }
+                    cambios = {}
+                    for col, val in candidatos.items():
+                        orig = fila_actual.get(col, "")
+                        if col in COLUMNAS_NUM:
+                            if abs(float(orig) - float(val)) > 1e-9:
+                                cambios[col] = val
+                        elif str(orig).strip() != str(val).strip():
+                            cambios[col] = val
+
+                    if not cambios:
+                        st.info("No hay cambios que guardar en este folio.")
+                    elif actualizar_folio_github(folio_a_editar, cambios, f"Actualización de folio {folio_a_editar}: {', '.join(cambios)}"):
+                        for c in claves.values():      # borra cualquier rastro del formulario
+                            st.session_state.pop(c, None)
+                        st.session_state.mensaje_guardado = f"¡Folio {folio_a_editar} actualizado correctamente en GitHub!"
+                        st.rerun()
         else:
             st.warning("No hay registros disponibles para editar en GitHub.")
 
