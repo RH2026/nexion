@@ -21,7 +21,7 @@ import streamlit as st
 import pytz
 from reportlab.lib import colors
 from auth import exigir_autenticacion
-from layout import render_layout
+from components.layout import render_layout
 
 exigir_autenticacion("facturacion")
 
