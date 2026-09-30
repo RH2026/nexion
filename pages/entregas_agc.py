@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 import io
 import time
 from html import escape
-from zoneinfo import ZoneInfo
 import requests
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -141,88 +140,6 @@ def guardar_cambios_github(df_nuevo, sha_base):
     except ValueError:
         detalle = r.text[:200]
     return False, f"Error al guardar en GitHub ({r.status_code}): {detalle}"
-
-
-# ============================================================
-# 3B. ALERTAS: entregas atrasadas y citas sin asignar
-# ============================================================
-TZ_LOCAL = ZoneInfo("America/Mexico_City")  # el servidor suele correr en UTC; fijamos la zona para no errar el "hoy"
-
-
-def _fecha_de_texto(txt):
-    """'12/03/2026 - 08:00' -> date(2026, 3, 12). None si no es una fecha válida."""
-    txt = str(txt).strip().split(" - ")[0].strip()
-    for fmt in ("%d/%m/%Y", "%d/%m/%y"):
-        try:
-            return datetime.strptime(txt, fmt).date()
-        except ValueError:
-            continue
-    return None
-
-
-def calcular_alertas(data_pendientes, hoy):
-    """Clasifica las entregas pendientes en alertas. Devuelve un dict de listas de filas."""
-    out = {"atrasadas": [], "sin_cita": [], "sin_hora": [], "hoy": []}
-    for it in data_pendientes:
-        cita = str(it.get("cita", "")).strip()
-        cita_up = cita.upper()
-        compromiso = _fecha_de_texto(it.get("entrega_texto", ""))
-        fila = {
-            "OC": it.get("oc", ""),
-            "Item": it.get("item_no", ""),
-            "Producto": it.get("producto", ""),
-            "Cita": cita,
-            "Fecha compromiso": it.get("entrega_texto", ""),
-            "Tarimas": it.get("tarimas_num", ""),
-        }
-
-        if cita_up.startswith("PENDIENTE"):
-            # Sin cita (o con hora pero sin fecha)
-            if compromiso and compromiso < hoy:
-                fila["Días de atraso"] = (hoy - compromiso).days
-            out["sin_cita"].append(fila)
-            continue
-
-        fecha_cita = _fecha_de_texto(cita)
-        if "POR ASIGNAR" in cita_up:
-            out["sin_hora"].append(fila)
-        if fecha_cita is None:
-            continue
-        if fecha_cita < hoy:
-            fila["Días de atraso"] = (hoy - fecha_cita).days
-            out["atrasadas"].append(fila)
-        elif fecha_cita == hoy:
-            out["hoy"].append(fila)
-
-    out["atrasadas"].sort(key=lambda f: -f["Días de atraso"])
-    out["sin_cita"].sort(key=lambda f: -f.get("Días de atraso", -1))
-    return out
-
-
-def render_panel_alertas(data_pendientes):
-    hoy = datetime.now(TZ_LOCAL).date()
-    al = calcular_alertas(data_pendientes, hoy)
-
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("🔴 Atrasadas", len(al["atrasadas"]))
-    c2.metric("🟠 Sin cita", len(al["sin_cita"]))
-    c3.metric("🟡 Cita sin hora", len(al["sin_hora"]))
-    c4.metric("🟢 Citas de hoy", len(al["hoy"]))
-
-    if not (al["atrasadas"] or al["sin_cita"] or al["sin_hora"]):
-        st.success("✅ Sin alertas: no hay entregas atrasadas ni citas por asignar.")
-
-    secciones = [
-        ("🔴 Entregas atrasadas (la cita ya pasó y siguen pendientes)", "atrasadas", True),
-        ("🟠 Sin cita asignada", "sin_cita", False),
-        ("🟡 Cita con fecha pero sin hora", "sin_hora", False),
-        ("🟢 Programadas para hoy", "hoy", False),
-    ]
-    for titulo, clave, abierto in secciones:
-        filas = al[clave]
-        if filas:
-            with st.expander(f"{titulo} — {len(filas)}", expanded=abierto):
-                st.dataframe(pd.DataFrame(filas).fillna(""), hide_index=True, use_container_width=True)
 
 
 # ============================================================
@@ -743,7 +660,6 @@ def main():
         data_pendientes = []
 
     if st.session_state.tipo_vista_agc == 'ENTREGAS':
-        render_panel_alertas(data_pendientes)
         render_logistica_flow_responsive(data_pendientes)
     elif st.session_state.tipo_vista_agc == 'CALENDARIO':
         col_nav1, col_nav2, col_btn_pdf = st.columns([1, 1, 4])
