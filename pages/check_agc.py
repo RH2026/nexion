@@ -58,6 +58,7 @@ def generar_checklist_html():
             <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
             <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
             <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
         </tr>
         """
     
@@ -104,12 +105,13 @@ def generar_checklist_html():
                 <thead>
                     <tr style="background-color: {jypesa_azul}; color: white; text-align: center;">
                         <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 6%;">Tarima</th>
-                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 15%;">Emplayo</th>
-                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 15%;">Esquineros</th>
-                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">Tacón sin Logos</th>
-                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">Estiba Alineada</th>
-                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">Estado de Cajas</th>
-                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 16%;">QR Correcto</th>
+                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 14%;">Condición de Tarima</th>
+                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 13%;">Emplayo</th>
+                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 13%;">Esquineros</th>
+                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 14%;">Tacón sin Logos</th>
+                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 14%;">Estiba Alineada</th>
+                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 13%;">Estado de Cajas</th>
+                        <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 13%;">QR Correcto</th>
                     </tr>
                 </thead>
                 <tbody>
