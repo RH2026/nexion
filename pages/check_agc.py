@@ -51,14 +51,14 @@ def generar_checklist_html():
     for i in range(1, 31):
         filas_html += f"""
         <tr>
-            <td style="border: 1px solid #bbb; padding: 4px; text-align: center; font-weight: bold; background-color: #f9f9f9;">{i}</td>
-            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
-            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
-            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
-            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
-            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
-            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
-            <td style="border: 1px solid #bbb; padding: 4px; text-align: center;"></td>
+            <td style="border: 1px solid #bbb; padding: 2px 4px; text-align: center; font-weight: bold; background-color: #f9f9f9;">{i}</td>
+            <td style="border: 1px solid #bbb; padding: 2px 4px; text-align: center;"></td>
+            <td style="border: 1px solid #bbb; padding: 2px 4px; text-align: center;"></td>
+            <td style="border: 1px solid #bbb; padding: 2px 4px; text-align: center;"></td>
+            <td style="border: 1px solid #bbb; padding: 2px 4px; text-align: center;"></td>
+            <td style="border: 1px solid #bbb; padding: 2px 4px; text-align: center;"></td>
+            <td style="border: 1px solid #bbb; padding: 2px 4px; text-align: center;"></td>
+            <td style="border: 1px solid #bbb; padding: 2px 4px; text-align: center;"></td>
         </tr>
         """
     
@@ -69,7 +69,7 @@ def generar_checklist_html():
         <style>
             @media print {{
                 @page {{ margin: 0; size: letter portrait; }}
-                body {{ margin: 1cm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+                body {{ margin: 0.8cm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
             }}
         </style>
     </head>
@@ -101,7 +101,7 @@ def generar_checklist_html():
                 Marque con una “✅” para indicar que cumple la especificación y marque con una “❌” para indicar que no cumple.
             </div>
 
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.75em; margin-bottom: 15px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.75em; margin-bottom: 8px;">
                 <thead>
                     <tr style="background-color: {jypesa_azul}; color: white; text-align: center;">
                         <th style="padding: 6px; border: 1px solid {jypesa_azul}; width: 6%;">Tarima</th>
@@ -119,14 +119,14 @@ def generar_checklist_html():
                 </tbody>
             </table>
 
-            <div style="margin-top: 20px; display: flex; justify-content: space-around; text-align: center; font-size: 0.85em; color: #333;">
+            <div style="margin-top: 12px; page-break-inside: avoid; display: flex; justify-content: space-around; text-align: center; font-size: 0.85em; color: #333;">
                 <div>
-                    <div style="border-bottom: 1px solid #000; width: 200px; height: 40px; margin: auto;"></div>
+                    <div style="border-bottom: 1px solid #000; width: 200px; height: 30px; margin: auto;"></div>
                     <p style="margin: 5px 0 0 0; font-weight: bold;">{inspector if inspector else 'Firma del Inspector'}</p>
                     <p style="margin: 0; color: #666; font-size: 0.9em;">Auditor de Carga</p>
                 </div>
                 <div>
-                    <div style="border-bottom: 1px solid #000; width: 200px; height: 40px; margin: auto;"></div>
+                    <div style="border-bottom: 1px solid #000; width: 200px; height: 30px; margin: auto;"></div>
                     <p style="margin: 5px 0 0 0; font-weight: bold;">Vo. Bo. Almacén / Logística</p>
                     <p style="margin: 0; color: #666; font-size: 0.9em;">JYPESA</p>
                 </div>
