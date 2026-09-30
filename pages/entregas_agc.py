@@ -567,7 +567,7 @@ def main():
                         cargar_csv_remoto.clear()
                         # Nueva versión del editor: descarta los deltas viejos del widget
                         st.session_state.editor_ver = ver + 1
-                        st.toast("¡Cambios guardados en la base remota! 🚀")
+                        st.toast("¡Cambios guardados en la base remota!")
                         st.rerun()
                     else:
                         st.error(msg)
