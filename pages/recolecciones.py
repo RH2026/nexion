@@ -1086,7 +1086,7 @@ def main():
                     )
 
                     nuevo_motivo_dev = st.text_area(
-                        "Motivo de la devolución (texto libre, va al final de los códigos)",
+                        "Motivo de la devolución o queja si es que aplica (texto libre, va al final de los códigos)",
                         value=str(fila_actual.get("Motivo_Devolucion", "")),
                         height=90,
                         key=claves["motdev"],
