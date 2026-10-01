@@ -796,6 +796,8 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                     st.switch_page("pages/preguia_paqmex.py")
                                 elif s == "RECOLECCION 3G":
                                     st.switch_page("pages/recoleccion_3g.py")
+                                elif s == "RECOLECCION ONE":
+                                    st.switch_page("pages/recoleccion_one.py")
                                 elif s == "COTIZACIONES":
                                     st.switch_page("pages/cotizaciones.py")
                                 elif s == "ENVIO DE MUESTRAS":
