@@ -118,7 +118,8 @@ def main():
         <style>        
             /* --- ESTILOS GENERALES Y HOVER PARA BOTONES (INCLUIDO EL FORMULARIO) --- */
             div.stButton > button,
-            div.stFormSubmitButton > button {
+            div.stFormSubmitButton > button,
+            div.stDownloadButton > button {
                 background-color: #628290 !important; 
                 color: #FFFFFF !important;             
                 border: 1px solid #628290 !important; 
@@ -136,7 +137,9 @@ def main():
             div.stButton > button:hover,
             div.stButton > button:focus,
             div.stFormSubmitButton > button:hover,
-            div.stFormSubmitButton > button:focus {
+            div.stFormSubmitButton > button:focus,
+            div.stDownloadButton > button:hover,
+            div.stDownloadButton > button:focus {
                 background-color: #4E6772 !important; 
                 color: #FFFFFF !important;             
                 border-color: #4E6772 !important;
@@ -144,7 +147,8 @@ def main():
             }
             
             div.stButton > button:active,
-            div.stFormSubmitButton > button:active {
+            div.stFormSubmitButton > button:active,
+            div.stDownloadButton > button:active {
                 background-color: #3f555f !important;
                 border-color: #3f555f !important;
                 color: #FFFFFF !important;
@@ -180,7 +184,7 @@ def main():
 
     COLUMNAS_ESTATUS = ["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total",
                         "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia",
-                        "Motivo", "ID_Queja"]
+                        "Motivo", "ID_Queja", "Motivo_Devolucion"]
     COLUMNAS_NUM = ["Peso_Total", "Costo de la Guia"]
 
     COLUMNAS_DETALLE = ["Folio", "Codigo", "Descripcion", "Cant_Solicitada", "Cant_Recibida"]
@@ -357,6 +361,172 @@ def main():
                           "Cant_Solicitada": cant, "Cant_Recibida": 0.0})
         return pd.DataFrame(filas, columns=COLUMNAS_PROD_EDIT)
 
+    def generar_pdf_recoleccion(fila, productos):
+        """Genera el PDF (formato corporativo) de UNA recolección. Devuelve bytes o None."""
+        try:
+            from reportlab.lib.pagesizes import letter
+            from reportlab.lib import colors
+            from reportlab.lib.units import mm
+            from reportlab.lib.styles import ParagraphStyle
+            from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+            from reportlab.platypus import (SimpleDocTemplate, Paragraph, Table,
+                                            TableStyle, Spacer, HRFlowable)
+        except ImportError:
+            st.error("Falta la librería `reportlab`. Agrégala a tu requirements.txt para generar PDFs.")
+            return None
+
+        f = {str(k).upper().strip(): v for k, v in dict(fila).items()}
+        g = lambda k: str(f.get(k, "") if f.get(k, "") is not None else "").strip()
+
+        def P(txt):  # texto seguro para Paragraph (escapa y respeta saltos de línea)
+            return _html.escape(str(txt)).replace("\n", "<br/>")
+
+        st_base = ParagraphStyle("base", fontName="Helvetica", fontSize=8.5, leading=11)
+        st_cel = ParagraphStyle("cel", parent=st_base, fontSize=8.5, leading=10.5)
+        st_der = ParagraphStyle("der", parent=st_base, alignment=TA_RIGHT, fontSize=9, leading=12)
+        st_marca = ParagraphStyle("marca", parent=st_base, fontName="Helvetica-Bold", fontSize=15, leading=17)
+        st_sub = ParagraphStyle("sub", parent=st_base, fontSize=6.5, leading=8)
+        st_tit = ParagraphStyle("tit", parent=st_base, fontName="Helvetica-Bold", fontSize=11,
+                                alignment=TA_CENTER, leading=14)
+        st_der_cel = ParagraphStyle("dercel", parent=st_cel, alignment=TA_RIGHT)
+
+        W = letter[0] - 30 * mm
+        folio = g("FOLIO")
+        fecha = g("FECHA_RECOLECCION") or datetime.now().strftime("%Y-%m-%d")
+
+        elementos = []
+
+        # --- Encabezado (igual al de tus otros formatos) ---
+        encabezado = Table(
+            [[[Paragraph("Jabones y Productos Especializados", st_marca),
+               Paragraph("Distribución y Logística | 2026", st_sub)],
+              Paragraph(f"<b>FOLIO:</b> {P(folio)}<br/><b>FECHA:</b> {P(fecha)}", st_der)]],
+            colWidths=[W * 0.65, W * 0.35],
+        )
+        encabezado.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
+        elementos.append(encabezado)
+        elementos.append(HRFlowable(width="100%", thickness=1.6, color=colors.black,
+                                    spaceBefore=2, spaceAfter=12))
+        elementos.append(Paragraph("REPORTE DE RECOLECCIÓN", st_tit))
+        elementos.append(Spacer(1, 10))
+
+        # --- Datos generales ---
+        try:
+            peso_txt = f"{float(f.get('PESO_TOTAL', 0) or 0):,.2f} KG"
+        except Exception:
+            peso_txt = g("PESO_TOTAL")
+        try:
+            costo_txt = f"$ {float(f.get('COSTO DE LA GUIA', 0) or 0):,.2f}"
+        except Exception:
+            costo_txt = g("COSTO DE LA GUIA")
+
+        datos = [
+            ("CLIENTE", g("CLIENTE")), ("PROVEEDOR", g("PROVEEDOR")),
+            ("NO. GUÍA", g("NUMERO DE GUIA")), ("ESTATUS", g("ESTATUS").upper()),
+            ("SOLICITANTE", g("SOLICITANTE")), ("PESO TOTAL", peso_txt),
+            ("COSTO GUÍA", costo_txt), ("MOTIVO", g("MOTIVO") or "—"),
+            ("ID DE QUEJA", g("ID_QUEJA") or "SIN QUEJA"), ("", ""),
+        ]
+        filas_datos = []
+        for i in range(0, len(datos), 2):
+            fila_d = []
+            for etiqueta, valor in datos[i:i + 2]:
+                fila_d.append(Paragraph(f"<b>{P(etiqueta)}:</b> {P(valor)}" if etiqueta else "", st_cel))
+            filas_datos.append(fila_d)
+        tabla_datos = Table(filas_datos, colWidths=[W / 2, W / 2])
+        tabla_datos.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
+        elementos.append(tabla_datos)
+        elementos.append(Spacer(1, 12))
+
+        # --- Tabla de productos ---
+        filas_prod = [[Paragraph("<b>CÓDIGO</b>", st_cel), Paragraph("<b>DESCRIPCIÓN</b>", st_cel),
+                       Paragraph("<b>SOLICITADO</b>", st_der_cel), Paragraph("<b>RECIBIDO</b>", st_der_cel)]]
+        tot_sol, tot_rec = 0.0, 0.0
+        n_prod = 0
+        for prod in productos or []:
+            pr = {str(k).upper().strip(): v for k, v in dict(prod).items()}
+            try:
+                sol = float(pr.get("CANT_SOLICITADA", 0) or 0)
+            except Exception:
+                sol = 0.0
+            try:
+                rec = float(pr.get("CANT_RECIBIDA", 0) or 0)
+            except Exception:
+                rec = 0.0
+            tot_sol += sol
+            tot_rec += rec
+            n_prod += 1
+            filas_prod.append([Paragraph(P(pr.get("CODIGO", "")), st_cel),
+                               Paragraph(P(pr.get("DESCRIPCION", "")), st_cel),
+                               Paragraph(_fmt_cant(sol), st_der_cel),
+                               Paragraph(_fmt_cant(rec), st_der_cel)])
+        estilos_prod = [
+            ("GRID", (0, 0), (-1, -1), 0.8, colors.black),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ]
+        if n_prod == 0:
+            filas_prod.append([Paragraph("Sin productos capturados", st_cel), "", "", ""])
+            estilos_prod.append(("SPAN", (0, 1), (-1, 1)))
+        else:
+            filas_prod.append(["", Paragraph("<b>TOTAL</b>", st_der_cel),
+                               Paragraph(f"<b>{_fmt_cant(tot_sol)}</b>", st_der_cel),
+                               Paragraph(f"<b>{_fmt_cant(tot_rec)}</b>", st_der_cel)])
+        tabla_prod = Table(filas_prod, colWidths=[W * 0.20, W * 0.50, W * 0.15, W * 0.15], repeatRows=1)
+        tabla_prod.setStyle(TableStyle(estilos_prod))
+        elementos.append(tabla_prod)
+        elementos.append(Spacer(1, 10))
+
+        # --- Cuadros de texto: motivo de la devolución y comentarios ---
+        def caja(titulo, texto, alto_extra=22):
+            contenido = [Paragraph(f"<b>{titulo}</b>" + (f"<br/>{P(texto)}" if texto else ""), st_cel),
+                         Spacer(1, alto_extra)]
+            t = Table([[contenido]], colWidths=[W])
+            t.setStyle(TableStyle([
+                ("BOX", (0, 0), (-1, -1), 0.8, colors.black),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]))
+            return t
+
+        elementos.append(caja("MOTIVO DE LA DEVOLUCIÓN:", g("MOTIVO_DEVOLUCION")))
+        elementos.append(Spacer(1, 8))
+        elementos.append(caja("COMENTARIOS:", g("OBSERVACIONES"), alto_extra=14))
+
+        def _pie(canvas, doc):
+            canvas.saveState()
+            canvas.setFont("Helvetica", 7)
+            canvas.setFillColor(colors.grey)
+            canvas.drawString(15 * mm, 10 * mm, f"Generado: {datetime.now():%Y-%m-%d %H:%M}")
+            canvas.drawRightString(letter[0] - 15 * mm, 10 * mm, f"Página {doc.page}")
+            canvas.restoreState()
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=15 * mm, rightMargin=15 * mm,
+                                topMargin=14 * mm, bottomMargin=18 * mm,
+                                title=f"Recolección {folio}")
+        doc.build(elementos, onFirstPage=_pie, onLaterPages=_pie)
+        return buffer.getvalue()
+
+    def _nombre_pdf(folio):
+        return "Recoleccion_" + re.sub(r"[^\w\-]", "_", str(folio)) + ".pdf"
+
     col_espacio, col_regresar = st.columns([5, 1])
     with col_regresar:
         # Verificas que la variable de sesión exista y que el usuario sea Rigoberto
@@ -374,7 +544,7 @@ def main():
         st.markdown(
             "<div style='margin-bottom:18px;'>"
             "<div style='color:#FFFFFF;font-size:19px;font-weight:800;letter-spacing:.3px;'>RENDER DE ESTATUS</div>"
-            "<div style='color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;'>MONITOREO DE RECOLECCIONES · GITHUB EN TIEMPO REAL · HAZ CLIC EN UN FOLIO PARA VER MOTIVO Y PRODUCTOS</div>"
+            "<div style='color:#8B9BB4;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;'>MONITOREO DE RECOLECCIONES · GITHUB EN TIEMPO REAL · HAZ CLIC EN UN FOLIO PARA VER MOTIVO Y PRODUCTOS</div>"
             "</div>",
             unsafe_allow_html=True
         )
@@ -548,9 +718,15 @@ def main():
                     if not filas_prod:
                         filas_prod = "<tr><td colspan='4' style='opacity:.5; text-align:center;'>Sin productos capturados</td></tr>"
 
+                    motivo_dev = str(item.get('MOTIVO_DEVOLUCION', '')).strip()
+                    motivo_dev_html = (esc(motivo_dev).replace("\n", "<br>") if motivo_dev
+                                       else "<span style='opacity:.5'>SIN CAPTURAR</span>")
+                    fila_dev = (f"<tr class='fila-texto'><td colspan='4'>"
+                                f"<span class='lbl'>MOTIVO DE LA DEVOLUCIÓN:</span> {motivo_dev_html}</td></tr>")
+
                     filas_html += f"""
                     <tr class="fila-main" onclick="toggleDet(this)">
-                        <td style="font-family: monospace; font-weight: 800; color: #FFFFFF;">{esc(folio_txt)}</td>
+                        <td style="font-family: monospace; font-weight: 800; color: #FFFFFF;"><span class="flecha">▸</span> {esc(folio_txt)} {aviso}</td>
                         <td>{esc(item.get('FECHA_RECOLECCION', 'N/A'))}</td>
                         <td style="font-family: monospace; color: #38bdf8; font-weight: 700;">{esc(item.get('NUMERO DE GUIA', 'N/A'))}</td>
                         <td style="text-transform: uppercase; font-weight: 700;">{esc(item.get('CLIENTE', 'N/A'))}</td>
@@ -576,7 +752,7 @@ def main():
                                             <th class="r">RECIBIDO</th>
                                         </tr>
                                     </thead>
-                                    <tbody>{filas_prod}</tbody>
+                                    <tbody>{filas_prod}{fila_dev}</tbody>
                                 </table>
                             </div>
                         </td>
@@ -701,6 +877,8 @@ def main():
                         }}
                         .matriz-table .sub-table .mono {{ font-family: monospace; color: #38bdf8; font-weight: 700; }}
                         .matriz-table .sub-table .r, .matriz-table .sub-table th.r {{ text-align: right; }}
+                        .matriz-table .sub-table .fila-texto td {{ border-top: 1px solid #4B5D67; border-bottom: none; padding-top: 10px; line-height: 1.5; }}
+                        .matriz-table .sub-table .lbl {{ font-size: 9px; font-weight: 800; letter-spacing: 1px; color: rgba(255, 255, 255, 0.6); margin-right: 6px; }}
                     </style>
 
                     <div class="table-container">
@@ -733,6 +911,19 @@ def main():
                 """
                 
                 components.html(html_tabla_matriz, height=620, scrolling=False)
+
+                # --- REPORTE PDF POR FOLIO ---
+                col_pdf1, col_pdf2 = st.columns([3, 1], vertical_alignment="bottom")
+                with col_pdf1:
+                    folios_pdf = df_render["FOLIO"].astype(str).unique().tolist()
+                    folio_pdf = st.selectbox("FOLIO PARA REPORTE PDF", folios_pdf, key="sel_folio_pdf")
+                with col_pdf2:
+                    fila_pdf = df_render[df_render["FOLIO"].astype(str) == str(folio_pdf)].iloc[0].to_dict()
+                    pdf_bytes = generar_pdf_recoleccion(fila_pdf, detalle_por_folio.get(str(folio_pdf), []))
+                    if pdf_bytes:
+                        st.download_button("📄 DESCARGAR PDF", data=pdf_bytes,
+                                           file_name=_nombre_pdf(folio_pdf), mime="application/pdf",
+                                           key="btn_pdf_tab1", use_container_width=True)
             else:
                 st.markdown(f"""
                     <div style="background: rgba(56, 189, 248, 0.05); border: 1px dashed #38bdf8; border-radius: 10px; padding: 25px; text-align: center; margin-top: 20px;">
@@ -776,7 +967,7 @@ def main():
                 k = re.sub(r"\W", "_", str(folio_a_editar))
                 claves = {n: f"edit_{n}_{k}" for n in ["estatus", "solicitante", "guia", "costo", "peso",
                                                        "cliente", "proveedor", "obs",
-                                                       "motivo", "queja", "prod", "pegar"]}
+                                                       "motivo", "queja", "prod", "pegar", "motdev"]}
                 OPC_ESTATUS = ["PENDIENTE", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"]
                 estatus_actual = str(fila_actual.get("Estatus", "PENDIENTE")).strip().upper()
 
@@ -843,7 +1034,21 @@ def main():
                         placeholder="ABC-123, 5, Jabón líquido 1L\nXYZ-999, 2",
                     )
 
+                    nuevo_motivo_dev = st.text_area(
+                        "Motivo de la devolución (texto libre, va al final de los códigos)",
+                        value=str(fila_actual.get("Motivo_Devolucion", "")),
+                        height=90,
+                        key=claves["motdev"],
+                    )
+
                     btn_guardar_cambios = st.form_submit_button("💾 GUARDAR CAMBIOS")
+
+                # PDF del folio con lo que ya está guardado (si acabas de editar, guarda primero)
+                pdf_edit = generar_pdf_recoleccion(fila_actual.to_dict(), prod_orig.to_dict("records"))
+                if pdf_edit:
+                    st.download_button("📄 DESCARGAR PDF DEL FOLIO", data=pdf_edit,
+                                       file_name=_nombre_pdf(folio_a_editar), mime="application/pdf",
+                                       key=f"btn_pdf_edit_{k}")
 
                 if btn_guardar_cambios:
                     motivo_guardar = "" if nuevo_motivo == "SIN DEFINIR" else nuevo_motivo
@@ -867,6 +1072,7 @@ def main():
                         "Costo de la Guia": float(nuevo_costo_guia),
                         "Motivo": motivo_guardar,
                         "ID_Queja": str(nuevo_id_queja).strip(),
+                        "Motivo_Devolucion": str(nuevo_motivo_dev).strip(),
                     }
                     cambios = {}
                     for col, val in candidatos.items():
