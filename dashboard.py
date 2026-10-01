@@ -1494,7 +1494,10 @@ def main():
                 total_a_tiempo_rk = int(df_rank["_A_TIEMPO"].sum())
                 efectividad_global_rk = (total_a_tiempo_rk / total_entregados_rk * 100) if total_entregados_rk else 0.0
 
-                df_con_entregas_rk = df_resumen_rk[df_resumen_rk["ENTREGADOS"] > 0]
+                if not df_resumen_rk.empty and "ENTREGADOS" in df_resumen_rk.columns:
+                    df_con_entregas_rk = df_resumen_rk[df_resumen_rk["ENTREGADOS"] > 0]
+                else:
+                    df_con_entregas_rk = pd.DataFrame(columns=df_resumen_rk.columns)
                 if not df_con_entregas_rk.empty:
                     fila_top_rk = df_con_entregas_rk.loc[df_con_entregas_rk["PCT_A_TIEMPO"].idxmax()]
                     fletera_top_rk = f"{fila_top_rk['FLETERA']}"
@@ -1524,7 +1527,10 @@ def main():
                 rkc1, rkc2 = st.columns(2)
                 with rkc1:
                     st.markdown("<div class='donut-section-title-s'>RANKING DE EFECTIVIDAD — FLETERAS PRINCIPALES (%)</div>", unsafe_allow_html=True)
-                    df_con_entregas_principales_rk = df_resumen_principales_rk[df_resumen_principales_rk["ENTREGADOS"] > 0]
+                    if not df_resumen_principales_rk.empty and "ENTREGADOS" in df_resumen_principales_rk.columns:
+                        df_con_entregas_principales_rk = df_resumen_principales_rk[df_resumen_principales_rk["ENTREGADOS"] > 0]
+                    else:
+                        df_con_entregas_principales_rk = pd.DataFrame(columns=df_resumen_principales_rk.columns)
                     if not df_con_entregas_principales_rk.empty:
                         df_plot_rk1 = df_con_entregas_principales_rk.sort_values("PCT_A_TIEMPO", ascending=True)
                         fig_rk1 = px.bar(df_plot_rk1, x="PCT_A_TIEMPO", y="FLETERA", orientation="h",
