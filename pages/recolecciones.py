@@ -519,13 +519,20 @@ def main():
 
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=15 * mm, rightMargin=15 * mm,
-                                topMargin=14 * mm, bottomMargin=18 * mm,
+                                topMargin=14 * mm, bottomMargin=18 * mm, pageCompression=1,
                                 title=f"Recolección {folio}")
         doc.build(elementos, onFirstPage=_pie, onLaterPages=_pie)
         return buffer.getvalue()
 
     def _nombre_pdf(folio):
         return "Recoleccion_" + re.sub(r"[^\w\-]", "_", str(folio)) + ".pdf"
+
+    @st.cache_data(ttl=60, show_spinner=False)
+    def _pdf_b64_cache(fila_json, productos_json):
+        pdf = generar_pdf_recoleccion(json.loads(fila_json), json.loads(productos_json))
+        return base64.b64encode(pdf).decode() if pdf else ""
+
+    MAX_PDF_INLINE = 150  # máximo de folios con botón PDF dentro de la tabla (con filtros caben todos)
 
     col_espacio, col_regresar = st.columns([5, 1])
     with col_regresar:
@@ -663,6 +670,14 @@ def main():
                 data_render = df_render.to_dict('records')
                 
                 # --- CONSTRUCCIÓN DE LA TABLA ESTILO MATRIZ CON ENCABEZADO STICKY ---
+                try:
+                    import reportlab  # noqa: F401
+                    pdf_disponible = True
+                except ImportError:
+                    pdf_disponible = False
+                    st.warning("Falta `reportlab` en requirements.txt para generar los PDF.")
+                n_filas_pdf = 0
+
                 filas_html = ""
                 for item in data_render:
                     estatus_val = str(item.get('ESTATUS', 'PENDIENTE')).upper()
@@ -724,6 +739,20 @@ def main():
                     fila_dev = (f"<tr class='fila-texto'><td colspan='4'>"
                                 f"<span class='lbl'>MOTIVO DE LA DEVOLUCIÓN:</span> {motivo_dev_html}</td></tr>")
 
+                    btn_pdf_html = ""
+                    if pdf_disponible and n_filas_pdf < MAX_PDF_INLINE:
+                        b64_pdf = _pdf_b64_cache(
+                            json.dumps(item, default=str, sort_keys=True),
+                            json.dumps(productos, default=str, sort_keys=True),
+                        )
+                        if b64_pdf:
+                            btn_pdf_html = (f"<button class='btn-pdf' data-b64='{b64_pdf}' "
+                                            f"data-name='{esc(_nombre_pdf(folio_txt))}' "
+                                            f"onclick='descargarPdf(this)'>📄 DESCARGAR PDF</button>")
+                            n_filas_pdf += 1
+                    elif pdf_disponible:
+                        btn_pdf_html = "<span class='chip'>PDF: USA EL SELECTOR DE ABAJO</span>"
+
                     filas_html += f"""
                     <tr class="fila-main" onclick="toggleDet(this)">
                         <td style="font-family: monospace; font-weight: 800; color: #FFFFFF;"><span class="flecha">▸</span> {esc(folio_txt)} {aviso}</td>
@@ -742,7 +771,7 @@ def main():
                     <tr class="fila-det">
                         <td colspan="8">
                             <div class="det-box">
-                                <div class="det-head">MOTIVO: <b>{motivo_html}</b> &nbsp; {chip_queja} &nbsp; <span style="opacity:.6;">{len(productos)} CÓDIGO(S)</span></div>
+                                <div class="det-head">{btn_pdf_html}MOTIVO: <b>{motivo_html}</b> &nbsp; {chip_queja} &nbsp; <span style="opacity:.6;">{len(productos)} CÓDIGO(S)</span></div>
                                 <table class="sub-table">
                                     <thead>
                                         <tr>
@@ -851,6 +880,23 @@ def main():
                             margin-bottom: 10px;
                             color: rgba(255, 255, 255, 0.7);
                         }}
+                        .btn-pdf {{
+                            float: right;
+                            background-color: #628290;
+                            color: #FFFFFF;
+                            border: 1px solid #628290;
+                            border-radius: 7px;
+                            font-size: 10px;
+                            font-weight: 700;
+                            letter-spacing: 0.5px;
+                            text-transform: uppercase;
+                            height: 28px;
+                            padding: 0 14px;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        }}
+                        .btn-pdf:hover {{ background-color: #4E6772; border-color: #4E6772; }}
+                        .btn-pdf:active {{ background-color: #3f555f; border-color: #3f555f; }}
                         .chip {{
                             font-size: 10px;
                             font-weight: 800;
@@ -902,6 +948,24 @@ def main():
                     </div>
 
                     <script>
+                        function descargarPdf(btn) {{
+                            try {{
+                                var bin = atob(btn.dataset.b64);
+                                var bytes = new Uint8Array(bin.length);
+                                for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                                var url = URL.createObjectURL(new Blob([bytes], {{type: 'application/pdf'}}));
+                                var a = document.createElement('a');
+                                a.href = url;
+                                a.download = btn.dataset.name || 'recoleccion.pdf';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                setTimeout(function() {{ URL.revokeObjectURL(url); }}, 2000);
+                            }} catch (e) {{
+                                alert('No se pudo descargar el PDF. Usa el selector de folio de abajo.');
+                            }}
+                        }}
+
                         function toggleDet(tr) {{
                             tr.classList.toggle('open');
                             tr.nextElementSibling.classList.toggle('open');
@@ -916,7 +980,7 @@ def main():
                 col_pdf1, col_pdf2 = st.columns([3, 1], vertical_alignment="bottom")
                 with col_pdf1:
                     folios_pdf = df_render["FOLIO"].astype(str).unique().tolist()
-                    folio_pdf = st.selectbox("FOLIO PARA REPORTE PDF", folios_pdf, key="sel_folio_pdf")
+                    folio_pdf = st.selectbox("O ELIGE UN FOLIO PARA EL REPORTE PDF", folios_pdf, key="sel_folio_pdf")
                 with col_pdf2:
                     fila_pdf = df_render[df_render["FOLIO"].astype(str) == str(folio_pdf)].iloc[0].to_dict()
                     pdf_bytes = generar_pdf_recoleccion(fila_pdf, detalle_por_folio.get(str(folio_pdf), []))
