@@ -532,7 +532,7 @@ def main():
         pdf = generar_pdf_recoleccion(json.loads(fila_json), json.loads(productos_json))
         return base64.b64encode(pdf).decode() if pdf else ""
 
-    MAX_PDF_INLINE = 150  # máximo de folios con botón PDF dentro de la tabla (con filtros caben todos)
+    MAX_PDF_INLINE = 200  # máximo de folios con botón PDF dentro de la tabla (con filtros caben todos)
 
     col_espacio, col_regresar = st.columns([5, 1])
     with col_regresar:
@@ -751,7 +751,7 @@ def main():
                                             f"onclick='descargarPdf(this)'>📄 DESCARGAR PDF</button>")
                             n_filas_pdf += 1
                     elif pdf_disponible:
-                        btn_pdf_html = "<span class='chip'>PDF: USA EL SELECTOR DE ABAJO</span>"
+                        btn_pdf_html = "<span class='chip'>PDF: FILTRA PARA HABILITARLO</span>"
 
                     filas_html += f"""
                     <tr class="fila-main" onclick="toggleDet(this)">
@@ -962,7 +962,7 @@ def main():
                                 document.body.removeChild(a);
                                 setTimeout(function() {{ URL.revokeObjectURL(url); }}, 2000);
                             }} catch (e) {{
-                                alert('No se pudo descargar el PDF. Usa el selector de folio de abajo.');
+                                alert('No se pudo descargar el PDF. Intenta de nuevo o usa otro navegador.');
                             }}
                         }}
 
@@ -975,19 +975,6 @@ def main():
                 """
                 
                 components.html(html_tabla_matriz, height=620, scrolling=False)
-
-                # --- REPORTE PDF POR FOLIO ---
-                col_pdf1, col_pdf2 = st.columns([3, 1], vertical_alignment="bottom")
-                with col_pdf1:
-                    folios_pdf = df_render["FOLIO"].astype(str).unique().tolist()
-                    folio_pdf = st.selectbox("O ELIGE UN FOLIO PARA EL REPORTE PDF", folios_pdf, key="sel_folio_pdf")
-                with col_pdf2:
-                    fila_pdf = df_render[df_render["FOLIO"].astype(str) == str(folio_pdf)].iloc[0].to_dict()
-                    pdf_bytes = generar_pdf_recoleccion(fila_pdf, detalle_por_folio.get(str(folio_pdf), []))
-                    if pdf_bytes:
-                        st.download_button("📄 DESCARGAR PDF", data=pdf_bytes,
-                                           file_name=_nombre_pdf(folio_pdf), mime="application/pdf",
-                                           key="btn_pdf_tab1", use_container_width=True)
             else:
                 st.markdown(f"""
                     <div style="background: rgba(56, 189, 248, 0.05); border: 1px dashed #38bdf8; border-radius: 10px; padding: 25px; text-align: center; margin-top: 20px;">
