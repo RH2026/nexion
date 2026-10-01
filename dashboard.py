@@ -1666,7 +1666,11 @@ def main():
 
                 with rkc6:
                     st.markdown("<div class='donut-section-title-s'>RANKING DE COSTO PROMEDIO POR CAJA</div>", unsafe_allow_html=True)
-                    df_con_costo_caja_rk = df_con_costo_rk[df_con_costo_rk["COSTO_PROM_CAJA"].notna()]
+                    # ── LA VERSIÓN SEGURA ──
+                    if not df_con_costo_rk.empty and "COSTO_PROM_CAJA" in df_con_costo_rk.columns:
+                        df_con_costo_caja_rk = df_con_costo_rk[df_con_costo_rk["COSTO_PROM_CAJA"].notna()]
+                    else:
+                        df_con_costo_caja_rk = pd.DataFrame(columns=df_con_costo_rk.columns)
                     if not df_con_costo_caja_rk.empty:
                         df_plot_rk6 = df_con_costo_caja_rk.sort_values("COSTO_PROM_CAJA", ascending=False)
                         fig_rk6 = px.bar(df_plot_rk6, x="COSTO_PROM_CAJA", y="FLETERA", orientation="h",
