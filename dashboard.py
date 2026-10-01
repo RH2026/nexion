@@ -1684,7 +1684,10 @@ def main():
 
                 st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
                 st.markdown("<div class='donut-section-title-s'>MAPA DE VALOR: COSTO PROMEDIO VS. EFECTIVIDAD POR FLETERA</div>", unsafe_allow_html=True)
-                df_mapa_valor_rk = df_resumen_rk[df_resumen_rk["PCT_A_TIEMPO"].notna() & (df_resumen_rk["ENVIOS"] > 0)]
+                if not df_resumen_rk.empty and "PCT_A_TIEMPO" in df_resumen_rk.columns and "ENVIOS" in df_resumen_rk.columns:
+                    df_mapa_valor_rk = df_resumen_rk[df_resumen_rk["PCT_A_TIEMPO"].notna() & (df_resumen_rk["ENVIOS"] > 0)]
+                else:
+                    df_mapa_valor_rk = pd.DataFrame(columns=df_resumen_rk.columns)
                 if not df_mapa_valor_rk.empty:
                     fig_rk7 = px.scatter(df_mapa_valor_rk, x="COSTO_PROM_ENVIO", y="PCT_A_TIEMPO", text="FLETERA",
                                           size="ENVIOS", color_discrete_sequence=["#7FA0B0"])
