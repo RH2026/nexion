@@ -1566,7 +1566,10 @@ def main():
                 df_dias_validos_rk = df_rank[df_rank["_ENTREGADO"] & (df_rank["_DIAS_TRANSITO"] >= 0)]
                 tiempo_prom_gral_rk = df_dias_validos_rk["_DIAS_TRANSITO"].mean() if not df_dias_validos_rk.empty else 0.0
 
-                df_con_tiempo_rk = df_resumen_rk[df_resumen_rk["DIAS_TRANSITO_PROM"].notna()]
+                if not df_resumen_rk.empty and "DIAS_TRANSITO_PROM" in df_resumen_rk.columns:
+                    df_con_tiempo_rk = df_resumen_rk[df_resumen_rk["DIAS_TRANSITO_PROM"].notna()]
+                else:
+                    df_con_tiempo_rk = pd.DataFrame(columns=df_resumen_rk.columns)
                 if not df_con_tiempo_rk.empty:
                     fila_rapida_rk = df_con_tiempo_rk.loc[df_con_tiempo_rk["DIAS_TRANSITO_PROM"].idxmin()]
                     fila_lenta_rk = df_con_tiempo_rk.loc[df_con_tiempo_rk["DIAS_TRANSITO_PROM"].idxmax()]
@@ -1622,7 +1625,10 @@ def main():
                 cajas_totales_rk = df_rank["CANTIDAD DE CAJAS"].sum()
                 costo_prom_caja_gral_rk = (df_rank["_COSTO_TOTAL"].sum() / cajas_totales_rk) if cajas_totales_rk else 0.0
 
-                df_con_costo_rk = df_resumen_rk[df_resumen_rk["ENVIOS"] > 0]
+                if not df_resumen_rk.empty and "ENVIOS" in df_resumen_rk.columns:
+                    df_con_costo_rk = df_resumen_rk[df_resumen_rk["ENVIOS"] > 0]
+                else:
+                    df_con_costo_rk = pd.DataFrame(columns=df_resumen_rk.columns)
                 if not df_con_costo_rk.empty:
                     fila_barata_rk = df_con_costo_rk.loc[df_con_costo_rk["COSTO_PROM_ENVIO"].idxmin()]
                     fila_cara_rk = df_con_costo_rk.loc[df_con_costo_rk["COSTO_PROM_ENVIO"].idxmax()]
