@@ -788,6 +788,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 st.session_state.menu_main = "FORMATOS"
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
+                                
                                 if s == "SALIDA DE PT":
                                     st.switch_page("pages/salida_pt.py")
                                 elif s == "CHECK LIST AGC":
@@ -802,6 +803,11 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                     st.switch_page("pages/cotizaciones.py")
                                 elif s == "ENVIO DE MUESTRAS":
                                     st.switch_page("pages/muestras.py")
+                                elif s == "CARTA RECLAMO":
+                                    # Cambia esto por la ruta de tu página cuando la tengas lista:
+                                    # st.switch_page("pages/carta_reclamo.py")
+                                    st.toast(f"Módulo {s} en desarrollo...", icon="🚧")
+                                    st.rerun()
                                 else:
                                     st.toast(f"Módulo {s} en desarrollo...", icon="🚧")
                                     st.rerun()
