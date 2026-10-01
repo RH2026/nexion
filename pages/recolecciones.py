@@ -374,7 +374,7 @@ def main():
         st.markdown(
             "<div style='margin-bottom:18px;'>"
             "<div style='color:#FFFFFF;font-size:19px;font-weight:800;letter-spacing:.3px;'>RENDER DE ESTATUS</div>"
-            "<div style='color:#8B9BB4;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;'>MONITOREO DE RECOLECCIONES · GITHUB EN TIEMPO REAL · HAZ CLIC EN UN FOLIO PARA VER MOTIVO Y PRODUCTOS</div>"
+            "<div style='color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;'>MONITOREO DE RECOLECCIONES · GITHUB EN TIEMPO REAL · HAZ CLIC EN UN FOLIO PARA VER MOTIVO Y PRODUCTOS</div>"
             "</div>",
             unsafe_allow_html=True
         )
@@ -550,7 +550,7 @@ def main():
 
                     filas_html += f"""
                     <tr class="fila-main" onclick="toggleDet(this)">
-                        <td style="font-family: monospace; font-weight: 800; color: #FFFFFF;"><span class="flecha">▸</span> {esc(folio_txt)} {aviso}</td>
+                        <td style="font-family: monospace; font-weight: 800; color: #FFFFFF;">{esc(folio_txt)}</td>
                         <td>{esc(item.get('FECHA_RECOLECCION', 'N/A'))}</td>
                         <td style="font-family: monospace; color: #38bdf8; font-weight: 700;">{esc(item.get('NUMERO DE GUIA', 'N/A'))}</td>
                         <td style="text-transform: uppercase; font-weight: 700;">{esc(item.get('CLIENTE', 'N/A'))}</td>
