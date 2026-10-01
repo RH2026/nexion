@@ -32,6 +32,7 @@ PAGINAS = {
     "kpi_surtido.py" : "pages/kpi_surtido.py",
     "envios_especiales.py" : "pages/envios_especiales.py",
     "costos_muestras.py" : "pages/costos_muestras.py",
+    "recoleccion_one.py" : "pages/recoleccion_one.py",
 }
 
 # ============================================================
