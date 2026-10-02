@@ -101,6 +101,32 @@ def cargar_datos_envios():
         return pd.DataFrame()
 
 
+def parse_fecha_segura(serie):
+    """Convierte fechas sin invertir día/mes.
+    - Si ya es datetime, se respeta tal cual.
+    - Texto ISO (2026-01-10 / 2026-01-10 00:00:00) -> año-mes-día (SIN dayfirst).
+    - Cualquier otro texto (10/01/2026) -> día/mes/año (dayfirst=True).
+    pd.to_datetime(..., dayfirst=True) sobre un ISO intercambia día y mes."""
+    serie = pd.Series(serie)
+    if pd.api.types.is_datetime64_any_dtype(serie):
+        return serie
+    s_txt = serie.fillna("").astype(str).str.strip()
+    es_iso = s_txt.str.match(r"^\d{4}-\d{1,2}-\d{1,2}")
+
+    def _conv(x, **kw):
+        try:
+            return pd.to_datetime(x, errors="coerce", format="mixed", **kw)
+        except (TypeError, ValueError):   # pandas viejo sin format="mixed"
+            return pd.to_datetime(x, errors="coerce", **kw)
+
+    out = pd.Series(pd.NaT, index=s_txt.index, dtype="datetime64[ns]")
+    if es_iso.any():
+        out.loc[es_iso] = _conv(s_txt[es_iso]).astype("datetime64[ns]")
+    if (~es_iso).any():
+        out.loc[~es_iso] = _conv(s_txt[~es_iso], dayfirst=True).astype("datetime64[ns]")
+    return out
+
+
 def limpiar_texto(texto):
     if pd.isna(texto):
         return ""
@@ -249,7 +275,7 @@ def main():
                     df_envios['destino'] = df_raw_surtido.get('DESTINO', pd.Series(dtype=str)).fillna('NACIONAL').astype(str)
 
                     f_prog_input = df_raw_surtido.get('FECHA DE PROGRAMACION', pd.Series(dtype=str)).fillna('').astype(str).str.strip()
-                    dt_prog_temp = pd.to_datetime(f_prog_input, errors='coerce', dayfirst=True)
+                    dt_prog_temp = parse_fecha_segura(f_prog_input)
                     df_envios['fecha_programacion'] = dt_prog_temp.dt.strftime('%d/%m/%Y').fillna(f_prog_input)
                     df_envios['dt_prog_parsed'] = dt_prog_temp
 
@@ -304,7 +330,7 @@ def main():
                                                 if col_fdoc in match_t1.columns:
                                                     fdoc_val = str(match_t1.iloc[0][col_fdoc]).strip()
                                                     if fdoc_val and fdoc_val.lower() not in ['', 'nan', '0', '0.0', 'none']:
-                                                        dt_parsed_fdoc = pd.to_datetime(fdoc_val, errors='coerce', dayfirst=True)
+                                                        dt_parsed_fdoc = parse_fecha_segura([fdoc_val]).iloc[0]
                                                         fecha_envio_encontrada = dt_parsed_fdoc.strftime('%d/%m/%Y') if pd.notnull(dt_parsed_fdoc) else fdoc_val
                                                         break
                                             break
@@ -312,10 +338,16 @@ def main():
                         if not guia_encontrada:
                             guia_encontrada = "PENDIENTE"
 
-                        if encontrado_en_t1 and fecha_envio_encontrada:
+                        # La fecha de envios.csv es la oficial; T1.xlsx solo se usa si envios.csv no trae fecha
+                        fecha_csv = str(f_env_raw_list.loc[idx]).strip() if idx in f_env_raw_list.index else ''
+                        if fecha_csv.lower() in ['', 'nan', 'nat', 'none', '0', '0.0']:
+                            fecha_csv = ''
+                        if fecha_csv:
+                            final_fecha_envio = fecha_csv
+                        elif encontrado_en_t1 and fecha_envio_encontrada:
                             final_fecha_envio = fecha_envio_encontrada
                         else:
-                            final_fecha_envio = str(f_env_raw_list.loc[idx]).strip() if idx in f_env_raw_list.index else ''
+                            final_fecha_envio = ''
 
                         lista_guias.append(guia_encontrada)
                         lista_fechas_envio.append(final_fecha_envio)
@@ -323,7 +355,7 @@ def main():
                     df_envios['numero_guia'] = lista_guias
                     df_envios['fecha_envio_raw'] = lista_fechas_envio
 
-                    dt_envio_temp = pd.to_datetime(df_envios['fecha_envio_raw'], errors='coerce', dayfirst=True)
+                    dt_envio_temp = parse_fecha_segura(df_envios['fecha_envio_raw'])
                     df_envios['fecha_envio'] = dt_envio_temp.dt.strftime('%d/%m/%Y').fillna(df_envios['fecha_envio_raw'])
                     df_envios['dt_envio_parsed'] = dt_envio_temp
 
@@ -588,7 +620,7 @@ def main():
                     df_raw_tab1 = cargar_datos()
 
                     if df_raw_tab1 is not None:
-                        df_raw_tab1["FECHA DE ENVÍO DT"] = pd.to_datetime(df_raw_tab1["FECHA DE ENVÍO"], dayfirst=True, errors='coerce')
+                        df_raw_tab1["FECHA DE ENVÍO DT"] = parse_fecha_segura(df_raw_tab1["FECHA DE ENVÍO"])
                         num_mes_sel = meses.index(mes_sel) + 1
 
                         df_filtrado_mes = df_raw_tab1[df_raw_tab1["FECHA DE ENVÍO DT"].dt.month == num_mes_sel].copy()
@@ -596,7 +628,7 @@ def main():
 
                     df = df_raw_tab1.copy()
                     for col in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
-                        df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
+                        df[col] = parse_fecha_segura(df[col])
 
                     df_mes = df[df["FECHA DE ENVÍO"].dt.month == (meses.index(mes_sel) + 1)].copy()
 
@@ -1143,7 +1175,7 @@ def main():
             df_desp_raw = df_raw.copy()
             for col_f_ds in ["EMISION", "FECHA DE ENVÍO"]:
                 if col_f_ds in df_desp_raw.columns:
-                    df_desp_raw[col_f_ds] = pd.to_datetime(df_desp_raw[col_f_ds], dayfirst=True, errors="coerce")
+                    df_desp_raw[col_f_ds] = parse_fecha_segura(df_desp_raw[col_f_ds])
                 else:
                     df_desp_raw[col_f_ds] = pd.NaT
             if "NÚMERO DE PEDIDO" not in df_desp_raw.columns:
@@ -1372,7 +1404,7 @@ def main():
             df_rank_raw = df_raw.copy()
             for col_fecha_rk in ["FECHA DE ENVÍO", "PROMESA DE ENTREGA", "FECHA DE ENTREGA REAL"]:
                 if col_fecha_rk in df_rank_raw.columns:
-                    df_rank_raw[col_fecha_rk] = pd.to_datetime(df_rank_raw[col_fecha_rk], dayfirst=True, errors='coerce')
+                    df_rank_raw[col_fecha_rk] = parse_fecha_segura(df_rank_raw[col_fecha_rk])
                 else:
                     df_rank_raw[col_fecha_rk] = pd.NaT
 
@@ -1706,8 +1738,8 @@ def main():
             # =========================================================-
             # 1. PROCESAMIENTO DE DATOS
             # =========================================================
-            df['FECHA DE ENVÍO'] = pd.to_datetime(df['FECHA DE ENVÍO'], errors='coerce')
-            df['FECHA DE ENTREGA REAL'] = pd.to_datetime(df['FECHA DE ENTREGA REAL'], errors='coerce')
+            df['FECHA DE ENVÍO'] = parse_fecha_segura(df['FECHA DE ENVÍO'])
+            df['FECHA DE ENTREGA REAL'] = parse_fecha_segura(df['FECHA DE ENTREGA REAL'])
             df['DIAS_REALES'] = (df['FECHA DE ENTREGA REAL'] - df['FECHA DE ENVÍO']).dt.days
             
             # =========================================================
