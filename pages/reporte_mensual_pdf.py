@@ -7,8 +7,9 @@ Genera un PDF ejecutivo del mes elegido con:
   3. Inteligencia de negocio
   4. Top 20 clientes de distribución
   5. Distribución de carga (solo COBRO REGRESO)
-  6. Ranking de fleteras (efectividad de entregas, tiempos y costo promedio)
-  7. Costos de muestras
+  6. Cobro regreso: costo por fletera (lo que paga JYPESA)
+  7. Ranking de fleteras (efectividad de entregas, tiempos y costo promedio)
+  8. Costos de muestras
 
 Los cálculos replican los del dashboard, pero filtran por MES **y AÑO**.
 Los gráficos se dibujan directo con reportlab (no necesita kaleido ni matplotlib).
@@ -74,6 +75,7 @@ MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO
 # Mismas listas que el dashboard
 CARRIERS_PRINCIPALES_DC = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "PAQUETE", "SANCHEZ", "FLETES DE REGRESO", "FARMASES"]
 FLETERAS_PRINCIPALES_RK = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "SANCHEZ", "FLETES DE REGRESO"]
+TARGET_COSTO_LOG = 7.5   # % meta de costo logístico (igual que Análisis Mensual)
 FERIADOS_24H = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']   # <- agrega aquí los de otros años
 
 # Paleta (impresión)
@@ -357,6 +359,56 @@ def calc_carga_regreso(df_all, anio, mes):
     rutas = rutas.sort_values(["_O", "TRANSPORTE", "CAJAS"], ascending=[False, True, False]).drop(columns="_O")
     return dict(vacio=False, registros=len(d), total=total, part=part, rutas=rutas,
                 lider=part.iloc[0], destinos=d["DESTINO"].replace("", pd.NA).nunique())
+
+
+def calc_costos_regreso(df_all, anio, mes):
+    """Costos de COBRO REGRESO (lo que paga JYPESA), por fletera.
+    Misma lógica que la página 'Análisis Mensual': FORMA DE ENVIO contiene REGRESO,
+    flete = guía + costos adicionales, costo logístico = flete / facturación.
+    Periodo: igual que la sección 05 (columna MES + validación de año)."""
+    d = df_all.copy()
+    f_env = d["FECHA DE ENVÍO"]
+    ok_anio = f_env.isna() | (f_env.dt.year == anio)
+    d = d[(d["MES"] == MESES[mes - 1]) & ok_anio]
+    d = d[d["FORMA DE ENVIO"].str.contains("REGRESO", case=False, na=False)].copy()
+    if d.empty:
+        return dict(vacio=True)
+
+    d["FLETERA"] = d["FLETERA"].replace("", "SIN ASIGNAR")
+    d["_FLETE"] = d["COSTO DE LA GUÍA"] + d["COSTOS ADICIONALES"]
+    d["_EVAL"] = d["PROMESA DE ENTREGA"].notna() & d["FECHA DE ENTREGA REAL"].notna()
+    d["_OK"] = d["_EVAL"] & (d["FECHA DE ENTREGA REAL"] <= d["PROMESA DE ENTREGA"])
+    d["_INC"] = d["VALUACION"] > 0
+
+    flete, fact, cajas = d["_FLETE"].sum(), d["FACTURACION"].sum(), d["CAJAS"].sum()
+    val, n_eval, n_ok = d["VALUACION"].sum(), int(d["_EVAL"].sum()), int(d["_OK"].sum())
+
+    # Desglose por concepto (informativo; usa solo el costo de guía, como el dashboard)
+    muestras = consignas = fnacional = 0.0
+    col_c = next((c for c in d.columns if "CONCEPTO" in str(c).upper()), None)
+    if col_c:
+        conc = d[col_c].fillna("").astype(str).str.strip().str.upper()
+        g = d["COSTO DE LA GUÍA"]
+        muestras = g[conc.str.contains("MUESTRA|RECOLECCI", regex=True)].sum()
+        consignas = g[conc.str.contains("CONSIGNA", regex=True)].sum()
+        fnacional = g[conc.str.contains("NACIONAL", regex=True)].sum()
+
+    res = d.groupby("FLETERA").agg(
+        envios=("FLETERA", "size"), cajas=("CAJAS", "sum"), flete=("_FLETE", "sum"),
+        fact=("FACTURACION", "sum"), val=("VALUACION", "sum"),
+        n_eval=("_EVAL", "sum"), n_ok=("_OK", "sum")).reset_index()
+    res["pct_gasto"] = (res["flete"] / flete * 100) if flete else 0.0
+    res["costo_caja"] = res["flete"] / res["cajas"].replace(0, np.nan)
+    res["pct_log"] = res["flete"] / res["fact"].replace(0, np.nan) * 100
+    res["efic"] = res["n_ok"] / res["n_eval"].replace(0, np.nan) * 100
+    res = res.sort_values("flete", ascending=False).reset_index(drop=True)
+
+    return dict(vacio=False, registros=len(d), flete=flete, fact=fact, cajas=cajas, val=val,
+                costo_log=(flete / fact * 100) if fact else 0.0,
+                costo_caja=(flete / cajas) if cajas else 0.0,
+                efic=(n_ok / n_eval * 100) if n_eval else None,
+                pct_inc=(d["_INC"].sum() / len(d) * 100),
+                muestras=muestras, consignas=consignas, fnacional=fnacional, res=res)
 
 
 def _resumen_por_fletera(df_in):
@@ -842,6 +894,7 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
     B = calc_bi(df_mes)
     T = calc_top_clientes(df_mes, 20)
     C = calc_carga_regreso(df_base, anio, mes)
+    G = calc_costos_regreso(df_base, anio, mes)
     K = calc_ranking(df_base, anio, mes)
     M = calc_muestras(df_muestras, anio, mes, precios) if df_muestras is not None else None
 
@@ -888,6 +941,12 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
                          f"y la más cara <b>{esc(K['cara']['FLETERA'])}</b> ({money(K['cara']['COSTO_PROM_ENVIO'])}).")
     if not C.get("vacio"):
         hallazgos.append(f"En cobro regreso se movieron <b>{num(C['total'])}</b> cajas; carrier dominante: <b>{esc(C['lider']['TRANSPORTE'])}</b> ({C['lider']['PCT']:.0f}%).")
+    if not G.get("vacio"):
+        mayor = G["res"].iloc[0]
+        dentro = G["costo_log"] <= TARGET_COSTO_LOG
+        hallazgos.append(f"Fletes de cobro regreso: se pagaron <b>{money(G['flete'])}</b> ({money(G['costo_caja'], 2)} por caja), equivalente a "
+                         f"<b>{G['costo_log']:.2f}%</b> de la facturación de esa modalidad ({'dentro' if dentro else 'fuera'} del target de {TARGET_COSTO_LOG}%). "
+                         f"El mayor gasto fue con <b>{esc(mayor['FLETERA'])}</b> ({mayor['pct_gasto']:.0f}% del total).")
     if M and M["total"]:
         hallazgos.append(f"Muestras: <b>{num(M['total'])}</b> envíos con una inversión de <b>{money(M['inv'])}</b> "
                          f"(productos {money(M['prod'])} + fletes {money(M['flete'])}); {M['pct_desp']:.0f}% despachado.")
@@ -897,7 +956,7 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
 
     story += [Spacer(1, 8), Paragraph("CONTENIDO", ParagraphStyle("ct", fontName="Helvetica-Bold", fontSize=9, textColor=C_GRAY, spaceAfter=3)),
               Paragraph("01 Resumen del mes · 02 Efectividad de envíos · 03 Inteligencia de negocio · 04 Top 20 clientes · "
-                        "05 Distribución de carga (cobro regreso) · 06 Ranking de fleteras · 07 Costos de muestras", ST["small"])]
+                        "05 Distribución de carga (cobro regreso) · 06 Cobro regreso: costo por fletera · 07 Ranking de fleteras · 08 Costos de muestras", ST["small"])]
 
     # ---------------- 01 RESUMEN DEL MES ----------------
     story += [PageBreak()] + seccion(1, "RESUMEN DEL MES", f"Pedidos, entregas y retrasos con fecha de envío en {titulo_mes.title()}")
@@ -1013,8 +1072,56 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
     else:
         story.append(sin_datos(f"No se encontraron registros de COBRO REGRESO en {titulo_mes.title()}."))
 
-    # ---------------- 06 RANKING DE FLETERAS ----------------
-    story += [PageBreak()] + seccion(6, "RANKING DE FLETERAS", "Efectividad de entregas, tiempos de tránsito y costo promedio (fleteras principales)")
+    # ---------------- 06 COBRO REGRESO: COSTO POR FLETERA ----------------
+    story += [PageBreak()] + seccion(6, "COBRO REGRESO  ·  COSTO POR FLETERA",
+                                     "Lo que paga JYPESA por fletes de regreso: gasto, costo por caja y servicio por fletera")
+    if not G.get("vacio"):
+        col_log = HEX["green"] if G["costo_log"] <= TARGET_COSTO_LOG else HEX["red"]
+        story += kpi_row([
+            ("Costo de flete (guía + adic.)", money(G["flete"], 2), HEX["slate"]),
+            ("Cajas enviadas", num(G["cajas"]), HEX["teal"]),
+            ("Costo por caja", money(G["costo_caja"], 2), HEX["orange"]),
+            (f"Costo logístico (target {TARGET_COSTO_LOG}%)", f"{G['costo_log']:.2f}%", col_log),
+        ], ncols=4)
+        story += kpi_row([
+            ("Facturación cobro regreso", money(G["fact"], 2), HEX["green"]),
+            ("Eficiencia de entrega", pct(G["efic"]) if G["efic"] is not None else "-", HEX["blue"]),
+            ("Valuación de incidencias", money(G["val"], 2), HEX["red"]),
+            ("% de incidencias", pct(G["pct_inc"]), HEX["gold"]),
+        ], ncols=4)
+        story.append(subtitulo("Desglose por concepto (informativo)"))
+        story += kpi_row([("Muestras / recolecciones", money(G["muestras"], 2), HEX["purple"]),
+                          ("Consignas", money(G["consignas"], 2), HEX["purple"]),
+                          ("F nacional", money(G["fnacional"], 2), HEX["purple"])], ncols=3)
+
+        res = G["res"]
+        izq = chart_barras_h([(r.FLETERA, r.flete) for r in res.itertuples()], width=262, label_w=92, color=C_ORANGE, fmt=money)
+        cc = res[res["costo_caja"].notna()].sort_values("costo_caja", ascending=True)
+        der = (chart_barras_h([(r.FLETERA, r.costo_caja) for r in cc.itertuples()], width=262, label_w=92, color=C_GOLD,
+                              fmt=lambda v: money(v, 2)) if not cc.empty else sin_datos("Sin cajas registradas."))
+        story.append(lado_a_lado(izq, der, "Gasto de flete por fletera", "Costo promedio por caja"))
+        story.append(Spacer(1, 10))
+
+        rows = [[trunc(r.FLETERA, 24), num(r.envios), num(r.cajas), money(r.flete, 2), pct(r.pct_gasto, 0),
+                 money(r.costo_caja, 2) if pd.notna(r.costo_caja) else "-", pct(r.pct_log, 2) if pd.notna(r.pct_log) else "-",
+                 pct(r.efic, 0) if pd.notna(r.efic) else "-", money(r.val, 2)] for r in res.itertuples()]
+        story.append(KeepTogether([subtitulo("Detalle por fletera (cobro regreso)"),
+                                   tabla(["FLETERA", "ENVÍOS", "CAJAS", "COSTO FLETE", "% GASTO", "COSTO/CAJA", "% LOGÍSTICO", "% A TIEMPO", "VALUACIÓN INC."],
+                                         rows, [100, 40, 42, 70, 48, 58, 52, 56, 74],
+                                         ["L", "R", "R", "R", "R", "R", "R", "R", "R"],
+                                         total_row=["TOTAL", num(G["registros"]), num(G["cajas"]), money(G["flete"], 2), "100%",
+                                                    money(G["costo_caja"], 2), pct(G["costo_log"], 2),
+                                                    pct(G["efic"], 0) if G["efic"] is not None else "-", money(G["val"], 2)])]))
+        story += [Spacer(1, 4), Paragraph(
+            f"Solo incluye envíos con forma de envío COBRO REGRESO. Costo de flete = guía + costos adicionales. Costo logístico = costo de flete / facturación de esta modalidad "
+            f"(target {TARGET_COSTO_LOG}%); a diferencia de la sección 03, aquí se incluyen los adicionales y no se mezclan otras modalidades. "
+            "% a tiempo = entregas con fecha real menor o igual a la promesa, sobre envíos con ambas fechas. "
+            "El desglose por concepto usa solo el costo de guía y es informativo.", ST["nota"])]
+    else:
+        story.append(sin_datos(f"No se encontraron envíos de COBRO REGRESO en {titulo_mes.title()}."))
+
+    # ---------------- 07 RANKING DE FLETERAS ----------------
+    story += [PageBreak()] + seccion(7, "RANKING DE FLETERAS", "Efectividad de entregas, tiempos de tránsito y costo promedio (fleteras principales)")
     if not K.get("vacio"):
         res = K["res"]
         # Tabla resumen
@@ -1081,8 +1188,8 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
     else:
         story.append(sin_datos())
 
-    # ---------------- 07 COSTOS DE MUESTRAS ----------------
-    story += [PageBreak()] + seccion(7, "COSTOS DE MUESTRAS", "Inversión en producto y fletes de muestras del periodo")
+    # ---------------- 08 COSTOS DE MUESTRAS ----------------
+    story += [PageBreak()] + seccion(8, "COSTOS DE MUESTRAS", "Inversión en producto y fletes de muestras del periodo")
     if M is None:
         story.append(sin_datos(muestras_msg or "No fue posible cargar la información de muestras."))
     elif not M["total"]:
@@ -1167,7 +1274,7 @@ def main():
     generar = c3.button("GENERAR REPORTE PDF", use_container_width=True)
 
     st.caption("Incluye: resumen del mes, efectividad de envíos, inteligencia de negocio, top 20 clientes, distribución de carga (cobro regreso), "
-               "ranking de fleteras (efectividad, tiempos y costo promedio) y costos de muestras.")
+               "costo por fletera en cobro regreso, ranking de fleteras (efectividad, tiempos y costo promedio) y costos de muestras.")
 
     if generar:
         mes_num = MESES.index(mes_sel) + 1
