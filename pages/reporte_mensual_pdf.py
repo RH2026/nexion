@@ -77,7 +77,7 @@ FLETERAS_PRINCIPALES_RK = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "SANCHE
 FERIADOS_24H = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']   # <- agrega aquí los de otros años
 
 # Paleta (impresión)
-C_NAVY = colors.HexColor("#1F2D35")
+C_NAVY = colors.HexColor("#384A52")
 C_SLATE = colors.HexColor("#2B343B")
 C_TEAL = colors.HexColor("#00A3A3")
 C_GOLD = colors.HexColor("#FFC000")
