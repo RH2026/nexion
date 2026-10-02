@@ -89,14 +89,14 @@ def chips_coincidencia(row):
         return ""
     chip_fuente = (
         "<span style='background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);"
-        "padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:1px;margin-right:4px;'>"
+        "padding:2px 8px;border-radius:4px;font-size:12px;font-weight:500;letter-spacing:1px;margin-right:4px;'>"
         f"📂 INFORMACIÓN OBTENIDA DE: {html.escape(fuente)}</span>"
     ) if fuente and fuente.lower() != "nan" else ""
     if not isinstance(campos, list) or not campos:
         return f"<div style='margin:0 0 4px 2px;'>{chip_fuente}</div>" if chip_fuente else ""
     chips = chip_fuente + "".join(
         "<span style='background:rgba(0,255,170,0.12);color:#00FFAA;border:1px solid rgba(0,255,170,0.35);"
-        "padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:1px;margin-right:4px;'>"
+        "padding:2px 8px;border-radius:4px;font-size:12px;font-weight:500;letter-spacing:1px;margin-right:4px;'>"
         f"COINCIDE EN: {html.escape(ETIQUETAS_CAMPO.get(str(c).strip().upper(), str(c)))}</span>"
         for c in campos
     )
