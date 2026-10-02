@@ -771,7 +771,7 @@ class _NumberedCanvas(rl_canvas.Canvas):
             self.line(MARGIN, 34, PAGE_W - MARGIN, 34)
             self.setFont("Helvetica", 7)
             self.setFillColor(C_GRAY)
-            self.drawString(MARGIN, 23, f"JYPESA | Logística  -  {self.titulo_pie}  -  Documento de uso interno")
+            self.drawString(MARGIN, 23, f"JYPESA | Logística  -  {self.titulo_pie}  -  Generado e impreso con Nexion Smart Logistic")
             self.drawRightString(PAGE_W - MARGIN, 23, f"Página {self._pageNumber} de {n}")
             super().showPage()
         super().save()
