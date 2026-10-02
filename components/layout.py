@@ -84,11 +84,17 @@ def chips_coincidencia(row):
     """HTML con 'COINCIDE EN: GUÍA / FACTURA / ...' para una fila de resultados."""
     try:
         campos = row.get("_COINCIDE_EN", [])
+        fuente = str(row.get("_FUENTE", "") or "").strip()
     except Exception:
         return ""
+    chip_fuente = (
+        "<span style='background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);"
+        "padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:1px;margin-right:4px;'>"
+        f"📂 INFORMACIÓN OBTENIDA DE: {html.escape(fuente)}</span>"
+    ) if fuente and fuente.lower() != "nan" else ""
     if not isinstance(campos, list) or not campos:
-        return ""
-    chips = "".join(
+        return f"<div style='margin:0 0 4px 2px;'>{chip_fuente}</div>" if chip_fuente else ""
+    chips = chip_fuente + "".join(
         "<span style='background:rgba(0,255,170,0.12);color:#00FFAA;border:1px solid rgba(0,255,170,0.35);"
         "padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:1px;margin-right:4px;'>"
         f"COINCIDE EN: {html.escape(ETIQUETAS_CAMPO.get(str(c).strip().upper(), str(c)))}</span>"
@@ -579,18 +585,35 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
             )
 
             if query:
+                # ═══════════════════════════════════════════════════════════════════
+                # BÚSQUEDA EN CASCADA POR GUÍA / FOLIO
+                #   1) Matriz Global (Dashboard)  2) T1  3) envios.csv
+                #   4) facturacion.csv            5) inventario.csv
+                # Se consultan los 3 primeros niveles SIEMPRE y se muestra el primero que
+                # traiga GUÍA. Si ninguno trae guía, se muestra el primero que tenga el folio.
+                # Cada resultado lleva `_FUENTE` para indicar de dónde salió la información.
+                # ═══════════════════════════════════════════════════════════════════
+                FUENTE_OPS = "MATRIZ GLOBAL · DASHBOARD"
+                FUENTE_T1 = "T1.xlsx · TRES GUERRAS"
+                FUENTE_ENV = "ENVIOS.CSV"
+
                 url_raw = "https://raw.githubusercontent.com/RH2026/nexion/refs/heads/main/Matriz_Excel_Dashboard.csv"
                 try:
                     df_matriz_fresco = pd.read_csv(url_raw)
                     df_matriz_fresco.columns = df_matriz_fresco.columns.str.strip()
-                except Exception:
+                except Exception as e_mx:
                     df_matriz_fresco = None
+                    st.toast(f"No se pudo leer la Matriz Global: {str(e_mx)[:100]}", icon="⚠️")
 
+                # ── Nivel 1: Matriz Global ──
                 res_ops = pd.DataFrame()
                 if df_matriz_fresco is not None:
                     cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
                     res_ops = buscar_con_campos(df_matriz_fresco, cols_op, query)
+                    if not res_ops.empty:
+                        res_ops["_FUENTE"] = FUENTE_OPS
 
+                # ── Nivel 2: T1 (se consulta siempre, ya no solo cuando Matriz viene vacía) ──
                 res_t1 = pd.DataFrame()
                 try:
                     df_t1_temp = pd.read_excel("T1.xlsx")
@@ -603,72 +626,134 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                         "F.DOC": "FECHA DE ENVÍO",
                         "BULTOS": "CANTIDAD DE CAJAS"
                     })
+                    # El folio a veces viene en otra columna de observaciones (OBSERVACION 2, 3...)
+                    cols_obs_t1 = [c for c in df_t1_temp.columns if c.startswith("OBSERVACION")]
                     match_t1 = buscar_con_campos(
                         df_t1_temp,
-                        ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO"],
+                        ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO"] + cols_obs_t1,
                         query,
                     )
                     if not match_t1.empty:
                         match_t1["FLETERA"] = "TRES GUERRAS"
+                        match_t1["_FUENTE"] = FUENTE_T1
                         res_t1 = match_t1
-                except Exception:
-                    pass
+                except Exception as e_t1:
+                    st.toast(f"No se pudo leer/buscar en T1.xlsx: {str(e_t1)[:100]}", icon="⚠️")
 
-                # ── Tercer nivel: envios.csv (envío registrado; se adapta al MISMO render de Matriz/T1) ──
+                # ── Nivel 3: envios.csv (también se consulta siempre) ──
                 res_env = pd.DataFrame()
-                if res_ops.empty and res_t1.empty:
-                    try:
-                        df_env, err_env = _leer_csv_remoto_o_local("envios.csv")
-                        if df_env is None:
-                            st.toast("No se pudo leer envios.csv: " + err_env[-120:], icon="⚠️")
+                try:
+                    df_env, err_env = _leer_csv_remoto_o_local("envios.csv")
+                    if df_env is None:
+                        st.toast("No se pudo leer envios.csv: " + err_env[-120:], icon="⚠️")
+                    else:
+                        mapa_env = {c.upper(): c for c in df_env.columns}
+                        claves_busq_env = ["FACTURA", "NOMBRE_CLIENTE", "NOMBRE_EXTRAN", "DESTINO"]
+                        cols_env = [mapa_env[k] for k in claves_busq_env if k in mapa_env]
+                        if cols_env:
+                            match_env = buscar_con_campos(df_env, cols_env, query)
+                            if not match_env.empty:
+                                # envios.csv -> nombres de columna que ya usa el render de Matriz/T1
+                                equivalencias = {
+                                    "FACTURA": "NÚMERO DE PEDIDO",
+                                    "NOMBRE_CLIENTE": "NOMBRE DEL CLIENTE",
+                                    "DESTINO": "DESTINO",
+                                    "DIRECCION": "DOMICILIO",
+                                    "TRANSPORTE": "FLETERA",
+                                    "COSTO": "COSTO DE LA GUÍA",
+                                    "QUANTITY": "CANTIDAD DE CAJAS",
+                                    "FECHA DE ENVIO": "FECHA DE ENVÍO",
+                                    "FECHA DE PROGRAMACION": "PROMESA DE ENTREGA",
+                                    "ESTATUS": "COMENTARIOS",
+                                }
+                                match_env = match_env.rename(columns={mapa_env[k]: v for k, v in equivalencias.items() if k in mapa_env})
+
+                                # Si hay varias filas por partida, se agrupan en una sola tarjeta por envío
+                                llaves_env = [c for c in ["NÚMERO DE PEDIDO", "FECHA DE ENVÍO", "FLETERA", "COMENTARIOS"] if c in match_env.columns]
+                                if llaves_env:
+                                    match_env = match_env.drop_duplicates(subset=llaves_env).reset_index(drop=True)
+
+                                # Celdas vacías: que no se pinte "nan" en la tarjeta
+                                match_env = match_env.fillna("")
+
+                                # Lo que trae envios.csv en bultos y costo no es el dato real: se deja PENDIENTE
+                                match_env["CANTIDAD DE CAJAS"] = "PENDIENTE"
+                                match_env["COSTO DE LA GUÍA"] = "PENDIENTE"
+                                if "FECHA DE ENVÍO" in match_env.columns:
+                                    match_env["FECHA DE ENVÍO"] = match_env["FECHA DE ENVÍO"].replace("", "PENDIENTE")
+                                if "PROMESA DE ENTREGA" in match_env.columns:
+                                    match_env["PROMESA DE ENTREGA"] = match_env["PROMESA DE ENTREGA"].replace("", "N/A")
+
+                                match_env["_ORIGEN"] = "ENVIOS"
+                                match_env["_FUENTE"] = FUENTE_ENV
+                                res_env = match_env
                         else:
-                            mapa_env = {c.upper(): c for c in df_env.columns}
-                            claves_busq_env = ["FACTURA", "NOMBRE_CLIENTE", "NOMBRE_EXTRAN", "DESTINO"]
-                            cols_env = [mapa_env[k] for k in claves_busq_env if k in mapa_env]
-                            if cols_env:
-                                match_env = buscar_con_campos(df_env, cols_env, query)
-                                if not match_env.empty:
-                                    # envios.csv -> nombres de columna que ya usa el render de Matriz/T1
-                                    equivalencias = {
-                                        "FACTURA": "NÚMERO DE PEDIDO",
-                                        "NOMBRE_CLIENTE": "NOMBRE DEL CLIENTE",
-                                        "DESTINO": "DESTINO",
-                                        "DIRECCION": "DOMICILIO",
-                                        "TRANSPORTE": "FLETERA",
-                                        "COSTO": "COSTO DE LA GUÍA",
-                                        "QUANTITY": "CANTIDAD DE CAJAS",
-                                        "FECHA DE ENVIO": "FECHA DE ENVÍO",
-                                        "FECHA DE PROGRAMACION": "PROMESA DE ENTREGA",
-                                        "ESTATUS": "COMENTARIOS",
-                                    }
-                                    match_env = match_env.rename(columns={mapa_env[k]: v for k, v in equivalencias.items() if k in mapa_env})
+                            st.toast("envios.csv no trae las columnas esperadas (Factura, Nombre_Cliente, DESTINO...)", icon="⚠️")
+                except Exception as e_env:
+                    st.toast(f"Error buscando en envios.csv: {str(e_env)[:120]}", icon="⚠️")
 
-                                    # Si hay varias filas por partida, se agrupan en una sola tarjeta por envío
-                                    llaves_env = [c for c in ["NÚMERO DE PEDIDO", "FECHA DE ENVÍO", "FLETERA", "COMENTARIOS"] if c in match_env.columns]
-                                    if llaves_env:
-                                        match_env = match_env.drop_duplicates(subset=llaves_env).reset_index(drop=True)
+                # ── Elección del resultado ──
+                def _guia_ok(v):
+                    return str(v).strip().lower() not in ("", "0", "nan", "none", "nat")
 
-                                    # Celdas vacías: que no se pinte "nan" en la tarjeta
-                                    match_env = match_env.fillna("")
+                def _tiene_guia_df(df):
+                    return (not df.empty) and ("NÚMERO DE GUÍA" in df.columns) and df["NÚMERO DE GUÍA"].map(_guia_ok).any()
 
-                                    # Lo que trae envios.csv en bultos y costo no es el dato real: se deja PENDIENTE
-                                    match_env["CANTIDAD DE CAJAS"] = "PENDIENTE"
-                                    match_env["COSTO DE LA GUÍA"] = "PENDIENTE"
-                                    if "FECHA DE ENVÍO" in match_env.columns:
-                                        match_env["FECHA DE ENVÍO"] = match_env["FECHA DE ENVÍO"].replace("", "PENDIENTE")
-                                    if "PROMESA DE ENTREGA" in match_env.columns:
-                                        match_env["PROMESA DE ENTREGA"] = match_env["PROMESA DE ENTREGA"].replace("", "N/A")
+                def _norm(v):
+                    return re.sub(r"\.0$", "", str(v).strip()).upper()
 
-                                    match_env["_ORIGEN"] = "ENVIOS"
-                                    res_env = match_env
-                            else:
-                                st.toast("envios.csv no trae las columnas esperadas (Factura, Nombre_Cliente, DESTINO...)", icon="⚠️")
-                    except Exception as e_env:
-                        st.toast(f"Error buscando en envios.csv: {str(e_env)[:120]}", icon="⚠️")
+                def _mismo_envio(a, b):
+                    """Misma guía (si ambos la traen) o mismo folio/pedido."""
+                    for col, valida in (("NÚMERO DE GUÍA", _guia_ok), ("NÚMERO DE PEDIDO", _guia_ok)):
+                        if col in a.index and col in b.index and valida(a[col]) and valida(b[col]):
+                            return _norm(a[col]) == _norm(b[col])
+                    return False
+
+                def _completar(base, extra):
+                    """Rellena SOLO los vacíos de `base` con datos de `extra` (1 fila vs 1 fila, mismo envío).
+                    Devuelve (df, cambió)."""
+                    if len(base) != 1 or len(extra) != 1 or not _mismo_envio(base.iloc[0], extra.iloc[0]):
+                        return base, False
+                    base = base.copy()
+                    ex = extra.iloc[0]
+                    cambio = False
+                    for col in extra.columns:
+                        if str(col).startswith("_"):
+                            continue
+                        if col not in base.columns:
+                            base[col] = ex[col]
+                            cambio = True
+                            continue
+                        v = base.iloc[0][col]
+                        vacio = pd.isna(v) or str(v).strip().lower() in ("", "nan", "none", "nat", "pendiente")
+                        nuevo_ok = not (pd.isna(ex[col]) or str(ex[col]).strip().lower() in ("", "nan", "none", "nat", "pendiente"))
+                        if vacio and nuevo_ok:
+                            base[col] = base[col].astype(object)
+                            base.iat[0, base.columns.get_loc(col)] = ex[col]
+                            cambio = True
+                    return base, cambio
+
+                niveles = [(res_ops, FUENTE_OPS), (res_t1, FUENTE_T1), (res_env, FUENTE_ENV)]
+                elegido = next((r for r, _ in niveles if _tiene_guia_df(r)), None)
+                if elegido is None:
+                    elegido = next((r for r, _ in niveles if not r.empty), None)
+
+                # Si el elegido es un solo envío, se completa con lo que traigan los otros niveles
+                if elegido is not None and len(elegido) == 1:
+                    fuentes_extra = []
+                    for otro, fuente_otro in niveles:
+                        if otro.empty or fuente_otro == elegido.iloc[0].get("_FUENTE"):
+                            continue
+                        elegido, cambio = _completar(elegido, otro)
+                        if cambio:
+                            fuentes_extra.append(fuente_otro.split(" ·")[0].replace(".xlsx", "").replace(".CSV", ".csv"))
+                    if fuentes_extra:
+                        elegido = elegido.copy()
+                        elegido["_FUENTE"] = f"{elegido.iloc[0]['_FUENTE']}  +  DATOS DE {' / '.join(fuentes_extra)}"
 
                 # ── Cuarto nivel: facturacion.csv (facturado pero aún NO procesado para envío) ──
                 res_fact = pd.DataFrame()
-                if res_ops.empty and res_t1.empty and res_env.empty:
+                if elegido is None:
                     try:
                         df_fact_temp, err_fact = _leer_csv_remoto_o_local("facturacion.csv")
                         if df_fact_temp is None:
@@ -693,7 +778,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                         st.toast(f"Error buscando en facturacion.csv: {str(e_fact)[:120]}", icon="⚠️")
 
                 res_inv = pd.DataFrame()
-                if res_ops.empty and res_t1.empty and res_env.empty and res_fact.empty:
+                if elegido is None and res_fact.empty:
                     try:
                         df_inv_temp = pd.read_csv("inventario.csv")
                         df_inv_temp.columns = df_inv_temp.columns.str.strip()
@@ -706,18 +791,10 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                     except Exception:
                         pass
 
-                if not res_ops.empty:
+                if elegido is not None:
                     st.session_state.busqueda_activa = True
                     st.session_state.tipo_resultado = "OPERACION"
-                    st.session_state.resultado_busqueda = res_ops
-                elif not res_t1.empty:
-                    st.session_state.busqueda_activa = True
-                    st.session_state.tipo_resultado = "OPERACION" 
-                    st.session_state.resultado_busqueda = res_t1
-                elif not res_env.empty:
-                    st.session_state.busqueda_activa = True
-                    st.session_state.tipo_resultado = "OPERACION"
-                    st.session_state.resultado_busqueda = res_env
+                    st.session_state.resultado_busqueda = elegido
                 elif not res_fact.empty:
                     st.session_state.busqueda_activa = True
                     st.session_state.tipo_resultado = "FACTURACION"
