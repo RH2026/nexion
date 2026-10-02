@@ -88,13 +88,15 @@ def cargar_estatus_github():
         if response.status_code == 200:
             file_data = response.json()
             content_decoded = base64.b64decode(file_data.get("content", "")).decode("utf-8-sig")
-            df = pd.read_csv(io.StringIO(content_decoded))
+            df = pd.read_csv(io.StringIO(content_decoded), dtype=str, keep_default_na=False)
             df.columns = df.columns.astype(str).str.strip()
+            if "Paqueteria" not in df.columns:
+                df["Paqueteria"] = ""
             return df
         else:
-            return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"])
+            return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia", "Paqueteria"])
     except Exception:
-        return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia"])
+        return pd.DataFrame(columns=["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia", "Paqueteria"])
 
 def guardar_estatus_github(df_nuevo, mensaje="Actualizar estatus de recolecciones"):
     try:
@@ -702,10 +704,11 @@ def main():
                     "Observaciones": observaciones_registro,
                     "Solicitante": "RIGOBERTO HERNANDEZ",
                     "Numero de Guia": "",
-                    "Costo de la Guia": 0.0
+                    "Costo de la Guia": 0.0,
+                    "Paqueteria": "TRESGUERRAS"
                 }])
                 if not df_estatus_actual.empty and str(num_factura) in df_estatus_actual["Folio"].values:
-                    df_estatus_actual.loc[df_estatus_actual["Folio"] == str(num_factura), ["Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total"]] = [fecha_rec_str, str(dest_cliente), str(rem_cliente), float(total_peso_calc)]
+                    df_estatus_actual.loc[df_estatus_actual["Folio"] == str(num_factura), ["Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total", "Paqueteria"]] = [fecha_rec_str, str(dest_cliente), str(rem_cliente), float(total_peso_calc), "TRESGUERRAS"]
                     df_final = df_estatus_actual
                 else:
                     df_final = pd.concat([df_estatus_actual, nuevo_registro], ignore_index=True)
