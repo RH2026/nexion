@@ -18,6 +18,7 @@ import html as _html
 import io
 import os
 import time
+import unicodedata
 from datetime import datetime
 from io import BytesIO
 
@@ -68,6 +69,8 @@ render_layout(modulo_actual="REPORTES", submodulo_actual="REPORTE MENSUAL PDF")
 GITHUB_USER, GITHUB_REPO, BRANCH = "RH2026", "nexion", "main"
 ARCHIVO_MATRIZ = "Matriz_Excel_Dashboard.csv"
 ARCHIVO_LOGO = "n1.png"
+ARCHIVO_HIST = "Historial2025.csv"   # totales mensuales de 2025: MES, COSTO DE LA GUÍA, CAJAS (cobro regreso)
+ANIO_HISTORIAL = 2025
 
 MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO",
          "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
@@ -187,6 +190,27 @@ def cargar_matriz():
         df = pd.read_csv(url, encoding="utf-8-sig")
     df.columns = [str(c).strip() for c in df.columns]
     return df
+
+
+@st.cache_data(ttl=3600)
+def cargar_historial_2025():
+    """Totales mensuales de 2025 (para el comparativo anual). Devuelve None si no se puede leer."""
+    url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{BRANCH}/{ARCHIVO_HIST}?v={int(time.time())}"
+    try:
+        try:
+            r = requests.get(url, headers=_headers_github(), timeout=40)
+            r.raise_for_status()
+            df = pd.read_csv(BytesIO(r.content), encoding="utf-8-sig")
+        except Exception:
+            df = pd.read_csv(url, encoding="utf-8-sig")
+        df.columns = ["".join(c for c in unicodedata.normalize("NFD", str(x)) if unicodedata.category(c) != "Mn").strip().upper()
+                      for x in df.columns]
+        df["MES"] = df["MES"].fillna("").astype(str).str.strip().str.upper()
+        for c in ["COSTO DE LA GUIA", "CAJAS"]:
+            df[c] = limpiar_moneda(df[c]) if c in df.columns else 0.0
+        return df[["MES", "COSTO DE LA GUIA", "CAJAS"]]
+    except Exception:
+        return None
 
 
 @st.cache_data(ttl=3600)
@@ -409,6 +433,24 @@ def calc_costos_regreso(df_all, anio, mes):
                 efic=(n_ok / n_eval * 100) if n_eval else None,
                 pct_inc=(d["_INC"].sum() / len(d) * 100),
                 muestras=muestras, consignas=consignas, fnacional=fnacional, res=res)
+
+
+def calc_comparativa_2025(G, df_hist, anio, mes):
+    """Flete y cajas de cobro regreso contra el mismo mes de 2025 (misma lógica que 'Análisis Mensual':
+    flete 2026 = guía + adicionales; flete 2025 = guía). None si no aplica; dict(sin_dato=True) si falta información."""
+    if G.get("vacio") or anio != ANIO_HISTORIAL + 1:
+        return None
+    nombre = MESES[mes - 1].title()
+    if df_hist is None or df_hist.empty:
+        return dict(sin_dato=True, motivo=f"No se pudo cargar {ARCHIVO_HIST}; no hay comparativo contra {ANIO_HISTORIAL}.")
+    f = df_hist[df_hist["MES"] == MESES[mes - 1]]
+    flete25, cajas25 = float(f["COSTO DE LA GUIA"].sum()), float(f["CAJAS"].sum())
+    if f.empty or (flete25 <= 0 and cajas25 <= 0):
+        return dict(sin_dato=True, motivo=f"{ARCHIVO_HIST} no tiene datos de {nombre} {ANIO_HISTORIAL}.")
+    return dict(sin_dato=False, flete25=flete25, cajas25=cajas25,
+                dif_flete=G["flete"] - flete25, dif_cajas=G["cajas"] - cajas25,
+                var_flete=((G["flete"] - flete25) / flete25 * 100) if flete25 > 0 else None,
+                var_cajas=((G["cajas"] - cajas25) / cajas25 * 100) if cajas25 > 0 else None)
 
 
 def _resumen_por_fletera(df_in):
@@ -883,7 +925,7 @@ def _hacer_paginas(titulo_mes, subtitulo_portada, logo_bytes):
 # ============================================================
 # 9. ARMADO DEL REPORTE
 # ============================================================
-def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo_bytes=None, muestras_msg=""):
+def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo_bytes=None, muestras_msg="", df_hist=None):
     """Devuelve BytesIO con el PDF.  df_base: salida de preparar_base().  df_muestras: salida de preparar_muestras() o None."""
     titulo_mes = f"{MESES[mes - 1]} {anio}"
     ahora = datetime.now().strftime("%d/%m/%Y %H:%M")
@@ -895,6 +937,7 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
     T = calc_top_clientes(df_mes, 20)
     C = calc_carga_regreso(df_base, anio, mes)
     G = calc_costos_regreso(df_base, anio, mes)
+    H = calc_comparativa_2025(G, df_hist, anio, mes)
     K = calc_ranking(df_base, anio, mes)
     M = calc_muestras(df_muestras, anio, mes, precios) if df_muestras is not None else None
 
@@ -944,9 +987,13 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
     if not G.get("vacio"):
         mayor = G["res"].iloc[0]
         dentro = G["costo_log"] <= TARGET_COSTO_LOG
-        hallazgos.append(f"Fletes de cobro regreso: se pagaron <b>{money(G['flete'])}</b> ({money(G['costo_caja'], 2)} por caja), equivalente a "
-                         f"<b>{G['costo_log']:.2f}%</b> de la facturación de esa modalidad ({'dentro' if dentro else 'fuera'} del target de {TARGET_COSTO_LOG}%). "
-                         f"El mayor gasto fue con <b>{esc(mayor['FLETERA'])}</b> ({mayor['pct_gasto']:.0f}% del total).")
+        txt_g = (f"Fletes de cobro regreso: se pagaron <b>{money(G['flete'])}</b> ({money(G['costo_caja'], 2)} por caja), equivalente a "
+                 f"<b>{G['costo_log']:.2f}%</b> de la facturación de esa modalidad ({'dentro' if dentro else 'fuera'} del target de {TARGET_COSTO_LOG}%). "
+                 f"El mayor gasto fue con <b>{esc(mayor['FLETERA'])}</b> ({mayor['pct_gasto']:.0f}% del total).")
+        if H and not H["sin_dato"] and H["var_flete"] is not None and H["var_cajas"] is not None:
+            txt_g += (f" Contra {MESES[mes - 1].title()} {ANIO_HISTORIAL}, el gasto de flete varió <b>{H['var_flete']:+.1f}%</b> "
+                      f"y el volumen de cajas <b>{H['var_cajas']:+.1f}%</b>.")
+        hallazgos.append(txt_g)
     if M and M["total"]:
         hallazgos.append(f"Muestras: <b>{num(M['total'])}</b> envíos con una inversión de <b>{money(M['inv'])}</b> "
                          f"(productos {money(M['prod'])} + fletes {money(M['flete'])}); {M['pct_desp']:.0f}% despachado.")
@@ -1089,6 +1136,24 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
             ("Valuación de incidencias", money(G["val"], 2), HEX["red"]),
             ("% de incidencias", pct(G["pct_inc"]), HEX["gold"]),
         ], ncols=4)
+        if H is not None:
+            nm = MESES[mes - 1].title()
+            story.append(subtitulo(f"Comparativo contra {nm} {ANIO_HISTORIAL}  //  flete y volumen"))
+            if H["sin_dato"]:
+                story += [sin_datos(H["motivo"]), Spacer(1, 8)]
+            else:
+                def _var(v, dif, dec, bueno_si_sube, money_=False):
+                    if v is None:
+                        return "-", HEX["gray"]
+                    d_txt = ("+" if dif >= 0 else "-") + (money(abs(dif)) if money_ else num(abs(dif)))
+                    sube_es_bien = (v >= 0) == bueno_si_sube
+                    return f"{v:+.1f}%  ({d_txt})", (HEX["green"] if sube_es_bien else HEX["red"])
+                v_f, c_f = _var(H["var_flete"], H["dif_flete"], 1, False, money_=True)
+                v_c, c_c = _var(H["var_cajas"], H["dif_cajas"], 1, True)
+                story += kpi_row([(f"Flete {nm} {ANIO_HISTORIAL}", money(H["flete25"], 2), HEX["slate"]),
+                                  (f"Flete {anio} vs {ANIO_HISTORIAL}", v_f, c_f),
+                                  (f"Cajas {nm} {ANIO_HISTORIAL}", num(H["cajas25"]), HEX["slate"]),
+                                  (f"Cajas {anio} vs {ANIO_HISTORIAL}", v_c, c_c)], ncols=4)
         story.append(subtitulo("Desglose por concepto (informativo)"))
         story += kpi_row([("Muestras / recolecciones", money(G["muestras"], 2), HEX["purple"]),
                           ("Consignas", money(G["consignas"], 2), HEX["purple"]),
@@ -1117,6 +1182,10 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
             f"(target {TARGET_COSTO_LOG}%); a diferencia de la sección 03, aquí se incluyen los adicionales y no se mezclan otras modalidades. "
             "% a tiempo = entregas con fecha real menor o igual a la promesa, sobre envíos con ambas fechas. "
             "El desglose por concepto usa solo el costo de guía y es informativo.", ST["nota"])]
+        if H is not None and not H["sin_dato"]:
+            story += [Spacer(1, 3), Paragraph(
+                f"Comparativo anual: flete {anio} (guía + adicionales) contra el costo de guía de {ARCHIVO_HIST} para el mismo mes; "
+                "para flete, una variación negativa es favorable; para cajas, una positiva.", ST["nota"])]
     else:
         story.append(sin_datos(f"No se encontraron envíos de COBRO REGRESO en {titulo_mes.title()}."))
 
@@ -1293,7 +1362,8 @@ def main():
                 msg_muestras = f"No se pudo importar muestras_common: {MUESTRAS_ERR}"
             try:
                 pdf = generar_reporte_pdf(df_base, df_muestras, int(anio_sel), mes_num, hoy,
-                                          precios=PRECIOS_MUESTRAS, logo_bytes=obtener_logo_bytes(), muestras_msg=msg_muestras)
+                                          precios=PRECIOS_MUESTRAS, logo_bytes=obtener_logo_bytes(), muestras_msg=msg_muestras,
+                                          df_hist=cargar_historial_2025())
                 st.session_state["rep_mensual_pdf"] = {"bytes": pdf.getvalue(), "nombre": f"Reporte_Mensual_Logistica_{mes_sel}_{anio_sel}.pdf"}
                 if msg_muestras:
                     st.warning(f"Reporte generado, pero la sección de muestras quedó sin datos: {msg_muestras}")
