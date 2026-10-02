@@ -37,6 +37,66 @@ def _leer_csv_remoto_o_local(nombre_archivo):
     return None, ultimo_error
 
 
+ETIQUETAS_CAMPO = {
+    "NÚMERO DE GUÍA": "GUÍA",
+    "NÚMERO DE PEDIDO": "FACTURA / PEDIDO",
+    "NO CLIENTE": "Nº CLIENTE",
+    "NOMBRE DEL CLIENTE": "CLIENTE",
+    "DESTINO": "DESTINO",
+    # columnas originales de envios.csv / facturacion.csv
+    "FACTURA": "FACTURA",
+    "PEDIDO": "PEDIDO",
+    "REFERENCIA": "REFERENCIA",
+    "CLIENTE": "Nº CLIENTE",
+    "NOMBRE_CLIENTE": "CLIENTE",
+    "NOMBRE_EXTRAN": "NOMBRE EXTRANJERO",
+}
+
+
+def buscar_con_campos(df, cols, query):
+    """Busca `query` en `cols` y devuelve las filas que coinciden, con la columna
+    `_COINCIDE_EN` (lista de campos donde pegó). Si existe al menos una coincidencia
+    EXACTA, solo se devuelven esas (así 223060 no trae 2230601); si no, parciales."""
+    if df is None or df.empty:
+        return pd.DataFrame()
+    cols = [c for c in cols if c in df.columns]
+    q = str(query).strip().upper()
+    if not cols or not q:
+        return pd.DataFrame()
+    # normaliza: sin espacios, mayúsculas y sin el ".0" que pandas agrega a números leídos como float
+    s = df[cols].fillna("").astype(str).apply(
+        lambda x: x.str.strip().str.replace(r"\.0$", "", regex=True).str.upper()
+    )
+    exacto = s.apply(lambda x: x == q)
+    parcial = s.apply(lambda x: x.str.contains(q, na=False, regex=False))
+    hits = exacto if exacto.any(axis=1).any() else parcial
+    mask = hits.any(axis=1)
+    if not mask.any():
+        return pd.DataFrame()
+    out = df[mask].copy()
+    out["_COINCIDE_EN"] = [
+        [c for c in cols if fila[c]] for fila in hits[mask].to_dict("records")
+    ]
+    return out
+
+
+def chips_coincidencia(row):
+    """HTML con 'COINCIDE EN: GUÍA / FACTURA / ...' para una fila de resultados."""
+    try:
+        campos = row.get("_COINCIDE_EN", [])
+    except Exception:
+        return ""
+    if not isinstance(campos, list) or not campos:
+        return ""
+    chips = "".join(
+        "<span style='background:rgba(0,255,170,0.12);color:#00FFAA;border:1px solid rgba(0,255,170,0.35);"
+        "padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:1px;margin-right:4px;'>"
+        f"COINCIDE EN: {html.escape(ETIQUETAS_CAMPO.get(str(c).strip().upper(), str(c)))}</span>"
+        for c in campos
+    )
+    return f"<div style='margin:0 0 4px 2px;'>{chips}</div>"
+
+
 def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
     """
     Layout maestro de NEXION: incluye estilos, sesión, control de permisos, 
@@ -529,34 +589,28 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                 res_ops = pd.DataFrame()
                 if df_matriz_fresco is not None:
                     cols_op = ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NO CLIENTE", "NOMBRE DEL CLIENTE", "DESTINO"]
-                    cols_op_disp = [c for c in cols_op if c in df_matriz_fresco.columns]
-                    if cols_op_disp:
-                        mask_ops = df_matriz_fresco[cols_op_disp].astype(str).apply(
-                            lambda x: x.str.contains(query, case=False, na=False)
-                        ).any(axis=1)
-                        res_ops = df_matriz_fresco[mask_ops].copy()
+                    res_ops = buscar_con_campos(df_matriz_fresco, cols_op, query)
 
                 res_t1 = pd.DataFrame()
                 try:
-                    df_t1_temp = pd.read_excel("T1.xlsx") 
+                    df_t1_temp = pd.read_excel("T1.xlsx")
                     df_t1_temp.columns = df_t1_temp.columns.str.strip().str.upper()
-                    cols_t1 = [c for c in ["OBSERVACION 1", "TALON", "DESTINATARIO", "DESTINO"] if c in df_t1_temp.columns]
-                    if cols_t1:
-                        mask_t1 = df_t1_temp[cols_t1].astype(str).apply(
-                            lambda x: x.str.contains(query, case=False, na=False)
-                        ).any(axis=1)
-                        match_t1 = df_t1_temp[mask_t1].copy()
-                        if not match_t1.empty:
-                            match_t1 = match_t1.rename(columns={
-                                "TALON": "NÚMERO DE GUÍA",
-                                "OBSERVACION 1": "NÚMERO DE PEDIDO",
-                                "DESTINATARIO": "NOMBRE DEL CLIENTE",
-                                "SUBTOTAL": "COSTO DE LA GUÍA",
-                                "F.DOC": "FECHA DE ENVÍO",
-                                "BULTOS": "CANTIDAD DE CAJAS"
-                            })
-                            match_t1["FLETERA"] = "TRES GUERRAS"
-                            res_t1 = match_t1
+                    df_t1_temp = df_t1_temp.rename(columns={
+                        "TALON": "NÚMERO DE GUÍA",
+                        "OBSERVACION 1": "NÚMERO DE PEDIDO",
+                        "DESTINATARIO": "NOMBRE DEL CLIENTE",
+                        "SUBTOTAL": "COSTO DE LA GUÍA",
+                        "F.DOC": "FECHA DE ENVÍO",
+                        "BULTOS": "CANTIDAD DE CAJAS"
+                    })
+                    match_t1 = buscar_con_campos(
+                        df_t1_temp,
+                        ["NÚMERO DE GUÍA", "NÚMERO DE PEDIDO", "NOMBRE DEL CLIENTE", "DESTINO"],
+                        query,
+                    )
+                    if not match_t1.empty:
+                        match_t1["FLETERA"] = "TRES GUERRAS"
+                        res_t1 = match_t1
                 except Exception:
                     pass
 
@@ -572,10 +626,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                             claves_busq_env = ["FACTURA", "NOMBRE_CLIENTE", "NOMBRE_EXTRAN", "DESTINO"]
                             cols_env = [mapa_env[k] for k in claves_busq_env if k in mapa_env]
                             if cols_env:
-                                mask_env = df_env[cols_env].astype(str).apply(
-                                    lambda x: x.str.contains(query, case=False, na=False, regex=False)
-                                ).any(axis=1)
-                                match_env = df_env[mask_env].copy()
+                                match_env = buscar_con_campos(df_env, cols_env, query)
                                 if not match_env.empty:
                                     # envios.csv -> nombres de columna que ya usa el render de Matriz/T1
                                     equivalencias = {
@@ -628,10 +679,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                             cols_fact = [mapa_cols[k] for k in claves_busq if k in mapa_cols]
 
                             if cols_fact:
-                                mask_fact = df_fact_temp[cols_fact].astype(str).apply(
-                                    lambda x: x.str.contains(query, case=False, na=False, regex=False)
-                                ).any(axis=1)
-                                res_fact = df_fact_temp[mask_fact].copy()
+                                res_fact = buscar_con_campos(df_fact_temp, cols_fact, query)
 
                                 # Facturación viene por partida (una fila por producto):
                                 # se agrupa por Factura + Pedido para no repetir la tarjeta.
@@ -652,7 +700,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                         cols_inv = [c for c in ["CODIGO", "DESCRIPCION"] if c in df_inv_temp.columns]
                         if cols_inv:
                             mask_inv = df_inv_temp[cols_inv].astype(str).apply(
-                                lambda x: x.str.contains(query, case=False, na=False)
+                                lambda x: x.str.contains(query, case=False, na=False, regex=False)
                             ).any(axis=1)
                             res_inv = df_inv_temp[mask_inv]
                     except Exception:
@@ -969,6 +1017,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                         detalle_pedido.append(f"{partidas_f} partidas")
                     linea_guia = f"<span style='font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;'>{' | '.join(detalle_pedido)}</span>" if detalle_pedido else ""
 
+                    st.markdown(chips_coincidencia(f), unsafe_allow_html=True)
                     st.markdown(
                         f"<div class='card-fact' style='background:rgba(38,32,20,0.75);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {fact_color};border-radius:12px;padding:16px 24px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;'>"
                         f"<div style='flex:1.2;min-width:150px;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO</span><br><b style='font-size:17px;color:{fact_color};letter-spacing:0.5px;'># {pedido_f}</b><br>{linea_guia}</div>"
@@ -1026,6 +1075,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
 
                     costo_txt = "PENDIENTE" if es_envios else f"$ {envio.get('COSTO DE LA GUÍA','0.00')}"
                     tarjeta_unica_html = f"""<div style="background: {vars_css['card']}; border: 1px solid {vars_css['border']}; border-left: 5px solid #38bdf8; padding: 20px 25px; border-radius: 8px; width: 100%; font-family: 'Inter', sans-serif; color: white; box-sizing: border-box; margin-bottom: 25px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px;"><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #38bdf8;"></div><div style="font-size: 9px; font-weight: 800; color: #38bdf8; letter-spacing: 1px;">ENVÍO</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('FECHA DE ENVÍO','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #38bdf8; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #a855f7; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #a855f7;"></div><div style="font-size: 9px; font-weight: 800; color: #a855f7; letter-spacing: 1px;">GUÍA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{n_guia if tiene_guia else 'EN PROCESO'}</div></div><div style="flex-grow: 1; height: 2px; background: #a855f7; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px #eab308;"></div><div style="font-size: 9px; font-weight: 800; color: #eab308; letter-spacing: 1px;">PROMESA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{envio.get('PROMESA DE ENTREGA','N/A')}</div></div><div style="flex-grow: 1; height: 2px; background: #00FFAA; margin: 0 5px; opacity: 0.6; transform: translateY(-10px);"></div><div style="text-align: center;"><div style="width: 10px; height: 10px; background: {status_color}; border-radius: 50%; margin: 0 auto 6px auto; box-shadow: 0 0 8px {status_color};"></div><div style="font-size: 9px; font-weight: 800; color: {status_color}; letter-spacing: 1px;">ENTREGA</div><div style="font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; margin-top: 2px;">{f_entrega_val}</div></div></div><div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;"><div style="flex: 1.2; min-width: 200px;"><div style="color: {accent_color}; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">{envio.get('FLETERA','N/A')}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">TALÓN / FOLIO</div><div style="color: {accent_color}; font-size: 18px; font-weight: 800; font-family: monospace; letter-spacing: 0.5px; line-height: 1.2;">{n_guia}</div><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px;">REF / PEDIDO: <span style="color: white; font-size: 13px; font-weight: 700;">{envio.get('NÚMERO DE PEDIDO','S/N')}</span></div></div><div style="flex: 2.5; min-width: 280px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">DESTINATARIO / CLIENTE</div><div style="color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; line-height: 1.3; margin-top: 2px;">{envio.get('NOMBRE DEL CLIENTE','N/A')}</div><div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px;">ID: {envio.get('NO CLIENTE','')} | {envio.get('DOMICILIO','')}</div><div style="font-size: 11px; color: {accent_color}; margin-top: 4px; font-weight: 600;">📍 GDL → {envio.get('DESTINO','N/A')}</div></div><div style="flex: 1.2; min-width: 150px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;"><div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">RESUMEN CARGA</div><div style="color: white; font-weight: 700; font-size: 11px; margin-top: 2px;">BULTOS: <span style="color: {accent_color};">{envio.get('CANTIDAD DE CAJAS','0')}</span></div><div style="color: {accent_color}; font-weight: 800; font-size: 13px; margin-top: 2px;">{costo_txt}</div></div><div style="text-align: right; min-width: 130px;"><span style="background-color: {status_color}15; color: {status_color}; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid {status_color}; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">ESTATUS: {status_text}</span></div></div></div>"""
+                    st.markdown(chips_coincidencia(envio), unsafe_allow_html=True)
                     st.markdown(tarjeta_unica_html, unsafe_allow_html=True)
 
                     if es_envios:
@@ -1055,6 +1105,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
 
                     for _, d in resultados.iterrows():
                         status_text = d["COMENTARIOS"] if "COMENTARIOS" in d and pd.notna(d.get("COMENTARIOS")) else "OK"
+                        st.markdown(chips_coincidencia(d), unsafe_allow_html=True)
                         st.markdown(f"<div class='card-nexion' style='background:rgba(30,39,46,0.7);border:1px solid rgba(255,255,255,0.05);border-left:4px solid {azul_premium};border-radius:12px;padding:18px 25px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;'><div style='flex:1;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>PEDIDO / FACTURA</span><br><b style='font-size:18px;color:{azul_premium};letter-spacing:0.5px;'># {d.get('NÚMERO DE PEDIDO','')}</b><br><span style='font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;'>Envío: {d.get('FECHA DE ENVÍO','')}</span></div><div style='flex:2.5;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>CLIENTE / DESTINO</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('NOMBRE DEL CLIENTE','')}</b><br><i style='font-size:11px;color:rgba(255,255,255,0.5);font-style:normal;font-weight:600;'>{d.get('DESTINO','')}</i></div><div style='flex:1.8;padding-left:25px;border-left:1px solid rgba(255,255,255,0.08);'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>TRANSPORTE Y GUÍA</span><br><b style='font-size:13px;color:white;text-transform:uppercase;'>{d.get('FLETERA', d.get('TRANSPORTE', 'LOGÍSTICA'))}</b><br><span style='font-size:12px;color:{azul_premium};font-weight:700;font-family:monospace;'>{d.get('NÚMERO DE GUÍA','')}</span></div><div style='flex:1.2;text-align:right;'><span style='color:rgba(255,255,255,0.4);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;'>ESTATUS ENTREGA</span><br><b style='font-size:14px;color:{azul_premium};'>{d.get('FECHA DE ENTREGA REAL','')}</b><br><span style='font-size:10px;color:white;font-weight:800;text-transform:uppercase;opacity:0.8;'>{status_text}</span></div></div>", unsafe_allow_html=True)
 
         st.markdown(f"<hr style='border-top:1px solid #ffffff; margin:5px 0 15px; opacity:0.1;'>", unsafe_allow_html=True)
