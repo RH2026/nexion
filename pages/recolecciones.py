@@ -184,7 +184,7 @@ def main():
 
     COLUMNAS_ESTATUS = ["Folio", "Fecha_Recoleccion", "Cliente", "Proveedor", "Peso_Total",
                         "Estatus", "Observaciones", "Solicitante", "Numero de Guia", "Costo de la Guia",
-                        "Motivo", "ID_Queja", "Motivo_Devolucion"]
+                        "Motivo", "ID_Queja", "Motivo_Devolucion", "Paqueteria"]
     COLUMNAS_NUM = ["Peso_Total", "Costo de la Guia"]
 
     COLUMNAS_DETALLE = ["Folio", "Codigo", "Descripcion", "Cant_Solicitada", "Cant_Recibida"]
@@ -192,6 +192,7 @@ def main():
     COLUMNAS_PROD_EDIT = ["Codigo", "Descripcion", "Cant_Solicitada", "Cant_Recibida"]
 
     OPC_MOTIVO = ["SIN DEFINIR", "QUEJA", "DEVOLUCIÓN", "REPOSICIÓN", "MUESTRA", "OTRO"]
+    OPC_PAQ = ["SIN DEFINIR", "TRESGUERRAS", "ONE", "OTRA"]
 
     esc = lambda v: _html.escape(str(v))
 
@@ -431,7 +432,7 @@ def main():
             ("NO. GUÍA", g("NUMERO DE GUIA")), ("ESTATUS", g("ESTATUS").upper()),
             ("SOLICITANTE", g("SOLICITANTE")), ("PESO TOTAL", peso_txt),
             ("COSTO GUÍA", costo_txt), ("MOTIVO", g("MOTIVO") or "—"),
-            ("ID DE QUEJA", g("ID_QUEJA") or "SIN QUEJA"), ("", ""),
+            ("ID DE QUEJA", g("ID_QUEJA") or "SIN QUEJA"), ("PAQUETERÍA", g("PAQUETERIA") or "—"),
         ]
         filas_datos = []
         for i in range(0, len(datos), 2):
@@ -570,7 +571,7 @@ def main():
                     detalle_por_folio[f] = g.to_dict("records")
 
             with st.container():
-                f_col1, f_col2, f_col3, f_col4 = st.columns([2, 2, 2, 2], vertical_alignment="bottom")
+                f_col1, f_col2, f_col3, f_col4, f_col5 = st.columns([2, 2, 2, 2, 2], vertical_alignment="bottom")
                 
                 with f_col1:
                     opciones_estatus = ["TODOS"] + sorted(df_estatus["ESTATUS"].dropna().unique().tolist()) if "ESTATUS" in df_estatus.columns else ["TODOS"]
@@ -592,6 +593,10 @@ def main():
                 with f_col4:
                     filtro_queja = st.selectbox("QUEJA", options=["TODOS", "CON QUEJA", "SIN QUEJA"], key="sel_queja_tab1")
 
+                with f_col5:
+                    paq_existentes = sorted([p for p in df_estatus["PAQUETERIA"].str.strip().unique().tolist() if p])
+                    filtro_paq = st.selectbox("PAQUETERÍA", options=["TODOS"] + paq_existentes + ["SIN CAPTURAR"], key="sel_paq_tab1")
+
             df_render = df_estatus.copy()
             
             if filtro_estatus_tab2 != "TODOS":
@@ -609,6 +614,11 @@ def main():
                 df_render = df_render[df_render["ID_QUEJA"].str.strip() != ""]
             elif filtro_queja == "SIN QUEJA":
                 df_render = df_render[df_render["ID_QUEJA"].str.strip() == ""]
+
+            if filtro_paq == "SIN CAPTURAR":
+                df_render = df_render[df_render["PAQUETERIA"].str.strip() == ""]
+            elif filtro_paq != "TODOS":
+                df_render = df_render[df_render["PAQUETERIA"].str.strip() == filtro_paq]
 
             total_envios = len(df_estatus)
             filtrados_n = len(df_render)
@@ -760,6 +770,7 @@ def main():
                         <td style="font-family: monospace; color: #38bdf8; font-weight: 700;">{esc(item.get('NUMERO DE GUIA', 'N/A'))}</td>
                         <td style="text-transform: uppercase; font-weight: 700;">{esc(item.get('CLIENTE', 'N/A'))}</td>
                         <td style="text-transform: uppercase;">{esc(item.get('PROVEEDOR', 'N/A'))}</td>
+                        <td style="text-transform: uppercase; color: #A78BFA; font-weight: 700;">{esc(item.get('PAQUETERIA', '') or '—')}</td>
                         <td style="color: #00FFAA; font-weight: 700; text-align: right;">{float(item.get('PESO_TOTAL', 0.0)):,.2f} KG</td>
                         <td style="text-align: right; font-family: monospace; color: #FFD700;">$ {float(item.get('COSTO DE LA GUIA', 0.0)):,.2f}</td>
                         <td style="text-align: center;">
@@ -769,7 +780,7 @@ def main():
                         </td>
                     </tr>
                     <tr class="fila-det">
-                        <td colspan="8">
+                        <td colspan="9">
                             <div class="det-box">
                                 <div class="det-head">{btn_pdf_html}MOTIVO: <b>{motivo_html}</b> &nbsp; {chip_queja} &nbsp; <span style="opacity:.6;">{len(productos)} CÓDIGO(S)</span></div>
                                 <table class="sub-table">
@@ -936,6 +947,7 @@ def main():
                                     <th>NO. GUÍA</th>
                                     <th>CLIENTE</th>
                                     <th>PROVEEDOR</th>
+                                    <th>PAQUETERÍA</th>
                                     <th style="text-align: right;">PESO TOTAL</th>
                                     <th style="text-align: right;">COSTO GUÍA</th>
                                     <th style="text-align: center;">ESTATUS</th>
@@ -1018,7 +1030,7 @@ def main():
                 k = re.sub(r"\W", "_", str(folio_a_editar))
                 claves = {n: f"edit_{n}_{k}" for n in ["estatus", "solicitante", "guia", "costo", "peso",
                                                        "cliente", "proveedor", "obs",
-                                                       "motivo", "queja", "prod", "pegar", "motdev"]}
+                                                       "motivo", "queja", "prod", "pegar", "motdev", "paq"]}
                 OPC_ESTATUS = ["PENDIENTE", "EN RUTA", "ENTREGADO", "CANCELADO", "INCIDENCIA"]
                 estatus_actual = str(fila_actual.get("Estatus", "PENDIENTE")).strip().upper()
 
@@ -1027,6 +1039,12 @@ def main():
                 if motivo_actual and motivo_actual not in opciones_motivo_edit:
                     opciones_motivo_edit.append(motivo_actual)  # respeta valores previos fuera de catálogo
                 idx_motivo = opciones_motivo_edit.index(motivo_actual) if motivo_actual in opciones_motivo_edit else 0
+
+                paq_actual = str(fila_actual.get("Paqueteria", "")).strip()
+                opciones_paq = list(OPC_PAQ)
+                if paq_actual and paq_actual not in opciones_paq:
+                    opciones_paq.append(paq_actual)
+                idx_paq = opciones_paq.index(paq_actual) if paq_actual in opciones_paq else 0
 
                 with st.form(f"form_edicion_estatus_{k}"):
                     st.markdown(f"**Editando Folio:** `{folio_a_editar}`")
@@ -1045,6 +1063,7 @@ def main():
                         nuevo_costo_guia = st.number_input("Costo de la Guía", value=float(fila_actual.get("Costo de la Guia", 0.0)), key=claves["costo"])
                         nuevo_peso = st.number_input("Peso Total (KG)", value=float(fila_actual.get("Peso_Total", 0.0)), key=claves["peso"])
 
+                    nueva_paq = st.selectbox("Paquetería", opciones_paq, index=idx_paq, key=claves["paq"])
                     nuevo_cliente = st.text_input("Cliente Destino", value=str(fila_actual.get("Cliente", "")), key=claves["cliente"])
                     nuevo_proveedor = st.text_input("Proveedor Remitente", value=str(fila_actual.get("Proveedor", "")), key=claves["proveedor"])
                     nueva_obs = st.text_area("Observaciones / Notas de Entrega", value=str(fila_actual.get("Observaciones", "")), key=claves["obs"])
@@ -1086,7 +1105,7 @@ def main():
                     )
 
                     nuevo_motivo_dev = st.text_area(
-                        "Motivo de la devolución o queja si es que aplica (texto libre, va al final de los códigos)",
+                        "Motivo de la devolución (texto libre, va al final de los códigos)",
                         value=str(fila_actual.get("Motivo_Devolucion", "")),
                         height=90,
                         key=claves["motdev"],
@@ -1124,6 +1143,7 @@ def main():
                         "Motivo": motivo_guardar,
                         "ID_Queja": str(nuevo_id_queja).strip(),
                         "Motivo_Devolucion": str(nuevo_motivo_dev).strip(),
+                        "Paqueteria": "" if nueva_paq == "SIN DEFINIR" else nueva_paq,
                     }
                     cambios = {}
                     for col, val in candidatos.items():
