@@ -802,8 +802,7 @@ def _hacer_paginas(titulo_mes, subtitulo_portada, logo_bytes):
         c.drawString(MARGIN, PAGE_H - 162, subtitulo_portada)
         if logo_bytes:
             try:
-                c.setFillColor(colors.white)
-                c.roundRect(PAGE_W - MARGIN - 118, PAGE_H - 92, 118, 56, 6, stroke=0, fill=1)
+                
                 c.drawImage(ImageReader(BytesIO(logo_bytes)), PAGE_W - MARGIN - 110, PAGE_H - 88, width=102, height=48,
                             preserveAspectRatio=True, mask='auto', anchor='c')
             except Exception:
