@@ -1349,7 +1349,7 @@ div.stButton > button:hover, div.stDownloadButton > button:hover{background-colo
     st.markdown("##### 2 · ARMA TU REPORTE (marca los bloques que quieras)")
     for k, _, _ in SECCIONES:
         st.session_state.setdefault(f"sec_{k}", k in PRESETS["Ejecutivo"])
-    b1, b2, b3, b4, b5 = st.columns(5)
+    b1, b2, b3, b4 = st.columns(4)
     b1.button("Ejecutivo", on_click=_preset, args=("Ejecutivo",), key="p1")
     b2.button("Costos", on_click=_preset, args=("Costos",), key="p2")
     b3.button("Todo", on_click=_preset, args=("Todo",), key="p3")
@@ -1398,7 +1398,7 @@ div.stButton > button:hover, div.stDownloadButton > button:hover{background-colo
 
     # ---------- IMPRESIÓN ----------
     st.markdown("##### 3 · IMPRIME")
-    p1, p2, p3, p4 = st.columns([1, 1, 1, 1], vertical_alignment="bottom")
+    p1, p2, p3 = st.columns(3, vertical_alignment="bottom")
     orient = p1.selectbox("ORIENTACIÓN DEL PDF", ["AUTOMÁTICA", "VERTICAL", "HORIZONTAL"], key="q_orient")
     firma = hashlib.md5(json.dumps([f, activas, o, orient], sort_keys=True, default=str).encode()).hexdigest()
     gen_pdf = p2.button("GENERAR PDF", key="q_pdf")
@@ -1420,8 +1420,9 @@ div.stButton > button:hover, div.stDownloadButton > button:hover{background-colo
                                                  "nombre": f"Consultas_{titulo.replace(' ', '_').replace('/', '-').replace(',', '')}.xlsx"}
             except Exception as e:
                 st.error(f"No se pudo generar el Excel: {e}")
-    for clave, etiqueta, mime, col in (("q_pdf_out", "DESCARGAR PDF", "application/pdf", p4),
-                                       ("q_xls_out", "DESCARGAR EXCEL", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", p4)):
+    _, dl2, dl3 = st.columns(3)
+    for clave, etiqueta, mime, col in (("q_pdf_out", "DESCARGAR PDF", "application/pdf", dl2),
+                                       ("q_xls_out", "DESCARGAR EXCEL", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", dl3)):
         out = st.session_state.get(clave)
         if out and out["firma"] == firma:
             col.download_button(etiqueta, data=out["bytes"], file_name=out["nombre"], mime=mime, key=f"dl_{clave}")
