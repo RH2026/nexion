@@ -1113,9 +1113,12 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
     for h in hallazgos:
         story.append(Paragraph(h, ST["bullet"], bulletText="•"))
 
-    story += [Spacer(1, 8), Paragraph("CONTENIDO", ParagraphStyle("ct", fontName="Helvetica-Bold", fontSize=9, textColor=C_GRAY, spaceAfter=3)),
-              Paragraph("01 Resumen del mes · 02 Efectividad de envíos · 03 Inteligencia de negocio · 04 Top 20 clientes · "
-                        "05 Distribución de carga (cobro regreso) · 06 Cobro regreso: costo por fletera · 07 Ranking de fleteras · 08 Costos de muestras", ST["small"])]
+    contenido = ["01  Resumen del mes", "02  Efectividad de envíos", "03  Inteligencia de negocio", "04  Top 20 clientes",
+                 "05  Distribución de carga (cobro regreso)", "06  Cobro regreso: costo por fletera", "07  Ranking de fleteras",
+                 "08  Costos de muestras"]
+    story.append(Spacer(1, 8))
+    story.append(KeepTogether([Paragraph("CONTENIDO", ParagraphStyle("ct", fontName="Helvetica-Bold", fontSize=9, textColor=C_GRAY, spaceAfter=3))]
+                              + [Paragraph(c, ST["small"]) for c in contenido]))
 
     # ---------------- 01 RESUMEN DEL MES ----------------
     story += [PageBreak()] + seccion(1, "RESUMEN DEL MES", f"Pedidos, entregas y retrasos con fecha de envío en {titulo_mes.title()}")
@@ -2648,20 +2651,6 @@ def _ui_detalle_pequenos(df_base, anios, mes_prev, idx_anio):
     if vista["vacio"]:
         st.warning(vista["motivo"])
         return
-
-    T = vista["T"]
-    m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("Pedidos", f"{int(T['n']):,}")
-    m2.metric("Valor facturado", money(T["fact"]))
-    m3.metric("Costo logístico", money(T["costo"]))
-    m4.metric("% logístico", pct(T["pct_log"], 2))
-    m5.metric("Perdimos vs target", money(vista["exceso_total"]))
-    with st.expander("Vista previa (primeros 200 pedidos)"):
-        pv = vista["det"].head(200).copy()
-        pv["FECHA"] = pv["FECHA"].dt.strftime("%d/%m/%Y")
-        pv = pv.drop(columns=["ANIO", "GUIA", "ADIC"]).rename(columns={
-            "FACT": "VALOR FACTURA", "COSTO": "COSTO LOGÍSTICO", "PCT": "% LOGÍSTICO", "VS": "VS TARGET (pp)", "PERDIMOS": "PERDIMOS ($)", "CLASE": "ESTADO"})
-        st.dataframe(pv, use_container_width=True, hide_index=True)
 
     b1, b2 = st.columns(2)
     gen_pdf = b1.button("GENERAR PDF", use_container_width=True, key="det_btn_pdf")
