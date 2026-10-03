@@ -913,6 +913,8 @@ def html_kpis(items):
     out = ['<div class="jq-cards">']
     for lab, val, tono, sub in items:
         c = HEX.get(tono, HEX["teal"])
+        if tono == "slate":
+            c = "#DCE5EA"  # slate = mismo color que la tarjeta; en pantalla se ve gris claro
         sm = " sm" if len(str(val)) > 12 else ""
         out.append(f'<div class="jq-card" style="--c:{c}"><div class="l">{_s(lab)}</div><div class="v{sm}">{_s(val)}</div>'
                    f'<div class="sub">{_s(sub)}</div></div>')
@@ -955,6 +957,8 @@ def html_bars(b):
     out = [f'<div class="jq-h">{_s(b["title"])}</div><div class="jq-bars">']
     for lab, v, tono in items:
         c = HEX.get(tono, HEX["teal"])
+        if tono == "slate":
+            c = "#9FB3BF"
         w = max(v / vmax * 100, 1.5) if v > 0 else 0
         out.append(f'<div class="jq-b" style="--c:{c};--c2:{c}99"><div class="lab" title="{esc(lab)}">{_s(lab)}</div>'
                    f'<div class="tr"><div class="fi" style="width:{w:.1f}%"></div></div><div class="val">{_s(fmt(b["kind"], v)[0])}</div></div>')
