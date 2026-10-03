@@ -882,7 +882,7 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 _sin_acceso(s)
 
                 with st.expander("REPORTES", expanded=(st.session_state.menu_main == "REPORTES")):
-                    opciones_rep = ["COSTOS CEDIS", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "COSTOS DE MUESTRAS"]
+                    opciones_rep = ["REPORTEADOR", "ANALISIS MENSUAL", "DETALLE COSTOS", "ENVIOS ESPECIALES", "COSTOS DE MUESTRAS"]
                     for s in opciones_rep:
                         label = f"» {s}" if st.session_state.menu_sub == s else s
                         if st.button(label, use_container_width=True, key=f"pop_rep_{s}2"):
@@ -891,7 +891,10 @@ def render_layout(modulo_actual: str, submodulo_actual: str = "GENERAL"):
                                 st.session_state.menu_main = "REPORTES"
                                 st.session_state.menu_sub = s
                                 st.session_state.busqueda_activa = False
-                                if s == "ANALISIS MENSUAL":
+                                
+                                if s == "REPORTEADOR":
+                                    st.switch_page("pages/reporteador.py")
+                                elif s == "ANALISIS MENSUAL":
                                     st.switch_page("pages/analisis_mensual.py")
                                 elif s == "COSTOS DE MUESTRAS":
                                     st.switch_page("pages/costos_muestras.py")
