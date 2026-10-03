@@ -560,13 +560,30 @@ try:
             </div>
             """
 
-        col_print1, col_print2 = st.columns(2)
+        col_print1, col_print2, col_print3 = st.columns(3)
+
         with col_print1:
-            if st.button(":material/print: GENERAR REPORTE GRÁFICO", type="primary", use_container_width=True):
+            if st.button(
+                ":material/print: GENERAR REPORTE GRÁFICO",
+                type="primary",
+                use_container_width=True
+            ):
                 st.session_state.reporte_a_imprimir = generar_reporte_grafico()
+        
         with col_print2:
-            if st.button(":material/calculate: IMPRIMIR CÁLCULO APLICADO", use_container_width=True):
+            if st.button(
+                ":material/calculate: IMPRIMIR CÁLCULO APLICADO",
+                use_container_width=True
+            ):
                 st.session_state.reporte_a_imprimir = generar_memoria_tecnica()
+        
+        with col_print3:
+            if st.button(
+                ":material/download: GENERAR REPORTES EN PDF",
+                use_container_width=True,
+                key="btn_reporte_mensual_pdf"
+            ):
+                st.switch_page("pages/reporte_mensual_pdf.py")
 
         if st.session_state.get('reporte_a_imprimir') is not None:
             html_template = f"""
