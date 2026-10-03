@@ -17,6 +17,10 @@ cajas y % logístico de cada concepto, por mes o todo el año, por modalidad).
 Una tercera opción, "SALUD DE PEDIDOS PEQUEÑOS (1 A 4 CAJAS)", analiza facturación, costo de flete (guía) y costo de distribución
 (adicionales) de los pedidos chicos: comparativo contra pedidos grandes, semáforo por pedido, fletera, ticket mínimo, sobrecosto y tendencia.
 
+Una cuarta opción, "DETALLE PEDIDO POR PEDIDO (1 A 4 CAJAS)", lista cada pedido chico (factura, cliente, destino, transporte, valor de factura, costo,
+% logístico, variación contra el target y cuánto se perdió), con filtros de mes, año, cobro regreso / cobro destino, número de cajas, destino y
+transporte, y se descarga en PDF (horizontal) o en Excel (con filtros automáticos).
+
 COSTOS EXTRAS: los registros cuya columna CONCEPTO sea recolecciones o maniobras NO se cuentan como pedidos (ni envíos, ni cajas,
 ni facturación, ni efectividad). Su costo (guía + adicionales) se muestra aparte como "costo extra" y se suma al costo logístico total;
 los reportes enseñan también el % logístico "solo pedidos" para comparar fleteras sin ese ruido.
@@ -2037,11 +2041,670 @@ def generar_reporte_pequenos_pdf(df_base, anio, mes, modalidad="TODAS", incluir_
 
 
 # ============================================================
-# 12. INTERFAZ (elegir reporte, periodo y generar)
+# 12. REPORTE INDEPENDIENTE: DETALLE PEDIDO POR PEDIDO (1 A 4 CAJAS)  ·  PDF u EXCEL
+# ============================================================
+# Factura por factura de los pedidos chicos: cliente, destino, transporte, valor de factura, costo logístico,
+# % logístico, variación contra el target y CUÁNTO SE PERDIÓ.
+#   PERDIMOS ($)  = lo que se pagó de logística por encima del target = max(costo - TARGET% x valor de factura, 0)
+#   VS TARGET     = % logístico del pedido menos el target, en puntos porcentuales (pp)
+#   ESTADO        = mismo semáforo del reporte de salud de pedidos pequeños (Sano / Alerta / Crítico / Pérdida / Sin facturación)
+# Filtros: mes (o todo el año), año, modalidad (cobro regreso / cobro destino), número de cajas, destino, transporte,
+# solo pedidos fuera de target y orden. Los registros de recolecciones / maniobras NO son pedidos (se excluyen, igual que en los demás reportes).
+ORDENES_DETALLE = ["MAYOR PÉRDIDA PRIMERO", "FECHA DE ENVÍO", "FACTURA", "CLIENTE", "DESTINO"]
+CAJAS_DETALLE_OPC = list(range(1, 11))
+CAJAS_DETALLE_DEF = [1, 2, 3, 4]
+
+PAGE_W_H, PAGE_H_H = PAGE_H, PAGE_W            # carta horizontal (792 x 612): el detalle trae muchas columnas
+CONTENT_W_H = PAGE_W_H - 2 * MARGIN            # 720
+
+TINTE_CLASE = {"SALUDABLE": "#DDF1E7", "EN ALERTA": "#FFF3CC", "CRÍTICO": "#FCE0CB", "PÉRDIDA": "#F8D4D4",
+               "SIN FACTURACIÓN": "#E4E8EB", "SIN DATOS": "#E4E8EB"}
+ETQ_CLASE_CORTA = {"SALUDABLE": "SANO", "EN ALERTA": "ALERTA", "CRÍTICO": "CRÍTICO", "PÉRDIDA": "PÉRDIDA",
+                   "SIN FACTURACIÓN": "S/FACT.", "SIN DATOS": "S/DATOS"}
+
+
+def _col_factura(df):
+    """Columna que identifica la factura: una columna FACTURA si la matriz la trae; si no, NÚMERO DE PEDIDO (igual que 'facturas' en la sección 02)."""
+    exactos = {"FACTURA", "NUMERO DE FACTURA", "NUMERO FACTURA", "NO FACTURA", "NO. FACTURA", "NUM FACTURA", "NUM. FACTURA",
+               "FOLIO FACTURA", "FOLIO DE FACTURA", "N FACTURA"}
+    for c in df.columns:
+        if _sin_acentos(c).strip().upper() in exactos:
+            return c
+    return "NÚMERO DE PEDIDO"
+
+
+def _etq_cajas(n):
+    n = int(n)
+    return f"{n} CAJA" + ("S" if n > 1 else "")
+
+
+def _txt_cajas(cajas):
+    c = sorted(int(x) for x in cajas)
+    if len(c) == 1:
+        return _etq_cajas(c[0])
+    if c == list(range(c[0], c[-1] + 1)):
+        return f"{c[0]} A {c[-1]} CAJAS"
+    return ", ".join(str(x) for x in c[:-1]) + f" Y {c[-1]} CAJAS"
+
+
+def _opciones_detalle(df_base, anio):
+    """Destinos y transportes disponibles del año (para los filtros de la página)."""
+    d, _ = _separar_extras(df_base)
+    f_env = d["FECHA DE ENVÍO"]
+    d = d[(f_env.isna() | (f_env.dt.year == anio)) & (d["MES"] != "")]
+    dest = sorted(set(d["DESTINO"].str.upper().replace("", "SIN DESTINO")))
+    trans = sorted(set(d["TRANSPORTE"].str.upper().replace("", "SIN TRANSPORTE")))
+    return dest, trans
+
+
+def _texto_filtros_detalle(periodo, modalidad, cajas, destinos, transportes, solo_fuera, base_txt):
+    def _lst(x, vacio):
+        if not x:
+            return vacio
+        return ", ".join(x) if len(x) <= 3 else f"{len(x)} seleccionados"
+    partes = ["Todas las modalidades" if modalidad == "TODAS" else modalidad.title(), periodo.title(), _txt_cajas(cajas).lower(),
+              f"Destino: {_lst(destinos, 'todos')}", f"Transporte: {_lst(transportes, 'todos')}"]
+    if solo_fuera:
+        partes.append("solo pedidos fuera de target")
+    partes.append(f"costo = {base_txt}")
+    return "  ·  ".join(partes)
+
+
+def _ordenar_detalle(d, orden):
+    if orden == "FECHA DE ENVÍO":
+        return d.sort_values(["FECHA DE ENVÍO", "_FAC"], na_position="last")
+    if orden == "FACTURA":
+        return d.sort_values("_FAC")
+    if orden == "CLIENTE":
+        return d.sort_values(["_CLI", "_EXC"], ascending=[True, False])
+    if orden == "DESTINO":
+        return d.sort_values(["_DE", "_EXC"], ascending=[True, False])
+    return d.sort_values(["_EXC", "_PCT"], ascending=[False, False], na_position="last")
+
+
+def calc_detalle_pequenos(df_base, anio, mes, modalidad="TODAS", incluir_adic=True, cajas=None, destinos=None,
+                          transportes=None, solo_fuera=False, orden=ORDENES_DETALLE[0]):
+    """Pedido por pedido (1 a N cajas) con sus indicadores + resúmenes por cajas / transporte / destino / cliente / modalidad / mes.
+    Periodo y modalidad igual que los demás reportes (columna MES + año; modalidad por FORMA DE ENVIO). mes = 0 -> todo el año."""
+    cajas = sorted({int(c) for c in (cajas or CAJAS_DETALLE_DEF)})
+    df_base, df_ext = _separar_extras(df_base)                     # recolecciones / maniobras no son pedidos
+    E = calc_extras(df_ext, anio, mes, modalidad)
+    anual, sin_cajas = _preparar_pequenos(df_base, anio, modalidad, incluir_adic, max(cajas))
+    d = (anual[anual["MES"] == MESES[mes - 1]] if mes else anual).copy()
+    d["_DE"] = d["DESTINO"].str.upper().replace("", "SIN DESTINO")
+    d["_TR"] = d["TRANSPORTE"].str.upper().replace("", "SIN TRANSPORTE")
+    d = d[d["_CAJ"].isin(cajas)]
+    if destinos:
+        d = d[d["_DE"].isin([str(x).upper() for x in destinos])]
+    if transportes:
+        d = d[d["_TR"].isin([str(x).upper() for x in transportes])]
+    if solo_fuera:
+        d = d[d["_CLASE"].isin(CLASES_FUERA_TARGET)]
+    if d.empty:
+        return dict(vacio=True, extras=E, motivo=f"No hay pedidos de {_txt_cajas(cajas).lower()} con esos filtros (periodo, modalidad, destino, transporte).")
+
+    d = d.copy()
+    col_f = _col_factura(d)
+    d["_FAC"] = d[col_f].fillna("").astype(str).str.strip()
+    d.loc[d["_FAC"].str.lower() == "nan", "_FAC"] = ""
+    d["_MOD"] = d["FORMA DE ENVIO"].str.upper().map(
+        lambda x: "COBRO REGRESO" if "REGRESO" in x else ("COBRO DESTINO" if "DESTINO" in x else (x or "SIN FORMA")))
+    d["_CLI"] = d["NOMBRE DEL CLIENTE"].replace("", "SIN CLIENTE")
+    d["_FLE"] = d["FLETERA"].replace("", "SIN ASIGNAR")
+    d = _ordenar_detalle(d, orden)
+
+    det = pd.DataFrame({
+        "FACTURA": d["_FAC"].to_numpy(), "FECHA": d["FECHA DE ENVÍO"].to_numpy(), "MES": d["MES"].to_numpy(),
+        "ANIO": d["FECHA DE ENVÍO"].dt.year.fillna(anio).astype(int).to_numpy(), "CLIENTE": d["_CLI"].to_numpy(),
+        "DESTINO": d["_DE"].to_numpy(), "CAJAS": d["_CAJ"].astype(int).to_numpy(), "MODALIDAD": d["_MOD"].to_numpy(),
+        "TRANSPORTE": d["_TR"].to_numpy(), "FLETERA": d["_FLE"].to_numpy(), "GUIA": d["COSTO DE LA GUÍA"].to_numpy(),
+        "ADIC": d["COSTOS ADICIONALES"].to_numpy(), "COSTO": d["_COSTO"].to_numpy(), "FACT": d["FACTURACION"].to_numpy(),
+        "PCT": d["_PCT"].to_numpy(), "VS": (d["_PCT"] - TARGET_COSTO_LOG).to_numpy(), "PERDIMOS": d["_EXC"].to_numpy(),
+        "CLASE": d["_CLASE"].to_numpy()})
+
+    def _grupo(col):
+        return _df_bloques(d, col).sort_values(["exceso", "costo"], ascending=False).reset_index(drop=True)
+    por_mes = []
+    if mes == 0:
+        for m in MESES:
+            g = d[d["MES"] == m]
+            if not g.empty:
+                b = _bloque(g)
+                b["K"] = m.title()
+                por_mes.append(b)
+
+    return dict(vacio=False, d=d, det=det, T=_bloque(d), cajas=cajas, sin_cajas=sin_cajas, extras=E, col_factura=col_f,
+                por_cajas=_df_bloques(d.sort_values("_CAJ"), "_CAJ"), por_transp=_grupo("_TR"), por_dest=_grupo("_DE"),
+                por_cli=_grupo("_CLI"), por_mod=_grupo("_MOD"), por_mes=pd.DataFrame(por_mes),
+                peores=det[det["PERDIMOS"] > 0].sort_values("PERDIMOS", ascending=False).head(15),
+                exceso_total=float(d["_EXC"].sum()), n_fuera=int(d["_CLASE"].isin(CLASES_FUERA_TARGET).sum()),
+                n_perdida=int((d["_CLASE"] == "PÉRDIDA").sum()),
+                n_sin_fact=int(d["_CLASE"].isin(["SIN FACTURACIÓN", "SIN DATOS"]).sum()),
+                sin_costo=int((d["_COSTO"] <= 0).sum()))
+
+
+# ---------------- PDF horizontal ----------------
+def _kpi_row_h(items, ncols=4, gap=8):
+    """Igual que kpi_row pero a todo el ancho de la hoja horizontal."""
+    cw = (CONTENT_W_H - gap * (ncols - 1)) / ncols
+    out = []
+    for i in range(0, len(items), ncols):
+        chunk = items[i:i + ncols]
+        row, widths, style = [], [], []
+        for j, (lab, val, col) in enumerate(chunk):
+            c = j * 2
+            v_style = ST["kpi_v"] if len(str(val)) <= 17 else ST["kpi_v_s"]
+            row.append([Paragraph(esc(lab).upper(), ST["kpi_l"]), Spacer(1, 3),
+                        Paragraph(f'<font color="{col}">{esc(val)}</font>', v_style)])
+            widths.append(cw)
+            style += [("BACKGROUND", (c, 0), (c, 0), C_LIGHT), ("LINEABOVE", (c, 0), (c, 0), 3, colors.HexColor(col)),
+                      ("BOX", (c, 0), (c, 0), 0.5, C_BORDER)]
+            if j < len(chunk) - 1:
+                row.append("")
+                widths.append(gap)
+        t = Table([row], colWidths=widths, hAlign="LEFT")
+        t.setStyle(TableStyle(style + [("VALIGN", (0, 0), (-1, -1), "TOP"),
+                                       ("LEFTPADDING", (0, 0), (-1, -1), 8), ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                                       ("TOPPADDING", (0, 0), (-1, -1), 7), ("BOTTOMPADDING", (0, 0), (-1, -1), 8)]))
+        out += [t, Spacer(1, 8)]
+    return out
+
+
+def _seccion_h(num_, titulo, subtitulo_=""):
+    """Banda de título a todo el ancho de la hoja horizontal (num_=None -> sin número)."""
+    cab = f"{num_:02d}&nbsp;&nbsp;{esc(titulo)}" if num_ else esc(titulo)
+    cont = [Paragraph(cab, ST["sec_t"])]
+    if subtitulo_:
+        cont.append(Paragraph(esc(subtitulo_), ST["sec_s"]))
+    t = Table([[cont]], colWidths=[CONTENT_W_H])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), C_SLATE), ("LINEBEFORE", (0, 0), (0, 0), 5, C_TEAL),
+        ("LEFTPADDING", (0, 0), (-1, -1), 12), ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+        ("TOPPADDING", (0, 0), (-1, -1), 9), ("BOTTOMPADDING", (0, 0), (-1, -1), 9)]))
+    return [t, Spacer(1, 10)]
+
+
+class _NumberedCanvasH(_NumberedCanvas):
+    """Numeración de páginas para la hoja horizontal."""
+
+    def save(self):
+        n = len(self._saved)
+        for s_ in self._saved:
+            self.__dict__.update(s_)
+            self.setStrokeColor(C_BORDER)
+            self.setLineWidth(0.5)
+            self.line(MARGIN, 34, PAGE_W_H - MARGIN, 34)
+            self.setFont("Helvetica", 7)
+            self.setFillColor(C_GRAY)
+            self.drawString(MARGIN, 23, f"JYPESA | Logística  -  {self.titulo_pie}  -  Generado e impreso con Nexion Smart Logistic")
+            self.drawRightString(PAGE_W_H - MARGIN, 23, f"Página {self._pageNumber} de {n}")
+            rl_canvas.Canvas.showPage(self)
+        rl_canvas.Canvas.save(self)
+
+
+def _hacer_paginas_horizontal(titulo_hdr, periodo_txt):
+    def normal(c, doc):
+        c.saveState()
+        c.setFillColor(C_NAVY)
+        c.rect(0, PAGE_H_H - 30, PAGE_W_H, 30, stroke=0, fill=1)
+        c.setFillColor(C_TEAL)
+        c.rect(0, PAGE_H_H - 30, PAGE_W_H, 2.5, stroke=0, fill=1)
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica-Bold", 8.5)
+        c.drawString(MARGIN, PAGE_H_H - 19, titulo_hdr)
+        c.setFillColor(C_GOLD)
+        c.drawRightString(PAGE_W_H - MARGIN, PAGE_H_H - 19, periodo_txt)
+        c.restoreState()
+    f = Frame(MARGIN, 44, CONTENT_W_H, PAGE_H_H - 44 - 48, id="fh", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    return [PageTemplate(id="horizontal", frames=[f], onPage=normal)]
+
+
+W_RES = [124, 52, 46, 88, 76, 52, 58, 68, 56, 100]          # suma 720
+H_RES = ["", "PEDIDOS", "CAJAS", "VALOR FACTURA", "COSTO LOG.", "% LOG.", f"VS {TARGET_COSTO_LOG}%", "COSTO / CAJA", "% FUERA", "PERDIMOS ($)"]
+W_DET = [56, 40, 118, 64, 22, 48, 82, 58, 50, 38, 42, 52, 50]   # suma 720
+H_DET = ["FACTURA", "FECHA", "CLIENTE", "DESTINO", "CJ.", "COBRO", "TRANSPORTE", "VALOR FACT.", "COSTO", "% LOG.", f"VS {TARGET_COSTO_LOG}%",
+         "PERDIMOS", "ESTADO"]
+A_DET = ["L", "C", "L", "L", "R", "L", "L", "R", "R", "R", "R", "R", "C"]
+
+
+def _fila_res(lab, b):
+    return [lab, num(b["n"]), num(b["cajas"]), money(b["fact"]), money(b["costo"]), pct(b["pct_log"], 2), _vs_target(b["pct_log"]),
+            _m(b["costo_caja"], 2), pct(b["pct_fuera"], 0), money(b["exceso"])]
+
+
+def _tabla_res(titulo_col, filas, total=None):
+    return tabla([titulo_col] + H_RES[1:], filas, W_RES, ["L"] + ["R"] * 9, total_row=total)
+
+
+def _tabla_detalle(g, total_row=None):
+    """Tabla pedido por pedido; la columna ESTADO lleva color de semáforo."""
+    filas = []
+    for r in g.itertuples():
+        filas.append([trunc(r.FACTURA, 10), r.FECHA.strftime("%d/%m/%y") if pd.notna(r.FECHA) else "S/F", trunc(r.CLIENTE, 25), trunc(r.DESTINO, 12),
+                      num(r.CAJAS), {"COBRO REGRESO": "REGRESO", "COBRO DESTINO": "DESTINO"}.get(r.MODALIDAD, trunc(r.MODALIDAD, 8)),
+                      trunc(r.TRANSPORTE, 16), money(r.FACT, 2), money(r.COSTO, 2), pct(r.PCT, 2), _vs_target(r.PCT), money(r.PERDIMOS, 2),
+                      ETQ_CLASE_CORTA.get(r.CLASE, r.CLASE)])
+    t = tabla(H_DET, filas, W_DET, A_DET, font=6.8, total_row=total_row)
+    t.setStyle(TableStyle([("BACKGROUND", (12, i + 1), (12, i + 1), colors.HexColor(TINTE_CLASE.get(r.CLASE, "#E4E8EB")))
+                           for i, r in enumerate(g.itertuples())]))
+    return t
+
+
+def generar_detalle_pequenos_pdf(df_base, anio, mes, modalidad="TODAS", incluir_adic=True, cajas=None, destinos=None,
+                                 transportes=None, solo_fuera=False, orden=ORDENES_DETALLE[0]):
+    """PDF horizontal pedido por pedido (1 a N cajas). mes=0 -> todo el año. Devuelve BytesIO."""
+    cajas = sorted({int(c) for c in (cajas or CAJAS_DETALLE_DEF)})
+    periodo = f"{MESES[mes - 1]} {anio}" if mes else f"AÑO {anio} (ACUMULADO)"
+    ahora = datetime.now().strftime("%d/%m/%Y %H:%M")
+    base_txt = "guía + costos adicionales" if incluir_adic else "solo costo de guía"
+    rng = _txt_cajas(cajas)
+    P = calc_detalle_pequenos(df_base, anio, mes, modalidad, incluir_adic, cajas, destinos, transportes, solo_fuera, orden)
+    story = _seccion_h(None, f"DETALLE DE PEDIDOS PEQUEÑOS  ·  {rng}",
+                       _texto_filtros_detalle(periodo, modalidad, cajas, destinos, transportes, solo_fuera, base_txt))
+    if P["vacio"]:
+        story.append(sin_datos(P["motivo"]))
+    else:
+        T, det = P["T"], P["det"]
+        col_l = HEX["green"] if (pd.notna(T["pct_log"]) and T["pct_log"] <= TARGET_COSTO_LOG) else HEX["red"]
+        story.append(Paragraph("RESUMEN EJECUTIVO", ParagraphStyle("re", fontName="Helvetica-Bold", fontSize=11, textColor=C_SLATE, spaceAfter=8)))
+        story += _kpi_row_h([
+            ("Pedidos (facturas)", num(T["n"]), HEX["slate"]),
+            ("Cajas", num(T["cajas"]), HEX["teal"]),
+            ("Valor facturado", money(T["fact"], 2), HEX["green"]),
+            (f"Costo logístico ({base_txt})", money(T["costo"], 2), HEX["orange"]),
+        ])
+        story += _kpi_row_h([
+            (f"% logístico (target {TARGET_COSTO_LOG}%)", pct(T["pct_log"], 2), col_l),
+            ("Perdimos vs target", money(P["exceso_total"], 2), HEX["red"]),
+            ("Pedidos fuera de target", f"{num(P['n_fuera'])}  ·  {pct(P['n_fuera'] / T['n'] * 100, 0)}", HEX["gold"]),
+            ("Costo ≥ factura / sin facturación", f"{num(P['n_perdida'])}  /  {num(P['n_sin_fact'])}", HEX["purple"]),
+        ])
+
+        hall = [f"Se analizaron <b>{num(T['n'])}</b> pedidos de {rng.lower()} ({num(T['cajas'])} cajas) con <b>{money(T['fact'])}</b> de valor de factura; "
+                f"el costo logístico fue <b>{money(T['costo'])}</b> ({base_txt}), es decir <b>{pct(T['pct_log'], 2)}</b> frente al target de {TARGET_COSTO_LOG}%.",
+                f"Contra ese target <b>perdimos {money(P['exceso_total'])}</b>: <b>{num(P['n_fuera'])}</b> de {num(T['n'])} pedidos ({pct(P['n_fuera'] / T['n'] * 100, 0)}) lo superan; "
+                f"<b>{num(P['n_perdida'])}</b> costaron igual o más de lo que se facturó y <b>{num(P['n_sin_fact'])}</b> no tienen facturación registrada."]
+        for nombre, df_g, etq in (("número de cajas", P["por_cajas"], lambda k: _etq_cajas(k)), ("transporte", P["por_transp"], str),
+                                  ("destino", P["por_dest"], str), ("cliente", P["por_cli"], str)):
+            top = df_g.sort_values("exceso", ascending=False).iloc[0]
+            if top["exceso"] > 0:
+                hall.append(f"Por {nombre}, donde más perdimos es <b>{esc(etq(top['K']))}</b>: <b>{money(top['exceso'])}</b> "
+                            f"({pct(top['exceso'] / P['exceso_total'] * 100, 0)} del total) con {pct(top['pct_log'], 2)} logístico en {num(top['n'])} pedido(s).")
+        if P["extras"]["n"]:
+            hall.append(f"No se incluyeron <b>{num(P['extras']['n'])}</b> registros de recolecciones y maniobras ({money(P['extras']['costo'])}): no son pedidos, se reportan como costos extras.")
+        story.append(Paragraph("HALLAZGOS CLAVE", ParagraphStyle("hk", fontName="Helvetica-Bold", fontSize=11, textColor=C_SLATE, spaceBefore=4, spaceAfter=6)))
+        for h in hall:
+            story.append(Paragraph(h, ST["bullet"], bulletText="•"))
+
+        # ---------------- 01 POR NÚMERO DE CAJAS ----------------
+        story += [Spacer(1, 6), CondPageBreak(330)] + _seccion_h(1, "RESUMEN POR NÚMERO DE CAJAS", "Cuánto factura, cuánto cuesta y cuánto perdimos según el tamaño del pedido")
+        pc = P["por_cajas"]
+        story.append(_tabla_res("NÚMERO DE CAJAS", [_fila_res(_etq_cajas(r["K"]), r) for _, r in pc.iterrows()], total=_fila_res("TOTAL", T)))
+        story.append(Spacer(1, 10))
+        cats = [f"{int(k)} cj" for k in pc["K"]]
+        izq = chart_barras_v(cats, [0 if pd.isna(v) else v for v in pc["pct_log"]], width=352, height=150, fmt=lambda v: f"{v:.1f}%",
+                             colors_list=[_color_pct(v) for v in pc["pct_log"]])
+        der = chart_barras_v(cats, [float(v) for v in pc["exceso"]], width=352, height=150, color=C_RED, fmt=lambda v: money(v, 0))
+        story.append(lado_a_lado(izq, der, f"% logístico por número de cajas (verde = dentro de {TARGET_COSTO_LOG}%)", "Cuánto perdimos por número de cajas ($)", w=(352, 352)))
+
+        # ---------------- 02 POR TRANSPORTE ----------------
+        story += [Spacer(1, 12), CondPageBreak(330)] + _seccion_h(2, "RESUMEN POR TRANSPORTE", "Qué transporte se llevó los pedidos y cuánto nos costó de más")
+        pt = P["por_transp"]
+        story.append(_tabla_res("TRANSPORTE", [_fila_res(trunc(r["K"], 32), r) for _, r in pt.iterrows()], total=_fila_res("TOTAL", T)))
+        story.append(Spacer(1, 10))
+        ptc = pt[pt["pct_log"].notna()].sort_values("pct_log", ascending=False).head(10)
+        izq = chart_barras_h([(r["K"], r["pct_log"]) for _, r in ptc.iterrows()], width=352, label_w=110, fmt=lambda v: f"{v:.2f}%",
+                             colors_list=[_color_pct(v) for v in ptc["pct_log"]]) if not ptc.empty else sin_datos("Sin facturación.")
+        der = chart_barras_h([(r["K"], r["exceso"]) for _, r in pt.head(10).iterrows()], width=352, label_w=110, color=C_RED, fmt=money)
+        story.append(lado_a_lado(izq, der, "% logístico por transporte", "Cuánto perdimos por transporte ($)", w=(352, 352)))
+
+        # ---------------- 03 POR DESTINO ----------------
+        story += [Spacer(1, 12), CondPageBreak(330)] + _seccion_h(3, "RESUMEN POR DESTINO", "Destinos con mayor pérdida frente al target (top 20)")
+        pdst = P["por_dest"]
+        story.append(_tabla_res("DESTINO", [_fila_res(trunc(r["K"], 32), r) for _, r in pdst.head(20).iterrows()], total=_fila_res("TOTAL", T)))
+        if len(pdst) > 20:
+            story += [Spacer(1, 3), Paragraph(f"Se muestran los 20 destinos con mayor pérdida de {len(pdst)}; el total incluye todos. El Excel trae la lista completa.", ST["nota"])]
+
+        # ---------------- 04 POR MODALIDAD / MES ----------------
+        if len(P["por_mod"]) > 1 or len(P["por_mes"]) > 0:
+            story += [Spacer(1, 12), CondPageBreak(250)] + _seccion_h(4, "POR MODALIDAD Y POR MES", "Cobro regreso vs cobro destino y evolución mensual")
+            if len(P["por_mod"]) > 1:
+                story.append(KeepTogether([subtitulo("Por modalidad (forma de envío)"),
+                                           _tabla_res("MODALIDAD", [_fila_res(trunc(r["K"], 32), r) for _, r in P["por_mod"].iterrows()], total=_fila_res("TOTAL", T))]))
+                story.append(Spacer(1, 10))
+            if len(P["por_mes"]) > 0:
+                story.append(KeepTogether([subtitulo("Por mes"),
+                                           _tabla_res("MES", [_fila_res(r["K"], r) for _, r in P["por_mes"].iterrows()], total=_fila_res("TOTAL", T))]))
+
+        # ---------------- 05 CLIENTES Y PEDIDOS CON MAYOR PÉRDIDA ----------------
+        story += [Spacer(1, 12), CondPageBreak(440)] + _seccion_h(5, "DÓNDE PERDIMOS MÁS", "Clientes y pedidos con mayor sobrecosto frente al target")
+        pcl = P["por_cli"][P["por_cli"]["exceso"] > 0].head(15)
+        if not pcl.empty:
+            story.append(KeepTogether([subtitulo("Top 15 clientes por pérdida"),
+                                       _tabla_res("CLIENTE", [_fila_res(trunc(r["K"], 32), r) for _, r in pcl.iterrows()])]))
+            story.append(Spacer(1, 10))
+        pe = P["peores"]
+        if not pe.empty:
+            story.append(KeepTogether([subtitulo("Los 15 pedidos donde más perdimos"), _tabla_detalle(pe)]))
+        else:
+            story.append(sin_datos("Ningún pedido superó el target en este periodo."))
+
+        # ---------------- 06 DETALLE PEDIDO POR PEDIDO ----------------
+        story += [PageBreak()] + _seccion_h(6, "DETALLE PEDIDO POR PEDIDO", f"Agrupado por número de cajas  ·  orden: {orden.lower()}  ·  perdimos = costo menos {TARGET_COSTO_LOG}% del valor de factura")
+        d_all = P["d"]
+        for n in sorted(det["CAJAS"].unique()):
+            g = det[det["CAJAS"] == n]
+            tot = _bloque(d_all[d_all["_CAJ"] == n])
+            story += [CondPageBreak(110),
+                      subtitulo(f"{_etq_cajas(n)}  ·  {num(tot['n'])} pedidos  ·  % logístico {pct(tot['pct_log'], 2)}  ·  perdimos {money(tot['exceso'], 2)}")]
+            story.append(_tabla_detalle(g, total_row=["TOTAL", "", f"{num(tot['n'])} pedidos", "", num(tot["cajas"]), "", "", money(tot["fact"], 2),
+                                                      money(tot["costo"], 2), pct(tot["pct_log"], 2), _vs_target(tot["pct_log"]), money(tot["exceso"], 2), ""]))
+            story.append(Spacer(1, 12))
+
+        notas = (f"FACTURA = columna '{P['col_factura']}' de la matriz. COSTO = {base_txt}. % LOG. = costo / valor de factura. VS {TARGET_COSTO_LOG}% = diferencia en puntos porcentuales contra el target. "
+                 f"PERDIMOS = lo pagado por encima del target (costo menos {TARGET_COSTO_LOG}% del valor de factura; si no hay factura, todo el costo). "
+                 f"ESTADO: Sano hasta {TARGET_COSTO_LOG}% · Alerta más de {TARGET_COSTO_LOG}% · Crítico más de {2 * TARGET_COSTO_LOG:g}% · Pérdida si el costo iguala o supera la factura · S/Fact. sin factura registrada. "
+                 "COBRO: REGRESO / DESTINO según la forma de envío. Periodo según la columna MES de la matriz y el año seleccionado. Las cajas salen de CANTIDAD DE CAJAS (o CAJAS si viene en 0). "
+                 "Los registros con concepto de recolecciones o maniobras no son pedidos y se excluyen.")
+        if P["sin_costo"]:
+            notas += f" Hay {num(P['sin_costo'])} pedido(s) sin costo registrado; si la guía aún no se captura, su % logístico se ve mejor de lo real."
+        if P["sin_cajas"]:
+            notas += f" {num(P['sin_cajas'])} registro(s) sin cajas quedan fuera del análisis."
+        story += [Spacer(1, 4), Paragraph(notas, ST["nota"])]
+
+    buf = BytesIO()
+    doc = BaseDocTemplate(buf, pagesize=(PAGE_W_H, PAGE_H_H), leftMargin=MARGIN, rightMargin=MARGIN, topMargin=48, bottomMargin=44,
+                          title=f"Detalle de pedidos pequeños - {periodo}", author="JYPESA Logística")
+    doc.addPageTemplates(_hacer_paginas_horizontal("DETALLE DE PEDIDOS PEQUEÑOS (PEDIDO POR PEDIDO)", periodo))
+
+    class _Canvas(_NumberedCanvasH):
+        titulo_pie = f"Detalle pedidos pequeños  -  generado {ahora}"
+    doc.build(story, canvasmaker=_Canvas)
+    buf.seek(0)
+    return buf
+
+
+# ---------------- Excel ----------------
+def generar_detalle_pequenos_excel(df_base, anio, mes, modalidad="TODAS", incluir_adic=True, cajas=None, destinos=None,
+                                   transportes=None, solo_fuera=False, orden=ORDENES_DETALLE[0]):
+    """Excel con hoja 'Detalle' (filtros automáticos; % logístico, vs target, perdimos y estado con fórmulas, totales que siguen al filtro)
+    y hojas de resumen. El target de la celda B3 de 'Detalle' se puede cambiar y todo se recalcula. Devuelve BytesIO."""
+    try:
+        from openpyxl import Workbook
+        from openpyxl.formatting.rule import CellIsRule, FormulaRule
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.utils import get_column_letter
+    except ImportError as e:   # pragma: no cover
+        raise RuntimeError("Falta la librería 'openpyxl' para generar Excel: agrégala a requirements.txt (openpyxl).") from e
+
+    cajas = sorted({int(c) for c in (cajas or CAJAS_DETALLE_DEF)})
+    periodo = f"{MESES[mes - 1]} {anio}" if mes else f"AÑO {anio} (ACUMULADO)"
+    base_txt = "guía + costos adicionales" if incluir_adic else "solo costo de guía"
+    P = calc_detalle_pequenos(df_base, anio, mes, modalidad, incluir_adic, cajas, destinos, transportes, solo_fuera, orden)
+    filtros = _texto_filtros_detalle(periodo, modalidad, cajas, destinos, transportes, solo_fuera, base_txt)
+
+    FN = "Arial"
+    f_n, f_b = Font(name=FN, size=10), Font(name=FN, size=10, bold=True)
+    f_h, f_t = Font(name=FN, size=10, bold=True, color="FFFFFF"), Font(name=FN, size=14, bold=True, color="2B343B")
+    f_s, f_in = Font(name=FN, size=9, italic=True, color="6B7A86"), Font(name=FN, size=10, bold=True, color="0000FF")
+    fill = lambda hx: PatternFill("solid", start_color=hx, end_color=hx)
+    lado = Side(style="thin", color="D5DDE2")
+    borde = Border(left=lado, right=lado, top=lado, bottom=lado)
+    MONEY, PCT_F, PP, FECHA = '"$"#,##0.00', "0.00%", '+0.00" pp";-0.00" pp";0.00" pp"', "dd/mm/yyyy"
+
+    def _v(x):
+        return None if x is None or (isinstance(x, float) and np.isnan(x)) else x
+
+    wb = Workbook()
+    wr = wb.active
+    wr.title = "Resumen"
+    wr["A1"], wr["A1"].font = f"DETALLE DE PEDIDOS PEQUEÑOS  ·  {_txt_cajas(cajas)}", f_t
+    wr["A2"], wr["A2"].font = filtros, f_s
+    wr["A3"], wr["A3"].font = f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}  ·  JYPESA Logística  ·  Nexion Smart Logistic", f_s
+    if P["vacio"]:
+        wr["A5"], wr["A5"].font = P["motivo"], f_b
+        wr.column_dimensions["A"].width = 110
+        buf = BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return buf
+
+    T, det = P["T"], P["det"]
+    N = len(det)
+
+    # ======== hoja DETALLE (viva) ========
+    wd = wb.create_sheet("Detalle")
+    DATA0, HDR, TOT = 6, 5, 4
+    LAST = DATA0 + N - 1
+    wd["A1"], wd["A1"].font = f"DETALLE PEDIDO POR PEDIDO  ·  {_txt_cajas(cajas)}  ·  {periodo.title()}", f_t
+    wd["A2"], wd["A2"].font = filtros, f_s
+    wd["A3"], wd["A3"].font = "TARGET % LOG. →", f_b
+    wd["B3"] = TARGET_COSTO_LOG / 100
+    wd["B3"].number_format, wd["B3"].font, wd["B3"].fill, wd["B3"].border = "0.0%", f_in, fill("FFF2CC"), borde
+    wd["C3"], wd["C3"].font = "Cambia este valor y se recalculan % vs target, PERDIMOS y ESTADO. Los totales de la fila 4 siguen a los filtros.", f_s
+
+    cols = [("FACTURA", 16), ("FECHA ENVÍO", 12), ("MES", 12), ("AÑO", 7), ("CLIENTE", 40), ("DESTINO", 20), ("CAJAS", 8),
+            ("COBRO (MODALIDAD)", 18), ("TRANSPORTE", 20), ("FLETERA", 20), ("COSTO GUÍA", 14), ("COSTOS ADIC.", 14),
+            ("COSTO LOGÍSTICO", 16), ("VALOR FACTURA", 16), ("% LOGÍSTICO", 12), ("VS TARGET (pp)", 14), ("PERDIMOS ($)", 15), ("ESTADO", 17)]
+    for j, (h, w) in enumerate(cols, start=1):
+        c = wd.cell(row=HDR, column=j, value=h)
+        c.font, c.fill, c.border = f_h, fill("2B343B"), borde
+        c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        wd.column_dimensions[get_column_letter(j)].width = w
+    wd.row_dimensions[HDR].height = 30
+
+    for i, r in enumerate(det.itertuples(index=False)):
+        x = DATA0 + i
+        costo_f = f"=K{x}+L{x}" if incluir_adic else f"=K{x}"
+        vals = [r.FACTURA, r.FECHA.to_pydatetime() if pd.notna(r.FECHA) else None, r.MES.title(), int(r.ANIO), r.CLIENTE, r.DESTINO, int(r.CAJAS),
+                r.MODALIDAD, r.TRANSPORTE, r.FLETERA, float(r.GUIA), float(r.ADIC), costo_f, float(r.FACT),
+                f'=IF(N{x}>0,M{x}/N{x},"")', f'=IF(N{x}>0,(M{x}/N{x}-$B$3)*100,"")', f"=MAX(M{x}-$B$3*N{x},0)",
+                f'=IF(AND(N{x}<=0,M{x}<=0),"SIN DATOS",IF(N{x}<=0,"SIN FACTURACIÓN",IF(M{x}/N{x}>=1,"PÉRDIDA",'
+                f'IF(M{x}/N{x}>2*$B$3,"CRÍTICO",IF(M{x}/N{x}>$B$3,"EN ALERTA","SALUDABLE")))))']
+        fmts = [None, FECHA, None, "0", None, None, "0", None, None, None, MONEY, MONEY, MONEY, MONEY, PCT_F, PP, MONEY, None]
+        for j, (v, fm) in enumerate(zip(vals, fmts), start=1):
+            c = wd.cell(row=x, column=j, value=v)
+            c.font, c.border = f_n, borde
+            if fm:
+                c.number_format = fm
+            if j in (2, 4, 7, 18):
+                c.alignment = Alignment(horizontal="center")
+
+    # fila de totales (SUBTOTAL: solo suma lo que está visible con el filtro)
+    wd.cell(row=TOT, column=1, value=f'="TOTAL FILTRADO ("&SUBTOTAL(103,A{DATA0}:A{LAST})&" pedidos)"')
+    for j, letra in ((7, "G"), (11, "K"), (12, "L"), (13, "M"), (14, "N"), (17, "Q")):
+        wd.cell(row=TOT, column=j, value=f"=SUBTOTAL(109,{letra}{DATA0}:{letra}{LAST})")
+    wd.cell(row=TOT, column=15, value=f'=IF(N{TOT}>0,M{TOT}/N{TOT},"")')
+    wd.cell(row=TOT, column=16, value=f'=IF(N{TOT}>0,(M{TOT}/N{TOT}-$B$3)*100,"")')
+    for j in range(1, len(cols) + 1):
+        c = wd.cell(row=TOT, column=j)
+        c.font, c.fill, c.border = f_b, fill("E3EAEE"), borde
+        c.number_format = {7: "0", 11: MONEY, 12: MONEY, 13: MONEY, 14: MONEY, 15: PCT_F, 16: PP, 17: MONEY}.get(j, "General")
+
+    wd.freeze_panes = f"B{DATA0}"
+    wd.auto_filter.ref = f"A{HDR}:{get_column_letter(len(cols))}{LAST}"
+    for txt, hx in TINTE_CLASE.items():
+        wd.conditional_formatting.add(f"R{DATA0}:R{LAST}", CellIsRule(operator="equal", formula=[f'"{txt}"'], fill=fill(hx.lstrip("#"))))
+    wd.conditional_formatting.add(f"O{DATA0}:O{LAST}", FormulaRule(formula=[f"AND(ISNUMBER($O{DATA0}),$O{DATA0}>$B$3)"], font=Font(name=FN, color="D64545", bold=True)))
+    wd.conditional_formatting.add(f"Q{DATA0}:Q{LAST}", CellIsRule(operator="greaterThan", formula=["0"], font=Font(name=FN, color="D64545", bold=True)))
+    wd.page_setup.orientation = "landscape"
+    wd.page_setup.fitToWidth, wd.page_setup.fitToHeight = 1, 0
+    wd.sheet_properties.pageSetUpPr.fitToPage = True
+    wd.print_title_rows = f"{HDR}:{HDR}"
+
+    # ======== hojas de RESUMEN (valores al momento de generar, con el target indicado) ========
+    heads = ["", "PEDIDOS", "CAJAS", "VALOR FACTURA", "COSTO LOGÍSTICO", "% LOGÍSTICO", "VS TARGET (pp)", "COSTO / CAJA", "% FUERA DE TARGET", "PERDIMOS ($)"]
+    fmt_g = [None, "#,##0", "#,##0", MONEY, MONEY, PCT_F, PP, MONEY, "0%", MONEY]
+
+    def _fila_x(b, etq):
+        pl = _v(b["pct_log"])
+        return [etq, int(b["n"]), float(b["cajas"]), float(b["fact"]), float(b["costo"]), None if pl is None else pl / 100,
+                None if pl is None else pl - TARGET_COSTO_LOG, _v(b["costo_caja"]), _v(b["pct_fuera"]) / 100 if _v(b["pct_fuera"]) is not None else None,
+                float(b["exceso"])]
+
+    def _tabla_x(ws, fila, titulo, titulo_col, df, etq_fn, con_total=True):
+        ws.cell(row=fila, column=1, value=titulo).font = Font(name=FN, size=11, bold=True, color="2B343B")
+        fila += 1
+        for j, h in enumerate([titulo_col] + heads[1:], start=1):
+            c = ws.cell(row=fila, column=j, value=h)
+            c.font, c.fill, c.border = f_h, fill("2B343B"), borde
+            c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        filas = [_fila_x(r, etq_fn(r["K"])) for _, r in df.iterrows()] + ([_fila_x(T, "TOTAL")] if con_total else [])
+        for k, vals in enumerate(filas):
+            es_tot = con_total and k == len(filas) - 1
+            for j, (v, fm) in enumerate(zip(vals, fmt_g), start=1):
+                c = ws.cell(row=fila + 1 + k, column=j, value=v)
+                c.font, c.border = (f_b if es_tot else f_n), borde
+                if es_tot:
+                    c.fill = fill("E3EAEE")
+                if fm:
+                    c.number_format = fm
+        return fila + len(filas) + 3
+
+    # KPIs
+    wr["A5"], wr["A5"].font = "INDICADORES", Font(name=FN, size=11, bold=True, color="2B343B")
+    kpis = [("Pedidos (facturas)", T["n"], "#,##0"), ("Cajas", T["cajas"], "#,##0"), ("Valor facturado", T["fact"], MONEY),
+            (f"Costo logístico ({base_txt})", T["costo"], MONEY), ("% logístico", None if pd.isna(T["pct_log"]) else T["pct_log"] / 100, PCT_F),
+            (f"Target % logístico", TARGET_COSTO_LOG / 100, "0.0%"), ("PERDIMOS vs target ($)", P["exceso_total"], MONEY),
+            ("Pedidos fuera de target", P["n_fuera"], "#,##0"), ("Pedidos con costo ≥ factura", P["n_perdida"], "#,##0"),
+            ("Pedidos sin facturación", P["n_sin_fact"], "#,##0"), ("Costo por caja", _v(T["costo_caja"]), MONEY),
+            ("Ticket promedio por pedido", _v(T["ticket"]), MONEY), ("Ticket mínimo para estar en target", _v(T["ticket_min"]), MONEY)]
+    for k, (lab, val, fm) in enumerate(kpis):
+        a, b = wr.cell(row=6 + k, column=1, value=lab), wr.cell(row=6 + k, column=2, value=_v(float(val)) if val is not None else None)
+        a.font, b.font, a.border, b.border = f_n, f_b, borde, borde
+        b.number_format = fm
+    fila = 6 + len(kpis) + 2
+    fila = _tabla_x(wr, fila, "POR NÚMERO DE CAJAS", "NÚMERO DE CAJAS", P["por_cajas"], lambda k: _etq_cajas(k))
+    fila = _tabla_x(wr, fila, "POR TRANSPORTE", "TRANSPORTE", P["por_transp"], str)
+    if len(P["por_mod"]) > 1:
+        fila = _tabla_x(wr, fila, "POR MODALIDAD (COBRO REGRESO / COBRO DESTINO)", "MODALIDAD", P["por_mod"], str)
+    if len(P["por_mes"]) > 0:
+        fila = _tabla_x(wr, fila, "POR MES", "MES", P["por_mes"], str)
+    notas = ["NOTAS",
+             f"· FACTURA = columna '{P['col_factura']}' de la matriz. Costo logístico = {base_txt}. % logístico = costo / valor de factura.",
+             f"· PERDIMOS = lo pagado por encima del target = máx(costo − {TARGET_COSTO_LOG}% × valor de factura, 0). Si no hay factura, todo el costo cuenta como pérdida.",
+             f"· ESTADO: SALUDABLE hasta {TARGET_COSTO_LOG}% · EN ALERTA más de {TARGET_COSTO_LOG}% · CRÍTICO más de {2 * TARGET_COSTO_LOG:g}% · PÉRDIDA si costo ≥ factura · SIN FACTURACIÓN.",
+             f"· Las tablas de resumen son valores calculados al generar el archivo con target {TARGET_COSTO_LOG}%. La hoja 'Detalle' es la hoja viva (fórmulas y filtros).",
+             "· Periodo según la columna MES de la matriz y el año; las cajas salen de CANTIDAD DE CAJAS (o CAJAS si viene en 0).",
+             "· Los registros con concepto de recolecciones o maniobras no son pedidos y se excluyen"
+             + (f" ({num(P['extras']['n'])} registros, {money(P['extras']['costo'], 2)})." if P["extras"]["n"] else ".")]
+    for k, t_ in enumerate(notas):
+        c = wr.cell(row=fila + k, column=1, value=t_)
+        c.font = f_b if k == 0 else f_s
+    wr.column_dimensions["A"].width = 42
+    for j in range(2, 11):
+        wr.column_dimensions[get_column_letter(j)].width = 17
+    wr.sheet_view.showGridLines = False
+
+    # hojas largas: destino y cliente (lista completa)
+    for nombre, clave, col_t, tit in (("Por destino", "por_dest", "DESTINO", "POR DESTINO (mayor pérdida primero)"),
+                                      ("Por cliente", "por_cli", "CLIENTE", "POR CLIENTE (mayor pérdida primero)")):
+        w = wb.create_sheet(nombre)
+        _tabla_x(w, 1, tit, col_t, P[clave], str)
+        w.column_dimensions["A"].width = 44
+        for j in range(2, 11):
+            w.column_dimensions[get_column_letter(j)].width = 17
+        w.freeze_panes = "B3"
+        w.sheet_view.showGridLines = False
+
+    from openpyxl.worksheet.properties import PageSetupProperties
+    for w_ in wb.worksheets:                # impresión: horizontal y a un ancho de página
+        w_.page_setup.orientation = "landscape"
+        w_.page_setup.fitToWidth, w_.page_setup.fitToHeight = 1, 0
+        w_.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+    wb.calculation.fullCalcOnLoad = True    # Excel recalcula las fórmulas al abrir
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf
+
+
+# ---------------- Interfaz de este reporte ----------------
+def _ui_detalle_pequenos(df_base, anios, mes_prev, idx_anio):
+    c1, c2, c3, c4 = st.columns(4, vertical_alignment="bottom")
+    mes_sel = c1.selectbox("MES", ["TODO EL AÑO"] + MESES, index=mes_prev, key="det_mes")
+    anio_sel = int(c2.selectbox("AÑO", anios, index=idx_anio, key="det_anio"))
+    modalidad = c3.selectbox("MODALIDAD (COBRO REGRESO / COBRO DESTINO)", ["TODAS", "COBRO REGRESO", "COBRO DESTINO"], key="det_mod")
+    costo_sel = c4.selectbox("COSTO A CONSIDERAR", ["Guía + adicionales", "Solo guía"], key="det_costo")
+
+    opc_dest, opc_trans = _opciones_detalle(df_base, anio_sel)
+    d1, d2, d3, d4 = st.columns([1, 1.4, 1.4, 1], vertical_alignment="bottom")
+    cajas_sel = d1.multiselect("NÚMERO DE CAJAS", CAJAS_DETALLE_OPC, default=CAJAS_DETALLE_DEF, key="det_cajas")
+    dest_sel = d2.multiselect("DESTINO (vacío = todos)", opc_dest, key=f"det_dest_{anio_sel}")
+    trans_sel = d3.multiselect("TRANSPORTE (vacío = todos)", opc_trans, key=f"det_trans_{anio_sel}")
+    orden = d4.selectbox("ORDENAR POR", ORDENES_DETALLE, key="det_orden")
+    solo_fuera = st.checkbox("Solo pedidos fuera de target (en alerta, críticos o en pérdida)", key="det_fuera")
+
+    st.caption("Lista pedido por pedido (factura, cliente, destino, transporte, valor de factura, costo, % logístico, variación contra el target y "
+               "cuánto perdimos) de los pedidos de 1 a 4 cajas (o las que elijas), agrupados por número de cajas. Sale en PDF horizontal o en Excel con filtros.")
+    if not cajas_sel:
+        st.warning("Elige al menos un número de cajas.")
+        return
+
+    mes_num = 0 if mes_sel == "TODO EL AÑO" else MESES.index(mes_sel) + 1
+    incluir_adic = (costo_sel == "Guía + adicionales")
+    kw = dict(incluir_adic=incluir_adic, cajas=cajas_sel, destinos=dest_sel, transportes=trans_sel, solo_fuera=solo_fuera, orden=orden)
+    vista = calc_detalle_pequenos(df_base, anio_sel, mes_num, modalidad, **kw)
+    if vista["vacio"]:
+        st.warning(vista["motivo"])
+        return
+
+    T = vista["T"]
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric("Pedidos", f"{int(T['n']):,}")
+    m2.metric("Valor facturado", money(T["fact"]))
+    m3.metric("Costo logístico", money(T["costo"]))
+    m4.metric("% logístico", pct(T["pct_log"], 2))
+    m5.metric("Perdimos vs target", money(vista["exceso_total"]))
+    with st.expander("Vista previa (primeros 200 pedidos)"):
+        pv = vista["det"].head(200).copy()
+        pv["FECHA"] = pv["FECHA"].dt.strftime("%d/%m/%Y")
+        pv = pv.drop(columns=["ANIO", "GUIA", "ADIC"]).rename(columns={
+            "FACT": "VALOR FACTURA", "COSTO": "COSTO LOGÍSTICO", "PCT": "% LOGÍSTICO", "VS": "VS TARGET (pp)", "PERDIMOS": "PERDIMOS ($)", "CLASE": "ESTADO"})
+        st.dataframe(pv, use_container_width=True, hide_index=True)
+
+    b1, b2 = st.columns(2)
+    gen_pdf = b1.button("GENERAR PDF", use_container_width=True, key="det_btn_pdf")
+    gen_xls = b2.button("GENERAR EXCEL", use_container_width=True, key="det_btn_xls")
+    per = "ANUAL" if mes_num == 0 else mes_sel
+    base_nom = f"Detalle_Pedidos_Pequenos_{min(cajas_sel)}a{max(cajas_sel)}_Cajas_{modalidad.replace(' ', '_')}_{per}_{anio_sel}"
+
+    if gen_pdf:
+        with st.spinner("Armando el PDF..."):
+            try:
+                pdf = generar_detalle_pequenos_pdf(df_base, anio_sel, mes_num, modalidad, **kw)
+                st.session_state["rep_det_pdf"] = {"bytes": pdf.getvalue(), "nombre": base_nom + ".pdf"}
+                st.success("¡PDF generado!")
+            except Exception as e:
+                st.error(f"No se pudo generar el PDF: {e}")
+    if gen_xls:
+        with st.spinner("Armando el Excel..."):
+            try:
+                xls = generar_detalle_pequenos_excel(df_base, anio_sel, mes_num, modalidad, **kw)
+                st.session_state["rep_det_xlsx"] = {"bytes": xls.getvalue(), "nombre": base_nom + ".xlsx"}
+                st.success("¡Excel generado!")
+            except Exception as e:
+                st.error(f"No se pudo generar el Excel: {e}")
+
+    r_pdf, r_xls = st.session_state.get("rep_det_pdf"), st.session_state.get("rep_det_xlsx")
+    if r_pdf or r_xls:
+        x1, x2 = st.columns(2)
+        if r_pdf:
+            x1.download_button("DESCARGAR PDF", data=r_pdf["bytes"], file_name=r_pdf["nombre"], mime="application/pdf",
+                               use_container_width=True, key="rep_det_pdf_dl")
+        if r_xls:
+            x2.download_button("DESCARGAR EXCEL", data=r_xls["bytes"], file_name=r_xls["nombre"],
+                               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                               use_container_width=True, key="rep_det_xlsx_dl")
+
+
+# ============================================================
+# 13. INTERFAZ (elegir reporte, periodo y generar)
 # ============================================================
 REPORTE_MENSUAL = "REPORTE MENSUAL COMPLETO"
 REPORTE_CONCEPTO = "% LOGÍSTICO POR CONCEPTO"
 REPORTE_PEQUENOS = "SALUD DE PEDIDOS PEQUEÑOS (1 A 4 CAJAS)"
+REPORTE_DETALLE = "DETALLE PEDIDO POR PEDIDO (1 A 4 CAJAS) - PDF / EXCEL"
 
 
 def main():
@@ -2081,7 +2744,7 @@ def main():
     anio_prev = hoy.year if hoy.month > 1 else hoy.year - 1
     idx_anio = anios.index(anio_prev) if anio_prev in anios else 0
 
-    tipo = st.selectbox("¿QUÉ REPORTE QUIERES GENERAR?", [REPORTE_MENSUAL, REPORTE_CONCEPTO, REPORTE_PEQUENOS])
+    tipo = st.selectbox("¿QUÉ REPORTE QUIERES GENERAR?", [REPORTE_MENSUAL, REPORTE_CONCEPTO, REPORTE_PEQUENOS, REPORTE_DETALLE])
     st.caption("Los registros con CONCEPTO de recolecciones o maniobras no se cuentan como pedidos: se reportan aparte como costos extras "
                "y se suman al costo logístico total.")
 
@@ -2160,7 +2823,7 @@ def main():
                                use_container_width=True, key="rep_log_concepto_dl")
 
     # ---------------- SALUD DE PEDIDOS PEQUEÑOS ----------------
-    else:
+    elif tipo == REPORTE_PEQUENOS:
         c1, c2, c3, c4, c5 = st.columns(5, vertical_alignment="bottom")
         mes_sel = c1.selectbox("MES", ["TODO EL AÑO"] + MESES, index=mes_prev, key="peq_mes")
         anio_sel = c2.selectbox("AÑO", anios, index=idx_anio, key="peq_anio")
@@ -2190,6 +2853,10 @@ def main():
         if rep:
             st.download_button("DESCARGAR REPORTE PDF", data=rep["bytes"], file_name=rep["nombre"], mime="application/pdf",
                                use_container_width=True, key="rep_pequenos_dl")
+
+    # ---------------- DETALLE PEDIDO POR PEDIDO (PDF / EXCEL) ----------------
+    else:
+        _ui_detalle_pequenos(df_base, anios, mes_prev, idx_anio)
 
 
 if __name__ == "__main__":
