@@ -247,7 +247,7 @@ def preparar_base(df_raw):
         df[c] = df[c].fillna("").astype(str).str.strip()
         df.loc[df[c].str.lower() == "nan", c] = ""
     df["MES"] = df["MES"].str.upper()
-    for c in ["COSTO DE LA GUÍA", "FACTURACION", "VALUACION", "COSTOS ADICIONALES", "CANTIDAD DE CAJAS"]:
+    for c in ["COSTO DE LA GUÍA", "FACTURACION", "VALUACION", "COSTOS ADICIONALES"]:
         df[c] = limpiar_moneda(df[c]) if c in df.columns else 0.0
     df["CAJAS"] = pd.to_numeric(df["CAJAS"], errors="coerce").fillna(0) if "CAJAS" in df.columns else 0.0
     col_c = next((c for c in df.columns if "CONCEPTO" in str(c).upper()), None)
@@ -277,7 +277,7 @@ def _col_factura(df):
 def preparar_universo(df, incluir_adic, hoy, max_peq):
     """Agrega a TODA la matriz las columnas de análisis (un renglón = un envío). Vectorizado."""
     u = df.copy()
-    u["_CAJ"] = np.where(u["CANTIDAD DE CAJAS"] > 0, u["CANTIDAD DE CAJAS"], u["CAJAS"]).astype(float).round()
+    u["_CAJ"] = u["CAJAS"].astype(float).round()  # solo columna CAJAS (no usar CANTIDAD DE CAJAS)
     u["_COSTO"] = u["COSTO DE LA GUÍA"] + (u["COSTOS ADICIONALES"] if incluir_adic else 0.0)
     fact, costo = u["FACTURACION"], u["_COSTO"]
     u["_PCT"] = costo / fact.where(fact > 0) * 100
