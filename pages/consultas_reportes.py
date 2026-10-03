@@ -1281,6 +1281,9 @@ div.stButton > button, div.stDownloadButton > button{background-color:#BDD7EE!im
 border-radius:6px!important;transition:all .25s ease!important;width:100%!important;box-shadow:none!important;font-weight:700!important}
 div.stButton > button:hover, div.stDownloadButton > button:hover{background-color:#00A3A3!important;border-color:#00A3A3!important;color:#fff!important}
 div.stButton > button p, div.stDownloadButton > button p{color:inherit!important}
+div[data-testid="stButton"], div[data-testid="stDownloadButton"], div.stButton, div.stDownloadButton{width:100%!important}
+div[data-testid="stElementContainer"]:has(> div.stButton), div[data-testid="stElementContainer"]:has(> div[data-testid="stButton"]), div[data-testid="stElementContainer"]:has(> div[data-testid="stDownloadButton"]){width:100%!important}
+div[data-testid="stButton"] > button, div[data-testid="stDownloadButton"] > button{width:100%!important;min-height:46px!important;font-size:14px!important}
 </style>""", unsafe_allow_html=True)
     st.markdown("<div style='padding:6px 0 14px 0;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:18px;'>"
                 "<span style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;'>"
