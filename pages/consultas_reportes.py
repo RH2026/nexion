@@ -164,7 +164,7 @@ def limpiar_moneda(serie):
 
 def fmt(kind, v):
     """Formato único para pantalla y PDF. Devuelve (texto, tono) con tono en '', good, bad, warn, mute."""
-    if kind in ("txt", "cls", "est", "docs"):
+    if kind in ("txt", "cls", "est"):
         s = "" if v is None or (isinstance(v, float) and pd.isna(v)) else str(v)
         tono = ""
         if kind == "cls":
@@ -294,8 +294,6 @@ def preparar_universo(df, incluir_adic, hoy, max_peq):
     u["_CLI"] = u["NOMBRE DEL CLIENTE"].replace("", "SIN CLIENTE")
     col_f = _col_factura(u)
     u["_FAC"] = u[col_f].fillna("").astype(str).str.strip().replace("nan", "")
-    u["_PED"] = u["NÚMERO DE PEDIDO"].fillna("").astype(str).str.strip().replace("nan", "")
-    u["_DOC"] = u["_FAC"].where(u["_FAC"] != "", u["_PED"])      # factura; si no hay, número de pedido
     # cajas en etiquetas con orden natural
     cap = max_peq + 1
     n = np.minimum(u["_CAJ"], cap).astype(int)
@@ -428,24 +426,6 @@ def total_de(r):
     return t
 
 
-def lista_docs(serie, corto=4):
-    """Facturas / pedidos únicos de un grupo: (texto corto para tabla, texto completo)."""
-    v = sorted({str(x).strip() for x in serie if str(x).strip() not in ("", "nan")})
-    if not v:
-        return "-", "-"
-    full = ", ".join(v)
-    return (", ".join(v[:corto]) + (f"  +{len(v) - corto} más" if len(v) > corto else "")), full
-
-
-def agregar_docs(filas, d, col, key="docs", kcol="K"):
-    """Agrega a cada fila agrupada sus facturas/pedidos (o folios) para rastreo."""
-    mapa = {k: lista_docs(g) for k, g in d.groupby(col)["_DOC"]}
-    for r in filas:
-        corto, full = mapa.get(r[kcol], ("-", "-"))
-        r[key], r[key + "_full"] = corto, full
-    return filas
-
-
 def _filas(df):
     return df.replace({np.nan: None}).to_dict("records")
 
@@ -512,11 +492,7 @@ def sec_dim(ctx, titulo, dim, d=None, con_top=True):
     mostrados = r if (nat or top == "TODOS" or not con_top) else r.head(int(top))
     nota = f"Mostrando {len(mostrados)} de {len(r)} · ordenado por {ctx['opts']['orden_met'].lower()}" if len(mostrados) < len(r) else ""
     kind_k = "cls" if col == "_CLASE" else ("est" if col == "_EST" else "txt")
-    cols_g, filas_g = _cols_grupo(dim.upper(), kind_k), _filas(mostrados)
-    if col == "_CLI":     # trazabilidad: factura(s) / pedido(s) de cada cliente
-        filas_g = agregar_docs(filas_g, d, col)
-        cols_g.insert(1, ("FACTURA / PEDIDO", "docs", "docs", "L", False))
-    out = [E_table(titulo, cols_g, filas_g, total=tot, note=nota)]
+    out = [E_table(titulo, _cols_grupo(dim.upper(), kind_k), _filas(mostrados), total=tot, note=nota)]
     # gráfica de la métrica elegida (top 12 o natural)
     mkey, mkind = METRICAS[ctx["opts"]["orden_met"]]
     gb = mostrados.head(12) if not nat or len(mostrados) <= 12 else mostrados.head(12)
@@ -602,8 +578,8 @@ def sec_peq(ctx):
     return out
 
 
-COLS_RANK = [("FACTURA", "_FAC", "txt", "L", False), ("PEDIDO", "_PED", "txt", "L", True),
-             ("CLIENTE", "_CLI", "txt", "L", False), ("FECHA", "FECHA DE ENVÍO", "date", "L", False), ("DESTINO", "_DE", "txt", "L", False), ("CJ.", "_CAJ", "int", "R", False),
+COLS_RANK = [("FACTURA", "_FAC", "txt", "L", False), ("FECHA", "FECHA DE ENVÍO", "date", "L", False),
+             ("CLIENTE", "_CLI", "txt", "L", False), ("DESTINO", "_DE", "txt", "L", False), ("CJ.", "_CAJ", "int", "R", False),
              ("COBRO", "_MODC", "txt", "L", False), ("TRANSPORTE", "_TR", "txt", "L", False), ("FLETERA", "_FLE", "txt", "L", True),
              ("FACTURACIÓN", "FACTURACION", "money", "R", False), ("GUÍA", "COSTO DE LA GUÍA", "money", "R", True),
              ("ADIC.", "COSTOS ADICIONALES", "money", "R", True), ("COSTO", "_COSTO", "money", "R", False),
@@ -626,8 +602,7 @@ def sec_rank(ctx):
     top = o["rank_top"]
     sel = r if top == "TODOS" else r.head(int(top))
     sel = sel.head(SCREEN_MAX)
-    cols_rank = COLS_RANK if (sel["_PED"] != sel["_FAC"]).any() else [c for c in COLS_RANK if c[1] != "_PED"]
-    rows = sel[[c[1] for c in cols_rank]].replace({np.nan: None, pd.NaT: None}).to_dict("records")
+    rows = sel[[c[1] for c in COLS_RANK]].replace({np.nan: None, pd.NaT: None}).to_dict("records")
     tot = dict(_FAC="TOTAL", _CAJ=sel["_CAJ"].sum(), FACTURACION=sel["FACTURACION"].sum(), **{"COSTO DE LA GUÍA": sel["COSTO DE LA GUÍA"].sum(),
                "COSTOS ADICIONALES": sel["COSTOS ADICIONALES"].sum()}, _COSTO=sel["_COSTO"].sum(),
                _PCT=(sel["_COSTO"].sum() / sel["FACTURACION"].sum() * 100) if sel["FACTURACION"].sum() > 0 else None,
@@ -635,7 +610,7 @@ def sec_rank(ctx):
     tot["_VS"] = tot["_PCT"] - TARGET if tot["_PCT"] is not None else None
     nota = (f"Mostrando {len(sel)} de {total_n} pedidos · ordenado por {o['rank_orden'].lower()} ({o['rank_dir'].lower()}). "
             f"Pedidos = envíos sin recolecciones/maniobras.")
-    return [E_table(f"Pedido por pedido · {o['rank_orden']}", cols_rank, rows, total=tot, note=nota, landscape=True)]
+    return [E_table(f"Pedido por pedido · {o['rank_orden']}", COLS_RANK, rows, total=tot, note=nota, landscape=True)]
 
 
 def sec_entr(ctx):
@@ -748,13 +723,7 @@ def sec_mues(ctx):
                 ("FLETE", "flete", "money", "R", False), ("INVERSIÓN", "inv", "money", "R", False),
                 ("PROM./ENVÍO", "prom", "money", "R", False), ("% DEL TOTAL", "pct", "pct", "R", False)]
         tot = dict(**{col: "TOTAL"}, envios=n, prod=prod, flete=flete, inv=inv, prom=inv / n, pct=100.0)
-        filas_m = _filas(gm)
-        if col == "_HOT":     # trazabilidad: folios de cada destino
-            mapa = {k: lista_docs(x["FOLIO"]) for k, x in d.groupby(col)}
-            for r_ in filas_m:
-                r_["docs"], r_["docs_full"] = mapa.get(r_[col], ("-", "-"))
-            cols.insert(1, ("FOLIOS", "docs", "docs", "L", False))
-        res = [E_table(titulo, cols, filas_m, total=tot, note=f"Mostrando {len(gm)} de {len(g)}" if len(gm) < len(g) else "")]
+        res = [E_table(titulo, cols, _filas(gm), total=tot, note=f"Mostrando {len(gm)} de {len(g)}" if len(gm) < len(g) else "")]
         return res, [(str(x[col]), float(x["inv"]), "red") for _, x in gm.head(12).iterrows()]
 
     t1, b1 = grp("_SOL", "Muestras por solicitante", "SOLICITÓ")
@@ -855,9 +824,6 @@ def sec_cruz(ctx):
         tr[f"c{i}"] = valor(s)
     cols = [(rdim.upper(), "K", "txt", "L", False)] + [(trunc(str(c), 14), f"c{i}", mkind, "R", False) for i, c in enumerate(orden_c)] + \
            [("TOTAL", "tot", mkind, "R", False)]
-    if rcol == "_CLI":    # trazabilidad
-        rows = agregar_docs(rows, d, rcol)
-        cols.append(("FACTURA / PEDIDO", "docs", "docs", "L", False))
     return [E_table(f"Tabla cruzada · {o['cz_met']} · {rdim} × {cdim}", cols, rows, total=tr, landscape=len(cols) > 9,
                     note="Las columnas se limitan a 12; lo demás se agrupa en OTROS.")]
 
@@ -895,6 +861,7 @@ CSS = """
 .jq-card{position:relative;overflow:hidden;padding:16px 18px 15px 18px;border-radius:14px;
  background:linear-gradient(145deg,#2F3A42 0%,#1F282D 100%);border:1px solid rgba(255,255,255,.07);
  box-shadow:0 8px 22px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.05);transition:transform .2s,box-shadow .2s}
+.jq-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.40),inset 0 1px 0 rgba(255,255,255,.07)}
 .jq-card:before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:var(--c)}
 .jq-card:after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;
  background:radial-gradient(circle,var(--c) 0%,transparent 70%);opacity:.14}
@@ -917,11 +884,11 @@ CSS = """
 .jq-t tfoot td{position:sticky;bottom:0;z-index:3;background:#2B343B!important;color:#fff;font-weight:800;border-top:2px solid #FFC000}
 .jq-t tfoot td:first-child{z-index:4}
 .jq-t .r{text-align:right;font-variant-numeric:tabular-nums}
-.jq-t td.docs{color:#9FB3BF;font-size:11.5px;max-width:300px;overflow:hidden;text-overflow:ellipsis}
 .jq-t .good{color:#4FD1A0;font-weight:700}.jq-t .bad{color:#FF6B6B;font-weight:700}
 .jq-t .warn{color:#FFC000;font-weight:700}.jq-t .mute{color:#6F808B}
-.jq-pill{font-size:11px;font-weight:800;letter-spacing:.6px}
-.jq-pill:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;background:currentColor}
+.jq-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.5px}
+.jq-pill.good{background:rgba(79,209,160,.15)}.jq-pill.bad{background:rgba(255,107,107,.15)}
+.jq-pill.warn{background:rgba(255,192,0,.15)}.jq-pill.mute{background:rgba(111,128,139,.18)}
 .jq-nota{color:#8497A3;font-size:11px;margin:6px 2px 0 2px;font-style:italic}
 .jq-aviso{padding:12px 16px;border-radius:10px;background:#2B343B;border-left:4px solid #FFC000;color:#DCE5EA;font-size:13px;margin:8px 0}
 .jq-bars{background:linear-gradient(145deg,#2F3A42,#1F282D);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 18px;
@@ -932,7 +899,7 @@ CSS = """
 .jq-b .fi{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--c),var(--c2))}
 .jq-b .val{text-align:right;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
 .jq-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px 0}
-.jq-chip{padding:5px 12px;border-radius:6px;background:#2B343B;border-left:3px solid #00A3A3;color:#DCE5EA;font-size:11px}
+.jq-chip{padding:5px 12px;border-radius:20px;background:#2B343B;border:1px solid rgba(0,163,163,.45);color:#DCE5EA;font-size:11px}
 </style>
 """
 
@@ -953,10 +920,8 @@ def html_kpis(items):
     return "".join(out)
 
 
-def _td(kind, align, v, full=None):
+def _td(kind, align, v):
     txt, tono = fmt(kind, v)
-    if kind == "docs":
-        return f'<td class="docs" title="{esc(full or txt)}">{_s(txt)}</td>'
     cls = ("r " if align == "R" else "") + tono
     if kind in ("cls", "est") and txt:
         return f'<td class="{cls.strip()}"><span class="jq-pill {tono}">{_s(txt)}</span></td>'
@@ -972,7 +937,7 @@ def html_table(t):
     out += [f'<th class="{"r" if c[3] == "R" else ""}">{_s(c[0])}</th>' for c in cols]
     out.append("</tr></thead><tbody>")
     for r in rows:
-        out.append("<tr>" + "".join(_td(c[2], c[3], r.get(c[1]), r.get(c[1] + "_full")) for c in cols) + "</tr>")
+        out.append("<tr>" + "".join(_td(c[2], c[3], r.get(c[1])) for c in cols) + "</tr>")
     out.append("</tbody>")
     if t["total"]:
         out.append("<tfoot><tr>" + "".join(
@@ -1109,8 +1074,6 @@ def _pdf_table(t, W, wide):
         k = c[2]
         if (k == "txt" and c[1] in ("_CLI", "K", "_HOT")) or c[0] in ("CLIENTE", "HOTEL / DESTINO"):
             pesos.append(2.6)
-        elif k == "docs":
-            pesos.append(2.4)
         elif k == "date":
             pesos.append(1.7)
         elif k in ("vs", "pctlog", "pctok"):
@@ -1278,9 +1241,6 @@ def generar_excel(secciones, resumen_filtros):
                 df = pd.DataFrame(p["rows"] + ([p["total"]] if p["total"] else []))
                 if df.empty:
                     continue
-                for c in p["cols"]:      # en Excel van TODAS las facturas/folios, no la lista corta
-                    if c[2] == "docs" and c[1] + "_full" in df.columns:
-                        df[c[1]] = df[c[1] + "_full"].where(df[c[1] + "_full"].notna(), df[c[1]])
                 df = df.reindex(columns=[c[1] for c in p["cols"]])
                 df.columns = [c[0] for c in p["cols"]]
                 for c in p["cols"]:
@@ -1317,17 +1277,9 @@ def _limpiar():
 
 def main():
     st.markdown("""<style>
-div.stButton > button, div.stDownloadButton > button{background:#2B343B!important;color:#DCE5EA!important;border:1px solid rgba(255,255,255,.10)!important;
-border-radius:6px!important;width:100%!important;min-height:40px!important;box-shadow:none!important;transform:none!important;
-font-size:12px!important;font-weight:800!important;letter-spacing:1px!important;text-transform:uppercase!important;transition:background .15s,border-color .15s!important}
-div.stButton > button:hover, div.stDownloadButton > button:hover{background:#34414A!important;border-color:#00A3A3!important;color:#fff!important;transform:none!important}
-div.stButton > button:active, div.stDownloadButton > button:active{background:#00A3A3!important;color:#fff!important}
-div.stDownloadButton > button{border-color:#00A3A3!important;color:#00D1D1!important}
-div[data-testid="stVerticalBlockBorderWrapper"]{border:1px solid rgba(255,255,255,.08)!important;border-radius:10px!important;background:rgba(43,52,59,.28)!important}
-div[data-testid="stCheckbox"]{background:#2B343B;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:8px 12px;margin-bottom:6px;transition:border-color .15s,background .15s}
-div[data-testid="stCheckbox"]:hover{border-color:rgba(0,163,163,.7)}
-div[data-testid="stCheckbox"]:has(input:checked){border-color:#00A3A3;background:rgba(0,163,163,.16)}
-div[data-testid="stCheckbox"] label{width:100%;cursor:pointer}
+div.stButton > button, div.stDownloadButton > button{background-color:#2B343B!important;color:#fff!important;border:1px solid #2B343B!important;
+border-radius:6px!important;transition:all .25s ease!important;width:100%!important;box-shadow:none!important;font-weight:700!important}
+div.stButton > button:hover, div.stDownloadButton > button:hover{background-color:#00A3A3!important;border-color:#00A3A3!important;color:#fff!important}
 </style>""", unsafe_allow_html=True)
     st.markdown("<div style='padding:6px 0 14px 0;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:18px;'>"
                 "<span style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;'>"
@@ -1397,15 +1349,14 @@ div[data-testid="stCheckbox"] label{width:100%;cursor:pointer}
     st.markdown("##### 2 · ARMA TU REPORTE (marca los bloques que quieras)")
     for k, _, _ in SECCIONES:
         st.session_state.setdefault(f"sec_{k}", k in PRESETS["Ejecutivo"])
-    with st.container(border=True):
-        b1, b2, b3, b4, _sp = st.columns([1, 1, 1, 1, 3])
-        b1.button("Ejecutivo", on_click=_preset, args=("Ejecutivo",), key="p1")
-        b2.button("Costos", on_click=_preset, args=("Costos",), key="p2")
-        b3.button("Todo", on_click=_preset, args=("Todo",), key="p3")
-        b4.button("Limpiar", on_click=_limpiar, key="p4")
-        cols_chk = st.columns(4)
-        for i, (k, nombre, desc) in enumerate(SECCIONES):
-            cols_chk[i % 4].checkbox(nombre, key=f"sec_{k}", help=desc)
+    b1, b2, b3, b4, b5 = st.columns(5)
+    b1.button("Ejecutivo", on_click=_preset, args=("Ejecutivo",), key="p1")
+    b2.button("Costos", on_click=_preset, args=("Costos",), key="p2")
+    b3.button("Todo", on_click=_preset, args=("Todo",), key="p3")
+    b4.button("Limpiar", on_click=_limpiar, key="p4")
+    cols_chk = st.columns(3)
+    for i, (k, nombre, desc) in enumerate(SECCIONES):
+        cols_chk[i % 3].checkbox(nombre, key=f"sec_{k}", help=desc)
     activas = [k for k, _, _ in SECCIONES if st.session_state.get(f"sec_{k}")]
 
     # ---------- 3. OPCIONES ----------
@@ -1447,38 +1398,35 @@ div[data-testid="stCheckbox"] label{width:100%;cursor:pointer}
 
     # ---------- IMPRESIÓN ----------
     st.markdown("##### 3 · IMPRIME")
-    firma = hashlib.md5(json.dumps([f, activas, o, st.session_state.get("q_orient", "AUTOMÁTICA")], sort_keys=True, default=str).encode()).hexdigest()
+    p1, p2, p3, p4 = st.columns([1, 1, 1, 1], vertical_alignment="bottom")
+    orient = p1.selectbox("ORIENTACIÓN DEL PDF", ["AUTOMÁTICA", "VERTICAL", "HORIZONTAL"], key="q_orient")
+    firma = hashlib.md5(json.dumps([f, activas, o, orient], sort_keys=True, default=str).encode()).hexdigest()
+    gen_pdf = p2.button("GENERAR PDF", key="q_pdf")
+    gen_xls = p3.button("GENERAR EXCEL", key="q_xls")
     titulo = (", ".join(m.title() for m in meses_sel) if meses_sel else "Año completo") + " " + "/".join(str(a) for a in f["anios"])
-    nom_base = titulo.replace(" ", "_").replace("/", "-").replace(",", "")
-    with st.container(border=True):
-        p1, p2, p3 = st.columns([1.2, 1, 1])
-        orient = p1.selectbox("ORIENTACIÓN DEL PDF", ["AUTOMÁTICA", "VERTICAL", "HORIZONTAL"], key="q_orient")
-        p2.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-        p3.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-        gen_pdf = p2.button("Generar PDF", key="q_pdf")
-        gen_xls = p3.button("Generar Excel", key="q_xls")
-        if gen_pdf:
-            with st.spinner("Armando el PDF..."):
-                try:
-                    pdf = generar_pdf(secciones, resumen, titulo, obtener_logo_bytes(), orient)
-                    st.session_state["q_pdf_out"] = {"bytes": pdf.getvalue(), "firma": firma, "nombre": f"Reporte_Consultas_{nom_base}.pdf"}
-                except Exception as e:
-                    st.error(f"No se pudo generar el PDF: {e}")
-        if gen_xls:
-            with st.spinner("Armando el Excel..."):
-                try:
-                    st.session_state["q_xls_out"] = {"bytes": generar_excel(secciones, resumen).getvalue(), "firma": firma,
-                                                     "nombre": f"Consultas_{nom_base}.xlsx"}
-                except Exception as e:
-                    st.error(f"No se pudo generar el Excel: {e}")
-        for clave, etiqueta, mime, col, nombre in (
-                ("q_pdf_out", "Descargar PDF", "application/pdf", p2, "PDF"),
-                ("q_xls_out", "Descargar Excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", p3, "Excel")):
-            out = st.session_state.get(clave)
-            if out and out["firma"] == firma:
-                col.download_button(etiqueta, data=out["bytes"], file_name=out["nombre"], mime=mime, key=f"dl_{clave}")
-            elif out:
-                col.caption(f"Cambiaste filtros o bloques: vuelve a generar el {nombre}.")
+    if gen_pdf:
+        with st.spinner("Armando el PDF..."):
+            try:
+                pdf = generar_pdf(secciones, resumen, titulo, obtener_logo_bytes(), orient)
+                st.session_state["q_pdf_out"] = {"bytes": pdf.getvalue(), "firma": firma,
+                                                 "nombre": f"Reporte_Consultas_{titulo.replace(' ', '_').replace('/', '-').replace(',', '')}.pdf"}
+            except Exception as e:
+                st.error(f"No se pudo generar el PDF: {e}")
+    if gen_xls:
+        with st.spinner("Armando el Excel..."):
+            try:
+                x = generar_excel(secciones, resumen)
+                st.session_state["q_xls_out"] = {"bytes": x.getvalue(), "firma": firma,
+                                                 "nombre": f"Consultas_{titulo.replace(' ', '_').replace('/', '-').replace(',', '')}.xlsx"}
+            except Exception as e:
+                st.error(f"No se pudo generar el Excel: {e}")
+    for clave, etiqueta, mime, col in (("q_pdf_out", "DESCARGAR PDF", "application/pdf", p4),
+                                       ("q_xls_out", "DESCARGAR EXCEL", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", p4)):
+        out = st.session_state.get(clave)
+        if out and out["firma"] == firma:
+            col.download_button(etiqueta, data=out["bytes"], file_name=out["nombre"], mime=mime, key=f"dl_{clave}")
+        elif out:
+            st.caption(f"Cambiaste filtros o bloques: vuelve a generar el {'PDF' if clave == 'q_pdf_out' else 'Excel'}.")
 
     st.markdown("---")
     render_pantalla(secciones, resumen, f)
