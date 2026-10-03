@@ -62,6 +62,7 @@ DESTINOS_VALIDOS = {
     "costos_muestras.py" : "pages/costos_muestras.py",
     "recoleccion_one.py" : "pages/recoleccion_one.py",
     "reporte_mensual_pdf.py" : "pages/reporte_mensual_pdf.py",
+    "consultas_reportes.py" : "pages/consultas_reportes.py",
 }
 
 
