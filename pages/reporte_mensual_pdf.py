@@ -14,6 +14,9 @@ Genera un PDF ejecutivo del mes elegido con:
 En la misma página se puede elegir otro reporte: "% LOGÍSTICO POR CONCEPTO" (facturación, costo de guía, adicionales,
 cajas y % logístico de cada concepto, por mes o todo el año, por modalidad).
 
+Una tercera opción, "SALUD DE PEDIDOS PEQUEÑOS (1 A 4 CAJAS)", analiza facturación, costo de flete (guía) y costo de distribución
+(adicionales) de los pedidos chicos: comparativo contra pedidos grandes, semáforo por pedido, fletera, ticket mínimo, sobrecosto y tendencia.
+
 Los cálculos replican los del dashboard, pero filtran por MES **y AÑO**.
 Los gráficos se dibujan directo con reportlab (no necesita kaleido ni matplotlib).
 """
@@ -82,6 +85,7 @@ MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO
 CARRIERS_PRINCIPALES_DC = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "PAQUETE", "SANCHEZ", "FLETES DE REGRESO", "FARMASES"]
 FLETERAS_PRINCIPALES_RK = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "SANCHEZ", "FLETES DE REGRESO"]
 TARGET_COSTO_LOG = 7.5   # % meta de costo logístico (igual que Análisis Mensual)
+CAJAS_PEQUENO_MAX = 4    # un pedido "pequeño" tiene de 1 a N cajas (editable también desde la página)
 FERIADOS_24H = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']   # <- agrega aquí los de otros años
 
 # Paleta (impresión)
@@ -701,7 +705,7 @@ def chart_barras_h(items, width=CONTENT_W, color=C_TEAL, fmt=num, label_w=150, b
     return d
 
 
-def chart_barras_v(cats, vals, width=CONTENT_W, height=150, color=C_TEAL, fmt=num, rotar=False):
+def chart_barras_v(cats, vals, width=CONTENT_W, height=150, color=C_TEAL, fmt=num, rotar=False, colors_list=None):
     n = len(cats)
     if n == 0 or not any(vals):
         return sin_datos()
@@ -717,7 +721,7 @@ def chart_barras_v(cats, vals, width=CONTENT_W, height=150, color=C_TEAL, fmt=nu
     for i, (c, v) in enumerate(zip(cats, vals)):
         x = left + i * slot + (slot - bw) / 2
         hh = area_h * v / vmax
-        d.add(Rect(x, bottom, bw, hh, fillColor=color, strokeColor=None))
+        d.add(Rect(x, bottom, bw, hh, fillColor=(colors_list[i] if colors_list else color), strokeColor=None))
         if mostrar_val and v > 0:
             _s(d, x + bw / 2, bottom + hh + 3, fmt(v), 6.5, bold=True, anchor="middle")
         if i % paso == 0:
@@ -842,6 +846,46 @@ def chart_scatter(puntos, width=CONTENT_W, height=200, xtitle="", ytitle=""):
                 break
         ocupados.append(caja)
         _s(d, caja[0], caja[1] + 1, txt, 7, bold=True)
+    return d
+
+
+def chart_lineas(cats, series, width=CONTENT_W, height=175, target=None, fmt=lambda v: f"{v:.1f}%"):
+    """series: [(nombre, valores (None/NaN = sin dato), color)].  target: línea punteada horizontal (mismo eje)."""
+    n = len(cats)
+    vals_all = [v for _, vs, _ in series for v in vs if v is not None and not pd.isna(v)]
+    if n == 0 or not vals_all:
+        return sin_datos("Sin datos para graficar.")
+    d = Drawing(width, height)
+    L, B, T, R = 40, 24, 28, 14
+    aw, ah = width - L - R, height - B - T
+    vmax = max(vals_all + ([target] if target else [])) * 1.15 or 1.0
+    paso_x = aw / max(n - 1, 1)
+    for k in range(5):
+        yy = B + ah * k / 4
+        d.add(Line(L, yy, L + aw, yy, strokeColor=C_BORDER, strokeWidth=0.4))
+        _s(d, L - 5, yy - 2.5, f"{vmax * k / 4:.1f}%", 6.5, anchor="end", fill=C_GRAY)
+    d.add(Line(L, B, L + aw, B, strokeColor=C_GRAY, strokeWidth=0.8))
+    if target:
+        ty = B + ah * target / vmax
+        d.add(Line(L, ty, L + aw, ty, strokeColor=C_GREEN, strokeWidth=1, strokeDashArray=[4, 3]))
+        _s(d, L + 3, ty + 3, f"target {target}%", 6.5, bold=True, anchor="start", fill=C_GREEN)
+    for i, c in enumerate(cats):
+        _s(d, L + i * paso_x, B - 10, str(c), 6.5, anchor="middle", fill=C_GRAY)
+    for si, (nombre, vs, col) in enumerate(series):
+        pts = [(L + i * paso_x, B + ah * v / vmax, v) if (v is not None and not pd.isna(v)) else None for i, v in enumerate(vs)]
+        for a, b in zip(pts, pts[1:]):
+            if a and b:
+                d.add(Line(a[0], a[1], b[0], b[1], strokeColor=col, strokeWidth=1.6))
+        for p in pts:
+            if p:
+                d.add(Circle(p[0], p[1], 2.6, fillColor=col, strokeColor=colors.white, strokeWidth=0.6))
+                if n <= 14:
+                    _s(d, p[0], p[1] + (5 if si % 2 == 0 else -9), fmt(p[2]), 6.2, bold=True, anchor="middle", fill=col)
+    lx = L
+    for nombre, _, col in series:
+        d.add(Rect(lx, height - 12, 8, 8, fillColor=col, strokeColor=None))
+        _s(d, lx + 12, height - 11, nombre, 7)
+        lx += 110
     return d
 
 
@@ -1479,10 +1523,411 @@ def generar_reporte_concepto_pdf(df_base, anio, mes, modalidad="COBRO REGRESO", 
 
 
 # ============================================================
-# 11. INTERFAZ (elegir reporte, periodo y generar)
+# 11. REPORTE INDEPENDIENTE: SALUD DE PEDIDOS PEQUEÑOS (1 A 4 CAJAS)
+# ============================================================
+# Costo de flete = guía; costo de distribución = costos adicionales (maniobras, reexpediciones, etc.).
+# Semáforo por pedido, según su % logístico individual (costo / facturación del pedido):
+#   SALUDABLE <= target | EN ALERTA > target | CRÍTICO > 2 x target | PÉRDIDA >= 100% | SIN FACTURACIÓN
+CLASES_SALUD = [   # (clave, etiqueta corta, color)
+    ("SALUDABLE", "Saludable", C_GREEN),
+    ("EN ALERTA", "En alerta", C_GOLD),
+    ("CRÍTICO", "Crítico", C_ORANGE),
+    ("PÉRDIDA", "Pérdida", C_RED),
+    ("SIN FACTURACIÓN", "Sin fact.", C_GRAY),
+]
+CLASES_FUERA_TARGET = ["EN ALERTA", "CRÍTICO", "PÉRDIDA", "SIN FACTURACIÓN"]
+
+
+def _m(v, dec=0):
+    """money() que muestra '-' cuando no hay dato."""
+    return "-" if v is None or pd.isna(v) else money(v, dec)
+
+
+def _vs_target(v):
+    return "-" if v is None or pd.isna(v) else f"{v - TARGET_COSTO_LOG:+.2f} pp"
+
+
+def _color_pct(v):
+    """Verde si está dentro del target, rojo si no (gris si no hay dato)."""
+    if v is None or pd.isna(v):
+        return C_GRAY
+    return C_GREEN if v <= TARGET_COSTO_LOG else C_RED
+
+
+def _etq_tam(n, max_cajas):
+    if n > max_cajas:
+        return f"{max_cajas + 1}+ CAJAS"
+    return f"{int(n)} CAJA" + ("S" if n > 1 else "")
+
+
+def _bloque(g):
+    """Indicadores de un grupo de pedidos (usa columnas _CAJ, _COSTO, _EXC, _CLASE preparadas)."""
+    n = len(g)
+    fact, costo, cajas = g["FACTURACION"].sum(), g["_COSTO"].sum(), g["_CAJ"].sum()
+    costo_ped = (costo / n) if n else np.nan
+    ticket_min = (costo_ped / (TARGET_COSTO_LOG / 100)) if n else np.nan   # facturación mínima para estar en target
+    return dict(
+        n=n, cajas=cajas, fact=fact, guia=g["COSTO DE LA GUÍA"].sum(), adic=g["COSTOS ADICIONALES"].sum(), costo=costo,
+        pct_log=(costo / fact * 100) if fact > 0 else np.nan,
+        costo_caja=(costo / cajas) if cajas else np.nan,
+        costo_ped=costo_ped, ticket=(fact / n) if n else np.nan, ticket_min=ticket_min,
+        fact_caja=(fact / cajas) if cajas else np.nan,
+        pct_fuera=(g["_CLASE"].isin(CLASES_FUERA_TARGET).sum() / n * 100) if n else np.nan,
+        pct_bajo_min=((g["FACTURACION"] < ticket_min).sum() / n * 100) if n else np.nan,
+        exceso=g["_EXC"].sum())
+
+
+def _df_bloques(d, col):
+    filas = []
+    for k, g in d.groupby(col, sort=False):
+        b = _bloque(g)
+        b["K"] = k   # clave del grupo (nombre sin guion bajo para poder usar itertuples)
+        filas.append(b)
+    return pd.DataFrame(filas)
+
+
+def _preparar_pequenos(df_base, anio, modalidad, incluir_adic, max_cajas):
+    """Filtra año y modalidad (sin filtrar mes) y agrega columnas de análisis. Devuelve (df, sin_cajas)."""
+    d = df_base.copy()
+    f_env = d["FECHA DE ENVÍO"]
+    d = d[(f_env.isna() | (f_env.dt.year == anio)) & (d["MES"] != "")].copy()
+    if modalidad == "COBRO REGRESO":
+        d = d[d["FORMA DE ENVIO"].str.contains("REGRESO", case=False, na=False)]
+    elif modalidad == "COBRO DESTINO":
+        d = d[d["FORMA DE ENVIO"].str.contains("DESTINO", case=False, na=False)]
+    d = d.copy()
+
+    # Cajas del pedido: CANTIDAD DE CAJAS; si viene en 0 se usa CAJAS (columna de cobro regreso)
+    d["_CAJ"] = np.where(d["CANTIDAD DE CAJAS"] > 0, d["CANTIDAD DE CAJAS"], d["CAJAS"]).astype(float).round()
+    sin_cajas = int((d["_CAJ"] < 1).sum())
+    d = d[d["_CAJ"] >= 1].copy()
+    d["_PEQ"] = d["_CAJ"] <= max_cajas
+    d["_TAMN"] = np.minimum(d["_CAJ"], max_cajas + 1).astype(int)
+
+    d["_COSTO"] = d["COSTO DE LA GUÍA"] + (d["COSTOS ADICIONALES"] if incluir_adic else 0.0)
+    fact, costo = d["FACTURACION"], d["_COSTO"]
+    d["_PCT"] = costo / fact.where(fact > 0) * 100          # NaN si el pedido no tiene facturación
+    conds = [(fact <= 0) & (costo <= 0), fact <= 0, d["_PCT"] >= 100,
+             d["_PCT"] > 2 * TARGET_COSTO_LOG, d["_PCT"] > TARGET_COSTO_LOG]
+    d["_CLASE"] = np.select(conds, ["SIN DATOS", "SIN FACTURACIÓN", "PÉRDIDA", "CRÍTICO", "EN ALERTA"], default="SALUDABLE")
+    d["_EXC"] = (costo - TARGET_COSTO_LOG / 100 * fact).clip(lower=0)   # lo que se paga por encima del target
+    return d, sin_cajas
+
+
+def calc_pequenos(df_base, anio, mes, modalidad="TODAS", incluir_adic=True, max_cajas=CAJAS_PEQUENO_MAX):
+    """Salud de pedidos pequeños (1 a max_cajas cajas) vs el resto. mes = 0 -> todo el año."""
+    anual, sin_cajas = _preparar_pequenos(df_base, anio, modalidad, incluir_adic, max_cajas)
+    d = anual[anual["MES"] == MESES[mes - 1]] if mes else anual
+    if d.empty:
+        return dict(vacio=True, motivo="No hay envíos con cajas registradas para ese periodo y modalidad.")
+    peq, resto = d[d["_PEQ"]], d[~d["_PEQ"]]
+    if peq.empty:
+        return dict(vacio=True, motivo=f"No hay pedidos de 1 a {max_cajas} cajas en ese periodo y modalidad.")
+
+    B_peq, B_res, B_tot = _bloque(peq), (_bloque(resto) if not resto.empty else None), _bloque(d)
+
+    por_tam = _df_bloques(d.sort_values("_TAMN"), "_TAMN")
+    por_clase = _df_bloques(peq, "_CLASE").set_index("K")
+    cruce = pd.crosstab(peq["_TAMN"], peq["_CLASE"])
+
+    def _ranking(col, n=10):
+        x = peq.assign(_K=peq[col].replace("", pd.NA)).dropna(subset=["_K"])
+        if x.empty:
+            return pd.DataFrame()
+        return _df_bloques(x, "_K").sort_values("exceso", ascending=False).head(n).reset_index(drop=True)
+
+    pf = peq.assign(_F=peq["FLETERA"].replace("", "SIN ASIGNAR"))
+    por_f = _df_bloques(pf, "_F").sort_values("costo", ascending=False).reset_index(drop=True)
+    if not resto.empty:
+        rf = _df_bloques(resto.assign(_F=resto["FLETERA"].replace("", "SIN ASIGNAR")), "_F").set_index("K")["pct_log"]
+        por_f["pct_log_resto"] = por_f["K"].map(rf)
+    else:
+        por_f["pct_log_resto"] = np.nan
+    por_forma = _df_bloques(peq.assign(_K=peq["FORMA DE ENVIO"].replace("", "SIN FORMA")), "_K").sort_values("costo", ascending=False)
+
+    # Bandas de facturación por pedido (cuartiles de los pedidos pequeños con facturación)
+    bandas = pd.DataFrame()
+    v = peq[peq["FACTURACION"] > 0]
+    if len(v) >= 8:
+        try:
+            cat, edges = pd.qcut(v["FACTURACION"], 4, retbins=True, duplicates="drop")
+            etiquetas = {iv: f"{money(iv.left if i else 0)} a {money(iv.right)}" for i, iv in enumerate(cat.cat.categories)}
+            v = v.assign(_B=cat.map(etiquetas).astype(str), _O=cat.cat.codes)
+            bandas = _df_bloques(v.sort_values("_O"), "_B")
+        except Exception:
+            bandas = pd.DataFrame()
+
+    # Tendencia del año (hasta el mes elegido): % logístico de pequeños vs resto
+    def _pl(g):
+        f = g["FACTURACION"].sum()
+        return (g["_COSTO"].sum() / f * 100) if f > 0 else np.nan
+    tendencia = []
+    for i, m in enumerate(MESES):
+        if mes and i + 1 > mes:
+            break
+        g = anual[anual["MES"] == m]
+        if g.empty or not g["_PEQ"].any():
+            continue
+        tendencia.append((m[:3].title(), _pl(g[g["_PEQ"]]), _pl(g[~g["_PEQ"]]), int(g["_PEQ"].sum())))
+
+    peores = peq[peq["_EXC"] > 0].sort_values("_EXC", ascending=False).head(15)
+    exceso_total = peq["_EXC"].sum()
+    clientes, destinos = _ranking("NOMBRE DEL CLIENTE"), _ranking("DESTINO")
+    conc_top = (clientes["exceso"].head(10).sum() / exceso_total * 100) if (exceso_total > 0 and not clientes.empty) else np.nan
+
+    return dict(vacio=False, d=d, peq=peq, B=B_peq, R=B_res, T=B_tot, max_cajas=max_cajas, sin_cajas=sin_cajas,
+                sin_costo=int((peq["_COSTO"] <= 0).sum()), por_tam=por_tam, por_clase=por_clase, cruce=cruce,
+                por_f=por_f, por_forma=por_forma, bandas=bandas, tendencia=tendencia, peores=peores,
+                clientes=clientes, destinos=destinos, exceso_total=exceso_total, conc_top=conc_top,
+                sh_ped=B_peq["n"] / B_tot["n"] * 100, sh_fact=(B_peq["fact"] / B_tot["fact"] * 100) if B_tot["fact"] else np.nan,
+                sh_costo=(B_peq["costo"] / B_tot["costo"] * 100) if B_tot["costo"] else np.nan,
+                sh_cajas=B_peq["cajas"] / B_tot["cajas"] * 100)
+
+
+def generar_reporte_pequenos_pdf(df_base, anio, mes, modalidad="TODAS", incluir_adic=True, max_cajas=CAJAS_PEQUENO_MAX):
+    """PDF de salud de pedidos pequeños (1 a max_cajas cajas): facturación, flete y distribución. Devuelve BytesIO."""
+    periodo = f"{MESES[mes - 1]} {anio}" if mes else f"AÑO {anio} (ACUMULADO)"
+    ahora = datetime.now().strftime("%d/%m/%Y %H:%M")
+    base_txt = "guía + costos adicionales" if incluir_adic else "solo costo de guía"
+    rng = f"1 a {max_cajas} cajas" if max_cajas > 1 else "1 caja"
+    P = calc_pequenos(df_base, anio, mes, modalidad, incluir_adic, max_cajas)
+
+    story = _encabezado_simple(f"SALUD DE PEDIDOS PEQUEÑOS  ·  {rng.upper()}",
+                               f"{modalidad.title() if modalidad != 'TODAS' else 'Todas las modalidades'}  ·  {periodo.title()}  ·  costo = {base_txt}")
+    if P["vacio"]:
+        story.append(sin_datos(P["motivo"]))
+    else:
+        B, R, T = P["B"], P["R"], P["T"]
+        mc = max_cajas
+        # ---------------- RESUMEN EJECUTIVO ----------------
+        story.append(Paragraph("RESUMEN EJECUTIVO", ParagraphStyle("re", fontName="Helvetica-Bold", fontSize=11, textColor=C_SLATE, spaceAfter=8)))
+        col_l = HEX["green"] if B["pct_log"] <= TARGET_COSTO_LOG else HEX["red"]
+        story += kpi_row([
+            (f"Pedidos de {rng}", f"{num(B['n'])}  ·  {P['sh_ped']:.0f}%", HEX["slate"]),
+            ("Facturación pequeños", f"{money(B['fact'])}  ·  {pct(P['sh_fact'], 0)}", HEX["green"]),
+            (f"Costo logístico ({base_txt})", f"{money(B['costo'])}  ·  {pct(P['sh_costo'], 0)}", HEX["orange"]),
+            (f"% logístico pequeños (target {TARGET_COSTO_LOG}%)", pct(B["pct_log"], 2), col_l),
+        ], ncols=4)
+        res_txt = pct(R["pct_log"], 2) if R else "-"
+        story += kpi_row([
+            (f"% logístico de {mc + 1}+ cajas", res_txt, HEX["gray"] if not R else (HEX["green"] if R["pct_log"] <= TARGET_COSTO_LOG else HEX["red"])),
+            ("Costo por caja (pequeños)", _m(B["costo_caja"], 2) + (f"  vs {_m(R['costo_caja'], 2)}" if R else ""), HEX["gold"]),
+            ("Costo por pedido (pequeños)", _m(B["costo_ped"], 2), HEX["purple"]),
+            ("Sobrecosto vs target", money(P["exceso_total"]), HEX["red"]),
+        ], ncols=4)
+        story += kpi_row([
+            ("Ticket promedio", _m(B["ticket"]), HEX["teal"]),
+            ("Ticket mínimo para estar en target", _m(B["ticket_min"]), HEX["blue"]),
+            ("Pedidos fuera de target", pct(B["pct_fuera"], 0), HEX["red"]),
+            ("Pedidos bajo el ticket mínimo", pct(B["pct_bajo_min"], 0), HEX["orange"]),
+        ], ncols=4)
+
+        hall = []
+        hall.append(f"Los pedidos de {rng} son <b>{P['sh_ped']:.0f}%</b> de los envíos y <b>{P['sh_cajas']:.0f}%</b> de las cajas, pero generan solo "
+                    f"<b>{pct(P['sh_fact'], 0)}</b> de la facturación y cargan <b>{pct(P['sh_costo'], 0)}</b> del costo logístico.")
+        if R and not pd.isna(B["pct_log"]) and not pd.isna(R["pct_log"]):
+            dif = B["pct_log"] - R["pct_log"]
+            hall.append(f"Su % logístico es <b>{B['pct_log']:.2f}%</b> contra <b>{R['pct_log']:.2f}%</b> de los pedidos de {mc + 1}+ cajas "
+                        f"({dif:+.2f} pp) y {'rebasa' if B['pct_log'] > TARGET_COSTO_LOG else 'cumple'} el target de {TARGET_COSTO_LOG}%.")
+        pt = P["por_tam"][P["por_tam"]["K"] <= mc]
+        pt_f = pt[pt["pct_log"].notna()]
+        if not pt_f.empty:
+            w = pt_f.sort_values("pct_log", ascending=False).iloc[0]
+            hall.append(f"El tamaño más pesado es <b>{_etq_tam(w['K'], mc)}</b> con <b>{w['pct_log']:.2f}%</b> logístico "
+                        f"({_m(w['costo_ped'], 2)} de costo por pedido sobre un ticket de {_m(w['ticket'])}).")
+        hall.append(f"<b>{B['pct_fuera']:.0f}%</b> de los pedidos pequeños supera el target; el sobrecosto acumulado frente a la meta es de <b>{money(P['exceso_total'])}</b>. "
+                    f"Los pedidos con costo igual o mayor a su facturación (pérdida) o sin facturación suman "
+                    f"<b>{num(P['por_clase']['n'].get('PÉRDIDA', 0) + P['por_clase']['n'].get('SIN FACTURACIÓN', 0))}</b>.")
+        if not pd.isna(B["ticket_min"]):
+            hall.append(f"Con el costo promedio actual ({_m(B['costo_ped'], 2)} por pedido), se necesita facturar al menos <b>{money(B['ticket_min'])}</b> por pedido "
+                        f"para quedar en target; el ticket promedio es {_m(B['ticket'])} y <b>{B['pct_bajo_min']:.0f}%</b> de los pedidos está por debajo de ese mínimo.")
+        pf_ = P["por_f"][(P["por_f"]["n"] >= 3) & P["por_f"]["pct_log"].notna()]
+        if len(pf_) >= 2:
+            a, z = pf_.sort_values("pct_log").iloc[0], pf_.sort_values("pct_log").iloc[-1]
+            hall.append(f"Por fletera (mín. 3 pedidos): la más eficiente en pedidos pequeños es <b>{esc(a['K'])}</b> ({a['pct_log']:.2f}%) y la más costosa "
+                        f"<b>{esc(z['K'])}</b> ({z['pct_log']:.2f}%).")
+        if not pd.isna(P["conc_top"]):
+            hall.append(f"Los 10 clientes con mayor sobrecosto concentran <b>{P['conc_top']:.0f}%</b> del exceso: ahí está la mayor oportunidad de negociación o de pedido mínimo.")
+        story.append(Paragraph("HALLAZGOS CLAVE", ParagraphStyle("hk", fontName="Helvetica-Bold", fontSize=11, textColor=C_SLATE, spaceBefore=4, spaceAfter=6)))
+        for h in hall:
+            story.append(Paragraph(h, ST["bullet"], bulletText="•"))
+
+        # ---------------- 01 PEQUEÑOS VS RESTO, POR TAMAÑO ----------------
+        story += [PageBreak()] + seccion(1, "PEQUEÑOS VS RESTO, POR TAMAÑO DE PEDIDO",
+                                         f"Facturación, flete y distribución de pedidos de {rng} frente a {mc + 1}+ cajas")
+        W9 = [66, 40, 36, 76, 60, 44, 48, 54, 56, 60]
+        H9 = ["TAMAÑO", "PEDIDOS", "CAJAS", "FACTURACIÓN", "COSTO", "% LOG.", f"VS {TARGET_COSTO_LOG}%", "COSTO / CAJA", "COSTO / PEDIDO", "TICKET PROM."]
+        A9 = ["L"] + ["R"] * 9
+
+        def _fila(lab, b):
+            return [lab, num(b["n"]), num(b["cajas"]), money(b["fact"]), money(b["costo"]), pct(b["pct_log"], 2), _vs_target(b["pct_log"]),
+                    _m(b["costo_caja"], 2), _m(b["costo_ped"], 2), _m(b["ticket"])]
+        filas = [_fila(f"PEQUEÑOS (1-{mc})", B)] + ([_fila(f"RESTO ({mc + 1}+)", R)] if R else [])
+        story.append(tabla(H9, filas, W9, A9, total_row=_fila("TOTAL", T)))
+        story.append(Spacer(1, 10))
+        pt_all = P["por_tam"]
+        cats = [_etq_tam(n, mc).replace(" CAJAS", " cj").replace(" CAJA", " cj") for n in pt_all["K"]]
+        izq = chart_barras_v(cats, [0 if pd.isna(v) else v for v in pt_all["pct_log"]], width=262, height=150, fmt=lambda v: f"{v:.1f}%",
+                             colors_list=[_color_pct(v) for v in pt_all["pct_log"]])
+        der = chart_barras_v(cats, [0 if pd.isna(v) else v for v in pt_all["costo_caja"]], width=262, height=150, color=C_GOLD, fmt=lambda v: money(v, 0))
+        story.append(lado_a_lado(izq, der, f"% logístico por tamaño (verde = dentro de {TARGET_COSTO_LOG}%)", "Costo por caja ($)"))
+        story.append(Spacer(1, 8))
+        izq = chart_barras_h([("% de los pedidos", P["sh_ped"]), ("% de las cajas", P["sh_cajas"]), ("% de la facturación", P["sh_fact"] if not pd.isna(P["sh_fact"]) else 0),
+                              ("% del costo logístico", P["sh_costo"] if not pd.isna(P["sh_costo"]) else 0)],
+                             width=262, label_w=104, fmt=lambda v: f"{v:.0f}%", colors_list=[C_SLATE, C_TEAL, C_GREEN, C_ORANGE])
+        der = chart_barras_v(cats, [0 if pd.isna(v) else v for v in pt_all["ticket"]], width=262, height=130, color=C_GREEN, fmt=lambda v: money(v, 0))
+        story.append(lado_a_lado(izq, der, f"Peso de los pedidos de {rng} en el total", "Ticket promedio por pedido ($)"))
+        story.append(Spacer(1, 10))
+        rows = [_fila(_etq_tam(r["K"], mc), r) for _, r in pt_all.iterrows()]
+        story.append(KeepTogether([subtitulo("Detalle por número de cajas"), tabla(H9, rows, W9, A9)]))
+        story += [Spacer(1, 4), Paragraph(
+            f"Costo = {base_txt}. % logístico = costo / facturación. Ticket = facturación promedio por pedido. "
+            f"Pedidos sin cajas registradas ({num(P['sin_cajas'])}) quedan fuera del análisis.", ST["nota"])]
+
+        # ---------------- 02 SEMÁFORO DE SALUD ----------------
+        story += [Spacer(1, 12), CondPageBreak(340)] + seccion(2, "SEMÁFORO DE SALUD DEL PEDIDO",
+                                         f"Cada pedido de {rng} clasificado por su % logístico individual (target {TARGET_COSTO_LOG}%)")
+        pc = P["por_clase"]
+        presentes = [(k, e, c) for k, e, c in CLASES_SALUD if k in pc.index]
+        n_pq = B["n"]
+        story += kpi_row([(e, f"{num(pc.loc[k, 'n'])}  ·  {pc.loc[k, 'n'] / n_pq * 100:.0f}%", c.hexval().replace("0x", "#")) for k, e, c in presentes],
+                         ncols=len(presentes))
+        izq = chart_donut([(e, pc.loc[k, "n"], c) for k, e, c in presentes])
+        der = chart_barras_h([(e, pc.loc[k, "costo"]) for k, e, c in presentes], width=262, label_w=70, fmt=money,
+                             colors_list=[c for _, _, c in presentes])
+        story.append(lado_a_lado(izq, der, "Pedidos por estado de salud", "Costo logístico por estado ($)"))
+        story.append(Spacer(1, 10))
+        rows = [[e, num(pc.loc[k, "n"]), pct(pc.loc[k, "n"] / n_pq * 100, 0), money(pc.loc[k, "fact"]),
+                 pct(pc.loc[k, "fact"] / B["fact"] * 100, 0) if B["fact"] else "-", money(pc.loc[k, "costo"]),
+                 pct(pc.loc[k, "costo"] / B["costo"] * 100, 0) if B["costo"] else "-", money(pc.loc[k, "exceso"]),
+                 _m(pc.loc[k, "costo_ped"], 2)] for k, e, c in presentes]
+        story.append(KeepTogether([subtitulo("Detalle por estado"),
+                                   tabla(["ESTADO", "PEDIDOS", "% PED.", "FACTURACIÓN", "% FACT.", "COSTO", "% COSTO", "SOBRECOSTO", "COSTO / PEDIDO"], rows,
+                                         [78, 48, 44, 78, 48, 70, 50, 70, 54], ["L"] + ["R"] * 8,
+                                         total_row=["TOTAL", num(n_pq), "100%", money(B["fact"]), "100%", money(B["costo"]), "100%", money(P["exceso_total"]), _m(B["costo_ped"], 2)])]))
+        story.append(Spacer(1, 10))
+        cr = P["cruce"]
+        cats_t = [_etq_tam(n, mc).replace(" CAJAS", " cj").replace(" CAJA", " cj") for n in cr.index]
+        series = [(e, [int(cr.loc[n, k]) if k in cr.columns else 0 for n in cr.index], c) for k, e, c in CLASES_SALUD]
+        story.append(KeepTogether([subtitulo("Semáforo por tamaño de pedido (número de pedidos)"), chart_apiladas_v(cats_t, series)]))
+        story += [Spacer(1, 4), Paragraph(
+            f"Saludable: hasta {TARGET_COSTO_LOG}% · En alerta: más de {TARGET_COSTO_LOG}% · Crítico: más de {2 * TARGET_COSTO_LOG:g}% · Pérdida: el costo iguala o supera la facturación · "
+            "Sin fact.: tiene costo pero no facturación. Sobrecosto = costo del pedido menos lo que costaría estando en target.", ST["nota"])]
+
+        # ---------------- 03 FLETERA Y MODALIDAD ----------------
+        story += [Spacer(1, 12), CondPageBreak(340)] + seccion(3, "POR FLETERA Y MODALIDAD", f"Quién cuesta más en pedidos de {rng} y cómo se compara contra sus envíos de {mc + 1}+ cajas")
+        pf = P["por_f"].head(12)
+        pfp = pf[pf["pct_log"].notna()].sort_values("pct_log", ascending=False)
+        izq = chart_barras_h([(r.K, r.pct_log) for r in pfp.itertuples()], width=262, label_w=92, fmt=lambda v: f"{v:.2f}%",
+                             colors_list=[_color_pct(v) for v in pfp["pct_log"]]) if not pfp.empty else sin_datos("Sin facturación.")
+        pcj = pf[pf["costo_caja"].notna()].sort_values("costo_caja", ascending=False)
+        der = chart_barras_h([(r.K, r.costo_caja) for r in pcj.itertuples()], width=262, label_w=92, color=C_GOLD,
+                             fmt=lambda v: money(v, 2)) if not pcj.empty else sin_datos("Sin cajas.")
+        story.append(lado_a_lado(izq, der, "% logístico en pedidos pequeños", "Costo por caja ($)"))
+        story.append(Spacer(1, 10))
+        rows = [[trunc(r.K, 24), num(r.n), num(r.cajas), money(r.fact), money(r.costo), pct(r.pct_log, 2), pct(r.pct_log_resto, 2),
+                 _m(r.costo_caja, 2), _m(r.costo_ped, 2), pct(r.pct_fuera, 0)] for r in pf.itertuples()]
+        story.append(KeepTogether([subtitulo("Detalle por fletera (top 12 por costo)"),
+                                   tabla(["FLETERA", "PEDIDOS", "CAJAS", "FACTURACIÓN", "COSTO", "% LOG. PEQ.", f"% LOG. {mc + 1}+", "COSTO / CAJA", "COSTO / PEDIDO", "% FUERA"],
+                                         rows, [96, 42, 36, 66, 60, 46, 46, 50, 54, 44], ["L"] + ["R"] * 9)]))
+        story.append(Spacer(1, 10))
+        pfm = P["por_forma"]
+        rows = [[trunc(r.K, 28), num(r.n), money(r.fact), money(r.costo), pct(r.pct_log, 2), _m(r.costo_caja, 2), pct(r.pct_fuera, 0)] for r in pfm.itertuples()]
+        story.append(KeepTogether([subtitulo("Por forma de envío"),
+                                   tabla(["FORMA DE ENVÍO", "PEDIDOS", "FACTURACIÓN", "COSTO", "% LOG.", "COSTO / CAJA", "% FUERA DE TARGET"], rows,
+                                         [130, 50, 80, 70, 60, 70, 80], ["L"] + ["R"] * 6)]))
+        story += [Spacer(1, 4), Paragraph("% Log. peq. = pedidos pequeños; % Log. resto = los de más cajas de la misma fletera (si es mucho menor, el problema es el tamaño del pedido y no la fletera). "
+                                          "% fuera = pedidos que superan el target.", ST["nota"])]
+
+        # ---------------- 04 TICKET Y PUNTO DE EQUILIBRIO ----------------
+        story += [Spacer(1, 12), CondPageBreak(340)] + seccion(4, "TICKET Y PUNTO DE EQUILIBRIO", "¿Desde qué facturación por pedido el flete deja de pesar?")
+        bd = P["bandas"]
+        if not bd.empty:
+            izq = chart_barras_h([(r.K, r.pct_log) for r in bd.itertuples()], width=262, label_w=104, fmt=lambda v: f"{v:.2f}%",
+                                 colors_list=[_color_pct(v) for v in bd["pct_log"]])
+            der = chart_barras_h([(r.K, r.costo_ped) for r in bd.itertuples()], width=262, label_w=104, color=C_ORANGE, fmt=lambda v: money(v, 2))
+            story.append(lado_a_lado(izq, der, "% logístico por rango de facturación", "Costo promedio por pedido ($)"))
+            story.append(Spacer(1, 10))
+            rows = [[r.K, num(r.n), money(r.fact), money(r.costo), pct(r.pct_log, 2), _m(r.costo_ped, 2), pct(r.pct_fuera, 0)] for r in bd.itertuples()]
+            story.append(KeepTogether([subtitulo("Pedidos pequeños por rango de facturación (cuartiles)"),
+                                       tabla(["RANGO POR PEDIDO", "PEDIDOS", "FACTURACIÓN", "COSTO", "% LOG.", "COSTO / PEDIDO", "% FUERA"], rows,
+                                             [140, 50, 80, 70, 56, 74, 70], ["L"] + ["R"] * 6)]))
+            story.append(Spacer(1, 10))
+        else:
+            story += [sin_datos("No hay suficientes pedidos pequeños con facturación para armar rangos."), Spacer(1, 10)]
+        ptm = P["por_tam"][P["por_tam"]["K"] <= mc]
+        rows = [[_etq_tam(r.K, mc), _m(r.ticket), _m(r.costo_ped, 2), _m(r.ticket_min), _m(r.ticket - r.ticket_min) if pd.notna(r.ticket_min) else "-",
+                 pct(r.pct_bajo_min, 0), _m(r.fact_caja)] for r in ptm.itertuples()]
+        story.append(KeepTogether([subtitulo("Ticket mínimo para estar en target, por número de cajas"),
+                                   tabla(["TAMAÑO", "TICKET PROM.", "COSTO / PEDIDO", "TICKET MÍNIMO", "BRECHA", "% PEDIDOS BAJO MÍNIMO", "FACT. POR CAJA"], rows,
+                                         [76, 76, 76, 76, 76, 90, 70], ["L"] + ["R"] * 6)]))
+        story += [Spacer(1, 4), Paragraph(
+            f"Ticket mínimo = costo promedio por pedido / {TARGET_COSTO_LOG}%. Brecha = ticket promedio menos ticket mínimo (negativa = en promedio el pedido no alcanza el target). "
+            "Sirve como referencia para definir pedido mínimo, cargos por envío chico o consolidación.", ST["nota"])]
+
+        # ---------------- 05 DÓNDE SE FUGA EL COSTO ----------------
+        story += [Spacer(1, 12), CondPageBreak(340)] + seccion(5, "DÓNDE SE FUGA EL COSTO", "Clientes, destinos y pedidos con mayor sobrecosto frente al target")
+        cl, de = P["clientes"], P["destinos"]
+        izq = chart_barras_h([(r.K, r.exceso) for r in cl.head(8).itertuples()], width=262, label_w=110, color=C_RED, fmt=money) if not cl.empty else sin_datos("Sin datos.")
+        der = chart_barras_h([(r.K, r.exceso) for r in de.head(8).itertuples()], width=262, label_w=90, color=C_ORANGE, fmt=money) if not de.empty else sin_datos("Sin datos.")
+        story.append(lado_a_lado(izq, der, "Sobrecosto por cliente (top 8)", "Sobrecosto por destino (top 8)"))
+        story.append(Spacer(1, 10))
+        if not cl.empty:
+            rows = [[str(i + 1), trunc(r.K, 40), num(r.n), num(r.cajas), money(r.fact), money(r.costo), pct(r.pct_log, 2), money(r.exceso)]
+                    for i, r in enumerate(cl.itertuples())]
+            story.append(KeepTogether([subtitulo("Top 10 clientes por sobrecosto (pedidos pequeños)"),
+                                       tabla(["#", "CLIENTE", "PEDIDOS", "CAJAS", "FACTURACIÓN", "COSTO", "% LOG.", "SOBRECOSTO"], rows,
+                                             [22, 188, 46, 38, 70, 62, 52, 62], ["C", "L"] + ["R"] * 6)]))
+            story.append(Spacer(1, 10))
+        pe = P["peores"]
+        if not pe.empty:
+            rows = [[trunc(str(r["NÚMERO DE PEDIDO"]), 11), trunc(r["NOMBRE DEL CLIENTE"], 24), trunc(r["FLETERA"] or "S/A", 14), trunc(r["DESTINO"], 11),
+                     num(r["_CAJ"]), money(r["FACTURACION"]), money(r["_COSTO"]), "S/F" if r["FACTURACION"] <= 0 else pct(r["_PCT"], 1), money(r["_EXC"])]
+                    for _, r in pe.iterrows()]
+            story.append(KeepTogether([subtitulo("15 pedidos pequeños con mayor sobrecosto"),
+                                       tabla(["PEDIDO", "CLIENTE", "FLETERA", "DESTINO", "CJ.", "FACTURACIÓN", "COSTO", "% LOG.", "SOBRECOSTO"], rows,
+                                             [52, 108, 72, 62, 28, 62, 50, 44, 62], ["L", "L", "L", "L", "R", "R", "R", "R", "R"])]))
+            story += [Spacer(1, 3), Paragraph("S/F = pedido sin facturación registrada (todo su costo cuenta como sobrecosto).", ST["nota"])]
+
+        # ---------------- 06 TENDENCIA ----------------
+        story += [Spacer(1, 12), CondPageBreak(340)] + seccion(6, "TENDENCIA DEL AÑO", f"% logístico mensual: pedidos de {rng} vs {mc + 1}+ cajas")
+        tr = P["tendencia"]
+        if len(tr) >= 2:
+            story.append(chart_lineas([t[0] for t in tr], [(f"{rng.capitalize()}", [t[1] for t in tr], C_ORANGE),
+                                                           (f"{mc + 1}+ cajas", [t[2] for t in tr], C_TEAL)], target=TARGET_COSTO_LOG))
+            story.append(Spacer(1, 8))
+            rows = [[t[0], num(t[3]), pct(t[1], 2), pct(t[2], 2), (f"{t[1] - t[2]:+.2f} pp" if pd.notna(t[1]) and pd.notna(t[2]) else "-")] for t in tr]
+            story.append(KeepTogether([subtitulo("Detalle mensual"),
+                                       tabla(["MES", "PEDIDOS PEQUEÑOS", "% LOG. PEQUEÑOS", f"% LOG. {mc + 1}+ CAJAS", "DIFERENCIA"], rows,
+                                             [90, 110, 110, 120, 110], ["L", "R", "R", "R", "R"])]))
+        else:
+            story.append(sin_datos("Se necesitan al menos dos meses con pedidos pequeños para mostrar la tendencia."))
+
+        # ---------------- NOTAS ----------------
+        notas = (f"Periodo según la columna MES de la matriz y el año seleccionado. Se toman las cajas de CANTIDAD DE CAJAS (o CAJAS si viene en 0) y se redondean al entero. "
+                 f"Costo de flete = costo de la guía; costo de distribución = costos adicionales; se usa {base_txt}. Target logístico: {TARGET_COSTO_LOG}%.")
+        if P["sin_costo"]:
+            notas += f" Hay {num(P['sin_costo'])} pedido(s) pequeños sin costo registrado; si la guía aún no se captura, el % logístico se verá mejor de lo real."
+        story += [Spacer(1, 10), Paragraph(notas, ST["nota"])]
+
+    buf = BytesIO()
+    doc = BaseDocTemplate(buf, pagesize=letter, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=48, bottomMargin=44,
+                          title=f"Salud de pedidos pequeños - {periodo}", author="JYPESA Logística")
+    doc.addPageTemplates(_hacer_paginas_simple("SALUD DE PEDIDOS PEQUEÑOS", periodo))
+
+    class _Canvas(_NumberedCanvas):
+        titulo_pie = f"Pedidos pequeños  -  generado {ahora}"
+    doc.build(story, canvasmaker=_Canvas)
+    buf.seek(0)
+    return buf
+
+
+# ============================================================
+# 12. INTERFAZ (elegir reporte, periodo y generar)
 # ============================================================
 REPORTE_MENSUAL = "REPORTE MENSUAL COMPLETO"
 REPORTE_CONCEPTO = "% LOGÍSTICO POR CONCEPTO"
+REPORTE_PEQUENOS = "SALUD DE PEDIDOS PEQUEÑOS (1 A 4 CAJAS)"
 
 
 def main():
@@ -1522,7 +1967,7 @@ def main():
     anio_prev = hoy.year if hoy.month > 1 else hoy.year - 1
     idx_anio = anios.index(anio_prev) if anio_prev in anios else 0
 
-    tipo = st.selectbox("¿QUÉ REPORTE QUIERES GENERAR?", [REPORTE_MENSUAL, REPORTE_CONCEPTO])
+    tipo = st.selectbox("¿QUÉ REPORTE QUIERES GENERAR?", [REPORTE_MENSUAL, REPORTE_CONCEPTO, REPORTE_PEQUENOS])
 
     # ---------------- REPORTE MENSUAL COMPLETO ----------------
     if tipo == REPORTE_MENSUAL:
@@ -1567,7 +2012,7 @@ def main():
                                use_container_width=True, key="rep_mensual_dl")
 
     # ---------------- % LOGÍSTICO POR CONCEPTO ----------------
-    else:
+    elif tipo == REPORTE_CONCEPTO:
         c1, c2, c3, c4 = st.columns(4, vertical_alignment="bottom")
         mes_sel = c1.selectbox("MES", ["TODO EL AÑO"] + MESES, index=mes_prev, key="conc_mes")   # +1 por "TODO EL AÑO"
         anio_sel = c2.selectbox("AÑO", anios, index=idx_anio, key="conc_anio")
@@ -1597,6 +2042,38 @@ def main():
         if rep:
             st.download_button("DESCARGAR REPORTE PDF", data=rep["bytes"], file_name=rep["nombre"], mime="application/pdf",
                                use_container_width=True, key="rep_log_concepto_dl")
+
+    # ---------------- SALUD DE PEDIDOS PEQUEÑOS ----------------
+    else:
+        c1, c2, c3, c4, c5 = st.columns(5, vertical_alignment="bottom")
+        mes_sel = c1.selectbox("MES", ["TODO EL AÑO"] + MESES, index=mes_prev, key="peq_mes")
+        anio_sel = c2.selectbox("AÑO", anios, index=idx_anio, key="peq_anio")
+        modalidad = c3.selectbox("MODALIDAD", ["TODAS", "COBRO REGRESO", "COBRO DESTINO"], key="peq_mod")
+        costo_sel = c4.selectbox("COSTO A CONSIDERAR", ["Guía + adicionales", "Solo guía"], key="peq_costo")
+        max_cj = c5.selectbox("PEDIDO PEQUEÑO = HASTA (CAJAS)", [2, 3, 4, 5, 6, 8, 10], index=[2, 3, 4, 5, 6, 8, 10].index(CAJAS_PEQUENO_MAX), key="peq_max")
+        generar = st.button("GENERAR REPORTE PDF", use_container_width=True, key="peq_btn")
+
+        st.caption("Salud de los pedidos pequeños: facturación vs costo de flete (guía) y de distribución (adicionales), comparativo contra pedidos grandes, "
+                   "semáforo por pedido, fletera, ticket mínimo para estar en target, clientes/destinos con mayor sobrecosto y tendencia del año.")
+
+        if generar:
+            mes_num = 0 if mes_sel == "TODO EL AÑO" else MESES.index(mes_sel) + 1
+            with st.spinner("Armando el reporte..."):
+                try:
+                    pdf = generar_reporte_pequenos_pdf(df_base, int(anio_sel), mes_num, modalidad,
+                                                       incluir_adic=(costo_sel == "Guía + adicionales"), max_cajas=int(max_cj))
+                    per = "ANUAL" if mes_num == 0 else mes_sel
+                    st.session_state["rep_pequenos_pdf"] = {
+                        "bytes": pdf.getvalue(),
+                        "nombre": f"Salud_Pedidos_Pequenos_1a{int(max_cj)}_Cajas_{modalidad.replace(' ', '_')}_{per}_{anio_sel}.pdf"}
+                    st.success("¡Reporte generado!")
+                except Exception as e:
+                    st.error(f"No se pudo generar el reporte: {e}")
+
+        rep = st.session_state.get("rep_pequenos_pdf")
+        if rep:
+            st.download_button("DESCARGAR REPORTE PDF", data=rep["bytes"], file_name=rep["nombre"], mime="application/pdf",
+                               use_container_width=True, key="rep_pequenos_dl")
 
 
 if __name__ == "__main__":
