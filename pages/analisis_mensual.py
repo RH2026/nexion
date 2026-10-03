@@ -259,31 +259,16 @@ try:
                 pct_eficiencia_ant = (cumplidos_ant / len(df_eval_ant)) * 100
                 var_eficiencia_mensual = pct_eficiencia - pct_eficiencia_ant
 
-    # --- BOTONES DE VISTA ---
-    col_print1, col_print2, col_print3 = st.columns(3)
-
-    with col_print1:
-        if st.button(
-            ":material/print: GENERAR REPORTE GRÁFICO",
-            type="primary",
-            use_container_width=True
-        ):
-            st.session_state.reporte_a_imprimir = generar_reporte_grafico()
+    # --- BOTONES DE VISTA ----
+    c_btn1, c_btn2 = st.columns(2)
     
-    with col_print2:
-        if st.button(
-            ":material/calculate: IMPRIMIR CÁLCULO APLICADO",
-            use_container_width=True
-        ):
-            st.session_state.reporte_a_imprimir = generar_memoria_tecnica()
+    with c_btn1:
+        if st.button("VER MÉTRICAS Y TARJETAS", use_container_width=True):
+            st.session_state.ver_grafico = False
     
-    with col_print3:
-        if st.button(
-            "📄 GENERAR REPORTES EN PDF",
-            use_container_width=True,
-            key="btn_reporte_mensual_pdf"
-        ):
-            st.switch_page("pages/reporte_mensual_pdf.py")
+    with c_btn2:
+        if st.button("VER GRÁFICO COMPARATIVO", use_container_width=True):
+            st.session_state.ver_grafico = True
             
     # --- 5. VISTA DE TARJETAS (ALTURA REDUCIDA Y DELTAS MÁS GRANDES) ---
     if not st.session_state.ver_grafico:
