@@ -17,6 +17,10 @@ cajas y % logístico de cada concepto, por mes o todo el año, por modalidad).
 Una tercera opción, "SALUD DE PEDIDOS PEQUEÑOS (1 A 4 CAJAS)", analiza facturación, costo de flete (guía) y costo de distribución
 (adicionales) de los pedidos chicos: comparativo contra pedidos grandes, semáforo por pedido, fletera, ticket mínimo, sobrecosto y tendencia.
 
+COSTOS EXTRAS: los registros cuya columna CONCEPTO sea recolecciones o maniobras NO se cuentan como pedidos (ni envíos, ni cajas,
+ni facturación, ni efectividad). Su costo (guía + adicionales) se muestra aparte como "costo extra" y se suma al costo logístico total;
+los reportes enseñan también el % logístico "solo pedidos" para comparar fleteras sin ese ruido.
+
 Los cálculos replican los del dashboard, pero filtran por MES **y AÑO**.
 Los gráficos se dibujan directo con reportlab (no necesita kaleido ni matplotlib).
 """
@@ -85,6 +89,7 @@ MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO
 CARRIERS_PRINCIPALES_DC = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "PAQUETE", "SANCHEZ", "FLETES DE REGRESO", "FARMASES"]
 FLETERAS_PRINCIPALES_RK = ["TRES GUERRAS", "ONE", "TINY PACK", "PAQMEX", "SANCHEZ", "FLETES DE REGRESO"]
 TARGET_COSTO_LOG = 7.5   # % meta de costo logístico (igual que Análisis Mensual)
+EXTRA_REGEX = "RECOLECCI|MANIOBRA"   # CONCEPTO que se trata como costo extra (sin acentos, mayúsculas): RECOLECCIONES / MANIOBRAS
 CAJAS_PEQUENO_MAX = 4    # un pedido "pequeño" tiene de 1 a N cajas (editable también desde la página)
 FERIADOS_24H = ['2026-01-01', '2026-02-02', '2026-03-16', '2026-05-01']   # <- agrega aquí los de otros años
 
@@ -252,6 +257,15 @@ def preparar_base(df_raw):
     for c in ["COSTO DE LA GUÍA", "FACTURACION", "VALUACION", "COSTOS ADICIONALES", "CANTIDAD DE CAJAS"]:
         df[c] = limpiar_moneda(df[c]) if c in df.columns else 0.0
     df["CAJAS"] = pd.to_numeric(df["CAJAS"], errors="coerce").fillna(0) if "CAJAS" in df.columns else 0.0
+
+    # Registros de recolecciones / maniobras: no son pedidos, son costos extras
+    col_c = next((c for c in df.columns if "CONCEPTO" in str(c).upper()), None)
+    if col_c:
+        conc = df[col_c].fillna("").astype(str).map(
+            lambda x: "".join(ch for ch in unicodedata.normalize("NFD", x) if unicodedata.category(ch) != "Mn")).str.strip().str.upper()
+        df["ES_EXTRA"] = conc.str.contains(EXTRA_REGEX, regex=True).astype(bool)
+    else:
+        df["ES_EXTRA"] = False
     return df
 
 
@@ -415,12 +429,11 @@ def calc_costos_regreso(df_all, anio, mes):
     val, n_eval, n_ok = d["VALUACION"].sum(), int(d["_EVAL"].sum()), int(d["_OK"].sum())
 
     # Desglose por concepto (informativo; usa solo el costo de guía, como el dashboard)
-    muestras = consignas = fnacional = 0.0
+    consignas = fnacional = 0.0
     col_c = next((c for c in d.columns if "CONCEPTO" in str(c).upper()), None)
     if col_c:
         conc = d[col_c].fillna("").astype(str).str.strip().str.upper()
         g = d["COSTO DE LA GUÍA"]
-        muestras = g[conc.str.contains("RECOLECCI|MANIOBRA", regex=True)].sum()
         consignas = g[conc.str.contains("CONSIGNA", regex=True)].sum()
         fnacional = g[conc.str.contains("NACIONAL", regex=True)].sum()
 
@@ -439,7 +452,7 @@ def calc_costos_regreso(df_all, anio, mes):
                 costo_caja=(flete / cajas) if cajas else 0.0,
                 efic=(n_ok / n_eval * 100) if n_eval else None,
                 pct_inc=(d["_INC"].sum() / len(d) * 100),
-                muestras=muestras, consignas=consignas, fnacional=fnacional, res=res)
+                consignas=consignas, fnacional=fnacional, res=res)
 
 
 def calc_comparativa_2025(G, df_hist, anio, mes):
@@ -455,9 +468,41 @@ def calc_comparativa_2025(G, df_hist, anio, mes):
     if f.empty or (flete25 <= 0 and cajas25 <= 0):
         return dict(sin_dato=True, motivo=f"{ARCHIVO_HIST} no tiene datos de {nombre} {ANIO_HISTORIAL}.")
     return dict(sin_dato=False, flete25=flete25, cajas25=cajas25,
-                dif_flete=G["flete"] - flete25, dif_cajas=G["cajas"] - cajas25,
-                var_flete=((G["flete"] - flete25) / flete25 * 100) if flete25 > 0 else None,
-                var_cajas=((G["cajas"] - cajas25) / cajas25 * 100) if cajas25 > 0 else None)
+                dif_flete=G.get("flete_total", G["flete"]) - flete25, dif_cajas=G.get("cajas_total", G["cajas"]) - cajas25,
+                var_flete=((G.get("flete_total", G["flete"]) - flete25) / flete25 * 100) if flete25 > 0 else None,
+                var_cajas=((G.get("cajas_total", G["cajas"]) - cajas25) / cajas25 * 100) if cajas25 > 0 else None)
+
+
+def _separar_extras(df):
+    """Devuelve (pedidos, extras): extras = registros con CONCEPTO de recolecciones / maniobras."""
+    if "ES_EXTRA" not in df.columns:
+        return df, df.iloc[0:0]
+    m = df["ES_EXTRA"].astype(bool)
+    return df[~m].copy(), df[m].copy()
+
+
+def _resumen_extras(d):
+    """Resume registros extras ya filtrados por periodo/modalidad: costo = guía + adicionales."""
+    r0 = dict(n=0, guia=0.0, adic=0.0, costo=0.0, cajas=0.0, por_concepto=pd.DataFrame())
+    if d is None or d.empty:
+        return r0
+    d = d.copy()
+    col_c = next((c for c in d.columns if "CONCEPTO" in str(c).upper()), None)
+    d["_CONC"] = (d[col_c].fillna("").astype(str).map(lambda x: _sin_acentos(x).strip().upper()).replace("", "SIN CONCEPTO")
+                  if col_c else "SIN CONCEPTO")
+    d["_COSTO"] = d["COSTO DE LA GUÍA"] + d["COSTOS ADICIONALES"]
+    pc = d.groupby("_CONC").agg(n=("_CONC", "size"), guia=("COSTO DE LA GUÍA", "sum"), adic=("COSTOS ADICIONALES", "sum"),
+                                costo=("_COSTO", "sum"), cajas=("CAJAS", "sum")).reset_index().rename(columns={"_CONC": "CONCEPTO"})
+    pc = pc.sort_values("costo", ascending=False).reset_index(drop=True)
+    return dict(n=len(d), guia=float(d["COSTO DE LA GUÍA"].sum()), adic=float(d["COSTOS ADICIONALES"].sum()),
+                costo=float(d["_COSTO"].sum()), cajas=float(d["CAJAS"].sum()), por_concepto=pc)
+
+
+def calc_extras(df_extras, anio, mes, modalidad="TODAS"):
+    """Costos extras (recolecciones / maniobras) del periodo y modalidad, con el mismo filtro que Análisis Mensual (MES + año)."""
+    if df_extras is None or df_extras.empty:
+        return _resumen_extras(None)
+    return _resumen_extras(_filtrar_periodo_modalidad(df_extras, anio, mes, modalidad))
 
 
 def _resumen_por_fletera(df_in):
@@ -977,6 +1022,11 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
     titulo_mes = f"{MESES[mes - 1]} {anio}"
     ahora = datetime.now().strftime("%d/%m/%Y %H:%M")
 
+    # Recolecciones / maniobras: no son pedidos, se reportan como costos extras
+    df_base, df_extras = _separar_extras(df_base)
+    E_all = calc_extras(df_extras, anio, mes, "TODAS")
+    E_reg = calc_extras(df_extras, anio, mes, "COBRO REGRESO")
+
     df_mes = filtrar_mes(df_base, "FECHA DE ENVÍO", anio, mes)
     R = calc_resumen(df_mes, hoy)
     D = calc_despachos(df_mes)
@@ -984,6 +1034,11 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
     T = calc_top_clientes(df_mes, 20)
     C = calc_carga_regreso(df_base, anio, mes)
     G = calc_costos_regreso(df_base, anio, mes)
+    if not G.get("vacio"):
+        G["extras"] = E_reg
+        G["flete_total"] = G["flete"] + E_reg["costo"]          # pedidos + extras
+        G["cajas_total"] = G["cajas"] + E_reg["cajas"]
+        G["costo_log_total"] = (G["flete_total"] / G["fact"] * 100) if G["fact"] else 0.0
     H = calc_comparativa_2025(G, df_hist, anio, mes)
     K = calc_ranking(df_base, anio, mes)
     M = calc_muestras(df_muestras, anio, mes, precios) if df_muestras is not None else None
@@ -997,7 +1052,7 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
         ("Pedidos del mes", num(R["total"]), HEX["slate"]),
         ("Entregados", f"{num(R['entregados'])} ({R['pct_entregado']:.0f}%)", HEX["green"]),
         ("Facturación", money(B["fact"]), HEX["teal"]),
-        ("Costo logístico", pct(B["costo_log"]), HEX["purple"]),
+        ("Costo logístico + extras", pct((B["guias"] + E_all["costo"]) / B["fact"] * 100 if B["fact"] else 0.0), HEX["purple"]),
         ("Despacho en 24 h háb.", pct(D["pct_ok"]) if D["total"] else "-", HEX["blue"]),
         ("Entregas a tiempo", pct(efect, 0) if efect is not None else "-", HEX["green"]),
         ("Tránsito promedio", f"{K['dias_prom']:.1f} días" if not K.get("vacio") else "-", HEX["orange"]),
@@ -1024,8 +1079,12 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
             txt += "."
         hallazgos.append(txt)
     if B["fact"]:
-        hallazgos.append(f"El costo de guías equivale a <b>{B['costo_log']:.1f}%</b> de la facturación ({money(B['guias'])} sobre {money(B['fact'])}); "
-                         f"costo promedio por caja <b>{money(B['costo_caja'], 2)}</b>.")
+        txt_b = (f"El costo de guías equivale a <b>{B['costo_log']:.1f}%</b> de la facturación ({money(B['guias'])} sobre {money(B['fact'])}); "
+                 f"costo promedio por caja <b>{money(B['costo_caja'], 2)}</b>.")
+        if E_all["n"]:
+            txt_b += (f" Además se pagaron <b>{money(E_all['costo'])}</b> en costos extras (recolecciones y maniobras, que no se cuentan como pedidos); "
+                      f"con ellos el costo logístico sube a <b>{(B['guias'] + E_all['costo']) / B['fact'] * 100:.1f}%</b>.")
+        hallazgos.append(txt_b)
     if not K.get("vacio") and K["barata"] is not None and K["cara"] is not None and K["barata"]["FLETERA"] != K["cara"]["FLETERA"]:
         hallazgos.append(f"Costo promedio por envío: la más económica fue <b>{esc(K['barata']['FLETERA'])}</b> ({money(K['barata']['COSTO_PROM_ENVIO'])}) "
                          f"y la más cara <b>{esc(K['cara']['FLETERA'])}</b> ({money(K['cara']['COSTO_PROM_ENVIO'])}).")
@@ -1033,10 +1092,12 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
         hallazgos.append(f"En cobro regreso se movieron <b>{num(C['total'])}</b> cajas; carrier dominante: <b>{esc(C['lider']['TRANSPORTE'])}</b> ({C['lider']['PCT']:.0f}%).")
     if not G.get("vacio"):
         mayor = G["res"].iloc[0]
-        dentro = G["costo_log"] <= TARGET_COSTO_LOG
-        txt_g = (f"Fletes de cobro regreso: se pagaron <b>{money(G['flete'])}</b> ({money(G['costo_caja'], 2)} por caja), equivalente a "
-                 f"<b>{G['costo_log']:.2f}%</b> de la facturación de esa modalidad ({'dentro' if dentro else 'fuera'} del target de {TARGET_COSTO_LOG}%). "
-                 f"El mayor gasto fue con <b>{esc(mayor['FLETERA'])}</b> ({mayor['pct_gasto']:.0f}% del total).")
+        dentro = G["costo_log_total"] <= TARGET_COSTO_LOG
+        txt_g = (f"Fletes de cobro regreso: se pagaron <b>{money(G['flete'])}</b> en pedidos ({money(G['costo_caja'], 2)} por caja)"
+                 + (f" y <b>{money(E_reg['costo'])}</b> en costos extras (recolecciones y maniobras)" if E_reg["n"] else "")
+                 + f", equivalente a <b>{G['costo_log_total']:.2f}%</b> de la facturación de esa modalidad ({'dentro' if dentro else 'fuera'} del target de {TARGET_COSTO_LOG}%)"
+                 + (f"; solo pedidos: {G['costo_log']:.2f}%" if E_reg["n"] else "")
+                 + f". El mayor gasto en pedidos fue con <b>{esc(mayor['FLETERA'])}</b> ({mayor['pct_gasto']:.0f}% del total).")
         if H and not H["sin_dato"] and H["var_flete"] is not None and H["var_cajas"] is not None:
             txt_g += (f" Contra {MESES[mes - 1].title()} {ANIO_HISTORIAL}, el gasto de flete varió <b>{H['var_flete']:+.1f}%</b> "
                       f"y el volumen de cajas <b>{H['var_cajas']:+.1f}%</b>.")
@@ -1108,6 +1169,15 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
     story += kpi_row([("Costo logístico (guías / fact.)", pct(B["costo_log"]), HEX["purple"]),
                       ("Cajas enviadas", num(B["cajas"]), HEX["slate"]),
                       ("Costo promedio por caja", money(B["costo_caja"], 2), HEX["red"])], ncols=3)
+    if E_all["n"]:
+        con_ext = (B["guias"] + E_all["costo"]) / B["fact"] * 100 if B["fact"] else 0.0
+        story += kpi_row([("Costos extras (recolec. y maniobras)", money(E_all["costo"]), HEX["gold"]),
+                          ("Costo logístico + extras", pct(con_ext), HEX["purple"]),
+                          ("Registros de costos extras", num(E_all["n"]), HEX["slate"])], ncols=3)
+        story.append(Paragraph("Los registros con concepto de recolecciones o maniobras no se cuentan como pedidos (ni en envíos, cajas, facturación ni efectividad); "
+                               "su costo (guía + adicionales) se muestra como costo extra. Costo logístico + extras = (costo de guías + costos extras) / facturación.",
+                               ST["nota"]))
+        story.append(Spacer(1, 4))
     pf = B["por_fletera"]
     if not pf.empty:
         top_f = pf.head(8)
@@ -1170,12 +1240,12 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
     story += [PageBreak()] + seccion(6, "COBRO REGRESO  ·  COSTO POR FLETERA",
                                      "Lo que paga JYPESA por fletes de regreso: gasto, costo por caja y servicio por fletera")
     if not G.get("vacio"):
-        col_log = HEX["green"] if G["costo_log"] <= TARGET_COSTO_LOG else HEX["red"]
+        col_log_t = HEX["green"] if G["costo_log_total"] <= TARGET_COSTO_LOG else HEX["red"]
         story += kpi_row([
-            ("Costo de flete (guía + adic.)", money(G["flete"], 2), HEX["slate"]),
+            ("Costo de flete pedidos (guía + adic.)", money(G["flete"], 2), HEX["slate"]),
             ("Cajas enviadas", num(G["cajas"]), HEX["teal"]),
-            ("Costo por caja", money(G["costo_caja"], 2), HEX["orange"]),
-            (f"Costo logístico (target {TARGET_COSTO_LOG}%)", f"{G['costo_log']:.2f}%", col_log),
+            ("Costo por caja (pedidos)", money(G["costo_caja"], 2), HEX["orange"]),
+            ("Costos extras (recolec. y maniobras)", money(E_reg["costo"], 2), HEX["gold"]),
         ], ncols=4)
         story += kpi_row([
             ("Facturación cobro regreso", money(G["fact"], 2), HEX["green"]),
@@ -1201,10 +1271,11 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
                                   (f"Flete {anio} vs {ANIO_HISTORIAL}", v_f, c_f),
                                   (f"Cajas {nm} {ANIO_HISTORIAL}", num(H["cajas25"]), HEX["slate"]),
                                   (f"Cajas {anio} vs {ANIO_HISTORIAL}", v_c, c_c)], ncols=4)
-        story.append(subtitulo("Desglose por concepto (informativo)"))
-        story += kpi_row([("Recolecciones y maniobras", money(G["muestras"], 2), HEX["purple"]),
-                          ("Consignas", money(G["consignas"], 2), HEX["purple"]),
-                          ("F nacional", money(G["fnacional"], 2), HEX["purple"])], ncols=3)
+        story.append(subtitulo("Costo logístico y desglose por concepto"))
+        story += kpi_row([(f"Costo logístico con extras (target {TARGET_COSTO_LOG}%)", f"{G['costo_log_total']:.2f}%", col_log_t),
+                          ("Costo logístico solo pedidos", f"{G['costo_log']:.2f}%", HEX["slate"]),
+                          ("Consignas (informativo)", money(G["consignas"], 2), HEX["purple"]),
+                          ("F nacional (informativo)", money(G["fnacional"], 2), HEX["purple"])], ncols=4)
 
         res = G["res"]
         izq = chart_barras_h([(r.FLETERA, r.flete) for r in res.itertuples()], width=262, label_w=92, color=C_ORANGE, fmt=money)
@@ -1225,13 +1296,15 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
                                                     money(G["costo_caja"], 2), pct(G["costo_log"], 2),
                                                     pct(G["efic"], 0) if G["efic"] is not None else "-", money(G["val"], 2)])]))
         story += [Spacer(1, 4), Paragraph(
-            f"Solo incluye envíos con forma de envío COBRO REGRESO. Costo de flete = guía + costos adicionales. Costo logístico = costo de flete / facturación de esta modalidad "
-            f"(target {TARGET_COSTO_LOG}%); a diferencia de la sección 03, aquí se incluyen los adicionales y no se mezclan otras modalidades. "
+            f"Solo incluye envíos con forma de envío COBRO REGRESO. Los registros con concepto de recolecciones o maniobras no se cuentan como pedidos: "
+            "su costo (guía + adicionales) se muestra como costo extra y no entra en el detalle por fletera ni en el costo por caja. "
+            f"Costo logístico solo pedidos = flete / facturación; con extras = (flete + extras) / facturación (target {TARGET_COSTO_LOG}%). "
+            "A diferencia de la sección 03, aquí se incluyen los adicionales y no se mezclan otras modalidades. "
             "% a tiempo = entregas con fecha real menor o igual a la promesa, sobre envíos con ambas fechas. "
-            "El desglose por concepto usa solo el costo de guía y es informativo.", ST["nota"])]
+            "Consignas y F nacional usan solo el costo de guía y son informativos.", ST["nota"])]
         if H is not None and not H["sin_dato"]:
             story += [Spacer(1, 3), Paragraph(
-                f"Comparativo anual: flete {anio} (guía + adicionales) contra el costo de guía de {ARCHIVO_HIST} para el mismo mes; "
+                f"Comparativo anual: flete {anio} (pedidos + costos extras, guía + adicionales) y sus cajas contra el costo de guía y cajas de {ARCHIVO_HIST} para el mismo mes; "
                 "para flete, una variación negativa es favorable; para cajas, una positiva.", ST["nota"])]
     else:
         story.append(sin_datos(f"No se encontraron envíos de COBRO REGRESO en {titulo_mes.title()}."))
@@ -1355,10 +1428,8 @@ def _sin_acentos(t):
     return "".join(c for c in unicodedata.normalize("NFD", str(t)) if unicodedata.category(c) != "Mn")
 
 
-def calc_logistico_concepto(df_base, anio, mes, modalidad="COBRO REGRESO", incluir_adic=True):
-    """% logístico por CONCEPTO.  mes = 0 -> todo el año.  modalidad: 'COBRO REGRESO' | 'COBRO DESTINO' | 'TODAS'.
-    Periodo igual que Análisis Mensual / sección 06 (columna MES + validación de año).
-    % logístico = costo (guía [+ adicionales]) / facturación del concepto."""
+def _filtrar_periodo_modalidad(df_base, anio, mes, modalidad):
+    """Periodo igual que Análisis Mensual (columna MES + validación de año; mes=0 -> todo el año) y modalidad por FORMA DE ENVIO."""
     d = df_base.copy()
     f_env = d["FECHA DE ENVÍO"]
     ok_anio = f_env.isna() | (f_env.dt.year == anio)
@@ -1367,9 +1438,19 @@ def calc_logistico_concepto(df_base, anio, mes, modalidad="COBRO REGRESO", inclu
         d = d[d["FORMA DE ENVIO"].str.contains("REGRESO", case=False, na=False)]
     elif modalidad == "COBRO DESTINO":
         d = d[d["FORMA DE ENVIO"].str.contains("DESTINO", case=False, na=False)]
-    d = d.copy()
+    return d.copy()
+
+
+def calc_logistico_concepto(df_base, anio, mes, modalidad="COBRO REGRESO", incluir_adic=True):
+    """% logístico por CONCEPTO.  mes = 0 -> todo el año.  modalidad: 'COBRO REGRESO' | 'COBRO DESTINO' | 'TODAS'.
+    Periodo igual que Análisis Mensual / sección 06 (columna MES + validación de año).
+    % logístico = costo (guía [+ adicionales]) / facturación del concepto."""
+    d_all = _filtrar_periodo_modalidad(df_base, anio, mes, modalidad)
+    d, d_ext = _separar_extras(d_all)
+    E = _resumen_extras(d_ext)
     if d.empty:
-        return dict(vacio=True, motivo="No hay envíos con esos filtros (periodo y modalidad).")
+        return dict(vacio=True, motivo=("No hay pedidos con esos filtros; solo hay registros de recolecciones/maniobras (costos extras)."
+                                        if E["n"] else "No hay envíos con esos filtros (periodo y modalidad)."))
 
     col_c = next((c for c in d.columns if "CONCEPTO" in str(c).upper()), None)
     if col_c is None:
@@ -1394,7 +1475,9 @@ def calc_logistico_concepto(df_base, anio, mes, modalidad="COBRO REGRESO", inclu
                 guia=d["COSTO DE LA GUÍA"].sum(), adic=d["COSTOS ADICIONALES"].sum(),
                 costo=costo, fact=fact, cajas=cajas,
                 pct_log=(costo / fact * 100) if fact else 0.0,
-                costo_caja=(costo / cajas) if cajas else 0.0)
+                costo_caja=(costo / cajas) if cajas else 0.0,
+                extras=E, costo_total=costo + E["costo"],
+                pct_log_total=((costo + E["costo"]) / fact * 100) if fact else 0.0)
 
 
 def _encabezado_simple(titulo, subtitulo_=""):
@@ -1442,9 +1525,9 @@ def generar_reporte_concepto_pdf(df_base, anio, mes, modalidad="COBRO REGRESO", 
         col_log = HEX["green"] if G["pct_log"] <= TARGET_COSTO_LOG else HEX["red"]
         story += kpi_row([
             ("Facturación", money(G["fact"], 2), HEX["green"]),
-            (f"Costo logístico ({base_txt})", money(G["costo"], 2), HEX["slate"]),
+            (f"Costo logístico de pedidos ({base_txt})", money(G["costo"], 2), HEX["slate"]),
             ("Cajas enviadas", num(G["cajas"]), HEX["teal"]),
-            (f"% logístico total (target {TARGET_COSTO_LOG}%)", f"{G['pct_log']:.2f}%", col_log),
+            (f"% logístico de pedidos (target {TARGET_COSTO_LOG}%)", f"{G['pct_log']:.2f}%", col_log),
         ], ncols=4)
 
         con_pct = pc[pc["pct_log"].notna()]
@@ -1489,7 +1572,30 @@ def generar_reporte_concepto_pdf(df_base, anio, mes, modalidad="COBRO REGRESO", 
         else:              # tabla larga: puede continuar en la siguiente hoja (repite encabezado)
             story += [CondPageBreak(120), subtitulo("Detalle por concepto"), t_conc]
 
+        # ---- costos extras (recolecciones / maniobras) ----
+        E = G["extras"]
+        if E["n"]:
+            col_t = HEX["green"] if G["pct_log_total"] <= TARGET_COSTO_LOG else HEX["red"]
+            story += [CondPageBreak(170), Spacer(1, 8), subtitulo("Costos extras (recolecciones y maniobras)")]
+            story += kpi_row([
+                ("Costos extras", money(E["costo"], 2), HEX["gold"]),
+                ("Costo logístico total (pedidos + extras)", money(G["costo_total"], 2), HEX["slate"]),
+                (f"% logístico con extras (target {TARGET_COSTO_LOG}%)", f"{G['pct_log_total']:.2f}%", col_t),
+                ("Extras como % del costo total", pct(E["costo"] / G["costo_total"] * 100 if G["costo_total"] else 0, 1), HEX["purple"]),
+            ], ncols=4)
+            pce = E["por_concepto"]
+            rows_e = [[trunc(r.CONCEPTO, 30), num(r.n), money(r.guia, 2), money(r.adic, 2), money(r.costo, 2),
+                       pct(r.costo / G["costo_total"] * 100 if G["costo_total"] else 0, 1)] for r in pce.itertuples()]
+            story.append(tabla(["CONCEPTO", "REGISTROS", "COSTO GUÍA", "ADICIONALES", "COSTO TOTAL", "% DEL COSTO TOTAL"],
+                               rows_e, [150, 64, 86, 80, 86, 74], ["L", "R", "R", "R", "R", "R"],
+                               total_row=(["TOTAL", num(E["n"]), money(E["guia"], 2), money(E["adic"], 2), money(E["costo"], 2),
+                                           pct(E["costo"] / G["costo_total"] * 100 if G["costo_total"] else 0, 1)] if len(pce) > 1 else None)))
+
         story += [Spacer(1, 8), Paragraph("LECTURA RÁPIDA", ParagraphStyle("lr", fontName="Helvetica-Bold", fontSize=10, textColor=C_SLATE, spaceAfter=4))]
+        if E["n"]:
+            story.append(Paragraph(f"Los costos extras (recolecciones y maniobras) suman <b>{money(E['costo'])}</b> "
+                                   f"({E['costo'] / G['costo_total'] * 100 if G['costo_total'] else 0:.0f}% del costo total); con ellos el % logístico pasa de "
+                                   f"<b>{G['pct_log']:.2f}%</b> (solo pedidos) a <b>{G['pct_log_total']:.2f}%</b>.", ST["bullet"], bulletText="•"))
         if peor is not None:
             story.append(Paragraph(f"El concepto con mayor % logístico es <b>{esc(peor['CONCEPTO'])}</b> con <b>{peor['pct_log']:.2f}%</b> "
                                    f"({money(peor['costo'])} de costo sobre {money(peor['fact'])} facturados).", ST["bullet"], bulletText="•"))
@@ -1506,7 +1612,8 @@ def generar_reporte_concepto_pdf(df_base, anio, mes, modalidad="COBRO REGRESO", 
 
         story += [Spacer(1, 6), Paragraph(
             f"% logístico = costo ({base_txt}) / facturación del concepto. Vs target = diferencia en puntos porcentuales (pp) contra la meta de {TARGET_COSTO_LOG}%. "
-            "Conceptos sin facturación aparecen con '-'. Periodo según la columna MES de la matriz y el año seleccionado."
+            "Conceptos sin facturación aparecen con '-'. Los registros con concepto de recolecciones o maniobras no se cuentan como pedidos: van aparte como costos extras. "
+            "Periodo según la columna MES de la matriz y el año seleccionado."
             + (f" Las gráficas muestran los {MAX_BARRAS_CONCEPTO} conceptos principales; la tabla incluye todos." if len(pc) > MAX_BARRAS_CONCEPTO else ""),
             ST["nota"])]
 
@@ -1616,6 +1723,8 @@ def _preparar_pequenos(df_base, anio, modalidad, incluir_adic, max_cajas):
 
 def calc_pequenos(df_base, anio, mes, modalidad="TODAS", incluir_adic=True, max_cajas=CAJAS_PEQUENO_MAX):
     """Salud de pedidos pequeños (1 a max_cajas cajas) vs el resto. mes = 0 -> todo el año."""
+    df_base, df_ext = _separar_extras(df_base)          # recolecciones / maniobras no son pedidos
+    E = calc_extras(df_ext, anio, mes, modalidad)
     anual, sin_cajas = _preparar_pequenos(df_base, anio, modalidad, incluir_adic, max_cajas)
     d = anual[anual["MES"] == MESES[mes - 1]] if mes else anual
     if d.empty:
@@ -1681,7 +1790,7 @@ def calc_pequenos(df_base, anio, mes, modalidad="TODAS", incluir_adic=True, max_
                 clientes=clientes, destinos=destinos, exceso_total=exceso_total, conc_top=conc_top,
                 sh_ped=B_peq["n"] / B_tot["n"] * 100, sh_fact=(B_peq["fact"] / B_tot["fact"] * 100) if B_tot["fact"] else np.nan,
                 sh_costo=(B_peq["costo"] / B_tot["costo"] * 100) if B_tot["costo"] else np.nan,
-                sh_cajas=B_peq["cajas"] / B_tot["cajas"] * 100)
+                sh_cajas=B_peq["cajas"] / B_tot["cajas"] * 100, extras=E)
 
 
 def generar_reporte_pequenos_pdf(df_base, anio, mes, modalidad="TODAS", incluir_adic=True, max_cajas=CAJAS_PEQUENO_MAX):
@@ -1749,6 +1858,9 @@ def generar_reporte_pequenos_pdf(df_base, anio, mes, modalidad="TODAS", incluir_
         if not pd.isna(P["conc_top"]):
             hall.append(f"Los 10 clientes con mayor sobrecosto concentran <b>{P['conc_top']:.0f}%</b> del exceso: ahí está la mayor oportunidad de negociación o de pedido mínimo.")
         story.append(Paragraph("HALLAZGOS CLAVE", ParagraphStyle("hk", fontName="Helvetica-Bold", fontSize=11, textColor=C_SLATE, spaceBefore=4, spaceAfter=6)))
+        if P["extras"]["n"]:
+            hall.append(f"No se incluyeron <b>{num(P['extras']['n'])}</b> registros de recolecciones y maniobras ({money(P['extras']['costo'])}): "
+                        "no son pedidos, se tratan como costos extras.")
         for h in hall:
             story.append(Paragraph(h, ST["bullet"], bulletText="•"))
 
@@ -1908,6 +2020,8 @@ def generar_reporte_pequenos_pdf(df_base, anio, mes, modalidad="TODAS", incluir_
                  f"Costo de flete = costo de la guía; costo de distribución = costos adicionales; se usa {base_txt}. Target logístico: {TARGET_COSTO_LOG}%.")
         if P["sin_costo"]:
             notas += f" Hay {num(P['sin_costo'])} pedido(s) pequeños sin costo registrado; si la guía aún no se captura, el % logístico se verá mejor de lo real."
+        if P["extras"]["n"]:
+            notas += " Los registros con concepto de recolecciones o maniobras se excluyen del análisis porque no son pedidos; su costo se reporta como costo extra."
         story += [Spacer(1, 10), Paragraph(notas, ST["nota"])]
 
     buf = BytesIO()
@@ -1968,6 +2082,8 @@ def main():
     idx_anio = anios.index(anio_prev) if anio_prev in anios else 0
 
     tipo = st.selectbox("¿QUÉ REPORTE QUIERES GENERAR?", [REPORTE_MENSUAL, REPORTE_CONCEPTO, REPORTE_PEQUENOS])
+    st.caption("Los registros con CONCEPTO de recolecciones o maniobras no se cuentan como pedidos: se reportan aparte como costos extras "
+               "y se suman al costo logístico total.")
 
     # ---------------- REPORTE MENSUAL COMPLETO ----------------
     if tipo == REPORTE_MENSUAL:
@@ -2078,4 +2194,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
