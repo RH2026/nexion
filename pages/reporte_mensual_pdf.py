@@ -413,7 +413,7 @@ def calc_costos_regreso(df_all, anio, mes):
     if col_c:
         conc = d[col_c].fillna("").astype(str).str.strip().str.upper()
         g = d["COSTO DE LA GUÍA"]
-        muestras = g[conc.str.contains("MUESTRA|RECOLECCI", regex=True)].sum()
+        muestras = g[conc.str.contains("RECOLECCI|MANIOBRA", regex=True)].sum()
         consignas = g[conc.str.contains("CONSIGNA", regex=True)].sum()
         fnacional = g[conc.str.contains("NACIONAL", regex=True)].sum()
 
@@ -1155,7 +1155,7 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
                                   (f"Cajas {nm} {ANIO_HISTORIAL}", num(H["cajas25"]), HEX["slate"]),
                                   (f"Cajas {anio} vs {ANIO_HISTORIAL}", v_c, c_c)], ncols=4)
         story.append(subtitulo("Desglose por concepto (informativo)"))
-        story += kpi_row([("Muestras / recolecciones", money(G["muestras"], 2), HEX["purple"]),
+        story += kpi_row([("Recolecciones y maniobras", money(G["muestras"], 2), HEX["purple"]),
                           ("Consignas", money(G["consignas"], 2), HEX["purple"]),
                           ("F nacional", money(G["fnacional"], 2), HEX["purple"])], ncols=3)
 
