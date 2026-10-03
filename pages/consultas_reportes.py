@@ -1277,9 +1277,10 @@ def _limpiar():
 
 def main():
     st.markdown("""<style>
-div.stButton > button, div.stDownloadButton > button{background-color:#2B343B!important;color:#fff!important;border:1px solid #2B343B!important;
+div.stButton > button, div.stDownloadButton > button{background-color:#BDD7EE!important;color:#1F2A33!important;border:1px solid #BDD7EE!important;
 border-radius:6px!important;transition:all .25s ease!important;width:100%!important;box-shadow:none!important;font-weight:700!important}
 div.stButton > button:hover, div.stDownloadButton > button:hover{background-color:#00A3A3!important;border-color:#00A3A3!important;color:#fff!important}
+div.stButton > button p, div.stDownloadButton > button p{color:inherit!important}
 </style>""", unsafe_allow_html=True)
     st.markdown("<div style='padding:6px 0 14px 0;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:18px;'>"
                 "<span style='color:#FFFFFF;font-size:13px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;'>"
@@ -1398,7 +1399,7 @@ div.stButton > button:hover, div.stDownloadButton > button:hover{background-colo
 
     # ---------- IMPRESIÓN ----------
     st.markdown("##### 3 · IMPRIME")
-    p1, p2, p3 = st.columns(3, vertical_alignment="bottom")
+    p1, p2, p3 = st.columns([1, 1.6, 1.6], vertical_alignment="bottom")
     orient = p1.selectbox("ORIENTACIÓN DEL PDF", ["AUTOMÁTICA", "VERTICAL", "HORIZONTAL"], key="q_orient")
     firma = hashlib.md5(json.dumps([f, activas, o, orient], sort_keys=True, default=str).encode()).hexdigest()
     gen_pdf = p2.button("GENERAR PDF", key="q_pdf")
@@ -1420,7 +1421,7 @@ div.stButton > button:hover, div.stDownloadButton > button:hover{background-colo
                                                  "nombre": f"Consultas_{titulo.replace(' ', '_').replace('/', '-').replace(',', '')}.xlsx"}
             except Exception as e:
                 st.error(f"No se pudo generar el Excel: {e}")
-    _, dl2, dl3 = st.columns(3)
+    _, dl2, dl3 = st.columns([1, 1.6, 1.6])
     for clave, etiqueta, mime, col in (("q_pdf_out", "DESCARGAR PDF", "application/pdf", dl2),
                                        ("q_xls_out", "DESCARGAR EXCEL", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", dl3)):
         out = st.session_state.get(clave)
