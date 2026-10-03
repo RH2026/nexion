@@ -11,6 +11,9 @@ Genera un PDF ejecutivo del mes elegido con:
   7. Ranking de fleteras (efectividad de entregas, tiempos y costo promedio)
   8. Costos de muestras
 
+En la misma página se puede elegir otro reporte: "% LOGÍSTICO POR CONCEPTO" (facturación, costo de guía, adicionales,
+cajas y % logístico de cada concepto, por mes o todo el año, por modalidad).
+
 Los cálculos replican los del dashboard, pero filtran por MES **y AÑO**.
 Los gráficos se dibujan directo con reportlab (no necesita kaleido ni matplotlib).
 """
@@ -1299,8 +1302,189 @@ def generar_reporte_pdf(df_base, df_muestras, anio, mes, hoy, precios=None, logo
 
 
 # ============================================================
-# 10. INTERFAZ MÍNIMA (solo elegir mes y generar)
+# 10. REPORTE INDEPENDIENTE: % LOGÍSTICO POR CONCEPTO
 # ============================================================
+MAX_BARRAS_CONCEPTO = 15   # solo para las gráficas; la tabla muestra TODOS los conceptos
+
+
+def _sin_acentos(t):
+    return "".join(c for c in unicodedata.normalize("NFD", str(t)) if unicodedata.category(c) != "Mn")
+
+
+def calc_logistico_concepto(df_base, anio, mes, modalidad="COBRO REGRESO", incluir_adic=True):
+    """% logístico por CONCEPTO.  mes = 0 -> todo el año.  modalidad: 'COBRO REGRESO' | 'COBRO DESTINO' | 'TODAS'.
+    Periodo igual que Análisis Mensual / sección 06 (columna MES + validación de año).
+    % logístico = costo (guía [+ adicionales]) / facturación del concepto."""
+    d = df_base.copy()
+    f_env = d["FECHA DE ENVÍO"]
+    ok_anio = f_env.isna() | (f_env.dt.year == anio)
+    d = d[ok_anio & ((d["MES"] == MESES[mes - 1]) if mes else (d["MES"] != ""))]
+    if modalidad == "COBRO REGRESO":
+        d = d[d["FORMA DE ENVIO"].str.contains("REGRESO", case=False, na=False)]
+    elif modalidad == "COBRO DESTINO":
+        d = d[d["FORMA DE ENVIO"].str.contains("DESTINO", case=False, na=False)]
+    d = d.copy()
+    if d.empty:
+        return dict(vacio=True, motivo="No hay envíos con esos filtros (periodo y modalidad).")
+
+    col_c = next((c for c in d.columns if "CONCEPTO" in str(c).upper()), None)
+    if col_c is None:
+        return dict(vacio=True, motivo="La matriz de envíos no trae la columna CONCEPTO.")
+
+    d["_CONC"] = d[col_c].fillna("").astype(str).map(lambda x: _sin_acentos(x).strip().upper()).replace("", "SIN CONCEPTO")
+    d["_COSTO"] = d["COSTO DE LA GUÍA"] + (d["COSTOS ADICIONALES"] if incluir_adic else 0.0)
+
+    pc = d.groupby("_CONC").agg(
+        envios=("_CONC", "size"), cajas=("CAJAS", "sum"), fact=("FACTURACION", "sum"),
+        guia=("COSTO DE LA GUÍA", "sum"), adic=("COSTOS ADICIONALES", "sum"), costo=("_COSTO", "sum"),
+    ).reset_index().rename(columns={"_CONC": "CONCEPTO"})
+    pc = pc.sort_values("costo", ascending=False).reset_index(drop=True)
+
+    costo, fact, cajas = d["_COSTO"].sum(), d["FACTURACION"].sum(), d["CAJAS"].sum()
+    pc["pct_gasto"] = (pc["costo"] / costo * 100) if costo else 0.0
+    pc["costo_caja"] = pc["costo"] / pc["cajas"].replace(0, np.nan)
+    pc["pct_log"] = pc["costo"] / pc["fact"].replace(0, np.nan) * 100
+    pc["vs_target"] = pc["pct_log"] - TARGET_COSTO_LOG
+
+    return dict(vacio=False, registros=len(d), pc=pc,
+                guia=d["COSTO DE LA GUÍA"].sum(), adic=d["COSTOS ADICIONALES"].sum(),
+                costo=costo, fact=fact, cajas=cajas,
+                pct_log=(costo / fact * 100) if fact else 0.0,
+                costo_caja=(costo / cajas) if cajas else 0.0)
+
+
+def _encabezado_simple(titulo, subtitulo_=""):
+    cont = [Paragraph(esc(titulo), ST["sec_t"])]
+    if subtitulo_:
+        cont.append(Paragraph(esc(subtitulo_), ST["sec_s"]))
+    t = Table([[cont]], colWidths=[CONTENT_W])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), C_SLATE), ("LINEBEFORE", (0, 0), (0, 0), 5, C_TEAL),
+        ("LEFTPADDING", (0, 0), (-1, -1), 12), ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+        ("TOPPADDING", (0, 0), (-1, -1), 9), ("BOTTOMPADDING", (0, 0), (-1, -1), 9)]))
+    return [t, Spacer(1, 10)]
+
+
+def _hacer_paginas_simple(titulo_hdr, periodo_txt):
+    def normal(c, doc):
+        c.saveState()
+        c.setFillColor(C_NAVY)
+        c.rect(0, PAGE_H - 30, PAGE_W, 30, stroke=0, fill=1)
+        c.setFillColor(C_TEAL)
+        c.rect(0, PAGE_H - 30, PAGE_W, 2.5, stroke=0, fill=1)
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica-Bold", 8.5)
+        c.drawString(MARGIN, PAGE_H - 19, titulo_hdr)
+        c.setFillColor(C_GOLD)
+        c.drawRightString(PAGE_W - MARGIN, PAGE_H - 19, periodo_txt)
+        c.restoreState()
+    f = Frame(MARGIN, 44, CONTENT_W, PAGE_H - 44 - 48, id="fn", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    return [PageTemplate(id="normal", frames=[f], onPage=normal)]
+
+
+def generar_reporte_concepto_pdf(df_base, anio, mes, modalidad="COBRO REGRESO", incluir_adic=True):
+    """PDF del % logístico por concepto.  df_base: salida de preparar_base().  mes=0 -> todo el año.  Devuelve BytesIO."""
+    periodo = f"{MESES[mes - 1]} {anio}" if mes else f"AÑO {anio} (ACUMULADO)"
+    ahora = datetime.now().strftime("%d/%m/%Y %H:%M")
+    base_txt = "guía + costos adicionales" if incluir_adic else "solo costo de guía"
+    G = calc_logistico_concepto(df_base, anio, mes, modalidad, incluir_adic)
+
+    story = _encabezado_simple("% LOGÍSTICO POR CONCEPTO",
+                               f"{modalidad.title() if modalidad != 'TODAS' else 'Todas las modalidades'}  ·  {periodo.title()}  ·  costo = {base_txt}")
+    if G["vacio"]:
+        story.append(sin_datos(G["motivo"]))
+    else:
+        pc = G["pc"]
+        col_log = HEX["green"] if G["pct_log"] <= TARGET_COSTO_LOG else HEX["red"]
+        story += kpi_row([
+            ("Facturación", money(G["fact"], 2), HEX["green"]),
+            (f"Costo logístico ({base_txt})", money(G["costo"], 2), HEX["slate"]),
+            ("Cajas enviadas", num(G["cajas"]), HEX["teal"]),
+            (f"% logístico total (target {TARGET_COSTO_LOG}%)", f"{G['pct_log']:.2f}%", col_log),
+        ], ncols=4)
+
+        con_pct = pc[pc["pct_log"].notna()]
+        fuera = int((con_pct["pct_log"] > TARGET_COSTO_LOG).sum())
+        if not con_pct.empty:
+            peor = con_pct.sort_values("pct_log", ascending=False).iloc[0]
+            peor_txt = f"{trunc(peor['CONCEPTO'], 16)}  {peor['pct_log']:.2f}%"
+        else:
+            peor, peor_txt = None, "-"
+        story += kpi_row([
+            ("Costo por caja", money(G["costo_caja"], 2), HEX["orange"]),
+            ("Envíos analizados", num(G["registros"]), HEX["blue"]),
+            ("Concepto con mayor % logístico", peor_txt, HEX["red"]),
+            ("Conceptos fuera de target", f"{fuera} de {len(con_pct)}", HEX["gold"]),
+        ], ncols=4)
+
+        # Gráficas (máx. MAX_BARRAS_CONCEPTO barras; la tabla trae todos los conceptos)
+        if not con_pct.empty:
+            ord_pct = con_pct.sort_values("pct_log", ascending=False).head(MAX_BARRAS_CONCEPTO)
+            izq = chart_barras_h([(r.CONCEPTO, r.pct_log) for r in ord_pct.itertuples()], width=262, label_w=100,
+                                 fmt=lambda v: f"{v:.2f}%",
+                                 colors_list=[C_GREEN if v <= TARGET_COSTO_LOG else C_RED for v in ord_pct["pct_log"]])
+        else:
+            izq = sin_datos("Ningún concepto tiene facturación.")
+        der = chart_barras_h([(r.CONCEPTO, r.costo) for r in pc.head(MAX_BARRAS_CONCEPTO).itertuples()],
+                             width=262, label_w=100, color=C_ORANGE, fmt=money)
+        story.append(lado_a_lado(izq, der, f"% logístico por concepto (verde = dentro de {TARGET_COSTO_LOG}%)", "Costo logístico por concepto"))
+        story.append(Spacer(1, 10))
+
+        def _vs(v):
+            return "-" if pd.isna(v) else f"{v:+.2f} pp"
+        rows = [[trunc(r.CONCEPTO, 24), num(r.envios), num(r.cajas), money(r.fact, 2), money(r.guia, 2), money(r.adic, 2),
+                 pct(r.pct_log, 2), _vs(r.vs_target), money(r.costo_caja, 2) if pd.notna(r.costo_caja) else "-"]
+                for r in pc.itertuples()]
+        t_conc = tabla(["CONCEPTO", "ENVÍOS", "CAJAS", "FACTURACIÓN", "COSTO GUÍA", "ADICIONALES", "% LOGÍSTICO", f"VS TARGET {TARGET_COSTO_LOG}%", "COSTO/CAJA"],
+                       rows, [92, 38, 42, 78, 68, 62, 52, 52, 56],
+                       ["L", "R", "R", "R", "R", "R", "R", "R", "R"],
+                       total_row=["TOTAL", num(G["registros"]), num(G["cajas"]), money(G["fact"], 2), money(G["guia"], 2), money(G["adic"], 2),
+                                  pct(G["pct_log"], 2), _vs(G["pct_log"] - TARGET_COSTO_LOG), money(G["costo_caja"], 2)])
+        if len(pc) <= 8:   # tabla corta: completa en una hoja
+            story.append(KeepTogether([subtitulo("Detalle por concepto"), t_conc]))
+        else:              # tabla larga: puede continuar en la siguiente hoja (repite encabezado)
+            story += [CondPageBreak(120), subtitulo("Detalle por concepto"), t_conc]
+
+        story += [Spacer(1, 8), Paragraph("LECTURA RÁPIDA", ParagraphStyle("lr", fontName="Helvetica-Bold", fontSize=10, textColor=C_SLATE, spaceAfter=4))]
+        if peor is not None:
+            story.append(Paragraph(f"El concepto con mayor % logístico es <b>{esc(peor['CONCEPTO'])}</b> con <b>{peor['pct_log']:.2f}%</b> "
+                                   f"({money(peor['costo'])} de costo sobre {money(peor['fact'])} facturados).", ST["bullet"], bulletText="•"))
+            story.append(Paragraph(f"<b>{fuera}</b> de {len(con_pct)} conceptos con facturación están por encima del target de {TARGET_COSTO_LOG}%.",
+                                   ST["bullet"], bulletText="•"))
+        top_gasto = pc.iloc[0]
+        story.append(Paragraph(f"El mayor gasto está en <b>{esc(top_gasto['CONCEPTO'])}</b>: {money(top_gasto['costo'])} "
+                               f"({top_gasto['pct_gasto']:.0f}% del costo total).", ST["bullet"], bulletText="•"))
+        sin_fact = pc[(pc["fact"] <= 0) & (pc["costo"] > 0)]
+        if not sin_fact.empty:
+            nombres = ", ".join(esc(trunc(x, 22)) for x in sin_fact["CONCEPTO"].head(4))
+            story.append(Paragraph(f"Sin facturación pero con costo: <b>{nombres}</b> ({money(sin_fact['costo'].sum())} en total). "
+                                   "No tienen % logístico propio, pero su costo sí está incluido en el total.", ST["bullet"], bulletText="•"))
+
+        story += [Spacer(1, 6), Paragraph(
+            f"% logístico = costo ({base_txt}) / facturación del concepto. Vs target = diferencia en puntos porcentuales (pp) contra la meta de {TARGET_COSTO_LOG}%. "
+            "Conceptos sin facturación aparecen con '-'. Periodo según la columna MES de la matriz y el año seleccionado."
+            + (f" Las gráficas muestran los {MAX_BARRAS_CONCEPTO} conceptos principales; la tabla incluye todos." if len(pc) > MAX_BARRAS_CONCEPTO else ""),
+            ST["nota"])]
+
+    buf = BytesIO()
+    doc = BaseDocTemplate(buf, pagesize=letter, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=48, bottomMargin=44,
+                          title=f"% Logístico por concepto - {periodo}", author="JYPESA Logística")
+    doc.addPageTemplates(_hacer_paginas_simple("REPORTE DE % LOGÍSTICO POR CONCEPTO", periodo))
+
+    class _Canvas(_NumberedCanvas):
+        titulo_pie = f"% logístico por concepto  -  generado {ahora}"
+    doc.build(story, canvasmaker=_Canvas)
+    buf.seek(0)
+    return buf
+
+
+# ============================================================
+# 11. INTERFAZ (elegir reporte, periodo y generar)
+# ============================================================
+REPORTE_MENSUAL = "REPORTE MENSUAL COMPLETO"
+REPORTE_CONCEPTO = "% LOGÍSTICO POR CONCEPTO"
+
+
 def main():
     st.markdown("""
 <style>
@@ -1317,7 +1501,7 @@ def main():
     st.markdown(
         "<div style='padding: 6px 0 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px;'>"
         "<span style='color:#FFFFFF; font-size:13px; font-weight:800; letter-spacing:2.5px; text-transform:uppercase;'>"
-        "REPORTES // REPORTE MENSUAL EN PDF PARA DIRECCIÓN</span></div>", unsafe_allow_html=True)
+        "REPORTES // REPORTES EN PDF PARA DIRECCIÓN</span></div>", unsafe_allow_html=True)
 
     try:
         import pytz
@@ -1336,46 +1520,83 @@ def main():
     anios = sorted({int(y) for y in df_base["FECHA DE ENVÍO"].dt.year.dropna().unique()} | {hoy.year}, reverse=True)
     mes_prev = hoy.month - 1 or 12
     anio_prev = hoy.year if hoy.month > 1 else hoy.year - 1
+    idx_anio = anios.index(anio_prev) if anio_prev in anios else 0
 
-    c1, c2, c3 = st.columns([1.3, 1, 1.6], vertical_alignment="bottom")
-    mes_sel = c1.selectbox("MES", MESES, index=mes_prev - 1)
-    anio_sel = c2.selectbox("AÑO", anios, index=anios.index(anio_prev) if anio_prev in anios else 0)
-    generar = c3.button("GENERAR REPORTE PDF", use_container_width=True)
+    tipo = st.selectbox("¿QUÉ REPORTE QUIERES GENERAR?", [REPORTE_MENSUAL, REPORTE_CONCEPTO])
 
-    st.caption("Incluye: resumen del mes, efectividad de envíos, inteligencia de negocio, top 20 clientes, distribución de carga (cobro regreso), "
-               "costo por fletera en cobro regreso, ranking de fleteras (efectividad, tiempos y costo promedio) y costos de muestras.")
+    # ---------------- REPORTE MENSUAL COMPLETO ----------------
+    if tipo == REPORTE_MENSUAL:
+        c1, c2, c3 = st.columns([1.3, 1, 1.6], vertical_alignment="bottom")
+        mes_sel = c1.selectbox("MES", MESES, index=mes_prev - 1, key="mens_mes")
+        anio_sel = c2.selectbox("AÑO", anios, index=idx_anio, key="mens_anio")
+        generar = c3.button("GENERAR REPORTE PDF", use_container_width=True, key="mens_btn")
 
-    if generar:
-        mes_num = MESES.index(mes_sel) + 1
-        with st.spinner("Armando el reporte..."):
-            df_muestras, msg_muestras = None, ""
-            if MUESTRAS_OK:
-                try:
-                    df_m, _sha = obtener_datos_github()
-                    if df_m is not None and not df_m.empty:
-                        df_muestras = preparar_muestras(df_m)
-                    else:
-                        msg_muestras = "No hay registros de muestras cargados."
-                except Exception as e:
-                    msg_muestras = f"No se pudo leer el registro de muestras: {e}"
-            else:
-                msg_muestras = f"No se pudo importar muestras_common: {MUESTRAS_ERR}"
-            try:
-                pdf = generar_reporte_pdf(df_base, df_muestras, int(anio_sel), mes_num, hoy,
-                                          precios=PRECIOS_MUESTRAS, logo_bytes=obtener_logo_bytes(), muestras_msg=msg_muestras,
-                                          df_hist=cargar_historial_2025())
-                st.session_state["rep_mensual_pdf"] = {"bytes": pdf.getvalue(), "nombre": f"Reporte_Mensual_Logistica_{mes_sel}_{anio_sel}.pdf"}
-                if msg_muestras:
-                    st.warning(f"Reporte generado, pero la sección de muestras quedó sin datos: {msg_muestras}")
+        st.caption("Incluye: resumen del mes, efectividad de envíos, inteligencia de negocio, top 20 clientes, distribución de carga (cobro regreso), "
+                   "costo por fletera en cobro regreso, ranking de fleteras (efectividad, tiempos y costo promedio) y costos de muestras.")
+
+        if generar:
+            mes_num = MESES.index(mes_sel) + 1
+            with st.spinner("Armando el reporte..."):
+                df_muestras, msg_muestras = None, ""
+                if MUESTRAS_OK:
+                    try:
+                        df_m, _sha = obtener_datos_github()
+                        if df_m is not None and not df_m.empty:
+                            df_muestras = preparar_muestras(df_m)
+                        else:
+                            msg_muestras = "No hay registros de muestras cargados."
+                    except Exception as e:
+                        msg_muestras = f"No se pudo leer el registro de muestras: {e}"
                 else:
-                    st.success("¡Reporte generado!")
-            except Exception as e:
-                st.error(f"No se pudo generar el reporte: {e}")
+                    msg_muestras = f"No se pudo importar muestras_common: {MUESTRAS_ERR}"
+                try:
+                    pdf = generar_reporte_pdf(df_base, df_muestras, int(anio_sel), mes_num, hoy,
+                                              precios=PRECIOS_MUESTRAS, logo_bytes=obtener_logo_bytes(), muestras_msg=msg_muestras,
+                                              df_hist=cargar_historial_2025())
+                    st.session_state["rep_mensual_pdf"] = {"bytes": pdf.getvalue(), "nombre": f"Reporte_Mensual_Logistica_{mes_sel}_{anio_sel}.pdf"}
+                    if msg_muestras:
+                        st.warning(f"Reporte generado, pero la sección de muestras quedó sin datos: {msg_muestras}")
+                    else:
+                        st.success("¡Reporte generado!")
+                except Exception as e:
+                    st.error(f"No se pudo generar el reporte: {e}")
 
-    rep = st.session_state.get("rep_mensual_pdf")
-    if rep:
-        st.download_button("DESCARGAR REPORTE PDF", data=rep["bytes"], file_name=rep["nombre"], mime="application/pdf",
-                           use_container_width=True, key="rep_mensual_dl")
+        rep = st.session_state.get("rep_mensual_pdf")
+        if rep:
+            st.download_button("DESCARGAR REPORTE PDF", data=rep["bytes"], file_name=rep["nombre"], mime="application/pdf",
+                               use_container_width=True, key="rep_mensual_dl")
+
+    # ---------------- % LOGÍSTICO POR CONCEPTO ----------------
+    else:
+        c1, c2, c3, c4 = st.columns(4, vertical_alignment="bottom")
+        mes_sel = c1.selectbox("MES", ["TODO EL AÑO"] + MESES, index=mes_prev, key="conc_mes")   # +1 por "TODO EL AÑO"
+        anio_sel = c2.selectbox("AÑO", anios, index=idx_anio, key="conc_anio")
+        modalidad = c3.selectbox("MODALIDAD", ["COBRO REGRESO", "COBRO DESTINO", "TODAS"], key="conc_mod")
+        costo_sel = c4.selectbox("COSTO A CONSIDERAR", ["Guía + adicionales", "Solo guía"], key="conc_costo")
+        generar = st.button("GENERAR REPORTE PDF", use_container_width=True, key="conc_btn")
+
+        st.caption("Calcula el % logístico (costo / facturación) de cada concepto, con facturación, costo de guía, adicionales, cajas, "
+                   f"costo por caja y comparación contra el target de {TARGET_COSTO_LOG}%. 'Guía + adicionales' es como Análisis Mensual; "
+                   "'Solo guía' es como la sección 03 del reporte mensual.")
+
+        if generar:
+            mes_num = 0 if mes_sel == "TODO EL AÑO" else MESES.index(mes_sel) + 1
+            with st.spinner("Armando el reporte..."):
+                try:
+                    pdf = generar_reporte_concepto_pdf(df_base, int(anio_sel), mes_num, modalidad,
+                                                       incluir_adic=(costo_sel == "Guía + adicionales"))
+                    per = "ANUAL" if mes_num == 0 else mes_sel
+                    st.session_state["rep_log_concepto_pdf"] = {
+                        "bytes": pdf.getvalue(),
+                        "nombre": f"Porcentaje_Logistico_por_Concepto_{modalidad.replace(' ', '_')}_{per}_{anio_sel}.pdf"}
+                    st.success("¡Reporte generado!")
+                except Exception as e:
+                    st.error(f"No se pudo generar el reporte: {e}")
+
+        rep = st.session_state.get("rep_log_concepto_pdf")
+        if rep:
+            st.download_button("DESCARGAR REPORTE PDF", data=rep["bytes"], file_name=rep["nombre"], mime="application/pdf",
+                               use_container_width=True, key="rep_log_concepto_dl")
 
 
 if __name__ == "__main__":
