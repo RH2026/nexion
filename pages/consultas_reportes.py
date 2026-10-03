@@ -1277,9 +1277,9 @@ def _limpiar():
 
 def main():
     st.markdown("""<style>
-div.stButton > button, div.stDownloadButton > button{background-color:#BDD7EE!important;color:#1F2A33!important;border:1px solid #BDD7EE!important;
+div.stButton > button, div.stDownloadButton > button{background-color:#628290!important;color:#fff!important;border:1px solid #628290!important;
 border-radius:6px!important;transition:all .25s ease!important;width:100%!important;box-shadow:none!important;font-weight:700!important}
-div.stButton > button:hover, div.stDownloadButton > button:hover{background-color:#00A3A3!important;border-color:#00A3A3!important;color:#fff!important}
+div.stButton > button:hover, div.stDownloadButton > button:hover{background-color:#4E6772!important;border-color:#4E6772!important;color:#fff!important}
 div.stButton > button p, div.stDownloadButton > button p{color:inherit!important}
 div[data-testid="stButton"], div[data-testid="stDownloadButton"], div.stButton, div.stDownloadButton{width:100%!important}
 div[data-testid="stElementContainer"]:has(> div.stButton), div[data-testid="stElementContainer"]:has(> div[data-testid="stButton"]), div[data-testid="stElementContainer"]:has(> div[data-testid="stDownloadButton"]){width:100%!important}
